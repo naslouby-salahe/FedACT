@@ -215,8 +215,8 @@ At fixed global identification geometry, rotating an action direction toward unr
 Across locked rolling cutoffs:
 
 $$
-\text{certified actions} >
-\text{point-positive ambiguous actions} >
+\text{certified actions} \gt 
+\text{point-positive ambiguous actions} \gt 
 \text{matched random valid actions}
 $$
 
@@ -462,13 +462,13 @@ L_o\ge\tau_{align}.
 ### Negatively identified
 
 \[
-U_o<\tau_{align}.
+U_o\lt \tau_{align}.
 \]
 
 ### Ambiguous
 
 \[
-L_o<\tau_{align}\le U_o.
+L_o\lt \tau_{align}\le U_o.
 \]
 
 ### Certified
@@ -1237,7 +1237,7 @@ A client is usable for identification only if all of the following hold:
 3. at least the minimum number of control-transition replicates exists;
 4. the selected nuisance rank passes the eigengap and bootstrap-stability rules;
 5. \(\hat\Sigma_k\), all uncertainty terms, and \(\beta_k\) are finite;
-6. \(\lambda_{\min}(\hat\Sigma_k)>0\);
+6. \(\lambda_{\min}(\hat\Sigma_k)\gt 0\);
 7. the private-transition history requirement is met;
 8. held-out control reconstruction passes the following fixed gate.
 
@@ -1282,13 +1282,13 @@ Before imposing an L2 plausibility ball, solve the **minimum-norm control-compat
 
 subject to the per-client standardized residual constraints at historical transition endpoint \(t\). This optimization contains no historical plausibility-radius constraint.
 
-For the current cohort family, collect \(\|\tilde g_{c,u}\|_2\) from strictly earlier eligible pre-cutoff endpoints \(u<t\). At least `identification.historical_plausibility_radius.minimum_reference_centers` reference centers are required. Define
+For the current cohort family, collect \(\|\tilde g_{c,u}\|_2\) from strictly earlier eligible pre-cutoff endpoints \(u\lt t\). At least `identification.historical_plausibility_radius.minimum_reference_centers` reference centers are required. Define
 
 \[
 R^{base}_{c,t} =
 Q_{\texttt{identification.historical＿plausibility＿radius.center＿norm＿quantile}}
 \left(
-\lbrace\|\tilde g_{c,u}\|_2:u<t\rbrace
+\lbrace\|\tilde g_{c,u}\|_2:u\lt t\rbrace
 \right).
 \]
 
@@ -1966,7 +1966,7 @@ d_o(x)=E_T(o(x))-E_T(x).
 Reject the action when
 
 \[
-\|d_o(x)\|_2<\texttt{numerical.zero＿displacement＿floor}.
+\|d_o(x)\|_2\lt \texttt{numerical.zero＿displacement＿floor}.
 \]
 
 Otherwise
@@ -2384,7 +2384,7 @@ W_o=U_o-L_o.
 
 \[
 \mathrm{AmbRate} =
-\frac{\left\lvert\lbrace L_o<\tau_{align}\le U_o\rbrace\right\rvert}
+\frac{\left\lvert\lbrace L_o\lt \tau_{align}\le U_o\rbrace\right\rvert}
 {\left\lvert\lbrace\text{valid candidate actions evaluated}\rbrace\right\rvert}.
 \]
 
@@ -2454,7 +2454,7 @@ A zero denominator is `UNDEFINED_NO_RELEVANT_ACTIONS`.
 
 ### Cosine future alignment
 
-When \(\|\hat g^{real}\|_2>0\),
+When \(\|\hat g^{real}\|_2\gt 0\),
 
 \[
 \mathrm{CosAlign} =
@@ -2490,7 +2490,7 @@ The exact Euclidean diameter may additionally be reported in analytical cases wh
 
 \[
 \lambda_{\min}^+(H) =
-\min\lbrace\lambda_i(H):\lambda_i(H)>
+\min\lbrace\lambda_i(H):\lambda_i(H)\gt 
 \texttt{numerical.rank＿clip＿epsilon＿relative}\lambda_{\max}(H)\rbrace.
 \]
 
@@ -3375,7 +3375,7 @@ For **complementary** geometry with requested common-intersection dimension \(d_
 3. for a requested pairwise principal-angle setting \(\theta\), rotate the client-specific blocks toward/away from a shared reference block using \(\cos\theta\) and \(\sin\theta\), then re-orthogonalize;
 4. reject and regenerate from the same deterministic child stream sequence until numerical SVD verifies the requested intersection dimension and the non-common principal angles within `numerical.projection_tie_tolerance`.
 
-For \(K>2\), client-specific complementary blocks are placed cyclically in the available orthogonal complement; if the requested \((K,r,d_0)\) combination cannot fit in \(d\), that grid cell is `NOT_GEOMETRICALLY_FEASIBLE` rather than silently changing rank.
+For \(K\gt 2\), client-specific complementary blocks are placed cyclically in the available orthogonal complement; if the requested \((K,r,d_0)\) combination cannot fit in \(d\), that grid cell is `NOT_GEOMETRICALLY_FEASIBLE` rather than silently changing rank.
 
 ## 21.3 Control observations and transition replicates
 
@@ -4019,7 +4019,7 @@ At each external cutoff/cohort/horizon:
    \[
    q_o^\top\hat g^{pred}_{center}\ge\tau_{align};
 \]
-3. **Negatively identified actions** — \(U_o<\tau_{align}\);
+3. **Negatively identified actions** — \(U_o\lt \tau_{align}\);
 4. **Matched random valid actions** — sampled from domain-valid nondegenerate candidates without using FedACT interval/point scores.
 
 The propagated point used in group 2 is uniquely the Chebyshev-center point implied by §8.3; no alternative point estimator may be selected post hoc.
@@ -4092,8 +4092,8 @@ Secondary:
 Across the prespecified repeated cutoff units:
 
 \[
-\text{Certified} >
-\text{Point-positive ambiguous} >
+\text{Certified} \gt 
+\text{Point-positive ambiguous} \gt 
 \text{Matched random valid}
 \]
 
@@ -4322,7 +4322,7 @@ control-quality diagnostics
 
 across client malicious transition vectors \(y_k\), while preserving client support counts and the set of transmitted packages. Reconstruct sets/certificates after permutation. This destroys the observed association between each client's transition and its control geometry without changing marginal control geometry or total support.
 
-For \(K=2\), the only non-identity swap is used. For \(K>2\), execute every planned analysis seed and average within cutoff.
+For \(K=2\), the only non-identity swap is used. For \(K\gt 2\), execute every planned analysis seed and average within cutoff.
 
 ## Precision gain versus identification gain
 
