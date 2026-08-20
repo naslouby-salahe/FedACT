@@ -91,7 +91,7 @@ The converse must also be demonstrated:
 
 Novelty is attached to the cybersecurity formulation and operational coupling:
 
-[
+$$
 \text{distributed control constraints}
 \rightarrow
 \mathcal G
@@ -103,7 +103,7 @@ Novelty is attached to the cybersecurity formulation and operational coupling:
 \text{certificate/ambiguity}
 \rightarrow
 \text{valid prospective hardening}.
-]
+$$
 
 No novelty credit is assigned to the established mathematics used internally, including:
 
@@ -214,7 +214,7 @@ At fixed global identification geometry, rotating an action direction toward unr
 
 Across locked rolling cutoffs:
 
-[
+$$
 \text{certified actions}
 
 >
@@ -224,7 +224,7 @@ Across locked rolling cutoffs:
 >
 
 \text{matched random valid actions}
-]
+$$
 
 for later-real action relevance.
 
@@ -283,7 +283,7 @@ Destroying historical temporal order materially weakens prospective action relev
 
 The second corpus reproduces the qualitative mechanism:
 
-[
+$$
 \text{control evidence}
 \rightarrow
 \text{action uncertainty}
@@ -291,7 +291,7 @@ The second corpus reproduces the qualitative mechanism:
 \text{certificate quality}
 \rightarrow
 \text{prospective consequence},
-]
+$$
 
 without changing the primary estimand or certification semantics.
 
@@ -614,11 +614,11 @@ Required evidence:
 
 | Assumption                   | Statement                                                                         | Mathematical role                         | Operationalization                     | Test/diagnostic                         | Failure consequence                                          |
 | ---------------------------- | --------------------------------------------------------------------------------- | ----------------------------------------- | -------------------------------------- | --------------------------------------- | ------------------------------------------------------------ |
-| Chronology                   | Every scientific decision uses information available by cutoff (T)                | Valid prospective interpretation          | cutoff manifests                       | leakage audit                           | prospective claims invalid                                   |
-| Shared component             | A meaningful shared component (g_{c,t}) exists for some cohorts/windows           | Defines global estimand                   | cross-client feasibility and stability | local-vs-global diagnostics             | global interpretation unsupported                            |
+| Chronology                   | Every scientific decision uses information available by cutoff \(T\)                | Valid prospective interpretation          | cutoff manifests                       | leakage audit                           | prospective claims invalid                                   |
+| Shared component             | A meaningful shared component \(g_{c,t}\) exists for some cohorts/windows           | Defines global estimand                   | cross-client feasibility and stability | local-vs-global diagnostics             | global interpretation unsupported                            |
 | Informative controls         | Benign/control transitions reveal part of nuisance geometry                       | Makes projection constraints meaningful   | matched control strata                 | held-out control reconstruction         | control-based identification unsupported                     |
-| Control-span validity        | (|P_kr_k|\le\rho_k) under declared sensitivity level                              | Bounds residual nuisance                  | calibrated/sensitivity radius          | violation sweeps                        | coverage/certificates invalid if understated                 |
-| Private-transition allowance | (|P_k\ell_k|\le\xi_k) or robust formulation tolerates private modes               | Protects shared-transition inference      | calibrated/sensitivity allowance       | private-transition sweep                | global certificates may be false                             |
+| Control-span validity        | \(|P_kr_k|\le\rho_k\) under declared sensitivity level                              | Bounds residual nuisance                  | calibrated/sensitivity radius          | violation sweeps                        | coverage/certificates invalid if understated                 |
+| Private-transition allowance | \(|P_k\ell_k|\le\xi_k\) or robust formulation tolerates private modes               | Protects shared-transition inference      | calibrated/sensitivity allowance       | private-transition sweep                | global certificates may be false                             |
 | Cutoff-fixed representation  | Representation remains fixed within each cutoff experiment                        | Preserves transition geometry             | encoder hash lock                      | artifact verification                   | mechanistic attribution invalid                              |
 | Action validity              | Every candidate operator preserves the domain validity contract                   | Gives security semantics                  | operator-specific validator            | validity audit                          | certified transformation unusable                            |
 | Historical predictability    | Historical action support contains predictive information for later horizons      | Required for prospective claims           | nested pseudo-future calibration       | time shuffle and pseudo-future coverage | prospective claim unsupported                                |
@@ -631,7 +631,7 @@ Required evidence:
 
 ## 6.1 Fundamental non-identification condition
 
-If a component (s\neq0):
+If a component \(s\neq0\):
 
 1. is shared across clients;
 2. lies outside every control nuisance span;
@@ -948,7 +948,7 @@ Includes the configuration values and derived quantities required by this sectio
 
 ### Cutoff-safe malicious transition
 
-Let \(\Delta=\texttt{temporal.transition_interval_months}\). For every eligible transition endpoint \(t\), use the two adjacent half-open windows defined in §9.3:
+Let \(\Delta=\texttt{temporal.transition\_interval\_months}\). For every eligible transition endpoint \(t\), use the two adjacent half-open windows defined in §9.3:
 
 \[
 W_t^-=[t-2\Delta,t-\Delta),
@@ -1039,7 +1039,7 @@ r_{\max}^{\mathrm{data}}
 \min\{
 d-1,\;
 S-1,\;
-\texttt{identification.nuisance_rank.maximum}
+\texttt{identification.nuisance\_rank.maximum}
 \},
 \]
 
@@ -1053,8 +1053,8 @@ For each admissible rank \(r\), compute
 \frac{\lambda_r}
 {\max\{
 \lambda_{r+1},
-\texttt{numerical.rank_clip_epsilon_relative}\lambda_1,
-\texttt{numerical.scale_standardization_floor}
+\texttt{numerical.rank\_clip\_epsilon\_relative}\lambda_1,
+\texttt{numerical.scale\_standardization\_floor}
 \}}.
 \]
 
@@ -1074,7 +1074,7 @@ Define the regularized nuisance covariance
 \eta
 =
 \max\left\{
-\texttt{numerical.scale_standardization_floor},
+\texttt{numerical.scale\_standardization\_floor},
 \;
 c\frac{\operatorname{tr}(\hat C^B_{\mathrm{raw}})}d
 \right\},
@@ -1118,7 +1118,7 @@ and
 \zeta
 =
 \max\left\{
-\texttt{numerical.scale_standardization_floor},
+\texttt{numerical.scale\_standardization\_floor},
 \;
 c\frac{\operatorname{tr}(\hat V^M)}d
 \right\}.
@@ -1333,7 +1333,7 @@ For the current cohort family, collect \(\|\tilde g_{c,u}\|_2\) from strictly ea
 \[
 R^{base}_{c,t}
 =
-Q_{\texttt{identification.historical_plausibility_radius.center_norm_quantile}}
+Q_{\texttt{identification.historical\_plausibility\_radius.center\_norm\_quantile}}
 \left(
 \{\|\tilde g_{c,u}\|_2:u<t\}
 \right).
@@ -1394,7 +1394,7 @@ If the denominator is at or below `numerical.scale_standardization_floor`, set \
 
 \[
 a=\min\{
-\texttt{temporal.temporal_model.maximum_scalar_coefficient},
+\texttt{temporal.temporal\_model.maximum\_scalar\_coefficient},
 \max\{0,a_{\mathrm{raw}}\}
 \}.
 \]
@@ -1416,7 +1416,7 @@ and let the process-error set be the L2 ball
 \qquad
 R_W
 =
-Q_{\texttt{temporal.process_noise.quantile}}
+Q_{\texttt{temporal.process\_noise.quantile}}
 (\{\|e_u\|_2\}).
 \]
 
@@ -1424,7 +1424,7 @@ Thus the process-error radius is calibrated from temporal-model residuals, not r
 
 ### Propagate
 
-For a forecast horizon \(h\) months, require \(h\) to be an integer multiple of `temporal.cutoff_step_months` and let \(n_h=h/\texttt{temporal.cutoff_step_months}\). Then
+For a forecast horizon \(h\) months, require \(h\) to be an integer multiple of `temporal.cutoff_step_months` and let \(n_h=h/\texttt{temporal.cutoff\_step\_months}\). Then
 
 \[
 \mathcal G^{pred}_{c,T+h}
@@ -1494,7 +1494,7 @@ When \(K\ge2\), leave-one-client-out stability is evaluated by reconstructing th
 
 \[
 \left\lceil
-\texttt{certification.leave_one_client_out_stability.minimum_unchanged_fraction}
+\texttt{certification.leave\_one\_client\_out\_stability.minimum\_unchanged\_fraction}
 \times K
 \right\rceil.
 \]
@@ -1637,11 +1637,11 @@ Later-real data are read only by evaluation producers after all corresponding sc
 All study intervals are half-open. Let
 
 \[
-H=\texttt{temporal.historical_training_window_months},
+H=\texttt{temporal.historical\_training\_window\_months},
 \qquad
-\Delta=\texttt{temporal.transition_interval_months},
+\Delta=\texttt{temporal.transition\_interval\_months},
 \qquad
-s=\texttt{temporal.cutoff_step_months}.
+s=\texttt{temporal.cutoff\_step\_months}.
 \]
 
 For historical transition endpoint \(t\),
@@ -2021,7 +2021,7 @@ d_o(x)=E_T(o(x))-E_T(x).
 Reject the action when
 
 \[
-\|d_o(x)\|_2<\texttt{numerical.zero_displacement_floor}.
+\|d_o(x)\|_2<\texttt{numerical.zero\_displacement\_floor}.
 \]
 
 Otherwise
@@ -2094,7 +2094,7 @@ A candidate is behavior-preserving when
 \[
 J(A,B)=\frac{|A\cap B|}{|A\cup B|}
 \ge
-\texttt{operators.validation.minimum_behavior_jaccard}.
+\texttt{operators.validation.minimum\_behavior\_jaccard}.
 \]
 
 If both event sets are empty, the check is uninformative and the candidate is not valid for confirmatory operator evidence.
@@ -2385,8 +2385,8 @@ Baseline acquisition identity, applicability decision, all effective hyperparame
 | Replace action-specific interval with global spectral gate           | decision-specific identification | global observability sufficient                    | mismatch at fixed global rank                    |
 | Matched-radius isotropic uncertainty set                             | control-derived geometry         | generic conservatism explains gain                 | weaker certificate relevance                     |
 | Set subspace-estimation contribution to zero                         | finite-sample calibration        | subspace error irrelevant                          | false certification at low control support       |
-| Set (\rho) to `ablations.zero_control_span_violation_budget`      | residual nuisance robustness     | controls exactly span nuisance                     | undercoverage under violation                    |
-| Set (\xi) to `ablations.zero_private_contamination_budget`        | private-transition allowance     | global transition fully shared                     | inconsistency/false confidence under local modes |
+| Set \(\rho\) to `ablations.zero_control_span_violation_budget`      | residual nuisance robustness     | controls exactly span nuisance                     | undercoverage under violation                    |
+| Set \(\xi\) to `ablations.zero_private_contamination_budget`        | private-transition allowance     | global transition fully shared                     | inconsistency/false confidence under local modes |
 | Shuffle historical order                                             | temporal information             | static geometry sufficient                         | reduced prospective value                        |
 | Identity/no-change dynamics                                          | forecast contribution            | current identified set sufficient                  | horizon-specific degradation                     |
 | Randomize support/action association while preserving validity/count | semantic action mapping          | any valid augmentation works                       | later relevance collapses                        |
@@ -2559,7 +2559,7 @@ The exact Euclidean diameter may additionally be reported in analytical cases wh
 \lambda_{\min}^+(H)
 =
 \min\{\lambda_i(H):\lambda_i(H)>
-\texttt{numerical.rank_clip_epsilon_relative}\lambda_{\max}(H)\}.
+\texttt{numerical.rank\_clip\_epsilon\_relative}\lambda_{\max}(H)\}.
 \]
 
 If no eigenvalue exceeds the threshold, report `UNDEFINED_NO_POSITIVE_SPECTRUM`.
@@ -2604,7 +2604,7 @@ Compute on the continuous sigmoid score over the complete declared evaluation po
 
 ### Early-horizon FNR
 
-For endpoint \(H_e=\texttt{temporal.early_horizon_months}\),
+For endpoint \(H_e=\texttt{temporal.early\_horizon\_months}\),
 
 \[
 \operatorname{EarlyFNR}
@@ -3421,7 +3421,7 @@ The synthetic representation dimension is \(d=64\).
 Let
 
 \[
-\sigma=\texttt{synthetic.base_sigma}.
+\sigma=\texttt{synthetic.base\_sigma}.
 \]
 
 The shared transition is generated by drawing \(v\sim\mathcal N(0,I_d)\) and setting
@@ -3429,7 +3429,7 @@ The shared transition is generated by drawing \(v\sim\mathcal N(0,I_d)\) and set
 \[
 g=
 \sigma\,
-\texttt{synthetic.shared_transition_norm_over_sigma}
+\texttt{synthetic.shared\_transition\_norm\_over\_sigma}
 \frac{v}{\|v\|_2}.
 \]
 
@@ -3537,7 +3537,7 @@ For `ten_percent_sparse`, choose exactly
 
 \[
 \max\{1,\lfloor
-\texttt{synthetic.sweeps.private_transition.sparse_fraction}\,d+0.5
+\texttt{synthetic.sweeps.private\_transition.sparse\_fraction}\,d+0.5
 \rfloor\}
 \]
 
@@ -3762,12 +3762,12 @@ Set:
 r_k=s\qquad\forall k.
 \]
 
-with (s) outside all nuisance spans.
+with \(s\) outside all nuisance spans.
 
 Expected:
 
 * client count does not solve decomposition;
-* complementary controls do not identify (s);
+* complementary controls do not identify \(s\);
 * declared sensitivity widens/invalidates certificates.
 
 ### Private-Transition Sweep
@@ -3782,7 +3782,7 @@ Expected:
 
 ### Outlier-Client Stress Test
 
-Use the configured corrupted-client counts 0, 1, and 2. For a synthetic population of size (K), their corresponding corrupted-client fractions are derived as (0), (1/K), and (2/K); these expressions are not configuration values.
+Use the configured corrupted-client counts 0, 1, and 2. For a synthetic population of size \(K\), their corresponding corrupted-client fractions are derived as \(0\), \(1/K\), and \(2/K\); these expressions are not configuration values.
 
 Stress:
 
@@ -4026,7 +4026,7 @@ A candidate configuration is valid only if all of the following hold over its el
 1. all required client/control/set quality gates are satisfied for enough units to retain at least the minimum paired cutoff count;
 2. empirical action-interval coverage against the inner later-real proxy is at least
    \[
-   p-\texttt{statistics.minimum_material_effects.maximum_coverage_deficit_absolute};
+   p-\texttt{statistics.minimum\_material\_effects.maximum\_coverage\_deficit\_absolute};
    \]
 3. false-certification rate is at most \(1-p\);
 4. prospective-set diameter, operator coverage, and leave-one-client-out rules are applied exactly as they will be externally;
@@ -4185,14 +4185,14 @@ The central mechanism is unsupported when the prespecified comparisons show no c
 
 ## Procedure per cutoff
 
-For each locked (T_j):
+For each locked \(T_j\):
 
 1. load only cutoff-safe scientific inputs;
 2. load the cutoff-fixed representation;
 3. construct historical malicious transitions;
 4. construct matched controls;
 5. estimate client nuisance constraints;
-6. intersect constraints into (\mathcal G_{c,T_j});
+6. intersect constraints into \(\mathcal G_{c,T_j}\);
 7. propagate to each locked horizon;
 8. generate all cutoff-valid action displacements;
 9. solve prospective action intervals;
@@ -4279,7 +4279,7 @@ The global gate passes a cohort/horizon only when the nonzero-spectrum condition
 =
 \frac{\lambda_{\max}(H)}{\lambda_{\min}^+(H)}
 \le
-\texttt{numerical.condition_number_limit}.
+\texttt{numerical.condition\_number\_limit}.
 \]
 
 When the global gate passes, all point-positive domain-valid actions are eligible; when it fails, all abstain. Compare this cohort-level global gate with action-specific FedACT intervals under matched action counts. This uses no separately calibrated global threshold.
@@ -4656,7 +4656,7 @@ Starting from the empty set, add the client maximizing
 \right),
 \]
 
-with \(\lambda=\texttt{client_selection.d_optimal_ridge}\). Ties go to lexical client id.
+with \(\lambda=\texttt{client\_selection.d\_optimal\_ridge}\). Ties go to lexical client id.
 
 ### Action-interval-contraction selector
 
@@ -4721,11 +4721,11 @@ At minimum:
 
 Run locked sensitivity across:
 
-* (\rho);
-* (\xi);
-* (R);
-* (\tau_{align});
-* (\tau_{amb});
+* \(\rho\);
+* \(\xi\);
+* \(R\);
+* \(\tau_{align}\);
+* \(\tau_{amb}\);
 * horizon;
 * nuisance rank;
 * coverage level.
@@ -5055,7 +5055,7 @@ The manuscript must preserve, where applicable:
 * corrupted clients are stress-tested but not solved generally;
 * representation choice can alter nuisance geometry;
 * prospective claims require historical predictability;
-* the later-real transition proxy contains residual nuisance and pooled private-transition bias because true (g) is unobserved.
+* the later-real transition proxy contains residual nuisance and pooled private-transition bias because true \(g\) is unobserved.
 
 ## 35.4 Completion criterion
 
@@ -5070,7 +5070,7 @@ FedACT research execution is complete when:
 
 The final evidence must preserve the complete scientific chain:
 
-[
+$$
 \boxed{
 \text{distributed control evidence}
 \rightarrow
@@ -5086,7 +5086,7 @@ The final evidence must preserve the complete scientific chain:
 \rightarrow
 \text{later-real evidence}
 }
-]
+$$
 
 A favorable detector score without this chain does **not** establish the FedACT contribution.
 
