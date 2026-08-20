@@ -2057,9 +2057,9 @@ For a cohort/window, valid-operator coverage is
 
 \[
 \frac{
-\#\lbrace\text{operator-eligible source samples with at least one valid nondegenerate candidate}\rbrace
+\left\lvert\lbrace\text{operator-eligible source samples with at least one valid nondegenerate candidate}\rbrace\right\rvert
 }{
-\#\lbrace\text{operator-eligible source samples}\rbrace
+\left\lvert\lbrace\text{operator-eligible source samples}\rbrace\right\rvert
 }.
 \]
 
@@ -2376,24 +2376,24 @@ W_o=U_o-L_o.
 
 \[
 \mathrm{CertRate} =
-\frac{\#\lbrace\text{valid candidate actions certified}\rbrace}
-{\#\lbrace\text{valid candidate actions evaluated}\rbrace}.
+\frac{\left\lvert\lbrace\text{valid candidate actions certified}\rbrace\right\rvert}
+{\left\lvert\lbrace\text{valid candidate actions evaluated}\rbrace\right\rvert}.
 \]
 
 ### Ambiguity rate
 
 \[
 \mathrm{AmbRate} =
-\frac{\#\lbrace L_o<\tau_{align}\le U_o\rbrace}
-{\#\lbrace\text{valid candidate actions evaluated}\rbrace}.
+\frac{\left\lvert\lbrace L_o<\tau_{align}\le U_o\rbrace\right\rvert}
+{\left\lvert\lbrace\text{valid candidate actions evaluated}\rbrace\right\rvert}.
 \]
 
 ### Abstention rate
 
 \[
 \mathrm{AbstentionRate} =
-\frac{\#\lbrace\text{eligible cohort/horizon units with no actionable certificate}\rbrace}
-{\#\lbrace\text{eligible cohort/horizon units}\rbrace}.
+\frac{\left\lvert\lbrace\text{eligible cohort/horizon units with no actionable certificate}\rbrace\right\rvert}
+{\left\lvert\lbrace\text{eligible cohort/horizon units}\rbrace\right\rvert}.
 \]
 
 ### False-certification rate
