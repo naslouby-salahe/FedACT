@@ -333,7 +333,7 @@ Where:
 The nuisance subspace is
 
 \[
-\mathcal N_{k,c,t}=\operatorname{col}(U_{k,c,t}).
+\mathcal N_{k,c,t}=\mathrm{col}(U_{k,c,t}).
 \]
 
 The ideal nuisance-removing projector is
@@ -359,7 +359,7 @@ For any positive-semidefinite matrix \(S\), the roadmap uses
 \[
 \boxed{
 \mathcal G_{c,t} =
-\left\{
+\left\lbrace
 g:
 \left\|
 \hat P_{k,c,t}
@@ -372,7 +372,7 @@ g:
 \;\forall k,
 \quad
 g\in\mathcal R_{c,t}
-\right\}.
+\right\rbrace.
 }
 \]
 
@@ -475,14 +475,14 @@ L_o<\tau_{align}\le U_o.
 
 \[
 \boxed{
-\operatorname{Cert}_o =
+\mathrm{Cert}_o =
 \mathbf 1
 \left[
 L_o\ge\tau_{align}
 \land
 W_o\le\tau_{amb}
 \land
-\operatorname{valid}(o)=1
+\mathrm{valid}(o)=1
 \right].
 }
 \]
@@ -699,7 +699,7 @@ For \(\psi_q(g)=q^\top g\),
 \iff
 q\perp\ker(A)
 \iff
-q\in\operatorname{range}(A^\top).
+q\in\mathrm{range}(A^\top).
 \]
 
 **FedACT-specific consequence:** action identity may be resolved while full transition identity is not.
@@ -714,10 +714,10 @@ For
 
 \[
 \mathcal G_\epsilon =
-\{g:\|Ag-b\|_2\le\epsilon\}
+\lbrace g:\|Ag-b\|_2\le\epsilon\rbrace
 \]
 
-and \(q\in\operatorname{range}(A^\top)\),
+and \(q\in\mathrm{range}(A^\top)\),
 
 \[
 \boxed{
@@ -775,9 +775,9 @@ Let \(\lambda_{1,k}\ge\cdots\ge\lambda_{d,k}\ge0\) be eigenvalues of the unregul
 \[
 \Gamma_{k,r} =
 \frac{\lambda_{r,k}}
-{\max\{\lambda_{r+1,k},
+{\max\lbrace\lambda_{r+1,k},
 \epsilon_{\mathrm{rank}}\lambda_{1,k},
-\epsilon_{\mathrm{scale}}\}},
+\epsilon_{\mathrm{scale}}\rbrace},
 \]
 
 where \(\epsilon_{\mathrm{rank}}\) and \(\epsilon_{\mathrm{scale}}\) are the numerical configuration values.
@@ -877,14 +877,14 @@ Under:
 4. sampling error vanishes;
 5. \(\rho_k,\xi_k\rightarrow0\) in the ideal regime;
 6. the plausibility set contains the truth;
-7. \(q\in\operatorname{range}(A^\top)\);
+7. \(q\in\mathrm{range}(A^\top)\);
 
 the action interval contracts to a singleton.
 
 Full transition contraction additionally requires
 
 \[
-\bigcap_k\mathcal N_k=\{0\}.
+\bigcap_k\mathcal N_k=\lbrace0\rbrace.
 \]
 
 # 8. FedACT Algorithm Contract
@@ -896,13 +896,13 @@ For client \(k\), cohort \(c\), transition endpoint \(t\), and external cutoff \
 ### Malicious observations
 
 \[
-D^M_k=\{(x_i,t_i,c_i,u_i)\}.
+D^M_k=\lbrace(x_i,t_i,c_i,u_i)\rbrace.
 \]
 
 ### Benign/control observations
 
 \[
-D^B_k=\{(x_j,t_j,u_j,s_j)\}.
+D^B_k=\lbrace(x_j,t_j,u_j,s_j)\rbrace.
 \]
 
 ### Cutoff-fixed representation
@@ -931,7 +931,7 @@ Includes the configuration values and derived quantities required by this sectio
 
 ### Cutoff-safe malicious transition
 
-Let \(\Delta=\texttt{temporal.transition\_interval\_months}\). For every eligible transition endpoint \(t\), use the two adjacent half-open windows defined in §9.3:
+Let \(\Delta=\texttt{temporal.transition＿interval＿months}\). For every eligible transition endpoint \(t\), use the two adjacent half-open windows defined in §9.3:
 
 \[
 W_t^-=[t-2\Delta,t-\Delta),
@@ -1010,11 +1010,11 @@ The admissible candidate ranks are the configured candidates not exceeding
 
 \[
 r_{\max}^{\mathrm{data}} =
-\min\{
+\min\lbrace
 d-1,\;
 S-1,\;
-\texttt{identification.nuisance\_rank.maximum}
-\},
+\texttt{identification.nuisance＿rank.maximum}
+\rbrace,
 \]
 
 where \(S\) is the number of control-transition replicates.
@@ -1024,11 +1024,11 @@ For each admissible rank \(r\), compute
 \[
 \Gamma_r =
 \frac{\lambda_r}
-{\max\{
+{\max\lbrace
 \lambda_{r+1},
-\texttt{numerical.rank\_clip\_epsilon\_relative}\lambda_1,
-\texttt{numerical.scale\_standardization\_floor}
-\}}.
+\texttt{numerical.rank＿clip＿epsilon＿relative}\lambda_1,
+\texttt{numerical.scale＿standardization＿floor}
+\rbrace}.
 \]
 
 The selected rank is the largest admissible \(r\) whose ratio meets the calibrated eigengap requirement. If none qualifies, the client emits `ABSTAIN_WEAK_EIGENGAP`.
@@ -1044,11 +1044,11 @@ Define the regularized nuisance covariance
 
 \[
 \eta =
-\max\left\{
-\texttt{numerical.scale\_standardization\_floor},
+\max\left\lbrace
+\texttt{numerical.scale＿standardization＿floor},
 \;
-c\frac{\operatorname{tr}(\hat C^B_{\mathrm{raw}})}d
-\right\},
+c\frac{\mathrm{tr}(\hat C^B_{\mathrm{raw}})}d
+\right\rbrace,
 \]
 
 where \(c\) is the selected value from `identification.covariance_regularization`.
@@ -1084,11 +1084,11 @@ and
 
 \[
 \zeta =
-\max\left\{
-\texttt{numerical.scale\_standardization\_floor},
+\max\left\lbrace
+\texttt{numerical.scale＿standardization＿floor},
 \;
-c\frac{\operatorname{tr}(\hat V^M)}d
-\right\}.
+c\frac{\mathrm{tr}(\hat V^M)}d
+\right\rbrace.
 \]
 
 The same selected covariance-regularization coefficient \(c\) is used for \(\hat C^B\) and \(\hat\Sigma_k\). Every inverse norm in FedACT uses the positive-definite \(\hat\Sigma_k^{-1}\); a pseudoinverse is used only in explicitly named point-estimator diagnostics.
@@ -1135,7 +1135,7 @@ Define the observed nuisance-amplitude bound
 A_k =
 Q_{0.95}
 \left(
-\{\|b^{(s)}-\bar b\|_2\}
+\lbrace\|b^{(s)}-\bar b\|_2\rbrace
 \right).
 \]
 
@@ -1168,7 +1168,7 @@ Let
 
 \[
 \rho_{k,2} =
-Q_{1-\alpha_\rho}(\{d_{\rho,s}\}),
+Q_{1-\alpha_\rho}(\lbrace d_{\rho,s}\rbrace),
 \]
 
 where \(\alpha_\rho\) is selected from `identification.control_span_violation`. Convert it to the standardized client norm:
@@ -1185,11 +1185,11 @@ When at least two quality-eligible clients exist for the same cohort/window, def
 
 \[
 m_{-k} =
-\operatorname{GeoMedian}
+\mathrm{GeoMedian}
 \left(
-\{
+\lbrace
 \hat P_jy_j:j\ne k
-\}
+\rbrace
 \right)
 \]
 
@@ -1206,7 +1206,7 @@ Define
 
 \[
 \xi_{k,2} =
-Q_{1-\alpha_\xi}(\{d_{\xi,k,t}\}),
+Q_{1-\alpha_\xi}(\lbrace d_{\xi,k,t}\rbrace),
 \qquad
 \xi_k =
 \frac{\xi_{k,2}}
@@ -1286,9 +1286,9 @@ For the current cohort family, collect \(\|\tilde g_{c,u}\|_2\) from strictly ea
 
 \[
 R^{base}_{c,t} =
-Q_{\texttt{identification.historical\_plausibility\_radius.center\_norm\_quantile}}
+Q_{\texttt{identification.historical＿plausibility＿radius.center＿norm＿quantile}}
 \left(
-\{\|\tilde g_{c,u}\|_2:u<t\}
+\lbrace\|\tilde g_{c,u}\|_2:u<t\rbrace
 \right).
 \]
 
@@ -1299,17 +1299,17 @@ The primary radius is \(R_{c,t}=R^{base}_{c,t}\); sensitivity analyses multiply 
 \[
 \boxed{
 \mathcal G_{c,t} =
-\{g:\|g\|_2\le R_{c,t}\}
+\lbrace g:\|g\|_2\le R_{c,t}\rbrace
 \cap
 \bigcap_{k\in\mathcal K_{c,t}}
-\left\{
+\left\lbrace
 g:
 \|
 \hat P_{k,c,t}(y_{k,c,t}-g)
 \|_{\hat\Sigma_{k,c,t}^{-1}}
 \le
 \beta_{k,c,t}
-\right\}.
+\right\rbrace.
 }
 \]
 
@@ -1344,10 +1344,10 @@ a_{\mathrm{raw}} =
 If the denominator is at or below `numerical.scale_standardization_floor`, set \(a=1\). Otherwise set
 
 \[
-a=\min\{
-\texttt{temporal.temporal\_model.maximum\_scalar\_coefficient},
-\max\{0,a_{\mathrm{raw}}\}
-\}.
+a=\min\lbrace
+\texttt{temporal.temporal＿model.maximum＿scalar＿coefficient},
+\max\lbrace0,a_{\mathrm{raw}}\rbrace
+\rbrace.
 \]
 
 At least `temporal.temporal_model.minimum_consecutive_pairs` valid consecutive center pairs are required; otherwise the prospective unit is `INSUFFICIENT_EVIDENCE`.
@@ -1362,18 +1362,18 @@ and let the process-error set be the L2 ball
 
 \[
 \mathcal W =
-\{w:\|w\|_2\le R_W\},
+\lbrace w:\|w\|_2\le R_W\rbrace,
 \qquad
 R_W =
-Q_{\texttt{temporal.process\_noise.quantile}}
-(\{\|e_u\|_2\}).
+Q_{\texttt{temporal.process＿noise.quantile}}
+(\lbrace\|e_u\|_2\rbrace).
 \]
 
 Thus the process-error radius is calibrated from temporal-model residuals, not raw center displacements.
 
 ### Propagate
 
-For a forecast horizon \(h\) months, require \(h\) to be an integer multiple of `temporal.cutoff_step_months` and let \(n_h=h/\texttt{temporal.cutoff\_step\_months}\). Then
+For a forecast horizon \(h\) months, require \(h\) to be an integer multiple of `temporal.cutoff_step_months` and let \(n_h=h/\texttt{temporal.cutoff＿step＿months}\). Then
 
 \[
 \mathcal G^{pred}_{c,T+h} =
@@ -1424,13 +1424,13 @@ This is an upper bound on the Euclidean diameter of \(\mathcal G\). The same qua
 ### Certify
 
 \[
-\operatorname{Cert}_{o,c,h}=1
+\mathrm{Cert}_{o,c,h}=1
 \iff
 L_{o,c,h}\ge\tau_{align}
 \land
 U_{o,c,h}-L_{o,c,h}\le\tau_{amb}
 \land
-\operatorname{valid}(o)=1.
+\mathrm{valid}(o)=1.
 \]
 
 The alignment and ambiguity thresholds are selected only by §25.
@@ -1441,7 +1441,7 @@ When \(K\ge2\), leave-one-client-out stability is evaluated by reconstructing th
 
 \[
 \left\lceil
-\texttt{certification.leave\_one\_client\_out\_stability.minimum\_unchanged\_fraction}
+\texttt{certification.leave＿one＿client＿out＿stability.minimum＿unchanged＿fraction}
 \times K
 \right\rceil.
 \]
@@ -1452,11 +1452,11 @@ A failing action is downgraded to `ambiguous` with `ABSTAIN_SINGLE_CLIENT_CERTIF
 
 \[
 \mathcal C^{FedACT}_{c,h}(x) =
-\{
+\lbrace
 o(x):
 o\in\mathcal O_T(x),
-\operatorname{Cert}_{o,c,h}=1
-\}.
+\mathrm{Cert}_{o,c,h}=1
+\rbrace.
 \]
 
 When more actions are certified than the configured per-sample cap, always include the certified action having the lowest current-detector malicious probability, because it is the hardest currently detected challenge. Fill remaining slots greedily by maximum minimum cosine distance from already selected \(q_o\) directions. Resolve exact ties lexicographically by `(operator_name, canonical_parameter_string, output_hash)`.
@@ -1480,7 +1480,7 @@ L_{\mathrm{hist}}(\phi)
 \mathbb E_{x\in M_{\mathrm{hist}}}
 \left(
 \max_{x'\in\mathcal C^{FedACT}_{c,h}(x)}
-\operatorname{BCEWithLogits}(h_\phi(E_T(x')),1)
+\mathrm{BCEWithLogits}(h_\phi(E_T(x')),1)
 \right)
 \right].
 \]
@@ -1582,11 +1582,11 @@ Later-real data are read only by evaluation producers after all corresponding sc
 All study intervals are half-open. Let
 
 \[
-H=\texttt{temporal.historical\_training\_window\_months},
+H=\texttt{temporal.historical＿training＿window＿months},
 \qquad
-\Delta=\texttt{temporal.transition\_interval\_months},
+\Delta=\texttt{temporal.transition＿interval＿months},
 \qquad
-s=\texttt{temporal.cutoff\_step\_months}.
+s=\texttt{temporal.cutoff＿step＿months}.
 \]
 
 For historical transition endpoint \(t\),
@@ -1966,7 +1966,7 @@ d_o(x)=E_T(o(x))-E_T(x).
 Reject the action when
 
 \[
-\|d_o(x)\|_2<\texttt{numerical.zero\_displacement\_floor}.
+\|d_o(x)\|_2<\texttt{numerical.zero＿displacement＿floor}.
 \]
 
 Otherwise
@@ -2039,7 +2039,7 @@ A candidate is behavior-preserving when
 \[
 J(A,B)=\frac{|A\cap B|}{|A\cup B|}
 \ge
-\texttt{operators.validation.minimum\_behavior\_jaccard}.
+\texttt{operators.validation.minimum＿behavior＿jaccard}.
 \]
 
 If both event sets are empty, the check is uninformative and the candidate is not valid for confirmatory operator evidence.
@@ -2057,9 +2057,9 @@ For a cohort/window, valid-operator coverage is
 
 \[
 \frac{
-\#\{\text{operator-eligible source samples with at least one valid nondegenerate candidate}\}
+\#\lbrace\text{operator-eligible source samples with at least one valid nondegenerate candidate}\rbrace
 }{
-\#\{\text{operator-eligible source samples}\}
+\#\lbrace\text{operator-eligible source samples}\rbrace
 }.
 \]
 
@@ -2217,7 +2217,7 @@ H=A^\top A.
 | Single pooled nuisance subspace | estimate one nuisance basis from all eligible control-transition replicates pooled with effective-support weights, then solve the corresponding point system | tests heterogeneous control geometry |
 | Average projected residual | effective-support-weighted mean of \(\hat P_ky_k\) | simple projected comparator |
 | Standard pseudoinverse | \(A^\dagger b\) with numerical pseudoinverse cutoff `numerical.rank_clip_epsilon_relative` | point reconstruction |
-| Regularized point reconstruction | \((H+\lambda I)^{-1}A^\top b\), with \(\lambda=\max(\epsilon_{\rm scale},c_{\rm ridge}\operatorname{tr}(H)/d)\) | regularization alternative |
+| Regularized point reconstruction | \((H+\lambda I)^{-1}A^\top b\), with \(\lambda=\max(\epsilon_{\rm scale},c_{\rm ridge}\mathrm{tr}(H)/d)\) | regularization alternative |
 | Covariance-weighted projected point | weighted least-squares solution of the stacked system above | statistically stronger point comparator |
 | Robust raw aggregation | geometric median of \(y_k\) | nuisance-agnostic robust aggregation |
 | Nuisance projection without global intersection | geometric median of \(\hat P_ky_k\) | tests intersection geometry |
@@ -2353,7 +2353,7 @@ Each ablation uses the same configuration contract rather than redefining scient
 For known-truth synthetic data,
 
 \[
-\operatorname{Coverage}_{set} =
+\mathrm{Coverage}_{set} =
 \frac1N\sum_{i=1}^N
 \mathbf1[g_i^{true}\in\mathcal G_i].
 \]
@@ -2361,7 +2361,7 @@ For known-truth synthetic data,
 ### Action-interval coverage
 
 \[
-\operatorname{Coverage}_{action} =
+\mathrm{Coverage}_{action} =
 \frac1N\sum_i
 \mathbf1[q_i^\top g_i^{true}\in[L_i,U_i]].
 \]
@@ -2375,25 +2375,25 @@ W_o=U_o-L_o.
 ### Certification rate
 
 \[
-\operatorname{CertRate} =
-\frac{\#\{\text{valid candidate actions certified}\}}
-{\#\{\text{valid candidate actions evaluated}\}}.
+\mathrm{CertRate} =
+\frac{\#\lbrace\text{valid candidate actions certified}\rbrace}
+{\#\lbrace\text{valid candidate actions evaluated}\rbrace}.
 \]
 
 ### Ambiguity rate
 
 \[
-\operatorname{AmbRate} =
-\frac{\#\{L_o<\tau_{align}\le U_o\}}
-{\#\{\text{valid candidate actions evaluated}\}}.
+\mathrm{AmbRate} =
+\frac{\#\lbrace L_o<\tau_{align}\le U_o\rbrace}
+{\#\lbrace\text{valid candidate actions evaluated}\rbrace}.
 \]
 
 ### Abstention rate
 
 \[
-\operatorname{AbstentionRate} =
-\frac{\#\{\text{eligible cohort/horizon units with no actionable certificate}\}}
-{\#\{\text{eligible cohort/horizon units}\}}.
+\mathrm{AbstentionRate} =
+\frac{\#\lbrace\text{eligible cohort/horizon units with no actionable certificate}\rbrace}
+{\#\lbrace\text{eligible cohort/horizon units}\rbrace}.
 \]
 
 ### False-certification rate
@@ -2405,11 +2405,11 @@ R_o^{true}=\mathbf1[q_o^\top g^{true}\ge\tau_{align}],
 \]
 
 \[
-\operatorname{FCR} =
+\mathrm{FCR} =
 \frac{
-\sum_o\mathbf1[\operatorname{Cert}_o=1\land R_o^{true}=0]
+\sum_o\mathbf1[\mathrm{Cert}_o=1\land R_o^{true}=0]
 }{
-\sum_o\mathbf1[\operatorname{Cert}_o=1]
+\sum_o\mathbf1[\mathrm{Cert}_o=1]
 }.
 \]
 
@@ -2437,7 +2437,7 @@ The threshold is the same pre-cutoff \(\tau_{align}\) used by the corresponding 
 ### Certificate precision
 
 \[
-\operatorname{Precision}_{cert} =
+\mathrm{Precision}_{cert} =
 \frac{TP_{cert}}{TP_{cert}+FP_{cert}},
 \]
 
@@ -2446,7 +2446,7 @@ where TP/FP compare certificate state with \(R_o^{real}\). A zero denominator is
 ### Certificate recall
 
 \[
-\operatorname{Recall}_{cert} =
+\mathrm{Recall}_{cert} =
 \frac{TP_{cert}}{TP_{cert}+FN_{cert}}.
 \]
 
@@ -2457,7 +2457,7 @@ A zero denominator is `UNDEFINED_NO_RELEVANT_ACTIONS`.
 When \(\|\hat g^{real}\|_2>0\),
 
 \[
-\operatorname{CosAlign} =
+\mathrm{CosAlign} =
 \frac{q_o^\top\hat g^{real}}{\|\hat g^{real}\|_2}.
 \]
 
@@ -2490,8 +2490,8 @@ The exact Euclidean diameter may additionally be reported in analytical cases wh
 
 \[
 \lambda_{\min}^+(H) =
-\min\{\lambda_i(H):\lambda_i(H)>
-\texttt{numerical.rank\_clip\_epsilon\_relative}\lambda_{\max}(H)\}.
+\min\lbrace\lambda_i(H):\lambda_i(H)>
+\texttt{numerical.rank＿clip＿epsilon＿relative}\lambda_{\max}(H)\rbrace.
 \]
 
 If no eigenvalue exceeds the threshold, report `UNDEFINED_NO_POSITIVE_SPECTRUM`.
@@ -2501,7 +2501,7 @@ If no eigenvalue exceeds the threshold, report `UNDEFINED_NO_POSITIVE_SPECTRUM`.
 \[
 \Delta_j(q\mid\mathcal K) =
 W_q(\mathcal G_{\mathcal K}) -
-W_q(\mathcal G_{\mathcal K\cup\{j\}}).
+W_q(\mathcal G_{\mathcal K\cup\lbrace j\rbrace}).
 \]
 
 ### Weighted client gain
@@ -2518,11 +2518,11 @@ The weights are fixed by §32.
 ### False-negative, true-positive, and false-positive rates
 
 \[
-\operatorname{FNR}=\frac{FN}{FN+TP},
+\mathrm{FNR}=\frac{FN}{FN+TP},
 \qquad
-\operatorname{TPR}=1-\operatorname{FNR},
+\mathrm{TPR}=1-\mathrm{FNR},
 \qquad
-\operatorname{FPR}=\frac{FP}{FP+TN}.
+\mathrm{FPR}=\frac{FP}{FP+TN}.
 \]
 
 A zero denominator produces `UNDEFINED` and the denominator count is reported.
@@ -2533,10 +2533,10 @@ Compute on the continuous sigmoid score over the complete declared evaluation po
 
 ### Early-horizon FNR
 
-For endpoint \(H_e=\texttt{temporal.early\_horizon\_months}\),
+For endpoint \(H_e=\texttt{temporal.early＿horizon＿months}\),
 
 \[
-\operatorname{EarlyFNR} =
+\mathrm{EarlyFNR} =
 \frac{
 \sum_{t\le H_e}FN_t
 }{
@@ -2555,8 +2555,8 @@ w_m=\frac{\Delta_m}{\sum_j\Delta_j}.
 Then
 
 \[
-\operatorname{Exposure} =
-\sum_m w_m\operatorname{FNR}_m.
+\mathrm{Exposure} =
+\sum_m w_m\mathrm{FNR}_m.
 \]
 
 The endpoint includes only bins before the reactive comparator is permitted to incorporate the corresponding feedback.
@@ -2566,13 +2566,13 @@ The endpoint includes only bins before the reactive comparator is permitted to i
 Time to catch-up is the first permitted chronological monthly evaluation boundary at which a reactive comparator simultaneously satisfies
 
 \[
-\operatorname{FNR}_{reactive}\le\operatorname{FNR}_{FedACT}
+\mathrm{FNR}_{reactive}\le\mathrm{FNR}_{FedACT}
 \]
 
 and
 
 \[
-\operatorname{FPR}_{reactive}\le\operatorname{FPR}_{FedACT}
+\mathrm{FPR}_{reactive}\le\mathrm{FPR}_{FedACT}
 \]
 
 on the same accumulated later-real population. If this never occurs in the observable horizon, report right-censored at the last observable boundary.
@@ -2582,10 +2582,10 @@ on the same accumulated later-real population. If this never occurs in the obser
 The primary clean-cost gate is absolute validation FNR degradation in percentage points:
 
 \[
-\Delta\operatorname{FNR}_{clean,pp} =
+\Delta\mathrm{FNR}_{clean,pp} =
 100(
-\operatorname{FNR}_{hardened} -
-\operatorname{FNR}_{base}
+\mathrm{FNR}_{hardened} -
+\mathrm{FNR}_{base}
 ).
 \]
 
@@ -2615,7 +2615,7 @@ Protocol framing, transport encryption, and network headers are excluded and rep
 Per client,
 
 \[
-C_k=\operatorname{bytes}(\text{canonical payload}),
+C_k=\mathrm{bytes}(\text{canonical payload}),
 \qquad
 C_{total}=\sum_{k\in\mathcal K_{selected}}C_k.
 \]
@@ -3027,12 +3027,12 @@ For cutoff \(T\), cohort \(c\), and horizon \(h\), define pre/post malicious mea
 
 \[
 \hat\mu^{M,pre}_{k,c,T,h} =
-\operatorname{mean}\{E_T(x):x\in c,\;t\in[T-h,T)\},
+\mathrm{mean}\lbrace E_T(x):x\in c,\;t\in[T-h,T)\rbrace,
 \]
 
 \[
 \hat\mu^{M,post}_{k,c,T,h} =
-\operatorname{mean}\{E_T(x):x\in c,\;t\in[T,T+h)\}.
+\mathrm{mean}\lbrace E_T(x):x\in c,\;t\in[T,T+h)\rbrace.
 \]
 
 Each side must satisfy the same malicious support floor. Let
@@ -3248,7 +3248,7 @@ Construct exact low-dimensional projector systems and verify
 
 ### Functional Identifiability Verification
 
-Construct cases with an unresolved full state and action directions both inside and outside \(\operatorname{range}(A^\top)\). Verify the equivalence in §7 exactly.
+Construct cases with an unresolved full state and action directions both inside and outside \(\mathrm{range}(A^\top)\). Verify the equivalence in §7 exactly.
 
 ### Action-Width Bound Verification
 
@@ -3295,7 +3295,7 @@ Verify the §8.3 center against analytical balls, boxes, and symmetric intersect
 For analytically solvable sets, verify that
 
 \[
-\operatorname{diam}(\mathcal G)\le D_{\mathrm{box}}(\mathcal G)
+\mathrm{diam}(\mathcal G)\le D_{\mathrm{box}}(\mathcal G)
 \]
 
 and that the coordinate support extrema satisfy the numerical solver tolerances.
@@ -3340,7 +3340,7 @@ The synthetic representation dimension is \(d=64\).
 Let
 
 \[
-\sigma=\texttt{synthetic.base\_sigma}.
+\sigma=\texttt{synthetic.base＿sigma}.
 \]
 
 The shared transition is generated by drawing \(v\sim\mathcal N(0,I_d)\) and setting
@@ -3348,7 +3348,7 @@ The shared transition is generated by drawing \(v\sim\mathcal N(0,I_d)\) and set
 \[
 g=
 \sigma\,
-\texttt{synthetic.shared\_transition\_norm\_over\_sigma}
+\texttt{synthetic.shared＿transition＿norm＿over＿sigma}
 \frac{v}{\|v\|_2}.
 \]
 
@@ -3361,7 +3361,7 @@ Unless a factor is being swept, use the corresponding value under `synthetic.def
 Convert a nuisance-dimension fraction \(f\) to
 
 \[
-r=\max\{1,\min(d-1,\lfloor fd+0.5\rfloor)\}.
+r=\max\lbrace1,\min(d-1,\lfloor fd+0.5\rfloor)\rbrace.
 \]
 
 A random orthonormal basis is produced by QR decomposition of a standard-normal matrix with deterministic column signs chosen so the largest-magnitude entry in each column is positive.
@@ -3454,9 +3454,9 @@ For dense private transition, draw a standard-normal vector, normalize it, and s
 For `ten_percent_sparse`, choose exactly
 
 \[
-\max\{1,\lfloor
-\texttt{synthetic.sweeps.private\_transition.sparse\_fraction}\,d+0.5
-\rfloor\}
+\max\lbrace1,\lfloor
+\texttt{synthetic.sweeps.private＿transition.sparse＿fraction}\,d+0.5
+\rfloor\rbrace
 \]
 
 coordinates without replacement using the structural stream, draw standard-normal values on those coordinates, normalize, and scale to \(\alpha_\ell\sigma\).
@@ -3483,7 +3483,7 @@ equals the configured `spectral_conditioning_ratio`, while preserving the reques
 
 ## 21.6 Action geometry
 
-Let \(q_{\mathrm{range}}\) be a unit vector in \(\operatorname{range}(A^\top)\) and \(q_{\mathrm{null}}\) a unit vector in \(\ker(A)\), drawn deterministically and orthogonalized.
+Let \(q_{\mathrm{range}}\) be a unit vector in \(\mathrm{range}(A^\top)\) and \(q_{\mathrm{null}}\) a unit vector in \(\ker(A)\), drawn deterministically and orthogonalized.
 
 For action-rotation angle \(\theta\),
 
@@ -3951,7 +3951,7 @@ A candidate configuration is valid only if all of the following hold over its el
 1. all required client/control/set quality gates are satisfied for enough units to retain at least the minimum paired cutoff count;
 2. empirical action-interval coverage against the inner later-real proxy is at least
    \[
-   p-\texttt{statistics.minimum\_material\_effects.maximum\_coverage\_deficit\_absolute};
+   p-\texttt{statistics.minimum＿material＿effects.maximum＿coverage＿deficit＿absolute};
 \]
 3. false-certification rate is at most \(1-p\);
 4. prospective-set diameter, operator coverage, and leave-one-client-out rules are applied exactly as they will be externally;
@@ -4200,7 +4200,7 @@ The global gate passes a cohort/horizon only when the nonzero-spectrum condition
 \kappa^+(H) =
 \frac{\lambda_{\max}(H)}{\lambda_{\min}^+(H)}
 \le
-\texttt{numerical.condition\_number\_limit}.
+\texttt{numerical.condition＿number＿limit}.
 \]
 
 When the global gate passes, all point-positive domain-valid actions are eligible; when it fails, all abstain. Compare this cohort-level global gate with action-specific FedACT intervals under matched action counts. This uses no separately calibrated global threshold.
@@ -4424,10 +4424,10 @@ For a realized eligible client count \(K\), form the unique corrupted counts
 
 \[
 \mathcal B =
-\operatorname{sorted}
+\mathrm{sorted}
 \left(
-\{0,1,2,\lfloor K/3\rfloor\}
-\cap\{0,\ldots,K-1\}
+\lbrace0,1,2,\lfloor K/3\rfloor\rbrace
+\cap\lbrace0,\ldots,K-1\rbrace
 \right).
 \]
 
@@ -4436,7 +4436,7 @@ For each nonzero count, choose corrupted clients by the deterministic permutatio
 * **basis rotation:** rotate the reported leading nuisance basis toward an orthogonal complement by `robustness.corrupted_client_allowance.parameters.basis_rotation_degrees`, then QR-orthonormalize;
 * **false rank reporting:** append up to `false_rank_increment` orthogonal basis vectors, clipped at \(d-1\);
 * **beta under-reporting:** multiply reported \(\beta_k\) by `beta_multiplier`;
-* **transition poisoning:** add a vector of norm `transition_poisoning_sigma` times the median uncorrupted \(\|y_j-\operatorname{GeoMedian}(y)\|_2\), in a deterministic random direction;
+* **transition poisoning:** add a vector of norm `transition_poisoning_sigma` times the median uncorrupted \(\|y_j-\mathrm{GeoMedian}(y)\|_2\), in a deterministic random direction;
 * **fabricated complementarity:** rotate the reported nuisance basis away from the dominant uncorrupted pooled nuisance direction by `fabricated_complementarity_rotation_degrees`.
 
 The server receives the corrupted summary as if authenticated; ground-truth corruption identity is used only by the stress evaluator.
@@ -4531,7 +4531,7 @@ If \(|\mathcal Q|=0\), the unit is `ABSTENTION_EXPECTED`.
 For eligible client count \(K\) and each configured budget fraction \(f\), define
 
 \[
-B(f,K)=\max\{1,\min\{K,\lceil fK\rceil\}\}.
+B(f,K)=\max\lbrace1,\min\lbrace K,\lceil fK\rceil\rbrace\rbrace.
 \]
 
 Every selector chooses exactly \(B\) clients. Communication is additionally reported using the exact serialized-byte metric in §16 so unequal summary sizes remain visible.
@@ -4565,14 +4565,14 @@ Starting from the empty set, add the client maximizing
 
 \[
 \log\det\left(
-\lambda I+\sum_{j\in\mathcal K\cup\{k\}}H_j
+\lambda I+\sum_{j\in\mathcal K\cup\lbrace k\rbrace}H_j
 \right) -
 \log\det\left(
 \lambda I+\sum_{j\in\mathcal K}H_j
 \right),
 \]
 
-with \(\lambda=\texttt{client\_selection.d\_optimal\_ridge}\). Ties go to lexical client id.
+with \(\lambda=\texttt{client＿selection.d＿optimal＿ridge}\). Ties go to lexical client id.
 
 ### Action-interval-contraction selector
 
@@ -4584,7 +4584,7 @@ G_k =
 \pi_q
 \left[
 W_q(\mathcal G_{\mathcal K}) -
-W_q(\mathcal G_{\mathcal K\cup\{k\}})
+W_q(\mathcal G_{\mathcal K\cup\lbrace k\rbrace})
 \right].
 \]
 
