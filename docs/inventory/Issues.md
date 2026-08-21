@@ -33,9 +33,6 @@
 - REQ-1216, REQ-1217, REQ-1218, REQ-1219, REQ-1220, REQ-1221, REQ-1222, REQ-1223, REQ-1224, REQ-1225, REQ-1226, REQ-1227, REQ-1228, REQ-1229, REQ-1230, REQ-1231
 - REQ-1232, REQ-1233, REQ-1234, REQ-1235, REQ-1236, REQ-1237, REQ-1238, REQ-1239, REQ-1240, REQ-1241, REQ-1242, REQ-1243, REQ-1244, REQ-1245, REQ-1246, REQ-1247
 - REQ-1248, REQ-1249, REQ-1250, REQ-1251, REQ-1252, REQ-1253, REQ-1254, REQ-1255
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Scientific configuration authority** for M01. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -235,8 +232,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M01 — I02 Implement Workflow and Artifact Boundary Contracts — consumes the completed scientific configuration authority contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -504,9 +499,6 @@ For every required output, the exact identity/location, schema, content, complet
 - REQ-1298, REQ-1299, REQ-1300, REQ-1301, REQ-1302, REQ-1303, REQ-1304, REQ-1305, REQ-1306, REQ-1307, REQ-1308, REQ-1309, REQ-1310, REQ-1311, REQ-1312, REQ-1313
 - REQ-1314, REQ-1315, REQ-1316, REQ-1317, REQ-1318, REQ-1319, REQ-1320, REQ-1321, REQ-1322, REQ-1323, REQ-1324, REQ-1325, REQ-1326, REQ-1327, REQ-1328, REQ-1329
 - REQ-1330, REQ-1394, REQ-1395, REQ-1396, REQ-1397, REQ-1398, REQ-1399, REQ-3298, REQ-3299, REQ-3300, REQ-3301, REQ-3302
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Workflow and artifact-boundary contracts** for M01. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -597,8 +589,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M01 — I03 Implement Provenance and Reproducibility Contracts — consumes the completed workflow and artifact-boundary contracts contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -740,9 +730,6 @@ For every required output, the exact identity/location, schema, content, complet
 - REQ-2078, REQ-2079, REQ-2080, REQ-2081, REQ-2082, REQ-2083, REQ-2084, REQ-2085, REQ-2086, REQ-2087, REQ-2088, REQ-2089, REQ-2090, REQ-2091, REQ-2092, REQ-2093
 - REQ-2094, REQ-2095, REQ-2096, REQ-2097, REQ-2098, REQ-2099, REQ-2100, REQ-2101, REQ-2102, REQ-2103, REQ-2104, REQ-2105, REQ-2106, REQ-2107, REQ-2108, REQ-2109
 - REQ-2110, REQ-2111
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Provenance and reproducibility contracts** for M01. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -871,8 +858,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M01 — I04 Establish Repository, Package, Artifact, and Test Architecture — consumes the completed provenance and reproducibility contracts contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -1059,9 +1044,6 @@ For every required output, the exact identity/location, schema, content, complet
 - REQ-2850–REQ-2855
 - REQ-2859–REQ-2863
 - REQ-2866–REQ-2879
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Repository, package, artifact and test architecture** for M01. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -1458,10 +1440,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M01 — I05 Implement Generic Workflow Registry and CLI Runtime Control — consumes the completed repository, package, artifact and test architecture contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
-
-
 ## Implementation Surface
 
 ### Production Code
@@ -1627,9 +1605,6 @@ For every required output, the exact identity/location, schema, content, complet
 - REQ-3174, REQ-3175, REQ-3176, REQ-3177, REQ-3178, REQ-3179, REQ-3201, REQ-3230, REQ-3231, REQ-3232, REQ-3233, REQ-3234, REQ-3235, REQ-3236, REQ-3253, REQ-3254
 - REQ-3255, REQ-3256, REQ-3257, REQ-3258, REQ-3259, REQ-3260, REQ-3261, REQ-3262, REQ-3263, REQ-3267, REQ-3268, REQ-3269, REQ-3270, REQ-3271, REQ-3272, REQ-3273
 - REQ-3274, REQ-3275, REQ-3276, REQ-3277, REQ-3278, REQ-3279, REQ-3280, REQ-3281, REQ-3282, REQ-3283, REQ-3284, REQ-3285
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Generic workflow registry and CLI/runtime control** for M01. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -1752,8 +1727,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M01 — I06 Implement Artifact Lifecycle, Reuse, Invalidation, and Execution State — consumes the completed generic workflow registry and cli/runtime control contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -1930,9 +1903,6 @@ For every required output, the exact identity/location, schema, content, complet
 - REQ-3070, REQ-3071, REQ-3072, REQ-3073, REQ-3074, REQ-3075, REQ-3076, REQ-3077, REQ-3078, REQ-3079, REQ-3080, REQ-3081, REQ-3082, REQ-3083, REQ-3084, REQ-3085
 - REQ-3202, REQ-3203, REQ-3204, REQ-3205, REQ-3206, REQ-3207, REQ-3208, REQ-3209, REQ-3210, REQ-3211, REQ-3212, REQ-3213, REQ-3214, REQ-3215, REQ-3216, REQ-3217
 - REQ-3292, REQ-3293, REQ-3294
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Artifact lifecycle, reuse, invalidation and execution state** for M01. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -2111,8 +2081,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 
 
 - M01 — I07 Audit Scientific Configuration, Repository, and Execution Contracts — independently verifies complete requirement coverage, tests, deliverables, provenance, evidence compatibility, and milestone exit readiness after implementation work is complete.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -2400,8 +2368,6 @@ Audit the complete M01 milestone after all of its implementation issues are comp
 - M02 — I08 Enforce Chronology and Cutoff-Fixed Representation Assumptions — may begin only after this audit records `PASS`, because M02 declares M01 as an upstream milestone.
 - M03 — I15 Enforce Action Validity and Operator Coverage Assumptions — may begin only after this audit records `PASS`, because M03 declares M01 as an upstream milestone.
 - M04 — I21 Implement FedACT Estimand, Feasible-Set, Propagation, and Certificate Mathematics — may begin only after this audit records `PASS`, because M04 declares M01 as an upstream milestone.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -2523,9 +2489,6 @@ This audit issue is complete only when **all** of the following are true:
 ### Requirements
 
 - REQ-0170, REQ-0171, REQ-0172, REQ-0190, REQ-0191, REQ-0192
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Chronology and cutoff-fixed representation assumptions** for M02. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -2563,8 +2526,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M02 — I09 Implement Chronological Information Boundaries and Cutoff Scheduling — consumes the completed chronology and cutoff-fixed representation assumptions contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -2649,9 +2610,6 @@ For every required output, the exact identity/location, schema, content, complet
 - REQ-0504, REQ-0505, REQ-0506, REQ-0507, REQ-0508, REQ-0509, REQ-0510, REQ-0511, REQ-0512, REQ-0513, REQ-0514, REQ-0515, REQ-0516, REQ-0517, REQ-0518, REQ-0519
 - REQ-0520, REQ-0521, REQ-0522, REQ-0523, REQ-0524, REQ-0525, REQ-0526, REQ-0527, REQ-0528, REQ-0529, REQ-0530, REQ-0531, REQ-0532, REQ-0533, REQ-0534, REQ-0535
 - REQ-0536, REQ-0537, REQ-0538, REQ-0539
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Chronological information boundaries and cutoff scheduling** for M02. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -2734,8 +2692,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M02 — I10 Implement Dataset Acquisition, Validation, Eligibility, and Preprocessing — consumes the completed chronological information boundaries and cutoff scheduling contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -2870,9 +2826,6 @@ For every required output, the exact identity/location, schema, content, complet
 - REQ-0607, REQ-0611, REQ-0612, REQ-0613, REQ-0614, REQ-0615, REQ-0616, REQ-0617, REQ-0618, REQ-0619, REQ-0620, REQ-0621, REQ-0622, REQ-0623, REQ-0624, REQ-0625
 - REQ-0626, REQ-0627, REQ-0628, REQ-0629, REQ-0630, REQ-0631, REQ-0632, REQ-0633, REQ-0634, REQ-0635, REQ-0636, REQ-0637, REQ-0638, REQ-0639, REQ-0640, REQ-0641
 - REQ-0642, REQ-0643, REQ-0644, REQ-0645, REQ-0646, REQ-0647, REQ-0648, REQ-0649, REQ-0650, REQ-0651, REQ-0652, REQ-0653, REQ-0654, REQ-1272, REQ-1273
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Dataset acquisition, schema, eligibility and preprocessing** for M02. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -3014,8 +2967,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M02 — I11 Implement Cutoff-Safe Representation and Base Detector Training — consumes the completed dataset acquisition, schema, eligibility and preprocessing contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -3208,9 +3159,6 @@ For every required output, the exact identity/location, schema, content, complet
 - REQ-0655, REQ-0656, REQ-0657, REQ-0658, REQ-0659, REQ-0660, REQ-0661, REQ-0662, REQ-0663, REQ-0664, REQ-0665, REQ-0666, REQ-0667, REQ-0668, REQ-0669, REQ-0670
 - REQ-0671, REQ-0672, REQ-0673, REQ-0674, REQ-0675, REQ-0676, REQ-0677, REQ-0678, REQ-0679, REQ-0680, REQ-0681, REQ-0682, REQ-0683, REQ-0684, REQ-0685, REQ-0686
 - REQ-0687, REQ-0688, REQ-0689, REQ-0690, REQ-0691, REQ-0692, REQ-0693, REQ-0694, REQ-0695, REQ-0696, REQ-0697, REQ-0698, REQ-0699, REQ-0700, REQ-0701
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Cutoff-safe representation and detector training** for M02. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -3288,8 +3236,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M02 — I12 Implement Data, Model, Training, and Scoring Architecture — consumes the completed cutoff-safe representation and detector training contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -3418,9 +3364,6 @@ For every required output, the exact identity/location, schema, content, complet
 - REQ-2473, REQ-2474, REQ-2475, REQ-2476, REQ-2477, REQ-2478, REQ-2479, REQ-2480, REQ-2481, REQ-2482, REQ-2483, REQ-2488, REQ-2489, REQ-2490, REQ-2491, REQ-2492
 - REQ-2493, REQ-2494, REQ-2495, REQ-2496, REQ-2497, REQ-2731, REQ-2732, REQ-2733, REQ-2734, REQ-2735, REQ-2736, REQ-2737, REQ-2738, REQ-2739, REQ-2740, REQ-2741
 - REQ-2742, REQ-2743, REQ-2744, REQ-2746, REQ-2747, REQ-2748, REQ-2749, REQ-2829, REQ-2839, REQ-2840, REQ-2841, REQ-2842, REQ-2843, REQ-2844
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Dataset/model/training/scoring architecture and tests** for M02. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -3545,8 +3488,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M02 — I13 Implement Preprocess CLI and Shared Producer Ownership — consumes the completed dataset/model/training/scoring architecture and tests contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -3781,9 +3722,6 @@ For every required output, the exact identity/location, schema, content, complet
 - REQ-2940, REQ-2941, REQ-2942, REQ-2943, REQ-2944, REQ-2945, REQ-2954, REQ-3014, REQ-3087, REQ-3088, REQ-3089, REQ-3099, REQ-3100, REQ-3119, REQ-3120, REQ-3121
 - REQ-3153, REQ-3154, REQ-3156, REQ-3157, REQ-3158, REQ-3159, REQ-3160, REQ-3161, REQ-3237, REQ-3238, REQ-3239, REQ-3240, REQ-3241, REQ-3246, REQ-3247, REQ-3248
 - REQ-3249, REQ-3250, REQ-3251, REQ-3252
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Preprocess/shared-producer CLI and artifact ownership** for M02. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -3851,8 +3789,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 
 
 - M02 — I14 Audit Chronology-Safe Data, Representation, and Base Detector — independently verifies complete requirement coverage, tests, deliverables, provenance, evidence compatibility, and milestone exit readiness after implementation work is complete.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -4020,8 +3956,6 @@ Audit the complete M02 milestone after all of its implementation issues are comp
 
 - M03 — I15 Enforce Action Validity and Operator Coverage Assumptions — may begin only after this audit records `PASS`, because M03 declares M02 as an upstream milestone.
 - M04 — I21 Implement FedACT Estimand, Feasible-Set, Propagation, and Certificate Mathematics — may begin only after this audit records `PASS`, because M04 declares M02 as an upstream milestone.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -4143,9 +4077,6 @@ This audit issue is complete only when **all** of the following are true:
 ### Requirements
 
 - REQ-0194, REQ-0195, REQ-0196, REQ-0218, REQ-0219
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Action-validity and operator-coverage assumptions** for M03. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -4183,8 +4114,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M03 — I16 Implement Operator Contracts and Action Displacements — consumes the completed action-validity and operator-coverage assumptions contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -4266,9 +4195,6 @@ For every required output, the exact identity/location, schema, content, complet
 
 - REQ-0702, REQ-0703, REQ-0704, REQ-0705, REQ-0706, REQ-0707, REQ-0708, REQ-0709, REQ-0710, REQ-0711, REQ-0712, REQ-0713, REQ-0714, REQ-0715, REQ-0716, REQ-0717
 - REQ-0718, REQ-0719, REQ-0720, REQ-0721, REQ-0722, REQ-0723, REQ-0724, REQ-0725, REQ-0726
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Operator contracts and action displacements** for M03. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -4324,8 +4250,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M03 — I17 Implement PE and APK Action Operators — consumes the completed operator contracts and action displacements contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -4429,9 +4353,6 @@ For every required output, the exact identity/location, schema, content, complet
 - REQ-0727, REQ-0728, REQ-0729, REQ-0730, REQ-0731, REQ-0732, REQ-0733, REQ-0734, REQ-0735, REQ-0736, REQ-0737, REQ-0738, REQ-0739, REQ-0740, REQ-0741, REQ-0742
 - REQ-0743, REQ-0744, REQ-0745, REQ-0746, REQ-0747, REQ-0748, REQ-0749, REQ-0750, REQ-0751, REQ-0752, REQ-0753, REQ-0754, REQ-0755, REQ-0756, REQ-0757, REQ-0758
 - REQ-0759, REQ-0760, REQ-0761, REQ-0762, REQ-0763, REQ-0764, REQ-0765, REQ-0766, REQ-0767
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **PE and APK operator implementations** for M03. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -4503,8 +4424,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M03 — I18 Implement Operator Validation, Failure Semantics, and Provenance — consumes the completed pe and apk operator implementations contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -4623,9 +4542,6 @@ For every required output, the exact identity/location, schema, content, complet
 - REQ-0768, REQ-0769, REQ-0770, REQ-0771, REQ-0772, REQ-0773, REQ-0774, REQ-0775, REQ-0776, REQ-0777, REQ-0778, REQ-0779, REQ-0780, REQ-0781, REQ-0782, REQ-0783
 - REQ-0784, REQ-0785, REQ-0786, REQ-0787, REQ-0788, REQ-0789, REQ-0790, REQ-0791, REQ-0792, REQ-0793, REQ-0794, REQ-0795, REQ-0796, REQ-0797, REQ-0798, REQ-0799
 - REQ-0800, REQ-0801, REQ-0802, REQ-0803
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Operator validation, failure semantics and provenance** for M03. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -4692,8 +4608,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M03 — I19 Implement Operator Architecture and Verification — consumes the completed operator validation, failure semantics and provenance contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -4807,9 +4721,6 @@ For every required output, the exact identity/location, schema, content, complet
 
 - REQ-2498, REQ-2499, REQ-2500, REQ-2501, REQ-2502, REQ-2503, REQ-2504, REQ-2505, REQ-2506, REQ-2507, REQ-2508, REQ-2509, REQ-2750, REQ-2751, REQ-2752, REQ-2753
 - REQ-2754
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Operator architecture and tests** for M03. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -4858,8 +4769,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 
 
 - M03 — I20 Audit Domain-Valid Action Operator Library — independently verifies complete requirement coverage, tests, deliverables, provenance, evidence compatibility, and milestone exit readiness after implementation work is complete.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -5019,8 +4928,6 @@ Audit the complete M03 milestone after all of its implementation issues are comp
 ### Blocks
 
 - M04 — I21 Implement FedACT Estimand, Feasible-Set, Propagation, and Certificate Mathematics — may begin only after this audit records `PASS`, because M04 declares M03 as an upstream milestone.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -5144,9 +5051,6 @@ This audit issue is complete only when **all** of the following are true:
 - REQ-0100, REQ-0101, REQ-0102, REQ-0103, REQ-0104, REQ-0105, REQ-0106, REQ-0107, REQ-0108, REQ-0110, REQ-0111, REQ-0112, REQ-0113, REQ-0114, REQ-0115, REQ-0116
 - REQ-0117, REQ-0118, REQ-0119, REQ-0120, REQ-0121, REQ-0122, REQ-0123, REQ-0124, REQ-0125, REQ-0126, REQ-0127, REQ-0128, REQ-0129, REQ-0130, REQ-0131, REQ-0132
 - REQ-0133, REQ-0134, REQ-0135, REQ-0136, REQ-0137, REQ-0139, REQ-0140, REQ-0141
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Primary estimand, feasible-set, propagation and certificate mathematics** for M04. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -5220,8 +5124,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M04 — I22 Verify Deterministic Mechanism and Solver Invariants — consumes the completed primary estimand, feasible-set, propagation and certificate mathematics contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -5337,9 +5239,6 @@ For every required output, the exact identity/location, schema, content, complet
 ### Requirements
 
 - REQ-0143, REQ-0144, REQ-0145, REQ-0154, REQ-0155
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Deterministic mechanism and solver validation obligations** for M04. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -5375,8 +5274,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M04 — I23 Implement Finite-Sample Uncertainty and Theoretical Guarantee Contracts — consumes the completed deterministic mechanism and solver validation obligations contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -5463,9 +5360,6 @@ For every required output, the exact identity/location, schema, content, complet
 - REQ-0272, REQ-0273, REQ-0274, REQ-0275, REQ-0276, REQ-0278, REQ-0279, REQ-0280, REQ-0281, REQ-0282, REQ-0283, REQ-0285, REQ-0286, REQ-0287, REQ-0288, REQ-0290
 - REQ-0291, REQ-0292, REQ-0294, REQ-0295, REQ-0296, REQ-0298, REQ-0299, REQ-0300, REQ-0302, REQ-0303, REQ-0304, REQ-0305, REQ-0306, REQ-0307, REQ-0308, REQ-0309
 - REQ-0311, REQ-1256, REQ-1257, REQ-1258, REQ-1259, REQ-1260, REQ-1261, REQ-1276, REQ-1277, REQ-1278, REQ-1279
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Assumptions, finite-sample uncertainty and theoretical guarantees** for M04. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -5603,8 +5497,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M04 — I24 Implement the End-to-End FedACT Client and Server Algorithm — consumes the completed assumptions, finite-sample uncertainty and theoretical guarantees contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -5800,9 +5692,6 @@ For every required output, the exact identity/location, schema, content, complet
 - REQ-0475, REQ-0476, REQ-0477, REQ-0478, REQ-0479, REQ-0480, REQ-0481, REQ-0482, REQ-0483, REQ-0484, REQ-0485, REQ-0486, REQ-0487, REQ-0804, REQ-0805, REQ-0806
 - REQ-0807, REQ-0808, REQ-0809, REQ-0810, REQ-0811, REQ-0812, REQ-0813, REQ-0814, REQ-0815, REQ-0816, REQ-0817, REQ-0818, REQ-0819, REQ-0820, REQ-0821, REQ-0822
 - REQ-0823, REQ-0824, REQ-0825, REQ-0826, REQ-0827, REQ-0828, REQ-0829, REQ-0830, REQ-0831, REQ-0836, REQ-0837, REQ-3297
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Client/server FedACT algorithm, feasible sets, certification and hardening** for M04. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -6037,8 +5926,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M04 — I25 Implement Mathematical and Numerical Verification Workflow — consumes the completed client/server fedact algorithm, feasible sets, certification and hardening contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -6322,9 +6209,6 @@ For every required output, the exact identity/location, schema, content, complet
 - REQ-1347, REQ-1348, REQ-1349, REQ-1350, REQ-1351, REQ-1352, REQ-1353, REQ-1354, REQ-1401, REQ-1402, REQ-1403, REQ-1405, REQ-1407, REQ-1408, REQ-1409, REQ-1410
 - REQ-1411, REQ-1412, REQ-1413, REQ-1414, REQ-1415, REQ-1416, REQ-1417, REQ-1418, REQ-1419, REQ-1420, REQ-1421, REQ-1422, REQ-1423, REQ-1424, REQ-1425, REQ-1426
 - REQ-1427, REQ-1428, REQ-1429, REQ-1430, REQ-1431, REQ-1432, REQ-1433, REQ-1434
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Mathematical and numerical verification workflow** for M04. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -6411,8 +6295,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M04 — I26 Implement FedACT Verification Architecture, Tests, and CLI — consumes the completed mathematical and numerical verification workflow contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -6547,9 +6429,6 @@ For every required output, the exact identity/location, schema, content, complet
 - REQ-2524, REQ-2525, REQ-2526, REQ-2527, REQ-2528, REQ-2529, REQ-2530, REQ-2531, REQ-2532, REQ-2533, REQ-2534, REQ-2535, REQ-2566, REQ-2567, REQ-2745, REQ-2755
 - REQ-2756, REQ-2757, REQ-2758, REQ-2759, REQ-2760, REQ-2761, REQ-2762, REQ-2763, REQ-2764, REQ-2765, REQ-2766, REQ-2779, REQ-2830, REQ-2831, REQ-2832, REQ-2833
 - REQ-2834, REQ-2846, REQ-2847, REQ-2848, REQ-2883, REQ-2884, REQ-2885, REQ-2886, REQ-2887, REQ-3101, REQ-3169
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **FedACT/math-verification architecture, tests and CLI** for M04. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -6640,8 +6519,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 
 
 - M04 — I27 Audit FedACT Identification, Certification, and Mathematical Verification — independently verifies complete requirement coverage, tests, deliverables, provenance, evidence compatibility, and milestone exit readiness after implementation work is complete.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -6871,8 +6748,6 @@ Audit the complete M04 milestone after all of its implementation issues are comp
 
 - M05 — I29 Implement Synthetic Generator and Smoke Validation — may begin only after this audit records `PASS`, because M05 declares M04 as an upstream milestone.
 - M05 — I28 Validate Known-Truth FedACT Mechanism Evidence — may begin only after this audit records `PASS`, because M05 declares M04 as an upstream milestone.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -6995,9 +6870,6 @@ This audit issue is complete only when **all** of the following are true:
 ### Requirements
 
 - REQ-0146, REQ-0147, REQ-0149, REQ-0150, REQ-0151, REQ-0153
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Known-truth mechanism evidence** for M05. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -7036,8 +6908,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M05 — I30 Execute Synthetic Theory and Geometry Sweeps — consumes the completed known-truth mechanism evidence contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -7123,9 +6993,6 @@ For every required output, the exact identity/location, schema, content, complet
 - REQ-1469, REQ-1470, REQ-1471, REQ-1472, REQ-1474, REQ-1475, REQ-1476, REQ-1477, REQ-1478, REQ-1479, REQ-1480, REQ-1481, REQ-1482, REQ-1483, REQ-1484, REQ-1485
 - REQ-1486, REQ-1487, REQ-1488, REQ-1489, REQ-1490, REQ-1491, REQ-1492, REQ-1493, REQ-1494, REQ-1495, REQ-1496, REQ-1497, REQ-1498, REQ-1499, REQ-1500, REQ-1501
 - REQ-1502, REQ-1503, REQ-1504, REQ-1505, REQ-1506, REQ-1507, REQ-1508, REQ-1509, REQ-1510, REQ-1511, REQ-1512, REQ-1513, REQ-1514, REQ-1515, REQ-1516, REQ-1517
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Synthetic generator, geometry and smoke validation** for M05. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -7236,8 +7103,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M05 — I28 Validate Known-Truth FedACT Mechanism Evidence — consumes the completed synthetic generator, geometry and smoke validation contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -7398,9 +7263,6 @@ For every required output, the exact identity/location, schema, content, complet
 - REQ-1550, REQ-1551, REQ-1552, REQ-1553, REQ-1554, REQ-1555, REQ-1556, REQ-1557, REQ-1558, REQ-1559, REQ-1560, REQ-1561, REQ-1562, REQ-1563, REQ-1564, REQ-1565
 - REQ-1566, REQ-1567, REQ-1568, REQ-1569, REQ-1570, REQ-1571, REQ-1572, REQ-1573, REQ-1574, REQ-1575, REQ-1576, REQ-1577, REQ-1578, REQ-1579, REQ-1580, REQ-1581
 - REQ-1583, REQ-1584, REQ-1585, REQ-1586, REQ-1587, REQ-1588, REQ-1589, REQ-1590, REQ-1591, REQ-1592, REQ-1593, REQ-1594, REQ-1595, REQ-1596, REQ-1597, REQ-1598
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Synthetic theory and geometry sweep program** for M05. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -7511,8 +7373,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M05 — I31 Implement Synthetic Workflow Architecture, Artifacts, and CLI — consumes the completed synthetic theory and geometry sweep program contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -7669,9 +7529,6 @@ For every required output, the exact identity/location, schema, content, complet
 
 - REQ-1355, REQ-1356, REQ-1357, REQ-1358, REQ-1359, REQ-1360, REQ-2568, REQ-2569, REQ-2780, REQ-2864, REQ-2865, REQ-2888, REQ-2889, REQ-2890, REQ-2891, REQ-2892
 - REQ-2933, REQ-3016, REQ-3091, REQ-3102, REQ-3125, REQ-3126, REQ-3127, REQ-3165, REQ-3166, REQ-3167, REQ-3168, REQ-3170, REQ-3264, REQ-3265, REQ-3266
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Synthetic workflow architecture, artifacts and CLI** for M05. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -7734,8 +7591,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 
 
 - M05 — I32 Audit Synthetic Mechanism and Geometry Validation — independently verifies complete requirement coverage, tests, deliverables, provenance, evidence compatibility, and milestone exit readiness after implementation work is complete.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -7901,8 +7756,6 @@ Audit the complete M05 milestone after all of its implementation issues are comp
 ### Blocks
 
 - M06 — I33 Implement Comparators and Validate Fairness and Parity — may begin only after this audit records `PASS`, because M06 declares M05 as an upstream milestone.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -8029,9 +7882,6 @@ This audit issue is complete only when **all** of the following are true:
 - REQ-0899, REQ-0900, REQ-0901, REQ-0902, REQ-0903, REQ-0904, REQ-0905, REQ-0906, REQ-0907, REQ-0908, REQ-0909, REQ-0910, REQ-0911, REQ-0912, REQ-0913, REQ-0914
 - REQ-0915, REQ-1280, REQ-1281, REQ-1633, REQ-1634, REQ-1635, REQ-1636, REQ-1637, REQ-1638, REQ-1639, REQ-1640, REQ-1641, REQ-1642, REQ-1643, REQ-1644, REQ-1645
 - REQ-1646, REQ-1647, REQ-1648, REQ-1649, REQ-1650
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Comparator implementation, fairness and parity validation** for M06. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -8148,8 +7998,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M06 — I34 Implement Evaluation Metrics and Statistical Primitives — consumes the completed comparator implementation, fairness and parity validation contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -8318,9 +8166,6 @@ For every required output, the exact identity/location, schema, content, complet
 - REQ-1061, REQ-1062, REQ-1063, REQ-1064, REQ-1065, REQ-1066, REQ-1067, REQ-1068, REQ-1069, REQ-1070, REQ-1071, REQ-1072, REQ-1073, REQ-1074, REQ-1075, REQ-1076
 - REQ-1077, REQ-1078, REQ-1079, REQ-1080, REQ-1081, REQ-1082, REQ-1083, REQ-1084, REQ-1085, REQ-1086, REQ-1087, REQ-1262, REQ-1263, REQ-1264, REQ-1265, REQ-1266
 - REQ-1267, REQ-1268, REQ-1269, REQ-1270, REQ-1271
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Evaluation metrics and statistical primitives** for M06. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -8485,8 +8330,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 
 - M06 — I35 Implement Baseline and Calibration Workflow Artifact Reuse — consumes the completed evaluation metrics and statistical primitives contract/evidence from this issue.
 - M06 — I36 Execute Real-Data Feasibility and Control Audit — consumes the completed evaluation metrics and statistical primitives contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -8697,9 +8540,6 @@ For every required output, the exact identity/location, schema, content, complet
 
 - REQ-1361, REQ-1362, REQ-1363, REQ-1364, REQ-1365, REQ-1366, REQ-1367, REQ-1368, REQ-1369, REQ-2934, REQ-2935, REQ-2946, REQ-2947, REQ-2948, REQ-2949, REQ-2950
 - REQ-2951
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Baseline/calibration workflow artifacts and producer reuse** for M06. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -8748,8 +8588,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M06 — I37 Implement Nested Pre-Cutoff Calibration — consumes the completed baseline/calibration workflow artifacts and producer reuse contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -8844,9 +8682,6 @@ For every required output, the exact identity/location, schema, content, complet
 - REQ-1599, REQ-1600, REQ-1601, REQ-1602, REQ-1603, REQ-1604, REQ-1605, REQ-1606, REQ-1607, REQ-1608, REQ-1609, REQ-1610, REQ-1611, REQ-1612, REQ-1613, REQ-1614
 - REQ-1615, REQ-1616, REQ-1617, REQ-1618, REQ-1619, REQ-1620, REQ-1621, REQ-1622, REQ-1623, REQ-1624, REQ-1625, REQ-1626, REQ-1627, REQ-1628, REQ-1629, REQ-1630
 - REQ-1631
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Real-data feasibility and control audit** for M06. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -8911,8 +8746,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 
 - M06 — I35 Implement Baseline and Calibration Workflow Artifact Reuse — consumes the completed real-data feasibility and control audit contract/evidence from this issue.
 - M06 — I37 Implement Nested Pre-Cutoff Calibration — consumes the completed real-data feasibility and control audit contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -9025,9 +8858,6 @@ For every required output, the exact identity/location, schema, content, complet
 - REQ-1683, REQ-1684, REQ-1685, REQ-1686, REQ-1687, REQ-1688, REQ-1689, REQ-1690, REQ-1691, REQ-1692, REQ-1693, REQ-1694, REQ-1695, REQ-1696, REQ-1697, REQ-1698
 - REQ-1699, REQ-1700, REQ-1701, REQ-1702, REQ-1703, REQ-1704, REQ-1705, REQ-1706, REQ-1707, REQ-1708, REQ-1709, REQ-1710, REQ-1711, REQ-1712, REQ-1713, REQ-1714
 - REQ-1715, REQ-1716, REQ-1717, REQ-1718, REQ-1719
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Nested pre-cutoff calibration** for M06. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -9128,8 +8958,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M06 — I38 Implement Calibration, Baseline, Evaluation, and Statistics Architecture — consumes the completed nested pre-cutoff calibration contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -9278,9 +9106,6 @@ For every required output, the exact identity/location, schema, content, complet
 - REQ-2550, REQ-2551, REQ-2552, REQ-2553, REQ-2554, REQ-2555, REQ-2556, REQ-2557, REQ-2586, REQ-2587, REQ-2588, REQ-2589, REQ-2590, REQ-2591, REQ-2592, REQ-2593
 - REQ-2598, REQ-2599, REQ-2600, REQ-2601, REQ-2602, REQ-2603, REQ-2604, REQ-2605, REQ-2767, REQ-2768, REQ-2769, REQ-2770, REQ-2771, REQ-2772, REQ-2773, REQ-2774
 - REQ-2775, REQ-2789, REQ-2790, REQ-2791, REQ-2794, REQ-2795, REQ-2796, REQ-2835, REQ-2836, REQ-2845
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Calibration/baseline/evaluation/statistics architecture and tests** for M06. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -9370,8 +9195,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 
 
 - M06 — I39 Audit Real-Data Feasibility, Baselines, Metrics, and Nested Calibration — independently verifies complete requirement coverage, tests, deliverables, provenance, evidence compatibility, and milestone exit readiness after implementation work is complete.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -9600,8 +9423,6 @@ Audit the complete M06 milestone after all of its implementation issues are comp
 ### Blocks
 
 - M07 — I43 Execute Real-Data Action-Certificate Validation — may begin only after this audit records `PASS`, because M07 declares M06 as an upstream milestone.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -9723,9 +9544,6 @@ This audit issue is complete only when **all** of the following are true:
 ### Requirements
 
 - REQ-0157, REQ-0158, REQ-0159, REQ-0161, REQ-0162, REQ-0163
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Prospective certificate and security-consequence evidence** for M07. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -9763,8 +9581,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M07 — I41 Validate Later-Real Operator Coverage — consumes the completed prospective certificate and security-consequence evidence contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -9846,9 +9662,6 @@ For every required output, the exact identity/location, schema, content, complet
 ### Requirements
 
 - REQ-0220
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Later-real operator-coverage validation** for M07. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -9880,8 +9693,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M07 — I42 Implement Claim-Critical Ablation Specifications — consumes the completed later-real operator-coverage validation contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -9960,9 +9771,6 @@ For every required output, the exact identity/location, schema, content, complet
 - REQ-0917, REQ-0918, REQ-0920, REQ-0921, REQ-0923, REQ-0924, REQ-0926, REQ-0927, REQ-0929, REQ-0930, REQ-0932, REQ-0933, REQ-0935, REQ-0936, REQ-0938, REQ-0939
 - REQ-0941, REQ-0942, REQ-0944, REQ-0945, REQ-0947, REQ-0948, REQ-0950, REQ-0951, REQ-0953, REQ-0954, REQ-0956, REQ-0957, REQ-0959, REQ-0960, REQ-0962, REQ-0963
 - REQ-0964
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Ablation specifications and claim-critical alternatives** for M07. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -10026,8 +9834,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M07 — I45 Execute Novelty-Critical Ablations — consumes the completed ablation specifications and claim-critical alternatives contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -10138,9 +9944,6 @@ For every required output, the exact identity/location, schema, content, complet
 - REQ-1720, REQ-1721, REQ-1722, REQ-1723, REQ-1724, REQ-1725, REQ-1726, REQ-1727, REQ-1728, REQ-1729, REQ-1730, REQ-1731, REQ-1732, REQ-1733, REQ-1734, REQ-1735
 - REQ-1736, REQ-1737, REQ-1738, REQ-1739, REQ-1740, REQ-1741, REQ-1742, REQ-1743, REQ-1744, REQ-1745, REQ-1746, REQ-1747, REQ-1748, REQ-1749, REQ-1750, REQ-1751
 - REQ-1752, REQ-1753, REQ-1754, REQ-1756
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Real-data action-certificate validation** for M07. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -10207,8 +10010,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M07 — I44 Execute Prospective FedACT Hardening Evaluation — consumes the completed real-data action-certificate validation contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -10322,9 +10123,6 @@ For every required output, the exact identity/location, schema, content, complet
 - REQ-1757, REQ-1758, REQ-1759, REQ-1760, REQ-1761, REQ-1762, REQ-1763, REQ-1764, REQ-1765, REQ-1766, REQ-1767, REQ-1768, REQ-1769, REQ-1770, REQ-1771, REQ-1772
 - REQ-1773, REQ-1774, REQ-1775, REQ-1776, REQ-1777, REQ-1778, REQ-1779, REQ-1780, REQ-1781, REQ-1782, REQ-1783, REQ-1784, REQ-1785, REQ-1786, REQ-1787, REQ-1788
 - REQ-1789, REQ-1790, REQ-1791, REQ-1792, REQ-1793, REQ-1794, REQ-1795, REQ-1796, REQ-1797
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Prospective FedACT hardening evaluation** for M07. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -10396,8 +10194,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M07 — I40 Validate Prospective Certificate and Security-Consequence Evidence — consumes the completed prospective fedact hardening evaluation contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -10516,9 +10312,6 @@ For every required output, the exact identity/location, schema, content, complet
 - REQ-1799, REQ-1800, REQ-1801, REQ-1802, REQ-1803, REQ-1804, REQ-1805, REQ-1806, REQ-1807, REQ-1808, REQ-1809, REQ-1810, REQ-1811, REQ-1812, REQ-1813, REQ-1814
 - REQ-1815, REQ-1816, REQ-1817, REQ-1818, REQ-1819, REQ-1820, REQ-1821, REQ-1822, REQ-1823, REQ-1824, REQ-1825, REQ-1826, REQ-1827, REQ-1828, REQ-1829, REQ-1833
 - REQ-1834
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Novelty-critical ablation execution** for M07. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -10582,8 +10375,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M07 — I46 Implement Prospective and Ablation Workflow Architecture — consumes the completed novelty-critical ablation execution contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -10694,9 +10485,6 @@ For every required output, the exact identity/location, schema, content, complet
 - REQ-1370, REQ-1371, REQ-1372, REQ-1373, REQ-1374, REQ-1375, REQ-1376, REQ-1377, REQ-1378, REQ-2570, REQ-2571, REQ-2572, REQ-2573, REQ-2574, REQ-2575, REQ-2594
 - REQ-2595, REQ-2596, REQ-2597, REQ-2781, REQ-2782, REQ-2783, REQ-2792, REQ-2793, REQ-2849, REQ-2893, REQ-2894, REQ-2895, REQ-2896, REQ-2897, REQ-2898, REQ-2899
 - REQ-2900, REQ-2901, REQ-2902, REQ-2903, REQ-2904, REQ-2905, REQ-2906, REQ-2907, REQ-3103, REQ-3104, REQ-3105, REQ-3171, REQ-3172, REQ-3173, REQ-3195
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Prospective/ablation workflow architecture, artifacts and CLI** for M07. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -10775,8 +10563,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 
 
 - M07 — I47 Audit Prospective Action Certification, Hardening, and Ablation Evidence — independently verifies complete requirement coverage, tests, deliverables, provenance, evidence compatibility, and milestone exit readiness after implementation work is complete.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -10968,8 +10754,6 @@ Audit the complete M07 milestone after all of its implementation issues are comp
 ### Blocks
 
 - M08 — I48 Validate Graceful Failure and Abstention Evidence — may begin only after this audit records `PASS`, because M08 declares M07 as an upstream milestone.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -11091,9 +10875,6 @@ This audit issue is complete only when **all** of the following are true:
 ### Requirements
 
 - REQ-0084, REQ-0085, REQ-0086, REQ-0087, REQ-0088, REQ-0089, REQ-0165, REQ-0166, REQ-0167
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Graceful-failure hypothesis and evidence** for M08. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -11134,8 +10915,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M08 — I49 Execute Federation and Complementarity Evaluation — consumes the completed graceful-failure hypothesis and evidence contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -11222,9 +11001,6 @@ For every required output, the exact identity/location, schema, content, complet
 - REQ-1835, REQ-1836, REQ-1837, REQ-1838, REQ-1839, REQ-1840, REQ-1841, REQ-1842, REQ-1843, REQ-1844, REQ-1845, REQ-1846, REQ-1847, REQ-1848, REQ-1849, REQ-1850
 - REQ-1851, REQ-1852, REQ-1853, REQ-1854, REQ-1855, REQ-1856, REQ-1857, REQ-1858, REQ-1859, REQ-1860, REQ-1861, REQ-1862, REQ-1863, REQ-1864, REQ-1865, REQ-1866
 - REQ-1867, REQ-1868, REQ-1869, REQ-1870, REQ-1871, REQ-1872, REQ-1873, REQ-1874, REQ-1875, REQ-1876, REQ-1877
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Federation and complementarity evaluation** for M08. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -11298,8 +11074,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M08 — I50 Execute Robustness and Failure-Boundary Evaluation — consumes the completed federation and complementarity evaluation contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -11421,9 +11195,6 @@ For every required output, the exact identity/location, schema, content, complet
 - REQ-1894, REQ-1895, REQ-1896, REQ-1897, REQ-1898, REQ-1900, REQ-1901, REQ-1902, REQ-1903, REQ-1904, REQ-1905, REQ-1906, REQ-1907, REQ-1908, REQ-1909, REQ-1910
 - REQ-1911, REQ-1912, REQ-1913, REQ-1914, REQ-1915, REQ-1916, REQ-1917, REQ-1918, REQ-1919, REQ-1920, REQ-1921, REQ-1922, REQ-1923, REQ-1924, REQ-1925, REQ-1926
 - REQ-1927, REQ-1928, REQ-1929, REQ-1930
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Robustness and failure-boundary evaluation** for M08. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -11506,8 +11277,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M08 — I51 Execute Cross-Corpus Generalization — consumes the completed robustness and failure-boundary evaluation contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -11637,9 +11406,6 @@ For every required output, the exact identity/location, schema, content, complet
 
 - REQ-1931, REQ-1932, REQ-1933, REQ-1934, REQ-1935, REQ-1936, REQ-1937, REQ-1938, REQ-1939, REQ-1940, REQ-1941, REQ-1942, REQ-1943, REQ-1944, REQ-1945, REQ-1946
 - REQ-1947, REQ-1948, REQ-1949, REQ-1950, REQ-1951, REQ-1952, REQ-1953, REQ-1954, REQ-1955, REQ-1956
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Cross-corpus generalization** for M08. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -11696,8 +11462,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M08 — I52 Implement Optional Communication-Limited Client Selection — consumes the completed cross-corpus generalization contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -11801,9 +11565,6 @@ For every required output, the exact identity/location, schema, content, complet
 
 - REQ-1958, REQ-1959, REQ-1960, REQ-1961, REQ-1962, REQ-1963, REQ-1964, REQ-1965, REQ-1966, REQ-1967, REQ-1968, REQ-1969, REQ-1970, REQ-1971, REQ-1972, REQ-1973
 - REQ-1974, REQ-1976, REQ-1977, REQ-1978, REQ-1979, REQ-1980, REQ-1981, REQ-1982, REQ-1983, REQ-1984
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Optional communication-limited client selection** for M08. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -11860,8 +11621,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M08 — I53 Implement Federation, Robustness, and Generalization Workflow Architecture — consumes this issue's completion record. Because client selection is optional (§32; roadmap-declared, not a mandatory scientific gate), this dependency is satisfied by either a completed positive-power client-selection result *or* a validly documented not-applicable/omitted determination (e.g. cutoff/cohort has fewer than two usable clients per REQ-1958); the milestone workflow architecture and its downstream audit gate may not be blocked by the mere absence of a positive client-selection experiment.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -11966,9 +11725,6 @@ For every required output, the exact identity/location, schema, content, complet
 - REQ-2580, REQ-2581, REQ-2582, REQ-2583, REQ-2784, REQ-2785, REQ-2786, REQ-2787, REQ-2908, REQ-2909, REQ-2910, REQ-2911, REQ-2912, REQ-2913, REQ-2914, REQ-2915
 - REQ-2916, REQ-2917, REQ-2918, REQ-2919, REQ-2920, REQ-2921, REQ-2922, REQ-2923, REQ-2924, REQ-2925, REQ-2926, REQ-2927, REQ-3106, REQ-3107, REQ-3108, REQ-3109
 - REQ-3196, REQ-3197, REQ-3198, REQ-3291
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Federation/robustness/generalization workflow architecture and CLI** for M08. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -12052,8 +11808,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 
 
 - M08 — I54 Audit Federation, Robustness, Cross-Corpus, and Client-Selection Evaluation — independently verifies complete requirement coverage, tests, deliverables, provenance, evidence compatibility, and milestone exit readiness after implementation work is complete.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -12246,8 +12000,6 @@ Audit the complete M08 milestone after all of its implementation issues are comp
 ### Blocks
 
 - M09 — I55 Execute Statistical Synthesis and Sensitivity Adjudication — may begin only after this audit records `PASS`, because M09 declares M08 as an upstream milestone.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -12370,9 +12122,6 @@ This audit issue is complete only when **all** of the following are true:
 
 - REQ-1274, REQ-1275, REQ-1985, REQ-1986, REQ-1987, REQ-1988, REQ-1989, REQ-1990, REQ-1991, REQ-1992, REQ-1993, REQ-1994, REQ-1995, REQ-1996, REQ-1997, REQ-1998
 - REQ-1999, REQ-2000, REQ-2001, REQ-2002, REQ-2003, REQ-2004, REQ-2005, REQ-2006, REQ-2007, REQ-2008, REQ-2009, REQ-2010, REQ-2011, REQ-2012, REQ-2013
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Statistical synthesis and sensitivity adjudication** for M09. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -12435,8 +12184,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M09 — I56 Adjudicate Claims Against Verified Evidence — consumes the completed statistical synthesis and sensitivity adjudication contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -12544,9 +12291,6 @@ For every required output, the exact identity/location, schema, content, complet
 
 - REQ-2112, REQ-2114, REQ-2116, REQ-2118, REQ-2120, REQ-2122, REQ-2124, REQ-2126, REQ-2128, REQ-2130, REQ-2132, REQ-2134, REQ-2136, REQ-2138, REQ-2140, REQ-2142
 - REQ-2144, REQ-2146, REQ-2148, REQ-2150, REQ-2152, REQ-2154, REQ-2156, REQ-2157, REQ-2159, REQ-2160, REQ-2162, REQ-2163, REQ-2164, REQ-2165
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Claim-evidence adjudication** for M09. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -12607,8 +12351,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M09 — I57 Produce Manuscript Tables, Figures, Appendix Evidence, and Completion Gates — consumes the completed claim-evidence adjudication contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -12718,9 +12460,6 @@ For every required output, the exact identity/location, schema, content, complet
 - REQ-2198, REQ-2199, REQ-2200, REQ-2201, REQ-2202, REQ-2203, REQ-2204, REQ-2205, REQ-2206, REQ-2207, REQ-2208, REQ-2209, REQ-2210, REQ-2211, REQ-2212, REQ-2213
 - REQ-2214, REQ-2215, REQ-2216, REQ-2217, REQ-2218, REQ-2219, REQ-2220, REQ-2221, REQ-2222, REQ-2223, REQ-2224, REQ-2225, REQ-2226, REQ-2227, REQ-2229, REQ-2230
 - REQ-2231
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Manuscript tables, figures, appendix evidence and completion gates** for M09. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -12816,8 +12555,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M09 — I58 Implement Analysis and Reporting Architecture — consumes the completed manuscript tables, figures, appendix evidence and completion gates contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -12959,9 +12696,6 @@ For every required output, the exact identity/location, schema, content, complet
 
 - REQ-2584, REQ-2585, REQ-2606, REQ-2607, REQ-2608, REQ-2609, REQ-2610, REQ-2611, REQ-2648, REQ-2649, REQ-2650, REQ-2651, REQ-2652, REQ-2653, REQ-2654, REQ-2655
 - REQ-2656, REQ-2657, REQ-2658, REQ-2659, REQ-2788, REQ-2797, REQ-2798, REQ-2799, REQ-2837, REQ-2856, REQ-2857, REQ-2858
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Analysis/reporting architecture and tests** for M09. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -13020,8 +12754,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ### Blocks
 
 - M09 — I59 Implement Statistical Synthesis, Reporting Workflow, and Verified Export — consumes the completed analysis/reporting architecture and tests contract/evidence from this issue.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -13147,9 +12879,6 @@ For every required output, the exact identity/location, schema, content, complet
 - REQ-1391, REQ-1392, REQ-1393, REQ-2928, REQ-2929, REQ-2930, REQ-2931, REQ-2932, REQ-3018, REQ-3097, REQ-3098, REQ-3110, REQ-3134, REQ-3135, REQ-3136, REQ-3181
 - REQ-3182, REQ-3183, REQ-3184, REQ-3185, REQ-3186, REQ-3187, REQ-3199, REQ-3218, REQ-3219, REQ-3220, REQ-3221, REQ-3222, REQ-3223, REQ-3224, REQ-3225, REQ-3226
 - REQ-3227, REQ-3228, REQ-3229, REQ-3242, REQ-3243, REQ-3244, REQ-3245, REQ-3286, REQ-3287, REQ-3288, REQ-3289, REQ-3290, REQ-3295, REQ-3296
-
-Every scope item, acceptance criterion, required output, and claim-bearing behavior in this issue traces to the roadmap authority and atomic inventory requirements reproduced below or to prerequisite implementation strictly necessary to satisfy them.
-
 ## Objective
 
 Implement and verify the roadmap-defined **Statistical-synthesis/reporting workflow and verified export** for M09. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
@@ -13227,8 +12956,6 @@ Implement only the work required to satisfy the mapped requirements and their ve
 
 
 - M09 — I60 Audit Statistical Synthesis, Claim Adjudication, and Manuscript Evidence — independently verifies complete requirement coverage, tests, deliverables, provenance, evidence compatibility, and milestone exit readiness after implementation work is complete.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
@@ -13411,8 +13138,6 @@ Audit the complete M09 milestone after all of its implementation issues are comp
 ### Blocks
 
 - None — this is the final milestone audit in the approved sequence.
-
-Dependencies describe the contract/evidence exchanged between issues. A dependency is consumable only when it is present, valid, complete, provenance-compatible, non-stale, and compatible with the active roadmap/configuration identity.
 ## Implementation Surface
 
 ### Production Code
