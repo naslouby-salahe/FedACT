@@ -259,174 +259,8 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ## Acceptance Criteria
 
 - [ ] **Milestone verification target** — Exact configuration schema/value/hash/fingerprint validation and forbidden-runtime-scientific-decision tests.
-- [ ] **REQ-1088** — `configs/fedact.yaml`/validated configuration contains the exact stated value or ordered set; configuration-schema tests and the configuration hash manifest verify it is loaded without override.
-- [ ] **REQ-1089** — `configs/fedact.yaml`/validated configuration contains the exact stated value or ordered set; configuration-schema tests and the configuration hash manifest verify it is loaded without override.
-- [ ] **REQ-1090** — `configs/fedact.yaml`/validated configuration contains the exact stated value or ordered set; configuration-schema tests and the configuration hash manifest verify it is loaded without override.
-- [ ] **REQ-1091** — `configs/fedact.yaml` contains `ablations.zero_control_span_violation_budget` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1092** — `configs/fedact.yaml` contains `ablations.zero_private_contamination_budget` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1093** — `configs/fedact.yaml` contains `artifacts.active_artifact_index` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1094** — `configs/fedact.yaml` contains `artifacts.configuration_file` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1095** — `configs/fedact.yaml` contains `artifacts.dependency_index` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1096** — `configs/fedact.yaml` contains `artifacts.directories.cache` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1097** — `configs/fedact.yaml` contains `artifacts.directories.experiments` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1098** — `configs/fedact.yaml` contains `artifacts.directories.preprocessing` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1099** — `configs/fedact.yaml` contains `artifacts.directories.project_summary` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1100** — `configs/fedact.yaml` contains `artifacts.directories.reproducibility` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1101** — `configs/fedact.yaml` contains `artifacts.directories.result_experiments` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1102** — `configs/fedact.yaml` contains `artifacts.directories.shared_artifacts` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1103** — `configs/fedact.yaml` contains `artifacts.directories.shared_baselines` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1104** — `configs/fedact.yaml` contains `artifacts.directories.shared_derived` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1105** — `configs/fedact.yaml` contains `artifacts.directories.shared_fitted` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1106** — `configs/fedact.yaml` contains `artifacts.directories.shared_models` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1107** — `configs/fedact.yaml` contains `artifacts.directories.shared_provenance` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1108** — `configs/fedact.yaml` contains `artifacts.directories.shared_scores` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1109** — `configs/fedact.yaml` contains `artifacts.directories.staging` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1110** — `configs/fedact.yaml` contains `artifacts.evidence_index` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1111** — `configs/fedact.yaml` contains `artifacts.experiment_directories` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1112** — `configs/fedact.yaml` contains `artifacts.outputs_root` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1113** — `configs/fedact.yaml` contains `artifacts.result_payload_directories` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1114** — `configs/fedact.yaml` contains `artifacts.results_root` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1115** — `configs/fedact.yaml` contains `baselines.point_ridge_relative` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1116** — `configs/fedact.yaml` contains `certification.alignment_threshold.percentile_candidates` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1117** — `configs/fedact.yaml` contains `certification.ambiguity_width.percentile_candidates` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1118** — `configs/fedact.yaml` contains `certification.forecast_set_diameter_abstention.historical_realized_diameter_quantile` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1119** — `configs/fedact.yaml` contains `certification.leave_one_client_out_stability.minimum_unchanged_fraction` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1120** — `configs/fedact.yaml` contains `certification.random_matching.minimum_exact_or_source_fraction` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1121** — `configs/fedact.yaml` contains `client_selection.budget_fractions` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1122** — `configs/fedact.yaml` contains `client_selection.d_optimal_ridge` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1123** — `configs/fedact.yaml` contains `datasets.ember2024.confirmatory_formats` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1124** — `configs/fedact.yaml` contains `datasets.lamda.labels.benign_detection_count` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1125** — `configs/fedact.yaml` contains `datasets.lamda.labels.discard_detection_counts` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1126** — `configs/fedact.yaml` contains `datasets.lamda.labels.malware_minimum_detection_count` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1127** — `configs/fedact.yaml` contains `datasets.lamda.preprocessing.raw_variance_threshold_when_required` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1128** — `configs/fedact.yaml` contains `hardening.maximum_actions_per_sample.candidates` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1129** — `configs/fedact.yaml` contains `hardening.maximum_actions_per_sample.primary` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1130** — `configs/fedact.yaml` contains `hardening.weight.candidates` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1131** — `configs/fedact.yaml` contains `hardening.weight.maximum_clean_fnr_degradation_percentage_points` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1132** — `configs/fedact.yaml` contains `identification.control_reconstruction_gate.held_out_residual_quantile` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1133** — `configs/fedact.yaml` contains `identification.control_reconstruction_gate.minimum_pass_fraction` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1134** — `configs/fedact.yaml` contains `identification.control_span_violation.primary_alpha` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1135** — `configs/fedact.yaml` contains `identification.control_span_violation.sensitivity_alpha` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1136** — `configs/fedact.yaml` contains `identification.covariance_regularization.primary_c` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1137** — `configs/fedact.yaml` contains `identification.covariance_regularization.sensitivity_c` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1138** — `configs/fedact.yaml` contains `identification.eigengap_ratio.candidates` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1139** — `configs/fedact.yaml` contains `identification.eigengap_ratio.default_without_nested_calibration` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1140** — `configs/fedact.yaml` contains `identification.historical_plausibility_radius.center_norm_quantile` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1141** — `configs/fedact.yaml` contains `identification.historical_plausibility_radius.minimum_reference_centers` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1142** — `configs/fedact.yaml` contains `identification.historical_plausibility_radius.sensitivity_multipliers` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1143** — `configs/fedact.yaml` contains `identification.minimum_control_transition_replicates` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1144** — `configs/fedact.yaml` contains `identification.minimum_support_per_class` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1145** — `configs/fedact.yaml` contains `identification.nuisance_rank.bootstrap_resamples` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1146** — `configs/fedact.yaml` contains `identification.nuisance_rank.candidates` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1147** — `configs/fedact.yaml` contains `identification.nuisance_rank.maximum` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1148** — `configs/fedact.yaml` contains `identification.nuisance_rank.minimum_bootstrap_stability_fraction` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1149** — `configs/fedact.yaml` contains `identification.private_contamination.minimum_history_residuals` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1150** — `configs/fedact.yaml` contains `identification.private_contamination.primary_alpha` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1151** — `configs/fedact.yaml` contains `identification.private_contamination.sensitivity_alpha` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1152** — `configs/fedact.yaml` contains `identification.tail_diagnostic.maximum_absolute_excess_kurtosis` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1153** — `configs/fedact.yaml` contains `identification.tail_diagnostic.maximum_flagged_coordinate_fraction` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1154** — `configs/fedact.yaml` contains `identification.target_coverage.candidates` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1155** — `configs/fedact.yaml` contains `identification.target_coverage.primary` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1156** — `configs/fedact.yaml` contains `identification.uncertainty.bootstrap_resamples` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1157** — `configs/fedact.yaml` contains `numerical.condition_number_limit` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1158** — `configs/fedact.yaml` contains `numerical.projection_tie_tolerance` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1159** — `configs/fedact.yaml` contains `numerical.rank_clip_epsilon_relative` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1160** — `configs/fedact.yaml` contains `numerical.scale_standardization_floor` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1161** — `configs/fedact.yaml` contains `numerical.solver.absolute_tolerance` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1162** — `configs/fedact.yaml` contains `numerical.solver.duality_gap_tolerance` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1163** — `configs/fedact.yaml` contains `numerical.solver.maximum_iterations` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1164** — `configs/fedact.yaml` contains `numerical.solver.relative_tolerance` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1165** — `configs/fedact.yaml` contains `numerical.zero_displacement_floor` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1166** — `configs/fedact.yaml` contains `operators.maximum_composed_atomic_actions` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1167** — `configs/fedact.yaml` contains `operators.minimum_valid_coverage` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1168** — `configs/fedact.yaml` contains `operators.validation.android_monkey_events` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1169** — `configs/fedact.yaml` contains `operators.validation.execution_timeout_seconds` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1170** — `configs/fedact.yaml` contains `operators.validation.minimum_behavior_jaccard` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1171** — `configs/fedact.yaml` contains `reporting.p_value_display_threshold` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1172** — `configs/fedact.yaml` contains `reporting.significant_figures.effect_sizes_and_p_values` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1173** — `configs/fedact.yaml` contains `reporting.significant_figures.percentages_and_rates` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1174** — `configs/fedact.yaml` contains `reporting.significant_figures.raw_action_width_and_alignment` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1175** — `configs/fedact.yaml` contains `robustness.corrupted_client_allowance.attacks` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1176** — `configs/fedact.yaml` contains `robustness.corrupted_client_allowance.counts` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1177** — `configs/fedact.yaml` contains `robustness.corrupted_client_allowance.parameters.basis_rotation_degrees` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1178** — `configs/fedact.yaml` contains `robustness.corrupted_client_allowance.parameters.beta_multiplier` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1179** — `configs/fedact.yaml` contains `robustness.corrupted_client_allowance.parameters.fabricated_complementarity_rotation_degrees` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1180** — `configs/fedact.yaml` contains `robustness.corrupted_client_allowance.parameters.false_rank_increment` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1181** — `configs/fedact.yaml` contains `robustness.corrupted_client_allowance.parameters.transition_poisoning_sigma` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1182** — `configs/fedact.yaml` contains `robustness.real_stress.control_support_fractions` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1183** — `configs/fedact.yaml` contains `robustness.real_stress.control_transition_noise_sigma_multipliers` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1184** — `configs/fedact.yaml` contains `seeds.analysis` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1185** — `configs/fedact.yaml` contains `seeds.baseline` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1186** — `configs/fedact.yaml` contains `seeds.calibration` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1187** — `configs/fedact.yaml` contains `seeds.client_selection` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1188** — `configs/fedact.yaml` contains `seeds.detector_training` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1189** — `configs/fedact.yaml` contains `seeds.operator` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1190** — `configs/fedact.yaml` contains `seeds.representation` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1191** — `configs/fedact.yaml` contains `seeds.synthetic_generation` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1192** — `configs/fedact.yaml` contains `seeds.synthetic_noise` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1193** — `configs/fedact.yaml` contains `statistics.bootstrap.resamples` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1194** — `configs/fedact.yaml` contains `statistics.confidence_level` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1195** — `configs/fedact.yaml` contains `statistics.maximum_missing_cutoff_fraction` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1196** — `configs/fedact.yaml` contains `statistics.minimum_material_effects.action_certification_precision_absolute_increase` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1197** — `configs/fedact.yaml` contains `statistics.minimum_material_effects.early_horizon_fnr_absolute_reduction_percentage_points` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1198** — `configs/fedact.yaml` contains `statistics.minimum_material_effects.maximum_coverage_deficit_absolute` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1199** — `configs/fedact.yaml` contains `statistics.minimum_paired_cutoffs` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1200** — `configs/fedact.yaml` contains `statistics.multiplicity.q` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1201** — `configs/fedact.yaml` contains `statistics.wilcoxon.maximum_nonzero_pairs_for_exact` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1202** — `configs/fedact.yaml` contains `synthetic.base_sigma` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1203** — `configs/fedact.yaml` contains `synthetic.defaults.action_rotation_angle_degrees` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1204** — `configs/fedact.yaml` contains `synthetic.defaults.common_intersection_dimension` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1205** — `configs/fedact.yaml` contains `synthetic.defaults.control_malicious_amplitude_ratio` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1206** — `configs/fedact.yaml` contains `synthetic.defaults.control_sample_size` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1207** — `configs/fedact.yaml` contains `synthetic.defaults.control_span_violation_over_sigma` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1208** — `configs/fedact.yaml` contains `synthetic.defaults.federation_client_count` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1209** — `configs/fedact.yaml` contains `synthetic.defaults.federation_geometry` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1210** — `configs/fedact.yaml` contains `synthetic.defaults.malicious_sample_size` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1211** — `configs/fedact.yaml` contains `synthetic.defaults.nuisance_dimension_fraction` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1212** — `configs/fedact.yaml` contains `synthetic.defaults.outlier_client_count` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1213** — `configs/fedact.yaml` contains `synthetic.defaults.pairwise_principal_angle_degrees` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1214** — `configs/fedact.yaml` contains `synthetic.defaults.private_transition_norm_over_sigma` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1215** — `configs/fedact.yaml` contains `synthetic.defaults.private_transition_sparsity_mode` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1216** — `configs/fedact.yaml` contains `synthetic.defaults.spectral_conditioning_ratio` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1217** — `configs/fedact.yaml` contains `synthetic.defaults.synchronized_nuisance_over_sigma` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1218** — `configs/fedact.yaml` contains `synthetic.independent_draws_per_grid_cell` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1219** — `configs/fedact.yaml` contains `synthetic.nested_noise_draws_per_seed` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1220** — `configs/fedact.yaml` contains `synthetic.shared_transition_norm_over_sigma` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1221** — `configs/fedact.yaml` contains `synthetic.sweeps.action_rotation_angle_degrees` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1222** — `configs/fedact.yaml` contains `synthetic.sweeps.common_intersection_dimension` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1223** — `configs/fedact.yaml` contains `synthetic.sweeps.control_malicious_amplitude_ratio` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1224** — `configs/fedact.yaml` contains `synthetic.sweeps.control_sample_size` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1225** — `configs/fedact.yaml` contains `synthetic.sweeps.control_span_violation_over_sigma` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1226** — `configs/fedact.yaml` contains `synthetic.sweeps.federation.client_counts` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1227** — `configs/fedact.yaml` contains `synthetic.sweeps.federation.geometries` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1228** — `configs/fedact.yaml` contains `synthetic.sweeps.federation.matched_total_samples` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1229** — `configs/fedact.yaml` contains `synthetic.sweeps.malicious_sample_size` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1230** — `configs/fedact.yaml` contains `synthetic.sweeps.nuisance_dimension.fractions` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1231** — `configs/fedact.yaml` contains `synthetic.sweeps.outlier_client_stress.attacks` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1232** — `configs/fedact.yaml` contains `synthetic.sweeps.outlier_client_stress.corrupted_client_counts` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1233** — `configs/fedact.yaml` contains `synthetic.sweeps.pairwise_principal_angle_degrees` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1234** — `configs/fedact.yaml` contains `synthetic.sweeps.private_transition.norm_over_sigma` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1235** — `configs/fedact.yaml` contains `synthetic.sweeps.private_transition.sparse_fraction` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1236** — `configs/fedact.yaml` contains `synthetic.sweeps.private_transition.sparsity_modes` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1237** — `configs/fedact.yaml` contains `synthetic.sweeps.spectral_conditioning_ratio` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1238** — `configs/fedact.yaml` contains `synthetic.sweeps.synchronized_nuisance_over_sigma` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1239** — `configs/fedact.yaml` contains `temporal.cutoff_step_months` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1240** — `configs/fedact.yaml` contains `temporal.early_horizon_months` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1241** — `configs/fedact.yaml` contains `temporal.forecast_horizons_months` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1242** — `configs/fedact.yaml` contains `temporal.full_retraining_interval_months` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1243** — `configs/fedact.yaml` contains `temporal.historical_training_window_months` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1244** — `configs/fedact.yaml` contains `temporal.primary_confirmatory_horizon_months` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1245** — `configs/fedact.yaml` contains `temporal.process_noise.quantile` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1246** — `configs/fedact.yaml` contains `temporal.temporal_model.maximum_scalar_coefficient` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1247** — `configs/fedact.yaml` contains `temporal.temporal_model.minimum_consecutive_pairs` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1248** — `configs/fedact.yaml` contains `temporal.transition_interval_months` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1249** — `configs/fedact.yaml` contains `training.batch_size` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1250** — `configs/fedact.yaml` contains `training.early_stopping_patience_epochs` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1251** — `configs/fedact.yaml` contains `training.final_learning_rate` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1252** — `configs/fedact.yaml` contains `training.initial_learning_rate` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1253** — `configs/fedact.yaml` contains `training.maximum_epochs` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1254** — `configs/fedact.yaml` contains `training.validation_fraction` at the cited authoritative YAML location with the exact roadmap value/order; schema/load tests round-trip it without override and the resulting value contributes to `configuration_hash`.
-- [ ] **REQ-1255** — `configs/fedact.yaml`/validated configuration contains the exact stated value or ordered set; configuration-schema tests and the configuration hash manifest verify it is loaded without override.
+- [ ] **REQ-1088, REQ-1089, REQ-1090, REQ-1255** — `configs/fedact.yaml`/validated configuration contains the exact stated value or ordered set for each; configuration-schema tests and the configuration hash manifest verify each is loaded without override.
+- [ ] **REQ-1091–REQ-1254** — `configs/fedact.yaml` contains each config key listed under its matching REQ ID in **Implementation Requirements** above, at its cited authoritative YAML location, with the exact roadmap value/order; schema/load tests round-trip each key without override and each resulting value contributes to `configuration_hash`.
 - [ ] All scope items and mapped atomic requirements are implemented completely.
 - [ ] Roadmap semantics are preserved exactly.
 - [ ] Configuration values are consumed from their authoritative source.
@@ -1013,11 +847,7 @@ Each test must prove an acceptance criterion, invariant, failure path, or previo
 For every required output, the exact identity/location, schema, content, completion rule, and provenance semantics stated in the implementation requirements above are authoritative.
 # M01 — I04 Establish Repository, Package, Artifact, and Test Architecture
 
-> Every issue is an executable unit of roadmap work.
->
-> The roadmap is the scientific and implementation authority. This issue may clarify execution and verification, but it must not silently expand, reinterpret, redesign, or weaken roadmap requirements.
->
-> The mandatory engineering and research checklist in this issue applies in full. It is a compliance gate, not additional scientific scope.
+> This issue is an executable unit of roadmap work under the roadmap's scientific/implementation authority — clarify execution/verification only; never expand, reinterpret, redesign, or weaken it. The mandatory checklist applies in full as a compliance gate, not additional scope.
 
 ## Issue Summary
 
@@ -1025,7 +855,7 @@ For every required output, the exact identity/location, schema, content, complet
 - **Primary deliverable:** Repository, package, artifact and test architecture
 - **Issue type:** Infrastructure
 - **Mapped implementation requirements:** 366
-- **Milestone outcome supported:** Establish the authoritative configuration, typed repository contracts, artifact/provenance lifecycle, and generic dependency-aware execution substrate required by every scientific workflow.
+- **Milestone outcome supported:** Authoritative configuration, typed repository contracts, artifact/provenance lifecycle, and dependency-aware execution substrate for every scientific workflow.
 
 ## Roadmap Authority
 
@@ -1035,32 +865,18 @@ For every required output, the exact identity/location, schema, content, complet
 
 ### Requirements
 
-- REQ-2232–REQ-2424
-- REQ-2558–REQ-2565
-- REQ-2612–REQ-2647
-- REQ-2660–REQ-2730
-- REQ-2776–REQ-2828
-- REQ-2838
-- REQ-2850–REQ-2855
-- REQ-2859–REQ-2863
-- REQ-2866–REQ-2879
+- REQ-2232–REQ-2424, REQ-2558–REQ-2565, REQ-2612–REQ-2647, REQ-2660–REQ-2730, REQ-2776–REQ-2828, REQ-2838, REQ-2850–REQ-2855, REQ-2859–REQ-2863, REQ-2866–REQ-2879
+
 ## Objective
 
-Implement and verify the roadmap-defined **Repository, package, artifact and test architecture** for M01. Completion requires every mapped atomic requirement below to exist as working, tested behavior and to satisfy the approved verification target:
-
-> Repository component existence, dependency-boundary, static-typing, canonical-vocabulary and architecture test suite.
-
-No scientific, mathematical, numerical, dataset, chronology, comparator, experiment, statistical, artifact, provenance, reporting, or execution decision may be rediscovered or invented during implementation when it is already fixed by these requirements.
+Implement and verify the roadmap-defined **Repository, package, artifact and test architecture** for M01; every mapped atomic requirement below must exist as working, tested behavior satisfying the approved verification target (see **Acceptance Criteria** — Milestone verification target). No scientific/implementation decision already fixed by these requirements may be rediscovered or invented.
 
 ## Scope
 
-Implement only the work required to satisfy the mapped requirements and their verification evidence:
+Required work:
 
-- Implement every atomic requirement reproduced under **Implementation Requirements**.
-- Preserve all formulas, fixed values, gates, identities, chronology rules, failure states, artifact contracts, and claim boundaries those requirements invoke.
-- Produce the exact code, configuration/domain contracts, tests, artifacts, evidence, and execution behavior needed for the requirement-specific acceptance checks.
-- Integrate only with the upstream/downstream contracts identified in **Dependencies**.
-- Keep requirement behavior explicit in production code and tests; no requirement may exist only implicitly in an acceptance criterion, test fixture, implementation note, or undocumented default.
+- Implement every atomic requirement under **Implementation Requirements**, preserving all formulas, fixed values, gates, identities, chronology rules, failure states, artifact contracts, and claim boundaries those requirements invoke; produce the exact code, configuration/domain contracts, tests, artifacts, evidence, and execution behavior needed for the requirement-specific acceptance checks.
+- Integrate only with the upstream/downstream contracts identified in **Dependencies**, and keep requirement behavior explicit in production code and tests — no requirement may exist only implicitly in an acceptance criterion, test fixture, implementation note, or undocumented default.
 
 ## Implementation Requirements
 
@@ -1444,137 +1260,45 @@ Implement only the work required to satisfy the mapped requirements and their ve
 
 ### Production Code
 
-- Roadmap-defined implementation for **Repository, package, artifact and test architecture** across `§36` and every module/component explicitly named by the mapped requirements.
+- Implementation across `§36` and every module/component named by the mapped requirements.
 
 ### Configuration / Domain Contracts
 
-- Typed configuration/domain contracts, enums, dataclasses/Pydantic models, fixed constants, and validation rules explicitly named by the mapped requirements.
-- Explicit configuration/domain identities include: `configs/fedact.yaml`, `configs/tests.yml`, `configs/smoke.yml`, `configs/`.
+- Typed configuration/domain contracts, enums, models, constants, and validation rules named by the mapped requirements: `configs/fedact.yaml`, `configs/tests.yml`, `configs/smoke.yml`, `configs/`.
 
 ### CLI / Application Surface
 
-- N/A — no operator-facing CLI behavior is introduced by this issue unless an atomic requirement below explicitly names one.
+- N/A — no operator-facing CLI behavior unless a listed requirement names one.
 
 ### Tests
 
-- Unit, numerical/scientific, boundary/failure, artifact/provenance, integration, CLI/E2E, smoke, regression, and architecture tests required by the acceptance evidence and the Required Tests section below.
+- Unit, numerical/scientific, boundary/failure, artifact/provenance, integration, CLI/E2E, smoke, regression, architecture tests per Acceptance Criteria/Required Tests below.
 
 ### Artifacts / Reporting
 
-- Persisted evidence and reporting artifacts explicitly required by the mapped requirements; all identity, schema, integrity, completion, dependency, and provenance rules remain authoritative.
-- Named paths/artifact identities include: `README.md`, `pyproject.toml`, `uv.lock`, `noxfile.py`, `configs/fedact.yaml`, `configs/tests.yml`, `configs/smoke.yml`, `data/raw`, `outputs/preprocessing`, `outputs/preprocessing/inventories`, `outputs/preprocessing/validation`, `outputs/preprocessing/prepared`, `outputs/preprocessing/splits`, `outputs/preprocessing/features`, `outputs/preprocessing/metadata`, `outputs/artifacts`, `outputs/artifacts/models`, `outputs/artifacts/models/representations`, `outputs/artifacts/models/detectors`, `outputs/artifacts/scores`, `outputs/artifacts/scores/encodings`, `outputs/artifacts/scores/detector_scores`, `outputs/artifacts/scores/detector_predictions`, `outputs/artifacts/fitted`, `outputs/artifacts/fitted/nuisance`, plus the additional explicit identities listed under Required Outputs.
+- Persisted evidence/reporting artifacts required by the mapped requirements; identity, schema, integrity, completion, dependency, and provenance rules are authoritative. Named paths: see **Required Outputs** below (`README.md` through the full `outputs/` tree).
 
 ## Acceptance Criteria
 
 - [ ] **Milestone verification target** — Repository component existence, dependency-boundary, static-typing, canonical-vocabulary and architecture test suite.
 - [ ] **REQ-2232–REQ-2683, REQ-2866–REQ-2873, REQ-2875–REQ-2879** — Acceptance targets remain the identically numbered requirements listed under **Implementation Requirements**. **Evidence:** Repository/path inspection plus architecture tests verify the stated component exists at the specified boundary and owns only the stated responsibility.
 - [ ] **REQ-2684–REQ-2730, REQ-2776–REQ-2828, REQ-2838, REQ-2850–REQ-2855, REQ-2859–REQ-2863, REQ-2874** — Acceptance targets remain the identically numbered requirements listed under **Implementation Requirements**. **Evidence:** Dedicated automated test constructs the specified positive/negative fixture and passes with the exact asserted behavior, tolerance, state, or rejection reason.
-- [ ] All scope items and mapped atomic requirements are implemented completely.
-- [ ] Roadmap semantics are preserved exactly.
-- [ ] Configuration values are consumed from their authoritative source.
-- [ ] Invalid, unavailable, infeasible, unsupported, assumption-violation, suppressed, abstention, and insufficient-evidence states follow the declared behavior wherever applicable.
-- [ ] Determinism and reproducibility requirements are satisfied wherever required.
-- [ ] Integration with required upstream and downstream contracts works.
-- [ ] Required artifacts and evidence are produced with the correct identity, schema, integrity, and provenance.
-- [ ] No unrelated scientific or product behavior has been introduced.
+- [ ] All scope items and mapped atomic requirements are implemented completely, roadmap semantics are preserved exactly, and configuration values are consumed from their authoritative source; invalid, unavailable, infeasible, unsupported, assumption-violation, suppressed, abstention, and insufficient-evidence states follow the declared behavior wherever applicable, and determinism and reproducibility requirements are satisfied wherever required.
+- [ ] Integration with required upstream and downstream contracts works, required artifacts/evidence are produced with the correct identity, schema, integrity, and provenance, and no unrelated scientific or product behavior has been introduced.
 
 ## Required Tests
 
-Specify the concrete tests required for this issue. A category that genuinely does not apply must be recorded as `N/A — <reason>` in the completion record rather than silently ignored.
-Each test must prove an acceptance criterion, invariant, failure path, or previously observed defect. Avoid tests that merely duplicate implementation details.
+Concrete tests required for this issue; record genuine non-applicability as `N/A — <reason>` in the completion record. Each test must prove an acceptance criterion, invariant, failure path, or known defect, not merely duplicate implementation details.
 
-- [ ] The requirement-specific verification/evidence checks listed in **Acceptance Criteria** are implemented at the appropriate unit, integration, scientific, artifact, CLI, or end-to-end layer rather than being replaced by broad smoke assertions.
-- [ ] The milestone verification target for this work package is exercised on the real roadmap-defined execution path where applicable.
+- [ ] The requirement-specific verification/evidence checks listed in **Acceptance Criteria** are implemented at the appropriate unit, integration, scientific, artifact, CLI, or end-to-end layer (not replaced by broad smoke assertions), and the milestone verification target is exercised on the real roadmap-defined execution path where applicable.
 
 ## Required Outputs
 
+- [ ] Verified implementation/evidence satisfying the work-package target (see **Acceptance Criteria** — Milestone verification target).
+- [ ] A completion-evidence record for every mapped atomic requirement (this issue's requirement-specific acceptance evidence), plus every named artifact/manifest/checkpoint/table/figure/report/index output, with roadmap-defined identity and provenance.
+- [ ] Named paths/artifact identities in this issue: `README.md`, `pyproject.toml`, `uv.lock`, `noxfile.py`, `configs/fedact.yaml`, `configs/tests.yml`, `configs/smoke.yml`, `data/raw`, `outputs/preprocessing`, `outputs/preprocessing/inventories`, `outputs/preprocessing/validation`, `outputs/preprocessing/prepared`, `outputs/preprocessing/splits`, `outputs/preprocessing/features`, `outputs/preprocessing/metadata`, `outputs/artifacts`, `outputs/artifacts/models`, `outputs/artifacts/models/representations`, `outputs/artifacts/models/detectors`, `outputs/artifacts/scores`, `outputs/artifacts/scores/encodings`, `outputs/artifacts/scores/detector_scores`, `outputs/artifacts/scores/detector_predictions`, `outputs/artifacts/fitted`, `outputs/artifacts/fitted/nuisance`, `outputs/artifacts/fitted/constraints`, `outputs/artifacts/fitted/calibration`, `outputs/artifacts/fitted/temporal`, `outputs/artifacts/fitted/feasible_sets`, `outputs/artifacts/baselines`, `outputs/artifacts/baselines/checkpoints`, `outputs/artifacts/baselines/scores`, `outputs/artifacts/baselines/parity`, `outputs/artifacts/derived`, `outputs/artifacts/derived/transitions`, `outputs/artifacts/derived/action_displacements`, `outputs/artifacts/derived/operators`, `outputs/artifacts/derived/certificates`, `outputs/artifacts/provenance`, `outputs/artifacts/provenance/manifests`, `outputs/artifacts/provenance/completion_records`, `outputs/artifacts/provenance/indexes`, `outputs/artifacts/provenance/indexes/artifact_index.jsonl`, `outputs/artifacts/provenance/indexes/dependency_index.json`, `outputs/experiments`, `outputs/experiments/<descriptive-experiment-name>`, and under `outputs/experiments/<descriptive-experiment-name>/`: `artifacts`, `artifacts/fitted`, `artifacts/predictions`, `artifacts/derived`, `evaluations`, `evaluations/records`, `evaluations/comparisons`, `evaluations/aggregates`, `metrics`, `metrics/per_seed`, `metrics/per_condition`, `metrics/aggregate`, `statistics`, `statistics/tests`, `statistics/confidence_intervals`, `statistics/effects`, `statistics/multiplicity`, `checkpoints`, `checkpoints/training`, `checkpoints/execution`, `diagnostics`, `diagnostics/scientific`, `diagnostics/numerical`, `diagnostics/runtime`, `logs`, `logs/execution`, `logs/failures`, `provenance`, `provenance/configuration`, `provenance/data`, `provenance/seeds`, `provenance/code`, `provenance/environment`, `provenance/dependencies`.
 
-- [ ] Verified implementation/evidence satisfying the work-package target: Repository component existence, dependency-boundary, static-typing, canonical-vocabulary and architecture test suite.
-- [ ] A completion-evidence record for every mapped atomic requirement, using the requirement-specific acceptance evidence in this issue.
-- [ ] Every persisted artifact, manifest, checkpoint, table, figure, report, index, or other output explicitly named by the mapped implementation requirements, with its roadmap-defined identity and provenance.
-- [ ] Explicitly named paths/artifact identities in this issue include:
-  - `README.md`
-  - `pyproject.toml`
-  - `uv.lock`
-  - `noxfile.py`
-  - `configs/fedact.yaml`
-  - `configs/tests.yml`
-  - `configs/smoke.yml`
-  - `data/raw`
-  - `outputs/preprocessing`
-  - `outputs/preprocessing/inventories`
-  - `outputs/preprocessing/validation`
-  - `outputs/preprocessing/prepared`
-  - `outputs/preprocessing/splits`
-  - `outputs/preprocessing/features`
-  - `outputs/preprocessing/metadata`
-  - `outputs/artifacts`
-  - `outputs/artifacts/models`
-  - `outputs/artifacts/models/representations`
-  - `outputs/artifacts/models/detectors`
-  - `outputs/artifacts/scores`
-  - `outputs/artifacts/scores/encodings`
-  - `outputs/artifacts/scores/detector_scores`
-  - `outputs/artifacts/scores/detector_predictions`
-  - `outputs/artifacts/fitted`
-  - `outputs/artifacts/fitted/nuisance`
-  - `outputs/artifacts/fitted/constraints`
-  - `outputs/artifacts/fitted/calibration`
-  - `outputs/artifacts/fitted/temporal`
-  - `outputs/artifacts/fitted/feasible_sets`
-  - `outputs/artifacts/baselines`
-  - `outputs/artifacts/baselines/checkpoints`
-  - `outputs/artifacts/baselines/scores`
-  - `outputs/artifacts/baselines/parity`
-  - `outputs/artifacts/derived`
-  - `outputs/artifacts/derived/transitions`
-  - `outputs/artifacts/derived/action_displacements`
-  - `outputs/artifacts/derived/operators`
-  - `outputs/artifacts/derived/certificates`
-  - `outputs/artifacts/provenance`
-  - `outputs/artifacts/provenance/manifests`
-  - `outputs/artifacts/provenance/completion_records`
-  - `outputs/artifacts/provenance/indexes`
-  - `outputs/artifacts/provenance/indexes/artifact_index.jsonl`
-  - `outputs/artifacts/provenance/indexes/dependency_index.json`
-  - `outputs/experiments`
-  - `outputs/experiments/<descriptive-experiment-name>`
-  - `outputs/experiments/<descriptive-experiment-name>/artifacts`
-  - `outputs/experiments/<descriptive-experiment-name>/artifacts/fitted`
-  - `outputs/experiments/<descriptive-experiment-name>/artifacts/predictions`
-  - `outputs/experiments/<descriptive-experiment-name>/artifacts/derived`
-  - `outputs/experiments/<descriptive-experiment-name>/evaluations`
-  - `outputs/experiments/<descriptive-experiment-name>/evaluations/records`
-  - `outputs/experiments/<descriptive-experiment-name>/evaluations/comparisons`
-  - `outputs/experiments/<descriptive-experiment-name>/evaluations/aggregates`
-  - `outputs/experiments/<descriptive-experiment-name>/metrics`
-  - `outputs/experiments/<descriptive-experiment-name>/metrics/per_seed`
-  - `outputs/experiments/<descriptive-experiment-name>/metrics/per_condition`
-  - `outputs/experiments/<descriptive-experiment-name>/metrics/aggregate`
-  - `outputs/experiments/<descriptive-experiment-name>/statistics`
-  - `outputs/experiments/<descriptive-experiment-name>/statistics/tests`
-  - `outputs/experiments/<descriptive-experiment-name>/statistics/confidence_intervals`
-  - `outputs/experiments/<descriptive-experiment-name>/statistics/effects`
-  - `outputs/experiments/<descriptive-experiment-name>/statistics/multiplicity`
-  - `outputs/experiments/<descriptive-experiment-name>/checkpoints`
-  - `outputs/experiments/<descriptive-experiment-name>/checkpoints/training`
-  - `outputs/experiments/<descriptive-experiment-name>/checkpoints/execution`
-  - `outputs/experiments/<descriptive-experiment-name>/diagnostics`
-  - `outputs/experiments/<descriptive-experiment-name>/diagnostics/scientific`
-  - `outputs/experiments/<descriptive-experiment-name>/diagnostics/numerical`
-  - `outputs/experiments/<descriptive-experiment-name>/diagnostics/runtime`
-  - `outputs/experiments/<descriptive-experiment-name>/logs`
-  - `outputs/experiments/<descriptive-experiment-name>/logs/execution`
-  - `outputs/experiments/<descriptive-experiment-name>/logs/failures`
-  - `outputs/experiments/<descriptive-experiment-name>/provenance`
-  - `outputs/experiments/<descriptive-experiment-name>/provenance/configuration`
-  - `outputs/experiments/<descriptive-experiment-name>/provenance/data`
-  - `outputs/experiments/<descriptive-experiment-name>/provenance/seeds`
-  - `outputs/experiments/<descriptive-experiment-name>/provenance/code`
-  - `outputs/experiments/<descriptive-experiment-name>/provenance/environment`
-  - `outputs/experiments/<descriptive-experiment-name>/provenance/dependencies`
-
-For every required output, the exact identity/location, schema, content, completion rule, and provenance semantics stated in the implementation requirements above are authoritative.
+Each output's identity/location, schema, content, completion rule, and provenance semantics are as stated in the implementation requirements above.
 # M01 — I05 Implement Generic Workflow Registry and CLI Runtime Control
 
 > Every issue is an executable unit of roadmap work.
@@ -5952,209 +5676,11 @@ Implement only the work required to satisfy the mapped requirements and their ve
 ## Acceptance Criteria
 
 - [ ] **Milestone verification target** — End-to-end client/server scientific artifacts plus exact gate/abstention/hardening tests.
-- [ ] **REQ-0312** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0313** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0314** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0315** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0316** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
+- [ ] **REQ-0312–REQ-0316, REQ-0318–REQ-0326, REQ-0328–REQ-0335, REQ-0337, REQ-0339–REQ-0360, REQ-0363–REQ-0372, REQ-0374–REQ-0387, REQ-0389–REQ-0393, REQ-0395–REQ-0401, REQ-0403–REQ-0404, REQ-0406–REQ-0408, REQ-0410–REQ-0414, REQ-0416, REQ-0418–REQ-0419, REQ-0421–REQ-0431, REQ-0433, REQ-0435–REQ-0439, REQ-0441–REQ-0442, REQ-0445–REQ-0473** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
 - [ ] **REQ-0317** — Client-input schema/integration test verifies the calibrated configuration object includes the roadmap-required scientific parameter/derived-quantity categories and rejects missing required fields before client execution.
-- [ ] **REQ-0318** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0319** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0320** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0321** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0322** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0323** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0324** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0325** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0326** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0327** — A deterministic negative-path test creates the triggering condition and asserts the exact scientific outcome/reason/missingness code, denominator/accounting behavior, and preserved diagnostic artifact.
-- [ ] **REQ-0328** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0329** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0330** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0331** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0332** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0333** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0334** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0335** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0336** — A deterministic negative-path test creates the triggering condition and asserts the exact scientific outcome/reason/missingness code, denominator/accounting behavior, and preserved diagnostic artifact.
-- [ ] **REQ-0337** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0338** — A deterministic negative-path test creates the triggering condition and asserts the exact scientific outcome/reason/missingness code, denominator/accounting behavior, and preserved diagnostic artifact.
-- [ ] **REQ-0339** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0340** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0341** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0342** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0343** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0344** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0345** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0346** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0347** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0348** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0349** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0350** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0351** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0352** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0353** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0354** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0355** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0356** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0357** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0358** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0359** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0360** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0362** — Deterministic unit/integration fixture exercises the complete stated computation and records the expected value/artifact with locked seeds and tolerances.
-- [ ] **REQ-0363** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0364** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0365** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0366** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0367** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0368** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0369** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0370** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0371** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0372** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0373** — A deterministic negative-path test creates the triggering condition and asserts the exact scientific outcome/reason/missingness code, denominator/accounting behavior, and preserved diagnostic artifact.
-- [ ] **REQ-0374** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0375** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0376** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0377** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0378** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0379** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0380** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0381** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0382** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0383** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0384** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0385** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0386** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0387** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0388** — A deterministic negative-path test creates the triggering condition and asserts the exact scientific outcome/reason/missingness code, denominator/accounting behavior, and preserved diagnostic artifact.
-- [ ] **REQ-0389** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0390** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0391** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0392** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0393** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0394** — A deterministic negative-path test creates the triggering condition and asserts the exact scientific outcome/reason/missingness code, denominator/accounting behavior, and preserved diagnostic artifact.
-- [ ] **REQ-0395** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0396** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0397** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0398** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0399** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0400** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0401** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0402** — A deterministic negative-path test creates the triggering condition and asserts the exact scientific outcome/reason/missingness code, denominator/accounting behavior, and preserved diagnostic artifact.
-- [ ] **REQ-0403** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0404** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0405** — A deterministic negative-path test creates the triggering condition and asserts the exact scientific outcome/reason/missingness code, denominator/accounting behavior, and preserved diagnostic artifact.
-- [ ] **REQ-0406** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0407** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0408** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0409** — A deterministic negative-path test creates the triggering condition and asserts the exact scientific outcome/reason/missingness code, denominator/accounting behavior, and preserved diagnostic artifact.
-- [ ] **REQ-0410** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0411** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0412** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0413** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0414** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0416** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0417** — Deterministic unit/integration fixture exercises the complete stated computation and records the expected value/artifact with locked seeds and tolerances.
-- [ ] **REQ-0418** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0419** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0420** — A deterministic negative-path test creates the triggering condition and asserts the exact scientific outcome/reason/missingness code, denominator/accounting behavior, and preserved diagnostic artifact.
-- [ ] **REQ-0421** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0422** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0423** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0424** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0425** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0426** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0427** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0428** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0429** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0430** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0431** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0433** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0434** — Deterministic unit/integration fixture exercises the complete stated computation and records the expected value/artifact with locked seeds and tolerances.
-- [ ] **REQ-0435** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0436** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0437** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0438** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0439** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0440** — A deterministic negative-path test creates the triggering condition and asserts the exact scientific outcome/reason/missingness code, denominator/accounting behavior, and preserved diagnostic artifact.
-- [ ] **REQ-0441** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0442** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0443** — A deterministic negative-path test creates the triggering condition and asserts the exact scientific outcome/reason/missingness code, denominator/accounting behavior, and preserved diagnostic artifact.
-- [ ] **REQ-0444** — A deterministic negative-path test creates the triggering condition and asserts the exact scientific outcome/reason/missingness code, denominator/accounting behavior, and preserved diagnostic artifact.
-- [ ] **REQ-0445** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0446** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0447** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0448** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0449** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0450** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0451** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0452** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0453** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0454** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0455** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0456** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0457** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0458** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0459** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0460** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0461** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0462** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0463** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0464** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0465** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0466** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0467** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0468** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0469** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0470** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0471** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0472** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0473** — Deterministic unit/integration fixture exercises this exact computation/branch; the produced scientific artifact and manifest record the expected values/state with locked tolerances and seeds.
-- [ ] **REQ-0474** — A deterministic negative-path test creates the triggering condition and asserts the exact scientific outcome/reason/missingness code, denominator/accounting behavior, and preserved diagnostic artifact.
-- [ ] **REQ-0475** — A deterministic negative-path test creates the triggering condition and asserts the exact scientific outcome/reason/missingness code, denominator/accounting behavior, and preserved diagnostic artifact.
-- [ ] **REQ-0476** — A deterministic negative-path test creates the triggering condition and asserts the exact scientific outcome/reason/missingness code, denominator/accounting behavior, and preserved diagnostic artifact.
-- [ ] **REQ-0477** — A deterministic negative-path test creates the triggering condition and asserts the exact scientific outcome/reason/missingness code, denominator/accounting behavior, and preserved diagnostic artifact.
-- [ ] **REQ-0478** — A deterministic negative-path test creates the triggering condition and asserts the exact scientific outcome/reason/missingness code, denominator/accounting behavior, and preserved diagnostic artifact.
-- [ ] **REQ-0479** — A deterministic negative-path test creates the triggering condition and asserts the exact scientific outcome/reason/missingness code, denominator/accounting behavior, and preserved diagnostic artifact.
-- [ ] **REQ-0480** — A deterministic negative-path test creates the triggering condition and asserts the exact scientific outcome/reason/missingness code, denominator/accounting behavior, and preserved diagnostic artifact.
-- [ ] **REQ-0481** — A deterministic negative-path test creates the triggering condition and asserts the exact scientific outcome/reason/missingness code, denominator/accounting behavior, and preserved diagnostic artifact.
-- [ ] **REQ-0482** — A deterministic negative-path test creates the triggering condition and asserts the exact scientific outcome/reason/missingness code, denominator/accounting behavior, and preserved diagnostic artifact.
-- [ ] **REQ-0483** — A deterministic negative-path test creates the triggering condition and asserts the exact scientific outcome/reason/missingness code, denominator/accounting behavior, and preserved diagnostic artifact.
-- [ ] **REQ-0484** — A deterministic negative-path test creates the triggering condition and asserts the exact scientific outcome/reason/missingness code, denominator/accounting behavior, and preserved diagnostic artifact.
-- [ ] **REQ-0485** — A deterministic negative-path test creates the triggering condition and asserts the exact scientific outcome/reason/missingness code, denominator/accounting behavior, and preserved diagnostic artifact.
-- [ ] **REQ-0486** — A deterministic negative-path test creates the triggering condition and asserts the exact scientific outcome/reason/missingness code, denominator/accounting behavior, and preserved diagnostic artifact.
-- [ ] **REQ-0487** — A deterministic negative-path test creates the triggering condition and asserts the exact scientific outcome/reason/missingness code, denominator/accounting behavior, and preserved diagnostic artifact.
-- [ ] **REQ-0804** — Repository/path inspection plus architecture tests verify the stated component exists at the specified boundary and owns only the stated responsibility.
-- [ ] **REQ-0805** — Repository/path inspection plus architecture tests verify the stated component exists at the specified boundary and owns only the stated responsibility.
-- [ ] **REQ-0806** — Repository/path inspection plus architecture tests verify the stated component exists at the specified boundary and owns only the stated responsibility.
-- [ ] **REQ-0807** — Repository/path inspection plus architecture tests verify the stated component exists at the specified boundary and owns only the stated responsibility.
-- [ ] **REQ-0808** — Repository/path inspection plus architecture tests verify the stated component exists at the specified boundary and owns only the stated responsibility.
-- [ ] **REQ-0809** — Repository/path inspection plus architecture tests verify the stated component exists at the specified boundary and owns only the stated responsibility.
-- [ ] **REQ-0810** — Repository/path inspection plus architecture tests verify the stated component exists at the specified boundary and owns only the stated responsibility.
-- [ ] **REQ-0811** — Repository/path inspection plus architecture tests verify the stated component exists at the specified boundary and owns only the stated responsibility.
-- [ ] **REQ-0812** — Repository/path inspection plus architecture tests verify the stated component exists at the specified boundary and owns only the stated responsibility.
-- [ ] **REQ-0813** — Repository/path inspection plus architecture tests verify the stated component exists at the specified boundary and owns only the stated responsibility.
-- [ ] **REQ-0814** — Repository/path inspection plus architecture tests verify the stated component exists at the specified boundary and owns only the stated responsibility.
-- [ ] **REQ-0815** — Repository/path inspection plus architecture tests verify the stated component exists at the specified boundary and owns only the stated responsibility.
-- [ ] **REQ-0816** — Repository/path inspection plus architecture tests verify the stated component exists at the specified boundary and owns only the stated responsibility.
-- [ ] **REQ-0817** — Repository/path inspection plus architecture tests verify the stated component exists at the specified boundary and owns only the stated responsibility.
-- [ ] **REQ-0818** — Repository/path inspection plus architecture tests verify the stated component exists at the specified boundary and owns only the stated responsibility.
-- [ ] **REQ-0819** — Repository/path inspection plus architecture tests verify the stated component exists at the specified boundary and owns only the stated responsibility.
-- [ ] **REQ-0820** — Repository/path inspection plus architecture tests verify the stated component exists at the specified boundary and owns only the stated responsibility.
-- [ ] **REQ-0821** — Repository/path inspection plus architecture tests verify the stated component exists at the specified boundary and owns only the stated responsibility.
-- [ ] **REQ-0822** — Repository/path inspection plus architecture tests verify the stated component exists at the specified boundary and owns only the stated responsibility.
-- [ ] **REQ-0823** — Repository/path inspection plus architecture tests verify the stated component exists at the specified boundary and owns only the stated responsibility.
-- [ ] **REQ-0824** — Repository/path inspection plus architecture tests verify the stated component exists at the specified boundary and owns only the stated responsibility.
-- [ ] **REQ-0825** — Repository/path inspection plus architecture tests verify the stated component exists at the specified boundary and owns only the stated responsibility.
-- [ ] **REQ-0826** — Repository/path inspection plus architecture tests verify the stated component exists at the specified boundary and owns only the stated responsibility.
-- [ ] **REQ-0827** — Repository/path inspection plus architecture tests verify the stated component exists at the specified boundary and owns only the stated responsibility.
-- [ ] **REQ-0828** — Repository/path inspection plus architecture tests verify the stated component exists at the specified boundary and owns only the stated responsibility.
-- [ ] **REQ-0829** — Repository/path inspection plus architecture tests verify the stated component exists at the specified boundary and owns only the stated responsibility.
-- [ ] **REQ-0830** — Repository/path inspection plus architecture tests verify the stated component exists at the specified boundary and owns only the stated responsibility.
-- [ ] **REQ-0831** — Repository/path inspection plus architecture tests verify the stated component exists at the specified boundary and owns only the stated responsibility.
-- [ ] **REQ-0836** — Repository/path inspection plus architecture tests verify the stated component exists at the specified boundary and owns only the stated responsibility.
-- [ ] **REQ-0837** — Repository/path inspection plus architecture tests verify the stated component exists at the specified boundary and owns only the stated responsibility.
+- [ ] **REQ-0327, REQ-0336, REQ-0338, REQ-0373, REQ-0388, REQ-0394, REQ-0402, REQ-0405, REQ-0409, REQ-0420, REQ-0440, REQ-0443–REQ-0444, REQ-0474–REQ-0487** — A deterministic negative-path test creates the triggering condition and asserts the exact scientific outcome/reason/missingness code, denominator/accounting behavior, and preserved diagnostic artifact.
+- [ ] **REQ-0362, REQ-0417, REQ-0434** — Deterministic unit/integration fixture exercises the complete stated computation and records the expected value/artifact with locked seeds and tolerances.
+- [ ] **REQ-0804–REQ-0831, REQ-0836–REQ-0837** — Repository/path inspection plus architecture tests verify the stated component exists at the specified boundary and owns only the stated responsibility.
 - [ ] **REQ-3297** — Boundary-validation integration test supplies permitted and future/leaking inputs and verifies only §9-permitted data reach the client procedure; rejected inputs are recorded before scientific computation.
 - [ ] All scope items and mapped atomic requirements are implemented completely.
 - [ ] Roadmap semantics are preserved exactly.
