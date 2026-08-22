@@ -10,7 +10,7 @@
 
 - **Milestone:** M01 — Scientific Configuration, Repository, and Execution Contracts
 - **Primary deliverable:** Scientific configuration authority
-- **Issue type:** Infrastructure
+- **Issue type:** Infrastructure / Implementation
 - **Mapped implementation requirements:** 168
 - **Milestone outcome supported:** Establish the authoritative configuration, typed repository contracts, artifact/provenance lifecycle, and generic dependency-aware execution substrate required by every scientific workflow.
 
@@ -317,7 +317,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M01 — Scientific Configuration, Repository, and Execution Contracts
 - **Primary deliverable:** Workflow and artifact-boundary contracts
-- **Issue type:** Infrastructure
+- **Issue type:** Infrastructure / Implementation
 - **Mapped implementation requirements:** 60
 - **Milestone outcome supported:** Establish the authoritative configuration, typed repository contracts, artifact/provenance lifecycle, and generic dependency-aware execution substrate required by every scientific workflow.
 
@@ -545,7 +545,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M01 — Scientific Configuration, Repository, and Execution Contracts
 - **Primary deliverable:** Provenance and reproducibility contracts
-- **Issue type:** Infrastructure
+- **Issue type:** Infrastructure / Implementation
 - **Mapped implementation requirements:** 98
 - **Milestone outcome supported:** Establish the authoritative configuration, typed repository contracts, artifact/provenance lifecycle, and generic dependency-aware execution substrate required by every scientific workflow.
 
@@ -853,7 +853,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M01 — Scientific Configuration, Repository, and Execution Contracts
 - **Primary deliverable:** Repository, package, artifact and test architecture
-- **Issue type:** Infrastructure
+- **Issue type:** Infrastructure / Implementation
 - **Mapped implementation requirements:** 366
 - **Milestone outcome supported:** Authoritative configuration, typed repository contracts, artifact/provenance lifecycle, and dependency-aware execution substrate for every scientific workflow.
 
@@ -1311,7 +1311,7 @@ Each output's identity/location, schema, content, completion rule, and provenanc
 
 - **Milestone:** M01 — Scientific Configuration, Repository, and Execution Contracts
 - **Primary deliverable:** Generic workflow registry and CLI/runtime control
-- **Issue type:** Infrastructure
+- **Issue type:** Infrastructure / Implementation
 - **Mapped implementation requirements:** 92
 - **Milestone outcome supported:** Establish the authoritative configuration, typed repository contracts, artifact/provenance lifecycle, and generic dependency-aware execution substrate required by every scientific workflow.
 
@@ -1605,7 +1605,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M01 — Scientific Configuration, Repository, and Execution Contracts
 - **Primary deliverable:** Artifact lifecycle, reuse, invalidation and execution state
-- **Issue type:** Infrastructure
+- **Issue type:** Infrastructure / Implementation
 - **Mapped implementation requirements:** 147
 - **Milestone outcome supported:** Establish the authoritative configuration, typed repository contracts, artifact/provenance lifecycle, and generic dependency-aware execution substrate required by every scientific workflow.
 
@@ -2200,7 +2200,7 @@ This audit issue is complete only when **all** of the following are true:
 
 - **Milestone:** M02 — Chronology-Safe Data, Representation, and Base Detector
 - **Primary deliverable:** Chronology and cutoff-fixed representation assumptions
-- **Issue type:** Implementation
+- **Issue type:** Implementation / Validation
 - **Mapped implementation requirements:** 6
 - **Milestone outcome supported:** Produce validated chronology-safe real/synthetic data products, cutoff/client/cohort partitions, and immutable cutoff-fixed representation and base-detector artifacts.
 
@@ -2318,7 +2318,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M02 — Chronology-Safe Data, Representation, and Base Detector
 - **Primary deliverable:** Chronological information boundaries and cutoff scheduling
-- **Issue type:** Implementation
+- **Issue type:** Implementation / Validation
 - **Mapped implementation requirements:** 52
 - **Milestone outcome supported:** Produce validated chronology-safe real/synthetic data products, cutoff/client/cohort partitions, and immutable cutoff-fixed representation and base-detector artifacts.
 
@@ -2531,7 +2531,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M02 — Chronology-Safe Data, Representation, and Base Detector
 - **Primary deliverable:** Dataset acquisition, schema, eligibility and preprocessing
-- **Issue type:** Implementation
+- **Issue type:** Implementation / Validation
 - **Mapped implementation requirements:** 111
 - **Milestone outcome supported:** Produce validated chronology-safe real/synthetic data products, cutoff/client/cohort partitions, and immutable cutoff-fixed representation and base-detector artifacts.
 
@@ -2868,7 +2868,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M02 — Chronology-Safe Data, Representation, and Base Detector
 - **Primary deliverable:** Cutoff-safe representation and detector training
-- **Issue type:** Implementation
+- **Issue type:** Implementation / Validation
 - **Mapped implementation requirements:** 47
 - **Milestone outcome supported:** Produce validated chronology-safe real/synthetic data products, cutoff/client/cohort partitions, and immutable cutoff-fixed representation and base-detector artifacts.
 
@@ -3070,7 +3070,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M02 — Chronology-Safe Data, Representation, and Base Detector
 - **Primary deliverable:** Dataset/model/training/scoring architecture and tests
-- **Issue type:** Infrastructure
+- **Issue type:** Infrastructure / Implementation
 - **Mapped implementation requirements:** 94
 - **Milestone outcome supported:** Produce validated chronology-safe real/synthetic data products, cutoff/client/cohort partitions, and immutable cutoff-fixed representation and base-detector artifacts.
 
@@ -3431,7 +3431,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M02 — Chronology-Safe Data, Representation, and Base Detector
 - **Primary deliverable:** Preprocess/shared-producer CLI and artifact ownership
-- **Issue type:** Infrastructure
+- **Issue type:** Infrastructure / Implementation
 - **Mapped implementation requirements:** 36
 - **Milestone outcome supported:** Produce validated chronology-safe real/synthetic data products, cutoff/client/cohort partitions, and immutable cutoff-fixed representation and base-detector artifacts.
 
@@ -3788,7 +3788,7 @@ This audit issue is complete only when **all** of the following are true:
 
 - **Milestone:** M03 — Domain-Valid Action Operator Library
 - **Primary deliverable:** Action-validity and operator-coverage assumptions
-- **Issue type:** Implementation
+- **Issue type:** Implementation / Validation
 - **Mapped implementation requirements:** 5
 - **Milestone outcome supported:** Provide the complete provenance-locked PE/APK operator library, action-displacement construction, and multi-layer domain-validity gates required before FedACT can certify defensive actions.
 
@@ -3905,7 +3905,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M03 — Domain-Valid Action Operator Library
 - **Primary deliverable:** Operator contracts and action displacements
-- **Issue type:** Implementation
+- **Issue type:** Implementation / Validation
 - **Mapped implementation requirements:** 25
 - **Milestone outcome supported:** Provide the complete provenance-locked PE/APK operator library, action-displacement construction, and multi-layer domain-validity gates required before FedACT can certify defensive actions.
 
@@ -4062,7 +4062,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M03 — Domain-Valid Action Operator Library
 - **Primary deliverable:** PE and APK operator implementations
-- **Issue type:** Implementation
+- **Issue type:** Implementation / Validation
 - **Mapped implementation requirements:** 41
 - **Milestone outcome supported:** Provide the complete provenance-locked PE/APK operator library, action-displacement construction, and multi-layer domain-validity gates required before FedACT can certify defensive actions.
 
@@ -4251,7 +4251,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M03 — Domain-Valid Action Operator Library
 - **Primary deliverable:** Operator validation, failure semantics and provenance
-- **Issue type:** Implementation
+- **Issue type:** Implementation / Validation
 - **Mapped implementation requirements:** 36
 - **Milestone outcome supported:** Provide the complete provenance-locked PE/APK operator library, action-displacement construction, and multi-layer domain-validity gates required before FedACT can certify defensive actions.
 
@@ -4431,7 +4431,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M03 — Domain-Valid Action Operator Library
 - **Primary deliverable:** Operator architecture and tests
-- **Issue type:** Implementation
+- **Issue type:** Implementation / Validation
 - **Mapped implementation requirements:** 17
 - **Milestone outcome supported:** Provide the complete provenance-locked PE/APK operator library, action-displacement construction, and multi-layer domain-validity gates required before FedACT can certify defensive actions.
 
@@ -4760,7 +4760,7 @@ This audit issue is complete only when **all** of the following are true:
 
 - **Milestone:** M04 — FedACT Identification, Certification, and Mathematical Verification
 - **Primary deliverable:** Primary estimand, feasible-set, propagation and certificate mathematics
-- **Issue type:** Implementation
+- **Issue type:** Implementation / Validation
 - **Mapped implementation requirements:** 40
 - **Milestone outcome supported:** Implement the complete FedACT client/server identification and certification engine, including finite-sample uncertainty, temporal set propagation, action support, abstention/hardening semantics, and verified mathematical/numerical contracts.
 
@@ -4950,7 +4950,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M04 — FedACT Identification, Certification, and Mathematical Verification
 - **Primary deliverable:** Deterministic mechanism and solver validation obligations
-- **Issue type:** Validation
+- **Issue type:** Validation / Statistical Analysis
 - **Mapped implementation requirements:** 5
 - **Milestone outcome supported:** Implement the complete FedACT client/server identification and certification engine, including finite-sample uncertainty, temporal set propagation, action support, abstention/hardening semantics, and verified mathematical/numerical contracts.
 
@@ -5065,7 +5065,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M04 — FedACT Identification, Certification, and Mathematical Verification
 - **Primary deliverable:** Assumptions, finite-sample uncertainty and theoretical guarantees
-- **Issue type:** Implementation
+- **Issue type:** Implementation / Validation
 - **Mapped implementation requirements:** 107
 - **Milestone outcome supported:** Implement the complete FedACT client/server identification and certification engine, including finite-sample uncertainty, temporal set propagation, action support, abstention/hardening semantics, and verified mathematical/numerical contracts.
 
@@ -5391,7 +5391,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M04 — FedACT Identification, Certification, and Mathematical Verification
 - **Primary deliverable:** Client/server FedACT algorithm, feasible sets, certification and hardening
-- **Issue type:** Implementation
+- **Issue type:** Implementation / Validation
 - **Mapped implementation requirements:** 204
 - **Milestone outcome supported:** Implement the complete FedACT client/server identification and certification engine, including finite-sample uncertainty, temporal set propagation, action support, abstention/hardening semantics, and verified mathematical/numerical contracts.
 
@@ -5719,7 +5719,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M04 — FedACT Identification, Certification, and Mathematical Verification
 - **Primary deliverable:** Mathematical and numerical verification workflow
-- **Issue type:** Validation
+- **Issue type:** Validation / Statistical Analysis
 - **Mapped implementation requirements:** 56
 - **Milestone outcome supported:** Implement the complete FedACT client/server identification and certification engine, including finite-sample uncertainty, temporal set propagation, action support, abstention/hardening semantics, and verified mathematical/numerical contracts.
 
@@ -5939,7 +5939,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M04 — FedACT Identification, Certification, and Mathematical Verification
 - **Primary deliverable:** FedACT/math-verification architecture, tests and CLI
-- **Issue type:** Validation
+- **Issue type:** Validation / Statistical Analysis
 - **Mapped implementation requirements:** 59
 - **Milestone outcome supported:** Implement the complete FedACT client/server identification and certification engine, including finite-sample uncertainty, temporal set propagation, action support, abstention/hardening semantics, and verified mathematical/numerical contracts.
 
@@ -6383,7 +6383,7 @@ This audit issue is complete only when **all** of the following are true:
 
 - **Milestone:** M05 — Synthetic Mechanism and Geometry Validation
 - **Primary deliverable:** Known-truth mechanism evidence
-- **Issue type:** Experiment
+- **Issue type:** Experiment / Validation
 - **Mapped implementation requirements:** 6
 - **Milestone outcome supported:** Validate FedACT under known truth through the locked synthetic generator, smoke checks, geometry/uncertainty sweeps, and mechanism-level falsification tests before real-data confirmation.
 
@@ -6502,7 +6502,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M05 — Synthetic Mechanism and Geometry Validation
 - **Primary deliverable:** Synthetic generator, geometry and smoke validation
-- **Issue type:** Experiment
+- **Issue type:** Experiment / Validation
 - **Mapped implementation requirements:** 80
 - **Milestone outcome supported:** Validate FedACT under known truth through the locked synthetic generator, smoke checks, geometry/uncertainty sweeps, and mechanism-level falsification tests before real-data confirmation.
 
@@ -6772,7 +6772,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M05 — Synthetic Mechanism and Geometry Validation
 - **Primary deliverable:** Synthetic theory and geometry sweep program
-- **Issue type:** Experiment
+- **Issue type:** Experiment / Validation
 - **Mapped implementation requirements:** 80
 - **Milestone outcome supported:** Validate FedACT under known truth through the locked synthetic generator, smoke checks, geometry/uncertainty sweeps, and mechanism-level falsification tests before real-data confirmation.
 
@@ -7041,7 +7041,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M05 — Synthetic Mechanism and Geometry Validation
 - **Primary deliverable:** Synthetic workflow architecture, artifacts and CLI
-- **Issue type:** Infrastructure
+- **Issue type:** Infrastructure / Implementation
 - **Mapped implementation requirements:** 31
 - **Milestone outcome supported:** Validate FedACT under known truth through the locked synthetic generator, smoke checks, geometry/uncertainty sweeps, and mechanism-level falsification tests before real-data confirmation.
 
@@ -7390,7 +7390,7 @@ This audit issue is complete only when **all** of the following are true:
 
 - **Milestone:** M06 — Real-Data Feasibility, Baselines, Metrics, and Nested Calibration
 - **Primary deliverable:** Comparator implementation, fairness and parity validation
-- **Issue type:** Validation
+- **Issue type:** Validation / Statistical Analysis
 - **Mapped implementation requirements:** 85
 - **Milestone outcome supported:** Establish real-data eligibility, comparator parity, full evaluation/statistical primitives, and leakage-safe nested pre-cutoff calibration required by confirmatory prospective workflows.
 
@@ -7671,7 +7671,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M06 — Real-Data Feasibility, Baselines, Metrics, and Nested Calibration
 - **Primary deliverable:** Evaluation metrics and statistical primitives
-- **Issue type:** Validation
+- **Issue type:** Validation / Statistical Analysis
 - **Mapped implementation requirements:** 133
 - **Milestone outcome supported:** Establish real-data eligibility, comparator parity, full evaluation/statistical primitives, and leakage-safe nested pre-cutoff calibration required by confirmatory prospective workflows.
 
@@ -8052,7 +8052,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M06 — Real-Data Feasibility, Baselines, Metrics, and Nested Calibration
 - **Primary deliverable:** Baseline/calibration workflow artifacts and producer reuse
-- **Issue type:** Infrastructure
+- **Issue type:** Infrastructure / Implementation
 - **Mapped implementation requirements:** 17
 - **Milestone outcome supported:** Establish real-data eligibility, comparator parity, full evaluation/statistical primitives, and leakage-safe nested pre-cutoff calibration required by confirmatory prospective workflows.
 
@@ -8193,7 +8193,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M06 — Real-Data Feasibility, Baselines, Metrics, and Nested Calibration
 - **Primary deliverable:** Real-data feasibility and control audit
-- **Issue type:** Experiment
+- **Issue type:** Experiment / Validation
 - **Mapped implementation requirements:** 33
 - **Milestone outcome supported:** Establish real-data eligibility, comparator parity, full evaluation/statistical primitives, and leakage-safe nested pre-cutoff calibration required by confirmatory prospective workflows.
 
@@ -8367,7 +8367,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M06 — Real-Data Feasibility, Baselines, Metrics, and Nested Calibration
 - **Primary deliverable:** Nested pre-cutoff calibration
-- **Issue type:** Experiment
+- **Issue type:** Experiment / Validation
 - **Mapped implementation requirements:** 69
 - **Milestone outcome supported:** Establish real-data eligibility, comparator parity, full evaluation/statistical primitives, and leakage-safe nested pre-cutoff calibration required by confirmatory prospective workflows.
 
@@ -8616,7 +8616,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M06 — Real-Data Feasibility, Baselines, Metrics, and Nested Calibration
 - **Primary deliverable:** Calibration/baseline/evaluation/statistics architecture and tests
-- **Issue type:** Infrastructure
+- **Issue type:** Infrastructure / Implementation
 - **Mapped implementation requirements:** 58
 - **Milestone outcome supported:** Establish real-data eligibility, comparator parity, full evaluation/statistical primitives, and leakage-safe nested pre-cutoff calibration required by confirmatory prospective workflows.
 
@@ -9057,7 +9057,7 @@ This audit issue is complete only when **all** of the following are true:
 
 - **Milestone:** M07 — Prospective Action Certification, Hardening, and Ablation Evidence
 - **Primary deliverable:** Prospective certificate and security-consequence evidence
-- **Issue type:** Experiment
+- **Issue type:** Experiment / Validation
 - **Mapped implementation requirements:** 6
 - **Milestone outcome supported:** Demonstrate the real-data action-certificate mechanism and prospective defensive consequence, then execute the complete novelty-critical ablation program under matched chronological conditions.
 
@@ -9175,7 +9175,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M07 — Prospective Action Certification, Hardening, and Ablation Evidence
 - **Primary deliverable:** Later-real operator-coverage validation
-- **Issue type:** Experiment
+- **Issue type:** Experiment / Validation
 - **Mapped implementation requirements:** 1
 - **Milestone outcome supported:** Demonstrate the real-data action-certificate mechanism and prospective defensive consequence, then execute the complete novelty-critical ablation program under matched chronological conditions.
 
@@ -9282,7 +9282,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M07 — Prospective Action Certification, Hardening, and Ablation Evidence
 - **Primary deliverable:** Ablation specifications and claim-critical alternatives
-- **Issue type:** Experiment
+- **Issue type:** Experiment / Validation
 - **Mapped implementation requirements:** 33
 - **Milestone outcome supported:** Demonstrate the real-data action-certificate mechanism and prospective defensive consequence, then execute the complete novelty-critical ablation program under matched chronological conditions.
 
@@ -9455,7 +9455,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M07 — Prospective Action Certification, Hardening, and Ablation Evidence
 - **Primary deliverable:** Real-data action-certificate validation
-- **Issue type:** Experiment
+- **Issue type:** Experiment / Validation
 - **Mapped implementation requirements:** 36
 - **Milestone outcome supported:** Demonstrate the real-data action-certificate mechanism and prospective defensive consequence, then execute the complete novelty-critical ablation program under matched chronological conditions.
 
@@ -9634,7 +9634,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M07 — Prospective Action Certification, Hardening, and Ablation Evidence
 - **Primary deliverable:** Prospective FedACT hardening evaluation
-- **Issue type:** Experiment
+- **Issue type:** Experiment / Validation
 - **Mapped implementation requirements:** 41
 - **Milestone outcome supported:** Demonstrate the real-data action-certificate mechanism and prospective defensive consequence, then execute the complete novelty-critical ablation program under matched chronological conditions.
 
@@ -9823,7 +9823,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M07 — Prospective Action Certification, Hardening, and Ablation Evidence
 - **Primary deliverable:** Novelty-critical ablation execution
-- **Issue type:** Experiment
+- **Issue type:** Experiment / Validation
 - **Mapped implementation requirements:** 33
 - **Milestone outcome supported:** Demonstrate the real-data action-certificate mechanism and prospective defensive consequence, then execute the complete novelty-critical ablation program under matched chronological conditions.
 
@@ -9996,7 +9996,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M07 — Prospective Action Certification, Hardening, and Ablation Evidence
 - **Primary deliverable:** Prospective/ablation workflow architecture, artifacts and CLI
-- **Issue type:** Infrastructure
+- **Issue type:** Infrastructure / Implementation
 - **Mapped implementation requirements:** 47
 - **Milestone outcome supported:** Demonstrate the real-data action-certificate mechanism and prospective defensive consequence, then execute the complete novelty-critical ablation program under matched chronological conditions.
 
@@ -10388,7 +10388,7 @@ This audit issue is complete only when **all** of the following are true:
 
 - **Milestone:** M08 — Federation, Robustness, Cross-Corpus, and Client-Selection Evaluation
 - **Primary deliverable:** Graceful-failure hypothesis and evidence
-- **Issue type:** Experiment
+- **Issue type:** Experiment / Validation
 - **Mapped implementation requirements:** 9
 - **Milestone outcome supported:** Complete the federation/complementarity, graceful-failure, robustness, cross-corpus generalization, and optional equal-budget client-selection studies with the roadmap’s explicit claim limits.
 
@@ -10512,7 +10512,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M08 — Federation, Robustness, Cross-Corpus, and Client-Selection Evaluation
 - **Primary deliverable:** Federation and complementarity evaluation
-- **Issue type:** Experiment
+- **Issue type:** Experiment / Validation
 - **Mapped implementation requirements:** 43
 - **Milestone outcome supported:** Complete the federation/complementarity, graceful-failure, robustness, cross-corpus generalization, and optional equal-budget client-selection studies with the roadmap’s explicit claim limits.
 
@@ -10705,7 +10705,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M08 — Federation, Robustness, Cross-Corpus, and Client-Selection Evaluation
 - **Primary deliverable:** Robustness and failure-boundary evaluation
-- **Issue type:** Experiment
+- **Issue type:** Experiment / Validation
 - **Mapped implementation requirements:** 52
 - **Milestone outcome supported:** Complete the federation/complementarity, graceful-failure, robustness, cross-corpus generalization, and optional equal-budget client-selection studies with the roadmap’s explicit claim limits.
 
@@ -10918,7 +10918,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M08 — Federation, Robustness, Cross-Corpus, and Client-Selection Evaluation
 - **Primary deliverable:** Cross-corpus generalization
-- **Issue type:** Experiment
+- **Issue type:** Experiment / Validation
 - **Mapped implementation requirements:** 26
 - **Milestone outcome supported:** Complete the federation/complementarity, graceful-failure, robustness, cross-corpus generalization, and optional equal-budget client-selection studies with the roadmap’s explicit claim limits.
 
@@ -11077,7 +11077,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M08 — Federation, Robustness, Cross-Corpus, and Client-Selection Evaluation
 - **Primary deliverable:** Optional communication-limited client selection
-- **Issue type:** Experiment
+- **Issue type:** Experiment / Validation
 - **Mapped implementation requirements:** 26
 - **Milestone outcome supported:** Complete the federation/complementarity, graceful-failure, robustness, cross-corpus generalization, and optional equal-budget client-selection studies with the roadmap’s explicit claim limits.
 
@@ -11235,7 +11235,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M08 — Federation, Robustness, Cross-Corpus, and Client-Selection Evaluation
 - **Primary deliverable:** Federation/robustness/generalization workflow architecture and CLI
-- **Issue type:** Infrastructure
+- **Issue type:** Infrastructure / Implementation
 - **Mapped implementation requirements:** 52
 - **Milestone outcome supported:** Complete the federation/complementarity, graceful-failure, robustness, cross-corpus generalization, and optional equal-budget client-selection studies with the roadmap’s explicit claim limits.
 
@@ -11634,7 +11634,7 @@ This audit issue is complete only when **all** of the following are true:
 
 - **Milestone:** M09 — Statistical Synthesis, Claim Adjudication, and Manuscript Evidence
 - **Primary deliverable:** Statistical synthesis and sensitivity adjudication
-- **Issue type:** Validation
+- **Issue type:** Validation / Statistical Analysis
 - **Mapped implementation requirements:** 31
 - **Milestone outcome supported:** Convert all verified mandatory workflow outcomes into prespecified statistical conclusions, bounded claim states, and reproducible manuscript-facing tables, figures, appendices, and evidence indexes without recomputation.
 
@@ -11803,7 +11803,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M09 — Statistical Synthesis, Claim Adjudication, and Manuscript Evidence
 - **Primary deliverable:** Claim-evidence adjudication
-- **Issue type:** Reporting
+- **Issue type:** Reporting / Validation
 - **Mapped implementation requirements:** 30
 - **Milestone outcome supported:** Convert all verified mandatory workflow outcomes into prespecified statistical conclusions, bounded claim states, and reproducible manuscript-facing tables, figures, appendices, and evidence indexes without recomputation.
 
@@ -11969,7 +11969,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M09 — Statistical Synthesis, Claim Adjudication, and Manuscript Evidence
 - **Primary deliverable:** Manuscript tables, figures, appendix evidence and completion gates
-- **Issue type:** Reporting
+- **Issue type:** Reporting / Validation
 - **Mapped implementation requirements:** 65
 - **Milestone outcome supported:** Convert all verified mandatory workflow outcomes into prespecified statistical conclusions, bounded claim states, and reproducible manuscript-facing tables, figures, appendices, and evidence indexes without recomputation.
 
@@ -12208,7 +12208,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M09 — Statistical Synthesis, Claim Adjudication, and Manuscript Evidence
 - **Primary deliverable:** Analysis/reporting architecture and tests
-- **Issue type:** Reporting
+- **Issue type:** Reporting / Validation
 - **Mapped implementation requirements:** 28
 - **Milestone outcome supported:** Convert all verified mandatory workflow outcomes into prespecified statistical conclusions, bounded claim states, and reproducible manuscript-facing tables, figures, appendices, and evidence indexes without recomputation.
 
@@ -12390,7 +12390,7 @@ For every required output, the exact identity/location, schema, content, complet
 
 - **Milestone:** M09 — Statistical Synthesis, Claim Adjudication, and Manuscript Evidence
 - **Primary deliverable:** Statistical-synthesis/reporting workflow and verified export
-- **Issue type:** Reporting
+- **Issue type:** Reporting / Validation
 - **Mapped implementation requirements:** 46
 - **Milestone outcome supported:** Convert all verified mandatory workflow outcomes into prespecified statistical conclusions, bounded claim states, and reproducible manuscript-facing tables, figures, appendices, and evidence indexes without recomputation.
 
