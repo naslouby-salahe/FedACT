@@ -9,13 +9,14 @@ from fedact.datasets.ember2024 import (
     monthly_matching_cell,
 )
 from fedact.datasets.lamda import (
+    LabelAuditOutcome,
     LamdaControlMatch,
     LamdaRawRecord,
-    audit_released_label,
+    OperatorEligibility,
+    audited_label,
     label_derivation_rule,
     lamda_client_semantics,
     match_controls_by_calendar_month,
-    operator_eligibility,
 )
 from fedact.datasets.records import (
     FEASIBILITY_CONDITION_ORDER,
@@ -33,7 +34,7 @@ from fedact.datasets.records import (
     SchemaChronologyManifest,
     SchemaManifestField,
     corpus_level_client_audit,
-    derive_binary_label,
+    is_derived_label_malicious,
 )
 
 __all__ = [
@@ -56,16 +57,17 @@ __all__ = [
     "SampleIdentifier",
     "SchemaChronologyManifest",
     "SchemaManifestField",
-    "audit_released_label",
+    "audited_label",
     "choose_control_matching_level",
     "conservative_timestamp_month",
     "corpus_level_client_audit",
-    "derive_binary_label",
+    "is_derived_label_malicious",
     "ember_client_semantics",
     "label_derivation_rule",
     "lamda_client_semantics",
     "match_controls_by_calendar_month",
     "match_ember_controls",
     "monthly_matching_cell",
-    "operator_eligibility",
+    "LabelAuditOutcome",
+    "OperatorEligibility",
 ]

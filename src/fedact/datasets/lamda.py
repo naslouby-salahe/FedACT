@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import NewType
 
 from fedact.config.models import LamdaDatasetConfig
 from fedact.datasets.records import (
@@ -29,17 +30,22 @@ def label_derivation_rule(config: LamdaDatasetConfig) -> LabelDerivationRule:
     )
 
 
-def audit_released_label(rule: LabelDerivationRule, record: LamdaRawRecord) -> bool | None:
+@dataclass(frozen=True)
+class LabelAuditOutcome:
+    binary_label: bool | None
+
+
+def audited_label(rule: LabelDerivationRule, record: LamdaRawRecord) -> LabelAuditOutcome:
     if record.label is not None and record.vt_count is not None:
         expected = _expected_label(rule, record.vt_count)
         if expected is None or expected != record.label:
-            return None
-        return record.label
+            return LabelAuditOutcome(binary_label=None)
+        return LabelAuditOutcome(binary_label=record.label)
     if record.label is not None:
-        return record.label
+        return LabelAuditOutcome(binary_label=record.label)
     if record.vt_count is not None:
-        return _expected_label(rule, record.vt_count)
-    return None
+        return LabelAuditOutcome(binary_label=_expected_label(rule, record.vt_count))
+    return LabelAuditOutcome(binary_label=None)
 
 
 def _expected_label(rule: LabelDerivationRule, vt_count: int) -> bool | None:
@@ -59,10 +65,18 @@ class LamdaControlMatch:
     calendar_month: str
 
 
+MaximumMatchesPerSample = NewType("MaximumMatchesPerSample", int)
+
+
+@dataclass(frozen=True)
+class MatchBudget:
+    maximum_per_malicious: MaximumMatchesPerSample
+
+
 def match_controls_by_calendar_month(
     malicious: tuple[LamdaRawRecord, ...],
     controls: tuple[LamdaRawRecord, ...],
-    maximum_per_malicious: int,
+    budget: MatchBudget,
 ) -> tuple[LamdaControlMatch, ...]:
     controls_by_month: dict[str, list[LamdaRawRecord]] = {}
     for control in controls:
@@ -74,7 +88,7 @@ def match_controls_by_calendar_month(
             control
             for control in controls_by_month.get(record.year_month, [])
             if control.sample_hash not in used
-        ][:maximum_per_malicious]
+        ][: budget.maximum_per_malicious]
         for control in candidates:
             used.add(control.sample_hash)
             matches.append(
@@ -91,5 +105,9 @@ def lamda_client_semantics() -> ClientSemanticsAudit:
     return corpus_level_client_audit(DatasetSelector.LAMDA)
 
 
-def operator_eligibility(sample_has_matching_apk: bool) -> bool:
-    return sample_has_matching_apk
+@dataclass(frozen=True)
+class OperatorEligibility:
+    has_matching_raw_artifact: bool
+
+    def is_eligible(self) -> bool:
+        return self.has_matching_raw_artifact

@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import NewType
+from typing import Annotated, NewType
+
+from pydantic import Field
 
 from fedact.config.models import NonNegativeInt, PositiveInt
 from fedact.domain.enums import DatasetSelector
@@ -74,7 +76,12 @@ class LabelDerivationRule:
     discard_detection_counts: tuple[NonNegativeInt, ...]
 
 
-def derive_binary_label(rule: LabelDerivationRule, vt_detection_count: int) -> bool:
+VirusTotalDetectionCount = Annotated[int, Field(ge=0)]
+
+
+def is_derived_label_malicious(
+    rule: LabelDerivationRule, vt_detection_count: VirusTotalDetectionCount
+) -> bool:
     if vt_detection_count == rule.benign_detection_count:
         return False
     if vt_detection_count >= rule.malware_minimum_detection_count:

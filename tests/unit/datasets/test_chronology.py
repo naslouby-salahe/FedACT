@@ -15,10 +15,10 @@ from fedact.datasets.chronology import (
     calendar_month,
     classify_horizon_availability,
     confirmatory_outcome_for_cutoffs,
-    endpoint_eligible_for_cutoff,
     enumerate_historical_endpoints,
     enumerate_rolling_cutoffs,
-    interval_overlaps_gap,
+    is_endpoint_eligible_for_cutoff,
+    is_interval_overlapping_gap,
     month_offset,
     reuse_source_checkpoint_month,
     transition_windows,
@@ -60,10 +60,18 @@ def test_historical_interval_is_exactly_the_configured_window(config: FedActConf
     window = config.temporal.historical_training_window_months
     historical_start = cutoff - window
     assert historical_start == 12
-    assert endpoint_eligible_for_cutoff(calendar_month(11), calendar_month(cutoff), window) is False
-    assert endpoint_eligible_for_cutoff(calendar_month(12), calendar_month(cutoff), window) is True
-    assert endpoint_eligible_for_cutoff(calendar_month(23), calendar_month(cutoff), window) is True
-    assert endpoint_eligible_for_cutoff(calendar_month(24), calendar_month(cutoff), window) is False
+    assert (
+        is_endpoint_eligible_for_cutoff(calendar_month(11), calendar_month(cutoff), window) is False
+    )
+    assert (
+        is_endpoint_eligible_for_cutoff(calendar_month(12), calendar_month(cutoff), window) is True
+    )
+    assert (
+        is_endpoint_eligible_for_cutoff(calendar_month(23), calendar_month(cutoff), window) is True
+    )
+    assert (
+        is_endpoint_eligible_for_cutoff(calendar_month(24), calendar_month(cutoff), window) is False
+    )
 
 
 def test_lamda_2015_gap_is_a_hard_chronology_break() -> None:
@@ -72,9 +80,11 @@ def test_lamda_2015_gap_is_a_hard_chronology_break() -> None:
         last_observed_month=calendar_month(143),
         prohibited_gaps=(LAMDA_MISSING_2015_GAP,),
     )
-    assert lamda.interval_is_observable(calendar_month(20), calendar_month(24))
-    assert not lamda.interval_is_observable(calendar_month(23), calendar_month(27))
-    assert interval_overlaps_gap(calendar_month(22), calendar_month(30), LAMDA_MISSING_2015_GAP)
+    assert lamda.is_interval_observable(calendar_month(20), calendar_month(24))
+    assert not lamda.is_interval_observable(calendar_month(23), calendar_month(27))
+    assert is_interval_overlapping_gap(
+        calendar_month(22), calendar_month(30), LAMDA_MISSING_2015_GAP
+    )
 
 
 def test_intervals_may_not_bridge_documented_gaps() -> None:
@@ -88,8 +98,8 @@ def test_intervals_may_not_bridge_documented_gaps() -> None:
             ),
         ),
     )
-    assert source.interval_is_observable(calendar_month(26), calendar_month(29))
-    assert not source.interval_is_observable(calendar_month(26), calendar_month(32))
+    assert source.is_interval_observable(calendar_month(26), calendar_month(29))
+    assert not source.is_interval_observable(calendar_month(26), calendar_month(32))
 
 
 def test_rolling_cutoffs_are_derived_deterministically_from_the_release(
@@ -116,7 +126,7 @@ def test_primary_confirmatory_requires_complete_later_real_interval(
     eligible = enumerate_rolling_cutoffs(source, config)
     primary_horizon = config.temporal.primary_confirmatory_horizon_months
     for cutoff in eligible:
-        complete = source.interval_is_observable(
+        complete = source.is_interval_observable(
             cutoff.cutoff_exclusive_month,
             month_offset(cutoff.cutoff_exclusive_month, primary_horizon),
         )
@@ -133,7 +143,7 @@ def test_unavailable_horizon_is_missing_source_data_and_never_shortened(
     evaluations = classify_horizon_availability(source, calendar_month(24), horizons)
     by_horizon = {evaluation.horizon_months: evaluation.availability for evaluation in evaluations}
     for horizon in horizons:
-        observable = source.interval_is_observable(
+        observable = source.is_interval_observable(
             calendar_month(24), month_offset(calendar_month(24), horizon)
         )
         expected = (
@@ -205,9 +215,9 @@ def test_enumerated_endpoints_respect_half_open_history_and_gaps(config: FedActC
         assert endpoint - 2 * delta >= history_start
         assert endpoint < 48
         windows = transition_windows(endpoint, delta)
-        assert source.interval_is_observable(windows.before_window_start_inclusive, endpoint)
+        assert source.is_interval_observable(windows.before_window_start_inclusive, endpoint)
 
 
 def test_empty_observability_interval_is_rejected() -> None:
     with pytest.raises(ChronologyError):
-        continuous_source().interval_is_observable(calendar_month(10), calendar_month(10))
+        continuous_source().is_interval_observable(calendar_month(10), calendar_month(10))

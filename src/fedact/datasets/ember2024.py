@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Annotated, NewType
+
+from pydantic import Field
 
 from fedact.config.models import PositiveInt
 from fedact.datasets.records import (
@@ -11,21 +14,25 @@ from fedact.datasets.records import (
 )
 from fedact.domain.enums import DatasetSelector
 
+WeekIdentifier = NewType("WeekIdentifier", str)
+CalendarMonthCell = NewType("CalendarMonthCell", str)
+SupportCount = Annotated[int, Field(ge=0)]
+
 
 @dataclass(frozen=True)
 class EmberRawRecord:
     sample_hash: SampleIdentifier
     format_client: str
-    collection_week: str
+    collection_week: WeekIdentifier
     family: str | None
 
 
-def conservative_timestamp_month(collection_week: str) -> str:
+def conservative_timestamp_month(collection_week: WeekIdentifier) -> WeekIdentifier:
     return collection_week
 
 
-def monthly_matching_cell(collection_week: str) -> str:
-    return collection_week[:7]
+def monthly_matching_cell(collection_week: WeekIdentifier) -> CalendarMonthCell:
+    return CalendarMonthCell(collection_week[:7])
 
 
 @dataclass(frozen=True)
@@ -34,9 +41,9 @@ class ControlMatchingLevel:
 
 
 def choose_control_matching_level(
-    weekly_support_per_side: int,
+    weekly_support_per_side: SupportCount,
     minimum_support_per_class: PositiveInt,
-    monthly_support_per_side: int,
+    monthly_support_per_side: SupportCount,
 ) -> ControlMatchingLevel | None:
     if weekly_support_per_side >= minimum_support_per_class:
         return ControlMatchingLevel(weekly=True)
@@ -54,7 +61,9 @@ class EmberControlMatch:
     weekly_level: bool
 
 
-def _matching_key(level: ControlMatchingLevel) -> Callable[[EmberRawRecord], str]:
+def _matching_key(
+    level: ControlMatchingLevel,
+) -> Callable[[EmberRawRecord], CalendarMonthCell | WeekIdentifier]:
     if level.weekly:
         return lambda record: record.collection_week
     return lambda record: monthly_matching_cell(record.collection_week)
@@ -68,13 +77,13 @@ def match_ember_controls(
     key = _matching_key(level)
     controls_by_cell: dict[str, list[EmberRawRecord]] = {}
     for control in controls:
-        controls_by_cell.setdefault(key(control), []).append(control)
+        controls_by_cell.setdefault(str(key(control)), []).append(control)
     matches: list[EmberControlMatch] = []
     used: set[SampleIdentifier] = set()
     for record in malicious:
         candidates = [
             control
-            for control in controls_by_cell.get(key(record), [])
+            for control in controls_by_cell.get(str(key(record)), [])
             if control.sample_hash not in used
         ]
         for control in candidates[:1]:
@@ -84,7 +93,7 @@ def match_ember_controls(
                     malicious_sample_id=record.sample_hash,
                     control_sample_id=control.sample_hash,
                     matched_week=control.collection_week if level.weekly else None,
-                    matched_month=None if level.weekly else key(record),
+                    matched_month=None if level.weekly else str(key(record)),
                     weekly_level=level.weekly,
                 )
             )
