@@ -7,6 +7,8 @@ BARE_PRIMITIVES: frozenset[str] = frozenset({"str", "int", "float", "bool", "byt
 PACKAGE_PRIMITIVE_ALLOWLIST: dict[str, frozenset[str]] = {
     "fedact.config": frozenset({"str"}),
     "fedact.datasets": frozenset({"str", "int", "float", "bool"}),
+    "fedact.models": frozenset({"int", "float", "bool"}),
+    "fedact.training": frozenset({"str", "int", "float", "bool"}),
     "fedact.cli": frozenset({"bool"}),
 }
 FUNCTION_ALLOWLIST: dict[str, frozenset[str]] = {
