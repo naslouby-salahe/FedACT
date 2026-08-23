@@ -23,6 +23,10 @@ ALLOWED_IMPORTS: dict[str, frozenset[str]] = {
         {
             "fedact.domain",
             "fedact.config",
+            "fedact.datasets",
+            "fedact.models",
+            "fedact.training",
+            "fedact.scoring",
             "fedact.artifacts",
             "fedact.runtime",
             "fedact.experiments",
@@ -32,6 +36,10 @@ ALLOWED_IMPORTS: dict[str, frozenset[str]] = {
         {
             "fedact.domain",
             "fedact.config",
+            "fedact.datasets",
+            "fedact.models",
+            "fedact.training",
+            "fedact.scoring",
             "fedact.artifacts",
             "fedact.runtime",
             "fedact.experiments",
