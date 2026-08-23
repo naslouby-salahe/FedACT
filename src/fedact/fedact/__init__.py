@@ -1,3 +1,4 @@
+from fedact.fedact.contracts import EXTENDED_ASSUMPTION_CONTRACTS
 from fedact.fedact.estimand import (
     SYNTHETIC_DIMENSION,
     ActionDisplacementEvaluation,
@@ -25,12 +26,27 @@ from fedact.fedact.temporal import (
     process_error_radius,
     propagate_radius,
 )
+from fedact.fedact.transitions import (
+    AbstentionReason,
+    ClientAbstention,
+    ClientTransmission,
+    effective_support,
+    geometric_median,
+    later_real_proxy,
+    leave_one_client_reference,
+    observed_nuisance_amplitude,
+    weighted_control_center,
+)
 
 __all__ = [
+    "AbstentionReason",
+    "EXTENDED_ASSUMPTION_CONTRACTS",
     "SYNTHETIC_DIMENSION",
     "ActionDisplacementEvaluation",
     "ActionInterval",
+    "ClientAbstention",
     "ClientConstraint",
+    "ClientTransmission",
     "DecisionState",
     "L2Ball",
     "NumericalFailureError",
@@ -38,11 +54,17 @@ __all__ = [
     "action_conditioning_index",
     "is_certified",
     "chebyshev_center",
+    "effective_support",
+    "geometric_median",
     "classify_decision_state",
     "is_constraint_satisfied",
+    "later_real_proxy",
+    "leave_one_client_reference",
     "fit_scalar_model",
     "intersect_constraints",
     "minimum_uniform_inflation",
+    "observed_nuisance_amplitude",
+    "weighted_control_center",
     "process_error_radius",
     "projector_from_basis",
     "propagate_radius",
