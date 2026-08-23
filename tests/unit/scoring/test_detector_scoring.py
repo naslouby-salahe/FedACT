@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 import torch
 
-from fedact.datasets.records import SampleIdentifier
+from fedact.domain.records import SampleIdentifier
 from fedact.models.detector import DetectorHead, detector_predictions, detector_probabilities
 from fedact.models.representation import EMBEDDING_DIMENSION, RepresentationEncoder
 from fedact.scoring.detector import (

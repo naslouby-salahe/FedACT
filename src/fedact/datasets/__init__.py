@@ -62,7 +62,6 @@ from fedact.datasets.records import (
     ExclusionRecord,
     FeasibilityCondition,
     LabelDerivationRule,
-    SampleIdentifier,
     SchemaChronologyManifest,
     SchemaManifestField,
     corpus_level_client_audit,
@@ -76,6 +75,7 @@ from fedact.datasets.splits import (
     construct_cutoff_split,
     is_meeting_support_floor,
 )
+from fedact.domain.records import SampleIdentifier
 
 __all__ = [
     "AuditContractError",

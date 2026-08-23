@@ -37,13 +37,12 @@ from fedact.datasets.records import (
     ExclusionReason,
     FeasibilityCondition,
     LabelDerivationRuleError,
-    SampleIdentifier,
     SchemaChronologyManifest,
     SchemaManifestField,
     is_derived_label_malicious,
 )
 from fedact.domain.enums import DatasetSelector
-from fedact.domain.records import DatasetIdentity, SplitCutoffIdentity
+from fedact.domain.records import DatasetIdentity, SampleIdentifier, SplitCutoffIdentity
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import torch
 
-from fedact.datasets.records import SampleIdentifier
+from fedact.domain.records import SampleIdentifier
 from fedact.models.detector import DetectorHead, detector_predictions, detector_probabilities
 from fedact.models.representation import RepresentationEncoder
 from fedact.training.representation import TrainingObservation

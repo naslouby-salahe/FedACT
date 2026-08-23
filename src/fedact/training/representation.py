@@ -8,7 +8,7 @@ from pydantic import Field
 from torch import nn
 
 from fedact.config.models import FedActConfig, PositiveInt
-from fedact.datasets.records import SampleIdentifier
+from fedact.domain.records import SampleIdentifier
 from fedact.models.detector import DetectorHead
 from fedact.models.representation import RepresentationEncoder
 
