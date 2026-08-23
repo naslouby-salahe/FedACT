@@ -27,12 +27,14 @@ class HardeningResult:
     combined_validation_objective: float
 
 
-def _clean_false_negative_rate(
+def clean_false_negative_rate(
     head: DetectorHead, encoder: RepresentationEncoder, population: tuple[TrainingObservation, ...]
-) -> float:
+) -> CleanFnr:
     malicious = [item for item in population if item.label]
     if not malicious:
         raise HardeningError("clean-cost evaluation requires malicious validation samples")
+    encoder.eval()
+    head.eval()
     with torch.no_grad():
         features = torch.tensor([item.features for item in malicious], dtype=torch.float32)
         scores = torch.sigmoid(head(encoder(features)).squeeze(dim=1))
@@ -109,7 +111,7 @@ def harden_detector_head(
             valid_loss = float(loss_fn(head(frozen_valid), labels_valid).item())
         degradation = max(
             0.0,
-            _clean_false_negative_rate(head, encoder, validation_population) - baseline_clean_fnr,
+            clean_false_negative_rate(head, encoder, validation_population) - baseline_clean_fnr,
         )
         if degradation <= allowed_fraction:
             candidate = HardeningResult(

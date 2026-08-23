@@ -62,6 +62,7 @@ REGISTERED_PRODUCTION_MODULES: frozenset[str] = frozenset(
         "src/fedact/experiments/definitions.py",
         "src/fedact/experiments/dependencies.py",
         "src/fedact/experiments/math_verification.py",
+        "src/fedact/experiments/synthetic_geometry.py",
         "src/fedact/experiments/registry.py",
         "src/fedact/experiments/producers.py",
         "src/fedact/fedact/__init__.py",

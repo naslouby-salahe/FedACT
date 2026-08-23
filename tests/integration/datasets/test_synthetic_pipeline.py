@@ -1,11 +1,8 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 import numpy as np
-import typer
 
-from fedact.app import Application, discover_repository_root
+from fedact.config.loading import LoadedConfiguration
 from fedact.config.models import FederationGeometry
 from fedact.datasets.synthetic.generator import (
     SYNTHETIC_DIMENSION,
@@ -14,14 +11,13 @@ from fedact.datasets.synthetic.generator import (
     nuisance_dimension,
 )
 from fedact.datasets.synthetic.validation import run_smoke_validation
+from fedact.experiments.synthetic_geometry import run_synthetic_geometry_sweeps
 
 
-def run(overwrite: bool, repository_root: Path) -> None:
-    app_instance = Application.from_repository_root(discover_repository_root(repository_root))
-    config = app_instance.configuration.values
-    typer.echo("synthetic generator smoke validation")
-    if overwrite:
-        typer.echo("overwrite: scoped to smoke-owned artifacts")
+def test_synthetic_end_to_end_pipeline(
+    production_configuration: LoadedConfiguration,
+) -> None:
+    config = production_configuration.values
     rng = np.random.default_rng(config.seeds.synthetic_generation[0])
     synth = config.synthetic
     nuis_dim = nuisance_dimension(synth.defaults.nuisance_dimension_fraction, SYNTHETIC_DIMENSION)
@@ -38,7 +34,7 @@ def run(overwrite: bool, repository_root: Path) -> None:
         config.seeds.synthetic_generation[0],
         config.seeds.synthetic_noise[0],
     ]
-    report = run_smoke_validation(
+    smoke_rep = run_smoke_validation(
         spaces=spaces,
         transition=transition,
         requested_nuisance_dimension=nuis_dim,
@@ -47,7 +43,7 @@ def run(overwrite: bool, repository_root: Path) -> None:
         orthonormality_tolerance=config.numerical.projection_tie_tolerance,
         seed_pair=seed_pair,
     )
-    if not report.is_passing:
-        typer.echo("smoke validation failed", err=True)
-        raise typer.Exit(code=1)
-    typer.echo("smoke validation passed")
+    assert smoke_rep.is_passing
+
+    sweep_rep = run_synthetic_geometry_sweeps(config)
+    assert sweep_rep.mechanism_valid

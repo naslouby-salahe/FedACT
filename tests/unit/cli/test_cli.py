@@ -55,19 +55,19 @@ def test_blocked_workflow_cannot_run(repository_root: Path) -> None:
     assert "blocked by" in result.output
 
 
-def test_executable_workflow_fails_until_its_producer_is_registered(
+def test_executable_workflow_runs_when_producer_is_registered(
     repository_root: Path,
 ) -> None:
     result = invoke("run", "math-verification", "--repository-root", str(repository_root))
-    assert result.exit_code == PRODUCER_NOT_REGISTERED_EXIT_CODE
-    assert "no scientific producer is registered" in result.output
+    assert result.exit_code == 0
+    assert "mathematical verification completed: PASS" in result.output
 
 
 def test_overwrite_flag_is_accepted_on_run(repository_root: Path) -> None:
     result = invoke(
         "run", "math-verification", "--overwrite", "--repository-root", str(repository_root)
     )
-    assert result.exit_code == PRODUCER_NOT_REGISTERED_EXIT_CODE
+    assert result.exit_code == 0
     assert "overwrite: scoped to this workflow's artifacts" in result.output
 
 
@@ -102,9 +102,10 @@ def test_preprocess_accepts_defined_selectors_and_scoped_overwrite(
 
 def test_smoke_supports_only_the_locked_form(repository_root: Path) -> None:
     result = invoke("smoke", "--repository-root", str(repository_root))
-    assert result.exit_code == PRODUCER_NOT_REGISTERED_EXIT_CODE
+    assert result.exit_code == 0
+    assert "smoke validation passed" in result.output
     scoped = invoke("smoke", "--overwrite", "--repository-root", str(repository_root))
-    assert scoped.exit_code == PRODUCER_NOT_REGISTERED_EXIT_CODE
+    assert scoped.exit_code == 0
     assert "overwrite: scoped to smoke-owned artifacts" in scoped.output
 
 
