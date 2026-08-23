@@ -1,4 +1,32 @@
+from fedact.fedact.actions import (
+    ActionDisplacementResult,
+    action_support_bounds,
+    box_diameter_bound,
+    evaluate_displacement,
+)
+from fedact.fedact.certification import (
+    CertificateDecision,
+    CertificateState,
+    decide,
+    downgrade_dominant_single_client,
+    is_forecast_set_within_gate,
+    leave_one_client_out_stability,
+)
+from fedact.fedact.client_selection import (
+    SelectionBudget,
+    d_optimal_gain,
+    greedy_d_optimal,
+    uniform_action_weights,
+)
+from fedact.fedact.constraints import ClientConstraintSummary, validate_summary
 from fedact.fedact.contracts import EXTENDED_ASSUMPTION_CONTRACTS
+from fedact.fedact.controls import (
+    ControlQualityGate,
+    ControlReplicate,
+    build_control_displacement,
+    held_out_reconstruction_residuals,
+    is_control_gate_passing,
+)
 from fedact.fedact.estimand import (
     SYNTHETIC_DIMENSION,
     ActionDisplacementEvaluation,
@@ -20,6 +48,16 @@ from fedact.fedact.feasible_sets import (
     is_constraint_satisfied,
     minimum_uniform_inflation,
 )
+from fedact.fedact.nuisance import (
+    NuisanceEstimate,
+    admissible_rank,
+    eigengap_ratio,
+    is_rank_stable,
+    regularized_covariance,
+    select_rank_by_eigengap,
+    weighted_covariance,
+)
+from fedact.fedact.solver import SolverToleranceSettings, solve_support_bounds
 from fedact.fedact.temporal import (
     TemporalModel,
     fit_scalar_model,
@@ -37,13 +75,36 @@ from fedact.fedact.transitions import (
     observed_nuisance_amplitude,
     weighted_control_center,
 )
+from fedact.fedact.uncertainty import (
+    client_radius,
+    sampling_uncertainty_quantile,
+    standardized_subspace_term,
+    subspace_uncertainty,
+)
 
 __all__ = [
+    "is_rank_stable",
+    "propagate_radius",
+    "weighted_covariance",
+    "admissible_rank",
+    "build_control_displacement",
+    "leave_one_client_out_stability",
+    "box_diameter_bound",
+    "CertificateDecision",
+    "CertificateState",
+    "ClientConstraintSummary",
+    "ControlQualityGate",
+    "ControlReplicate",
+    "NuisanceEstimate",
+    "SelectionBudget",
+    "SolverToleranceSettings",
+    "ActionDisplacementResult",
     "AbstentionReason",
     "EXTENDED_ASSUMPTION_CONTRACTS",
     "SYNTHETIC_DIMENSION",
     "ActionDisplacementEvaluation",
     "ActionInterval",
+    "action_support_bounds",
     "ClientAbstention",
     "ClientConstraint",
     "ClientTransmission",
@@ -53,21 +114,38 @@ __all__ = [
     "TemporalModel",
     "action_conditioning_index",
     "is_certified",
+    "is_control_gate_passing",
     "chebyshev_center",
+    "decide",
     "effective_support",
     "geometric_median",
     "classify_decision_state",
     "is_constraint_satisfied",
     "later_real_proxy",
     "leave_one_client_reference",
+    "d_optimal_gain",
+    "downgrade_dominant_single_client",
+    "eigengap_ratio",
+    "evaluate_displacement",
     "fit_scalar_model",
+    "is_forecast_set_within_gate",
+    "greedy_d_optimal",
+    "held_out_reconstruction_residuals",
     "intersect_constraints",
     "minimum_uniform_inflation",
     "observed_nuisance_amplitude",
     "weighted_control_center",
     "process_error_radius",
+    "regularized_covariance",
     "projector_from_basis",
-    "propagate_radius",
+    "select_rank_by_eigengap",
+    "solve_support_bounds",
+    "standardized_subspace_term",
+    "subspace_uncertainty",
+    "sampling_uncertainty_quantile",
+    "uniform_action_weights",
+    "validate_summary",
+    "client_radius",
     "smallest_positive_eigenvalue",
     "support_interval",
 ]
