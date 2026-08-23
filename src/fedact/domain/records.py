@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import NewType
 
 from fedact.domain.enums import ArtifactBoundary, WorkflowName
+
+DependencyFingerprint = NewType("DependencyFingerprint", str)
 
 
 @dataclass(frozen=True)

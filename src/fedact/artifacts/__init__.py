@@ -1,3 +1,20 @@
+from fedact.artifacts.identity import (
+    ArtifactIdentity,
+    ContentChecksum,
+    EnvironmentFingerprint,
+    MaterialConfigurationHash,
+    MaterialDependency,
+    ProducerCodeFingerprint,
+    ScientificKey,
+    artifact_identity_from_parts,
+    canonical_json,
+    compute_dependency_fingerprint,
+    content_checksum,
+    environment_fingerprint,
+    material_configuration_hash,
+    producer_code_fingerprint,
+    sha256_digest,
+)
 from fedact.artifacts.lifecycle import (
     REUSABLE_STATES,
     ArtifactCompletionError,
@@ -6,12 +23,37 @@ from fedact.artifacts.lifecycle import (
     validate_completion,
     validate_transition,
 )
+from fedact.artifacts.provenance import (
+    ArtifactManifest,
+    ProvenanceContractError,
+    RunProvenance,
+    assert_reusable,
+)
 
 __all__ = [
     "REUSABLE_STATES",
     "ArtifactCompletionError",
+    "ArtifactIdentity",
+    "ArtifactManifest",
+    "ContentChecksum",
+    "EnvironmentFingerprint",
     "IllegalArtifactTransitionError",
+    "MaterialConfigurationHash",
+    "MaterialDependency",
+    "ProducerCodeFingerprint",
+    "ProvenanceContractError",
+    "RunProvenance",
+    "ScientificKey",
+    "artifact_identity_from_parts",
+    "assert_reusable",
+    "canonical_json",
+    "compute_dependency_fingerprint",
+    "content_checksum",
+    "environment_fingerprint",
     "is_reusable",
+    "material_configuration_hash",
+    "producer_code_fingerprint",
+    "sha256_digest",
     "validate_completion",
     "validate_transition",
 ]

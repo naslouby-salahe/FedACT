@@ -8,6 +8,7 @@ from fedact.domain.records import (
     ArtifactBoundaryContract,
     CompletionEvidence,
     CompletionRequirements,
+    DependencyFingerprint,
     WorkflowContract,
 )
 
@@ -17,6 +18,7 @@ __all__ = [
     "ArtifactLifecycleState",
     "CompletionEvidence",
     "CompletionRequirements",
+    "DependencyFingerprint",
     "ScientificOutcome",
     "WorkflowContract",
     "WorkflowName",
