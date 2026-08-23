@@ -17,11 +17,53 @@ ALLOWED_IMPORTS: dict[str, frozenset[str]] = {
         {"fedact.domain", "fedact.config", "fedact.datasets", "fedact.models", "fedact.training"}
     ),
     "fedact.artifacts": frozenset({"fedact.domain", "fedact.config"}),
+    "fedact.baselines": frozenset(
+        {"fedact.domain", "fedact.config", "fedact.models", "fedact.training", "fedact.scoring"}
+    ),
+    "fedact.calibration": frozenset(
+        {"fedact.domain", "fedact.config", "fedact.datasets", "fedact.models", "fedact.fedact"}
+    ),
+    "fedact.evaluation": frozenset(
+        {
+            "fedact.domain",
+            "fedact.config",
+            "fedact.datasets",
+            "fedact.models",
+            "fedact.scoring",
+            "fedact.operators",
+            "fedact.fedact",
+            "fedact.baselines",
+        }
+    ),
+    "fedact.analysis": frozenset({"fedact.domain", "fedact.config", "fedact.evaluation"}),
+    "fedact.reporting": frozenset(
+        {
+            "fedact.domain",
+            "fedact.config",
+            "fedact.evaluation",
+            "fedact.analysis",
+            "fedact.artifacts",
+        }
+    ),
     "fedact.runtime": frozenset(
         {"fedact.domain", "fedact.config", "fedact.artifacts", "fedact.experiments"}
     ),
     "fedact.experiments": frozenset(
-        {"fedact.domain", "fedact.config", "fedact.datasets", "fedact.fedact"}
+        {
+            "fedact.domain",
+            "fedact.config",
+            "fedact.datasets",
+            "fedact.models",
+            "fedact.training",
+            "fedact.scoring",
+            "fedact.operators",
+            "fedact.fedact",
+            "fedact.baselines",
+            "fedact.calibration",
+            "fedact.evaluation",
+            "fedact.analysis",
+            "fedact.artifacts",
+        }
     ),
     "fedact.app": frozenset(
         {
@@ -31,7 +73,14 @@ ALLOWED_IMPORTS: dict[str, frozenset[str]] = {
             "fedact.models",
             "fedact.training",
             "fedact.scoring",
+            "fedact.operators",
+            "fedact.fedact",
+            "fedact.baselines",
+            "fedact.calibration",
+            "fedact.evaluation",
+            "fedact.analysis",
             "fedact.artifacts",
+            "fedact.reporting",
             "fedact.runtime",
             "fedact.experiments",
         }
@@ -44,7 +93,14 @@ ALLOWED_IMPORTS: dict[str, frozenset[str]] = {
             "fedact.models",
             "fedact.training",
             "fedact.scoring",
+            "fedact.operators",
+            "fedact.fedact",
+            "fedact.baselines",
+            "fedact.calibration",
+            "fedact.evaluation",
+            "fedact.analysis",
             "fedact.artifacts",
+            "fedact.reporting",
             "fedact.runtime",
             "fedact.experiments",
             "fedact.app",
