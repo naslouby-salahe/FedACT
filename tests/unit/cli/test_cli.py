@@ -4,7 +4,6 @@ from pathlib import Path
 
 from typer.testing import CliRunner, Result
 
-from fedact.app import PRODUCER_NOT_REGISTERED_EXIT_CODE
 from fedact.cli.main import app
 
 RUNNER = CliRunner()
@@ -119,4 +118,5 @@ def test_report_forms_validate_workflow_names(repository_root: Path) -> None:
         "--repository-root",
         str(repository_root),
     )
-    assert valid.exit_code == PRODUCER_NOT_REGISTERED_EXIT_CODE
+    assert valid.exit_code == 0
+    assert "manuscript evidence reporting completed: SUCCESS" in valid.output
