@@ -8,6 +8,8 @@ from typing import NewType
 
 from fedact.domain.records import DependencyFingerprint
 
+CanonicalPayload = NewType("CanonicalPayload", str)
+HexDigest = NewType("HexDigest", str)
 ContentChecksum = NewType("ContentChecksum", str)
 ProducerCodeFingerprint = NewType("ProducerCodeFingerprint", str)
 EnvironmentFingerprint = NewType("EnvironmentFingerprint", str)
@@ -16,18 +18,20 @@ ArtifactIdentity = NewType("ArtifactIdentity", str)
 ScientificKey = NewType("ScientificKey", str)
 
 
-def canonical_json(value: object) -> str:
-    return json.dumps(
-        value,
-        sort_keys=True,
-        separators=(",", ":"),
-        ensure_ascii=True,
-        allow_nan=False,
+def canonical_json(value: object) -> CanonicalPayload:
+    return CanonicalPayload(
+        json.dumps(
+            value,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+            allow_nan=False,
+        )
     )
 
 
-def sha256_digest(payload: str) -> str:
-    return f"sha256:{hashlib.sha256(payload.encode('utf-8')).hexdigest()}"
+def sha256_digest(payload: CanonicalPayload) -> HexDigest:
+    return HexDigest(f"sha256:{hashlib.sha256(payload.encode('utf-8')).hexdigest()}")
 
 
 def content_checksum(content: bytes) -> ContentChecksum:
@@ -67,7 +71,3 @@ def environment_fingerprint(recorded_versions: Mapping[str, str]) -> Environment
     return EnvironmentFingerprint(
         sha256_digest(canonical_json(dict(sorted(recorded_versions.items()))))
     )
-
-
-def artifact_identity_from_parts(parts: tuple[str, ...]) -> ArtifactIdentity:
-    return ArtifactIdentity(sha256_digest(canonical_json(list(parts))))

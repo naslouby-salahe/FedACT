@@ -7,7 +7,11 @@ dependencies = [
     "numpy>=1.26",
     "pydantic>=2.8",
     "pyyaml>=6.0",
+    "typer>=0.12",
 ]
+
+[project.scripts]
+fedact = "fedact.cli.main:main"
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]
@@ -37,7 +41,7 @@ reportUnknownMemberType = false
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
-addopts = "-n auto"
+addopts = "-n auto --cov=fedact --cov-fail-under=85"
 
 [dependency-groups]
 dev = [
@@ -49,6 +53,8 @@ dev = [
     "ruff>=0.6",
     "pyright>=1.1",
     "types-pyyaml>=6.0",
+    "import-linter>=2.13",
+    "pytest-cov>=7.1.0",
 ]
 [tool.deptry]
 known_first_party = ["fedact"]
@@ -56,3 +62,29 @@ known_first_party = ["fedact"]
 [tool.deptry.per_rule_ignores]
 DEP004 = ["nox"]
 DEP002 = ["types-pyyaml"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/fedact/cli/main.py" = ["UP045"]
+
+[tool.importlinter]
+root_packages = ["fedact"]
+
+[[tool.importlinter.contracts]]
+name = "Layered package architecture"
+type = "layers"
+layers = [
+    "fedact.cli",
+    "fedact.app",
+    "fedact.runtime",
+    "fedact.experiments",
+    "fedact.artifacts",
+    "fedact.config",
+    "fedact.domain",
+]
+
+[tool.coverage.run]
+source = ["src/fedact"]
+
+[tool.coverage.report]
+fail_under = 85
+show_missing = true

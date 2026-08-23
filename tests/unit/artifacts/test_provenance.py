@@ -19,11 +19,22 @@ from fedact.artifacts.provenance import (
     RunProvenance,
     assert_reusable,
 )
+from fedact.config.loading import ConfigurationHash
 from fedact.domain.enums import (
     ArtifactLifecycleState,
     RequiredScientificArtifact,
     ScientificOutcome,
     WorkflowName,
+)
+from fedact.domain.records import (
+    CohortDefinition,
+    DatasetIdentity,
+    OperatorLibraryIdentity,
+    PreprocessingIdentity,
+    RepositoryCommit,
+    RunResultSummary,
+    SolverOutcomeRecord,
+    SplitCutoffIdentity,
 )
 
 
@@ -90,24 +101,24 @@ def test_fingerprint_mismatch_blocks_reuse() -> None:
 def test_run_provenance_supports_every_reconstruction_item() -> None:
     provenance = RunProvenance(
         workflow_name=WorkflowName.MAIN_PROSPECTIVE_FEDACT_EVALUATION,
-        configuration_hash="sha256:2033b396",
-        repository_commit="1cf8b45",
-        dataset_identity="ember2024:win32_pe",
-        raw_checksum="sha256:" + "a" * 64,
-        preprocessing_identity="sha256:" + "b" * 64,
-        split_and_cutoff="cutoff:2024-03;window:12",
-        client_cohort_definition="client:cohort-a",
-        horizon="3m",
-        representation_checkpoint_hash="sha256:" + "c" * 64,
-        detector_checkpoint_hash="sha256:" + "d" * 64,
+        configuration_hash=ConfigurationHash("sha256:2033b396"),
+        repository_commit=RepositoryCommit("1cf8b45"),
+        dataset_identity=DatasetIdentity("ember2024:win32_pe"),
+        raw_checksum=ContentChecksum("sha256:" + "a" * 64),
+        preprocessing_identity=PreprocessingIdentity("sha256:" + "b" * 64),
+        split_and_cutoff_identity=SplitCutoffIdentity("cutoff:2024-03;window:12"),
+        client_cohort_definition=CohortDefinition("client:cohort-a"),
+        horizon_months=3,
+        representation_checkpoint_hash=ContentChecksum("sha256:" + "c" * 64),
+        detector_checkpoint_hash=ContentChecksum("sha256:" + "d" * 64),
         seed_streams=("detector_training:2001",),
         upstream_artifact_identities=(ArtifactIdentity("sha256:" + "e" * 64),),
-        operator_library_identity="sha256:" + "f" * 64,
-        solver_outcome="optimal",
+        operator_library_identity=OperatorLibraryIdentity("sha256:" + "f" * 64),
+        solver_outcome=SolverOutcomeRecord("optimal"),
         producer_code_fingerprint=ProducerCodeFingerprint("sha256:" + "0" * 64),
         environment_fingerprint=EnvironmentFingerprint("sha256:" + "1" * 63 + "0"),
         scientific_outcome=ScientificOutcome.PASS,
-        run_result="completed",
+        run_result=RunResultSummary("completed"),
     )
     reconstructed = dataclasses.replace(provenance)
     assert reconstructed == provenance

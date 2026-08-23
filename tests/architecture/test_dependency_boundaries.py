@@ -7,8 +7,29 @@ ALLOWED_IMPORTS: dict[str, frozenset[str]] = {
     "fedact.domain": frozenset(),
     "fedact.config": frozenset({"fedact.domain"}),
     "fedact.artifacts": frozenset({"fedact.domain", "fedact.config"}),
-    "fedact.runtime": frozenset({"fedact.domain", "fedact.config", "fedact.artifacts"}),
+    "fedact.runtime": frozenset(
+        {"fedact.domain", "fedact.config", "fedact.artifacts", "fedact.experiments"}
+    ),
     "fedact.experiments": frozenset({"fedact.domain", "fedact.config"}),
+    "fedact.app": frozenset(
+        {
+            "fedact.domain",
+            "fedact.config",
+            "fedact.artifacts",
+            "fedact.runtime",
+            "fedact.experiments",
+        }
+    ),
+    "fedact.cli": frozenset(
+        {
+            "fedact.domain",
+            "fedact.config",
+            "fedact.artifacts",
+            "fedact.runtime",
+            "fedact.experiments",
+            "fedact.app",
+        }
+    ),
 }
 DEFAULT_ALLOWED: frozenset[str] = frozenset(ALLOWED_IMPORTS)
 
@@ -26,11 +47,16 @@ def internal_imports(path: Path) -> list[str]:
 
 def owning_package(module_name: str) -> str:
     parts = module_name.split(".")
-    for candidate in sorted(ALLOWED_IMPORTS, key=len, reverse=True):
+    best: str = module_name
+    best_length = 0
+    for candidate in ALLOWED_IMPORTS:
         candidate_parts = candidate.split(".")
-        if tuple(parts[: len(candidate_parts)]) == tuple(candidate_parts):
-            return candidate
-    return module_name
+        prefix_matches = tuple(parts[: len(candidate_parts)]) == tuple(candidate_parts)
+        improves_best = len(candidate_parts) > best_length
+        if prefix_matches and improves_best:
+            best = candidate
+            best_length = len(candidate_parts)
+    return best
 
 
 def boundary_violations(importer_module: str, imported_modules: list[str]) -> list[str]:
@@ -42,9 +68,7 @@ def boundary_violations(importer_module: str, imported_modules: list[str]) -> li
         if imported_owner in {owner, "fedact"}:
             continue
         if imported_owner not in allowed:
-            violations.append(
-                f"{importer_module}: {owner} may not import {imported_owner} ({imported})"
-            )
+            violations.append(f"{importer_module}: {owner} may not import {imported_owner}")
     return violations
 
 
@@ -56,7 +80,9 @@ def package_module_name(repository_root: Path, source_file: Path) -> str:
     return module
 
 
-def test_package_dependency_directions_follow_the_architecture(repository_root: Path) -> None:
+def test_package_dependency_directions_follow_the_architecture(
+    repository_root: Path,
+) -> None:
     package_root = repository_root / "src" / "fedact"
     violations: list[str] = []
     for source_file in sorted(package_root.rglob("*.py")):
@@ -72,16 +98,14 @@ def test_domain_importing_another_package_is_detected(tmp_path: Path) -> None:
     )
     violations = boundary_violations("fedact.domain.violating", internal_imports(violating))
     assert violations == [
-        "fedact.domain.violating: fedact.domain may not import fedact.experiments "
-        "(fedact.experiments.dependencies)"
+        "fedact.domain.violating: fedact.domain may not import fedact.experiments"
     ]
 
 
-def test_experiments_importing_domain_and_config_is_allowed(tmp_path: Path) -> None:
+def test_cli_layer_may_compose_all_packages(tmp_path: Path) -> None:
     allowed_file = tmp_path / "allowed.py"
     allowed_file.write_text(
-        "from fedact.domain.enums import WorkflowName\n"
-        "from fedact.config.models import FedActConfig\n",
+        "from fedact.app import Application\nfrom fedact.domain.enums import ScientificOutcome\n",
         encoding="utf-8",
     )
-    assert boundary_violations("fedact.experiments.allowed", internal_imports(allowed_file)) == []
+    assert boundary_violations("fedact.cli.allowed", internal_imports(allowed_file)) == []

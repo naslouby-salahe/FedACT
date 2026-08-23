@@ -1,4 +1,4 @@
-.PHONY: setup format lint typecheck dead-code depcheck unit architecture tests checks
+.PHONY: setup format lint typecheck dead-code depcheck imports unit architecture tests checks
 
 setup:
 	uv sync
@@ -18,6 +18,9 @@ dead-code:
 depcheck:
 	uv run deptry .
 
+imports:
+	uv run lint-imports
+
 unit:
 	uv run pytest tests/unit tests/scientific
 
@@ -26,4 +29,4 @@ architecture:
 
 tests: unit architecture
 
-checks: lint typecheck dead-code depcheck tests
+checks: lint typecheck dead-code depcheck imports tests

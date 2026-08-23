@@ -34,6 +34,11 @@ def dependency_hygiene(session: nox.Session) -> None:
     session.run("uv", "run", "deptry", ".")
 
 
+@nox.session(name="import-contracts")
+def import_contracts(session: nox.Session) -> None:
+    session.run("uv", "run", "lint-imports")
+
+
 @nox.session(name="unit")
 def unit(session: nox.Session) -> None:
     session.run("uv", "run", "pytest", "tests/unit", "tests/scientific")

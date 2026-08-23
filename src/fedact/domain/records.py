@@ -6,6 +6,14 @@ from typing import NewType
 from fedact.domain.enums import ArtifactBoundary, WorkflowName
 
 DependencyFingerprint = NewType("DependencyFingerprint", str)
+RepositoryCommit = NewType("RepositoryCommit", str)
+DatasetIdentity = NewType("DatasetIdentity", str)
+PreprocessingIdentity = NewType("PreprocessingIdentity", str)
+SplitCutoffIdentity = NewType("SplitCutoffIdentity", str)
+CohortDefinition = NewType("CohortDefinition", str)
+OperatorLibraryIdentity = NewType("OperatorLibraryIdentity", str)
+SolverOutcomeRecord = NewType("SolverOutcomeRecord", str)
+RunResultSummary = NewType("RunResultSummary", str)
 
 
 @dataclass(frozen=True)
