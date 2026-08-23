@@ -6,6 +6,7 @@ from pathlib import Path
 ALLOWED_IMPORTS: dict[str, frozenset[str]] = {
     "fedact.domain": frozenset(),
     "fedact.config": frozenset({"fedact.domain"}),
+    "fedact.datasets": frozenset({"fedact.domain", "fedact.config"}),
     "fedact.artifacts": frozenset({"fedact.domain", "fedact.config"}),
     "fedact.runtime": frozenset(
         {"fedact.domain", "fedact.config", "fedact.artifacts", "fedact.experiments"}
