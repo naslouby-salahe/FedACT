@@ -95,10 +95,8 @@ def test_preprocess_accepts_defined_selectors_and_scoped_overwrite(
     scoped = invoke(
         "preprocess", "ember2024", "--overwrite", "--repository-root", str(repository_root)
     )
-    for result, scope in ((plain, "all datasets"), (selected, "lamda"), (scoped, "ember2024")):
-        assert result.exit_code == PRODUCER_NOT_REGISTERED_EXIT_CODE, (
-            "preprocessing producers arrive with the data milestone"
-        )
+    for result, scope in ((plain, "lamda ember2024"), (selected, "lamda"), (scoped, "ember2024")):
+        assert result.exit_code == 0
         assert scope in result.output
 
 
