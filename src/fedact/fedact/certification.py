@@ -1,16 +1,29 @@
 from __future__ import annotations
 
+import math
+from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Annotated
 
-import numpy as np
-from pydantic import Field
+from fedact.domain.enums import CertificationStatus
+from fedact.domain.types import (
+    CertificationFlag,
+    DiagnosisMessage,
+    EvaluationCount,
+    IntervalBound,
+    MetricRate,
+    NormValue,
+    ThresholdValue,
+    ValidationFlag,
+)
+from fedact.fedact.estimand import ActionInterval
 
-Threshold = Annotated[float, Field()]
-WidthLimit = Annotated[float, Field(gt=0.0)]
-DiameterValue = Annotated[float, Field(ge=0.0)]
-StabilityFraction = Annotated[float, Field(gt=0.0, le=1.0)]
+
+class CertificateState(StrEnum):
+    CERTIFIED = "CERTIFIED"
+    AMBIGUOUS = "AMBIGUOUS"
+    NEGATIVE = "NEGATIVE"
+    ABSTAIN = "ABSTAIN"
 
 
 @dataclass(frozen=True)
@@ -18,51 +31,124 @@ class DomainValid:
     valid: bool
 
 
-class CertificateState(StrEnum):
-    CERTIFIED = "CERTIFIED"
-    POSITIVE = "POSITIVELY_IDENTIFIED"
-    NEGATIVE = "NEGATIVELY_IDENTIFIED"
-    AMBIGUOUS = "AMBIGUOUS"
-
-
 @dataclass(frozen=True)
 class CertificateDecision:
-    state: CertificateState
-    leave_one_client_out_note: str | None = None
+    status: CertificationStatus
+    lower_bound: float
+    upper_bound: float
+    width: float
+    alignment_threshold: float
+    ambiguity_width_threshold: float
+    diameter_gate_passed: bool
+    leave_one_client_out_passed: bool
+    leave_one_client_out_note: DiagnosisMessage | None
+
+    @property
+    def state(self) -> CertificateState:
+        if self.status is CertificationStatus.CERTIFIED_POSITIVE:
+            return CertificateState.CERTIFIED
+        if self.status is CertificationStatus.CERTIFIED_NEGATIVE:
+            return CertificateState.NEGATIVE
+        if self.status is CertificationStatus.AMBIGUOUS:
+            return CertificateState.AMBIGUOUS
+        return CertificateState.ABSTAIN
 
 
 def decide(
-    lower: Threshold,
-    upper: Threshold,
-    tau_align: Threshold,
-    tau_amb: WidthLimit,
+    lower: IntervalBound,
+    upper: IntervalBound,
+    tau_align: ThresholdValue,
+    tau_amb: ThresholdValue,
     domain_valid: DomainValid,
+    diameter_bound: IntervalBound = 1.0,
+    diameter_quantile: ThresholdValue = 2.0,
 ) -> CertificateDecision:
-    if not domain_valid:
-        return CertificateDecision(state=CertificateState.NEGATIVE)
-    if lower >= tau_align and (upper - lower) <= tau_amb:
-        return CertificateDecision(state=CertificateState.CERTIFIED)
-    if upper < tau_align:
-        return CertificateDecision(state=CertificateState.NEGATIVE)
-    return CertificateDecision(state=CertificateState.AMBIGUOUS)
+    interval = ActionInterval(lower=lower, upper=upper)
+    return certify_action_interval(
+        action_interval=interval,
+        domain_validity=domain_valid,
+        alignment_threshold=tau_align,
+        ambiguity_width_threshold=tau_amb,
+        set_diameter=diameter_bound,
+        historical_realized_diameter_quantile=diameter_quantile,
+    )
 
 
 def is_forecast_set_within_gate(
-    diameter_bound: DiameterValue, historical_quantile_value: DiameterValue
+    diameter_bound: IntervalBound,
+    historical_quantile_value: ThresholdValue,
 ) -> bool:
     return diameter_bound <= historical_quantile_value
 
 
 def leave_one_client_out_stability(
-    decisions: tuple[bool, ...], minimum_unchanged_fraction: StabilityFraction
-) -> tuple[bool, int]:
-    total = len(decisions)
-    unchanged = sum(1 for decision in decisions if decision)
-    required = int(np.ceil(minimum_unchanged_fraction * total))
-    return unchanged >= required, required
+    decisions: Sequence[CertificationFlag],
+    minimum_unchanged_fraction: MetricRate = 0.8,
+) -> tuple[bool, EvaluationCount]:
+    if not decisions:
+        return True, 0
+    trues = sum(1 for d in decisions if d)
+    falses = len(decisions) - trues
+    dominant = max(trues, falses)
+    req = int(math.ceil(len(decisions) * minimum_unchanged_fraction))
+    return dominant >= req, int(len(decisions) * minimum_unchanged_fraction)
 
 
 def downgrade_dominant_single_client(state: CertificateState) -> CertificateState:
     if state is CertificateState.CERTIFIED:
         return CertificateState.AMBIGUOUS
     return state
+
+
+def certify_action_interval(
+    action_interval: ActionInterval,
+    domain_validity: DomainValid,
+    alignment_threshold: ThresholdValue,
+    ambiguity_width_threshold: ThresholdValue,
+    set_diameter: NormValue,
+    historical_realized_diameter_quantile: ThresholdValue,
+    leave_one_client_out_passed: ValidationFlag = True,
+    leave_one_client_out_note: DiagnosisMessage | None = None,
+) -> CertificateDecision:
+    if not domain_validity.valid or not leave_one_client_out_passed:
+        return CertificateDecision(
+            status=CertificationStatus.ABSTAIN,
+            lower_bound=action_interval.lower,
+            upper_bound=action_interval.upper,
+            width=action_interval.width,
+            alignment_threshold=alignment_threshold,
+            ambiguity_width_threshold=ambiguity_width_threshold,
+            diameter_gate_passed=False,
+            leave_one_client_out_passed=leave_one_client_out_passed,
+            leave_one_client_out_note=leave_one_client_out_note,
+        )
+    diameter_ok = set_diameter <= historical_realized_diameter_quantile
+    if not diameter_ok:
+        return CertificateDecision(
+            status=CertificationStatus.ABSTAIN,
+            lower_bound=action_interval.lower,
+            upper_bound=action_interval.upper,
+            width=action_interval.width,
+            alignment_threshold=alignment_threshold,
+            ambiguity_width_threshold=ambiguity_width_threshold,
+            diameter_gate_passed=False,
+            leave_one_client_out_passed=leave_one_client_out_passed,
+            leave_one_client_out_note=leave_one_client_out_note,
+        )
+    if action_interval.is_certified_positive(alignment_threshold, ambiguity_width_threshold):
+        status = CertificationStatus.CERTIFIED_POSITIVE
+    elif action_interval.is_certified_negative(alignment_threshold, ambiguity_width_threshold):
+        status = CertificationStatus.CERTIFIED_NEGATIVE
+    else:
+        status = CertificationStatus.AMBIGUOUS
+    return CertificateDecision(
+        status=status,
+        lower_bound=action_interval.lower,
+        upper_bound=action_interval.upper,
+        width=action_interval.width,
+        alignment_threshold=alignment_threshold,
+        ambiguity_width_threshold=ambiguity_width_threshold,
+        diameter_gate_passed=True,
+        leave_one_client_out_passed=leave_one_client_out_passed,
+        leave_one_client_out_note=leave_one_client_out_note,
+    )

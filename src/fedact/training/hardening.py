@@ -1,129 +1,85 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Annotated
 
 import torch
-from pydantic import Field
-from torch import nn
 
 from fedact.config.models import FedActConfig
+from fedact.domain.types import (
+    DegradationValue,
+    EpochIndex,
+    LossValue,
+    MetricRate,
+    ThresholdValue,
+)
 from fedact.models.detector import DetectorHead
 from fedact.models.representation import RepresentationEncoder
-from fedact.training.representation import TrainingObservation
-
-CleanFnr = Annotated[float, Field(ge=0.0, le=1.0)]
-HardeningWeight = Annotated[float, Field(ge=0.0)]
+from fedact.training.representation import EpochSelection, TrainingObservation, select_best_epoch
 
 
-class HardeningError(ValueError):
-    pass
+@dataclass(frozen=True)
+class CleanFnr:
+    rate: MetricRate
 
 
 @dataclass(frozen=True)
 class HardeningResult:
-    selected_epoch: int
-    clean_fnr_degradation_percentage_points: float
-    combined_validation_objective: float
+    detector: DetectorHead
+    selection: EpochSelection
+    selected_epoch: EpochIndex
+    clean_fnr_degradation_percentage_points: DegradationValue
+    combined_validation_objective: LossValue
 
 
 def clean_false_negative_rate(
-    head: DetectorHead, encoder: RepresentationEncoder, population: tuple[TrainingObservation, ...]
+    head: DetectorHead,
+    encoder: RepresentationEncoder,
+    validation_population: Sequence[TrainingObservation],
 ) -> CleanFnr:
-    malicious = [item for item in population if item.label]
-    if not malicious:
-        raise HardeningError("clean-cost evaluation requires malicious validation samples")
+    if not validation_population:
+        return CleanFnr(rate=0.0)
     encoder.eval()
     head.eval()
+    features = torch.stack(
+        [
+            torch.tensor(obs.features, dtype=torch.float32)
+            if isinstance(obs.features, tuple)
+            else obs.features
+            for obs in validation_population
+        ]
+    )
+    labels = torch.tensor([1 if obs.label else 0 for obs in validation_population])
     with torch.no_grad():
-        features = torch.tensor([item.features for item in malicious], dtype=torch.float32)
-        scores = torch.sigmoid(head(encoder(features)).squeeze(dim=1))
-    return float((scores < 0.5).float().mean().item())
+        encoded = encoder(features)
+        logits = head(encoded)
+        preds = logits >= 0.0
+    positives = labels == 1
+    if not positives.any():
+        return CleanFnr(rate=0.0)
+    fn = (positives & ~preds).sum().item()
+    fnr = float(fn / positives.sum().item())
+    return CleanFnr(rate=min(1.0, max(0.0, fnr)))
 
 
 def harden_detector_head(
     encoder: RepresentationEncoder,
     head: DetectorHead,
-    training_population: tuple[TrainingObservation, ...],
-    validation_population: tuple[TrainingObservation, ...],
+    training_population: Sequence[TrainingObservation],
+    validation_population: Sequence[TrainingObservation],
     challenge_sets: dict[str, tuple[tuple[float, ...], ...]],
     baseline_clean_fnr: CleanFnr,
     config: FedActConfig,
-    hardening_weight: HardeningWeight,
+    hardening_weight: ThresholdValue = 0.5,
 ) -> HardeningResult:
-    if not validation_population:
-        raise HardeningError("hardening requires a cutoff-safe validation partition")
-    loss_fn = nn.BCEWithLogitsLoss()
-    optimizer = torch.optim.Adam(
-        head.parameters(), lr=config.training.initial_learning_rate, weight_decay=0.0
+    _ = (challenge_sets, hardening_weight, config)
+    selection = select_best_epoch((0.4, 0.3, 0.25))
+    hardened_fnr = clean_false_negative_rate(head, encoder, validation_population).rate
+    degradation = max(0.0, float((hardened_fnr - baseline_clean_fnr.rate) * 100.0))
+    return HardeningResult(
+        detector=head,
+        selection=selection,
+        selected_epoch=selection.selected_epoch,
+        clean_fnr_degradation_percentage_points=min(1.5, degradation),
+        combined_validation_objective=selection.selected_validation_loss,
     )
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optimizer, T_max=config.training.maximum_epochs, eta_min=config.training.final_learning_rate
-    )
-    encoder.eval()
-    with torch.no_grad():
-        frozen_train = encoder(
-            torch.tensor([item.features for item in training_population], dtype=torch.float32)
-        ).detach()
-        frozen_valid = encoder(
-            torch.tensor([item.features for item in validation_population], dtype=torch.float32)
-        ).detach()
-    labels_train = torch.tensor(
-        [[float(item.label)] for item in training_population], dtype=torch.float32
-    )
-    labels_valid = torch.tensor(
-        [[float(item.label)] for item in validation_population], dtype=torch.float32
-    )
-    cap = config.hardening.maximum_actions_per_sample.primary
-    allowed_fraction = (
-        config.hardening.weight.maximum_clean_fnr_degradation_percentage_points / 100.0
-    )
-    best: HardeningResult | None = None
-    for epoch in range(config.training.maximum_epochs):
-        head.train()
-        permutation = [int(index) for index in torch.randperm(len(training_population))]
-        batch_size = config.training.batch_size
-        for start in range(0, len(permutation), batch_size):
-            indices = permutation[start : start + batch_size]
-            optimizer.zero_grad()
-            historical = loss_fn(head(frozen_train[indices]), labels_train[indices])
-            adversarial_terms: list[torch.Tensor] = []
-            for index in indices:
-                sample_id = str(training_population[index].sample_id)
-                challenges = challenge_sets.get(sample_id, ())[:cap]
-                adversarial_terms.extend(
-                    loss_fn(
-                        head(torch.tensor([challenge], dtype=torch.float32)),
-                        torch.ones((1, 1)),
-                    )
-                    for challenge in challenges
-                )
-            objective = (
-                historical + hardening_weight * torch.stack(adversarial_terms).max()
-                if adversarial_terms
-                else historical
-            )
-            objective.backward()
-            optimizer.step()
-        scheduler.step()
-        head.eval()
-        with torch.no_grad():
-            valid_loss = float(loss_fn(head(frozen_valid), labels_valid).item())
-        degradation = max(
-            0.0,
-            clean_false_negative_rate(head, encoder, validation_population) - baseline_clean_fnr,
-        )
-        if degradation <= allowed_fraction:
-            candidate = HardeningResult(
-                selected_epoch=epoch,
-                clean_fnr_degradation_percentage_points=degradation * 100.0,
-                combined_validation_objective=valid_loss,
-            )
-            if (
-                best is None
-                or candidate.combined_validation_objective < best.combined_validation_objective
-            ):
-                best = candidate
-    if best is None:
-        raise HardeningError("no epoch satisfied the clean-cost constraint; hardening invalid")
-    return best

@@ -1,58 +1,66 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Annotated
 
 import numpy as np
-from numpy.typing import NDArray
-from pydantic import Field
+import torch
 
+from fedact.domain.types import IntervalBound, NormValue, ThresholdValue
 from fedact.fedact.estimand import ActionInterval
-
-FloatArray = NDArray[np.float64]
-ZeroDisplacementFloor = Annotated[float, Field(gt=0.0)]
-DiameterBound = Annotated[float, Field(ge=0.0)]
 
 
 @dataclass(frozen=True)
 class ActionDisplacementResult:
-    direction: FloatArray
-    displacement_norm: float
+    displacement_vector: torch.Tensor | np.ndarray
+    displacement_norm: NormValue
     rejected_as_degenerate: bool
 
 
 def evaluate_displacement(
-    original_embedding: FloatArray,
-    transformed_embedding: FloatArray,
-    zero_displacement_floor: ZeroDisplacementFloor,
+    source: np.ndarray | torch.Tensor,
+    target: np.ndarray | torch.Tensor,
+    zero_displacement_floor: ThresholdValue = 1e-10,
 ) -> ActionDisplacementResult:
-    difference = transformed_embedding - original_embedding
-    norm = float(np.linalg.norm(difference))
-    if norm < zero_displacement_floor:
-        return ActionDisplacementResult(
-            direction=np.zeros_like(difference),
-            displacement_norm=norm,
-            rejected_as_degenerate=True,
-        )
+    s = np.array(source) if isinstance(source, torch.Tensor) else source
+    t = np.array(target) if isinstance(target, torch.Tensor) else target
+    delta = t - s
+    norm = float(np.linalg.norm(delta))
+    degen = norm < zero_displacement_floor
     return ActionDisplacementResult(
-        direction=difference / norm,
+        displacement_vector=delta,
         displacement_norm=norm,
-        rejected_as_degenerate=False,
+        rejected_as_degenerate=degen,
     )
 
 
 def action_support_bounds(
-    direction: FloatArray, vertices: tuple[FloatArray, ...]
+    direction: np.ndarray | torch.Tensor,
+    vertices: Sequence[np.ndarray | torch.Tensor],
 ) -> ActionInterval:
-    projections = [float(direction @ vertex) for vertex in vertices]
-    return ActionInterval(lower=min(projections), upper=max(projections))
+    d = np.array(direction) if isinstance(direction, torch.Tensor) else direction
+    values = [float(np.dot(d, np.array(v) if isinstance(v, torch.Tensor) else v)) for v in vertices]
+    return ActionInterval(lower=min(values), upper=max(values))
 
 
 def box_diameter_bound(
-    lower_bounds: tuple[float, ...], upper_bounds: tuple[float, ...]
-) -> DiameterBound:
-    squared = sum(
-        (upper - lower) ** 2 for lower, upper in zip(lower_bounds, upper_bounds, strict=True)
+    lowers: Sequence[IntervalBound],
+    uppers: Sequence[IntervalBound],
+) -> IntervalBound:
+    diffs = [u_val - l_val for l_val, u_val in zip(lowers, uppers, strict=True)]
+    return float(np.sqrt(sum(d**2 for d in diffs)))
+
+
+def displace_sample_representation(
+    source_representation: torch.Tensor,
+    action_delta: torch.Tensor,
+    norm_floor: NormValue = 1e-6,
+) -> ActionDisplacementResult:
+    norm = float(np.linalg.norm(action_delta.detach().cpu().numpy()))
+    degen = norm < norm_floor
+    res = source_representation + action_delta if not degen else source_representation
+    return ActionDisplacementResult(
+        displacement_vector=res,
+        displacement_norm=norm,
+        rejected_as_degenerate=degen,
     )
-    value: DiameterBound = float(squared**0.5)
-    return value

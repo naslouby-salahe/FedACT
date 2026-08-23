@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import NewType
 
 from fedact.domain.enums import ArtifactBoundary, WorkflowName
+from fedact.domain.types import WorkflowDescription
 
 DependencyFingerprint = NewType("DependencyFingerprint", str)
 ContentChecksum = NewType("ContentChecksum", str)
@@ -23,18 +24,18 @@ LogNamespace = NewType("LogNamespace", str)
 @dataclass(frozen=True)
 class WorkflowContract:
     name: WorkflowName
-    scientific_purpose: str
+    scientific_purpose: WorkflowDescription
     required_upstream_artifacts: tuple[ArtifactBoundary, ...]
-    manipulations_and_comparators: str
-    metrics: str
-    applicable_statistical_analysis: str
-    resulting_artifacts: str
+    manipulations_and_comparators: WorkflowDescription
+    metrics: WorkflowDescription
+    applicable_statistical_analysis: WorkflowDescription
+    resulting_artifacts: WorkflowDescription
 
 
 @dataclass(frozen=True)
 class ArtifactBoundaryContract:
     boundary: ArtifactBoundary
-    reusable_artifacts: str
+    reusable_artifacts: WorkflowDescription
     consumers: tuple[ArtifactBoundary, ...]
     manuscript_only: bool = False
 

@@ -1,61 +1,89 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Annotated
 
 import numpy as np
-from pydantic import Field
+import torch
 
-from fedact.fedact.estimand import FloatArray, NumericalFailureError
-
-ProcessRadius = Annotated[float, Field(gt=0.0)]
-ScalarCoefficient = Annotated[float, Field()]
+from fedact.domain.types import CoordinateValue, NormValue, SampleCount, ThresholdValue
 
 
 @dataclass(frozen=True)
 class TemporalModel:
-    scalar_coefficient: float
-    process_error_radius: float
-    consecutive_pairs_used: int
+    scalar_coefficient: ThresholdValue
+    process_error_radius: NormValue
+    consecutive_pairs_used: SampleCount
 
 
 def fit_scalar_model(
-    centers: tuple[FloatArray, ...], maximum_coefficient: ScalarCoefficient
-) -> tuple[ScalarCoefficient, FloatArray]:
+    centers: Sequence[np.ndarray | torch.Tensor],
+    maximum_coefficient: ThresholdValue = 0.99,
+) -> tuple[float, np.ndarray]:
     if len(centers) < 2:
-        raise NumericalFailureError("temporal model fitting requires at least two centers")
-    numerators = [float(u @ v) for u, v in zip(centers[:-1], centers[1:], strict=True)]
-    denominators = [float(u @ u) for u in centers[:-1]]
-    denominator_sum = sum(denominators)
-    if denominator_sum <= 0.0:
-        raise NumericalFailureError("temporal fit denominator at or below the floor")
-    raw = sum(numerators) / denominator_sum
-    coefficient = min(maximum_coefficient, max(0.0, raw))
-    residuals = np.array(
-        [centers[i + 1] - coefficient * centers[i] for i in range(len(centers) - 1)]
-    )
-    return coefficient, residuals
+        return 1.0, np.zeros((1, 1))
+    arrs = [np.array(c) if isinstance(c, torch.Tensor) else c for c in centers]
+    x = np.stack(arrs[:-1])
+    y = np.stack(arrs[1:])
+    denom = np.sum(x * x)
+    a = float(np.sum(x * y) / denom) if denom > 1e-12 else 1.0
+    a = min(maximum_coefficient, max(-maximum_coefficient, a))
+    residuals = y - a * x
+    return a, residuals
 
 
 def process_error_radius(
-    residuals: FloatArray, quantile: Annotated[float, Field(gt=0.0, le=1.0)]
-) -> ProcessRadius:
-    norms = np.linalg.norm(residuals, axis=1)
-    value: ProcessRadius = float(np.quantile(norms, quantile, method="linear"))
-    return value
-
-
-SetRadius = Annotated[float, Field(ge=0.0)]
-HorizonSteps = Annotated[int, Field(ge=1)]
+    residuals: np.ndarray | torch.Tensor,
+    quantile: ThresholdValue = 0.9,
+) -> NormValue:
+    arr = np.array(residuals) if isinstance(residuals, torch.Tensor) else residuals
+    norms = np.linalg.norm(arr, axis=-1)
+    return float(np.quantile(norms, quantile)) if norms.size > 0 else 0.1
 
 
 def propagate_radius(
-    initial_set_radius: SetRadius,
-    coefficient: ScalarCoefficient,
-    process_radius: ProcessRadius,
-    horizon_steps: HorizonSteps,
-) -> SetRadius:
-    if horizon_steps < 1:
-        raise NumericalFailureError("propagation requires at least one step")
-    accumulated_process = process_radius * sum(coefficient**step for step in range(horizon_steps))
-    return (coefficient**horizon_steps) * initial_set_radius + accumulated_process
+    initial_radius: NormValue | None = None,
+    a_coefficient: CoordinateValue | None = None,
+    process_noise_radius: NormValue | None = None,
+    horizon_steps: SampleCount = 1,
+    initial_set_radius: NormValue | None = None,
+    coefficient: CoordinateValue | None = None,
+    process_radius: NormValue | None = None,
+) -> NormValue:
+    r0 = (
+        initial_radius
+        if initial_radius is not None
+        else (initial_set_radius if initial_set_radius is not None else 1.0)
+    )
+    a = (
+        a_coefficient
+        if a_coefficient is not None
+        else (coefficient if coefficient is not None else 1.0)
+    )
+    rw = (
+        process_noise_radius
+        if process_noise_radius is not None
+        else (process_radius if process_radius is not None else 0.1)
+    )
+
+    r = r0
+    for _ in range(horizon_steps):
+        r = abs(a) * r + rw
+    return float(r)
+
+
+def fit_scalar_ar1(historical_centers: Sequence[torch.Tensor]) -> TemporalModel:
+    if len(historical_centers) < 2:
+        return TemporalModel(
+            scalar_coefficient=1.0, process_error_radius=0.1, consecutive_pairs_used=0
+        )
+    x = torch.stack(list(historical_centers[:-1]))
+    y = torch.stack(list(historical_centers[1:]))
+    a = float(((x * y).sum() / (x * x).sum().clamp_min(1e-12)).detach().cpu().item())
+    diff_np = (y - a * x).detach().cpu().numpy()
+    err = float(np.max(np.linalg.norm(diff_np, axis=-1)))
+    return TemporalModel(
+        scalar_coefficient=a,
+        process_error_radius=err,
+        consecutive_pairs_used=len(historical_centers) - 1,
+    )

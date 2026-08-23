@@ -121,3 +121,46 @@ class ExecutableWorkflowName(StrEnum):
 class DatasetSelector(StrEnum):
     LAMDA = "lamda"
     EMBER2024 = "ember2024"
+
+
+class ActionPolarity(StrEnum):
+    POSITIVE = "POSITIVE"
+    NEGATIVE = "NEGATIVE"
+    AMBIGUOUS = "AMBIGUOUS"
+
+
+class FederationGeometry(StrEnum):
+    COMPLEMENTARY = "COMPLEMENTARY"
+    REDUNDANT = "REDUNDANT"
+    LOCAL = "LOCAL"
+
+
+class RankSelectionMethod(StrEnum):
+    FIXED_RANK = "FIXED_RANK"
+    EIGENGAP = "EIGENGAP"
+    VARIANCE_THRESHOLD = "VARIANCE_THRESHOLD"
+
+
+class DatasetSplit(StrEnum):
+    HISTORICAL = "HISTORICAL"
+    PROSPECTIVE = "PROSPECTIVE"
+    VALIDATION = "VALIDATION"
+
+
+class InformationFlowPhase(StrEnum):
+    OBSERVATION_COLLECTION = "OBSERVATION_COLLECTION"
+    PREPROCESSING = "PREPROCESSING"
+    HISTORICAL_CALIBRATION = "HISTORICAL_CALIBRATION"
+    PROSPECTIVE_EVALUATION = "PROSPECTIVE_EVALUATION"
+
+
+class PartitionScheme(StrEnum):
+    CHRONOLOGICAL = "CHRONOLOGICAL"
+    FEDERATED = "FEDERATED"
+
+
+class CertificationStatus(StrEnum):
+    CERTIFIED_POSITIVE = "CERTIFIED_POSITIVE"
+    CERTIFIED_NEGATIVE = "CERTIFIED_NEGATIVE"
+    AMBIGUOUS = "AMBIGUOUS"
+    ABSTAIN = "ABSTAIN"

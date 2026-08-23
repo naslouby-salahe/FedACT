@@ -4,13 +4,15 @@ import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
+from fedact.domain.types import ArtifactName, MetricRate, WorkflowStatus
+
 
 @dataclass(frozen=True)
 class ProjectSummaryPayload:
-    project: str
-    verdict: str
-    prospective_fnr: float
-    certification_rate: float
+    project: ArtifactName
+    verdict: WorkflowStatus
+    prospective_fnr: MetricRate
+    certification_rate: MetricRate
 
 
 def generate_project_summary(metrics: ProjectSummaryPayload, output_file: Path) -> None:

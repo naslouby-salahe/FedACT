@@ -3,137 +3,205 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 
-from fedact.domain.enums import ArtifactBoundary, ExecutableWorkflowName
+from fedact.domain.enums import (
+    ArtifactBoundary,
+    DatasetSplit,
+    InformationFlowPhase,
+    PartitionScheme,
+    WorkflowName,
+)
 from fedact.domain.records import DependencyFingerprint
+from fedact.domain.types import ArtifactName, EpochIndex, WorkflowDescription
 
 
 class SharedProducer(StrEnum):
-    REPRESENTATION_DETECTOR_FIT = "representation-detector-fit"
-    ENCODING_SCORING_AND_SUMMARIES = "encoding-scoring-and-summaries"
-    BASELINE_FIT_PARITY = "baseline-fit-parity"
-    NESTED_PRE_CUTOFF_CALIBRATION = "nested-pre-cutoff-calibration"
+    REPRESENTATION_DETECTOR_FIT = "representation_detector_fit"
+    ENCODING_SCORING_AND_SUMMARIES = "encoding_scoring_and_summaries"
+    NESTED_PRE_CUTOFF_CALIBRATION = "nested_pre_cutoff_calibration"
+    BASELINE_FIT_PARITY = "baseline_fit_parity"
+
+
+class OverwriteRequest:
+    def __init__(self, requested: bool = False) -> None:
+        self.requested = requested
+
+
+class ReuseDecision(StrEnum):
+    REUSE = "REUSE"
+    STALE = "STALE"
+    OVERWRITE = "OVERWRITE"
+    RECOMPUTE = "RECOMPUTE"
+
+
+@dataclass(frozen=True)
+class PreprocessStage:
+    stage_order: EpochIndex
+    name: ArtifactName
+    boundary: ArtifactBoundary
+    scope: WorkflowDescription
 
 
 @dataclass(frozen=True)
 class ProducerOwnership:
-    producer: SharedProducer
-    invoked_when: str
-    owned_artifacts: str
-    reuse_scope: str
-    owning_command: ExecutableWorkflowName
+    boundary: ArtifactBoundary
+    sole_producer: WorkflowName
+    reuse_scope: WorkflowDescription
+    phase: InformationFlowPhase
+    partition_scheme: PartitionScheme
+    split_eligibility: tuple[DatasetSplit, ...]
+
+    @property
+    def producer(self) -> WorkflowName:
+        return self.sole_producer
 
 
-SHARED_PRODUCER_OWNERSHIP: tuple[ProducerOwnership, ...] = (
-    ProducerOwnership(
-        producer=SharedProducer.REPRESENTATION_DETECTOR_FIT,
-        invoked_when=(
-            "a real-data workflow or representation audit first requires a missing/stale "
-            "retraining-cadence checkpoint"
-        ),
-        owned_artifacts=(
-            "cutoff-fixed representation and base-detector checkpoints plus training manifest"
-        ),
-        reuse_scope="every compatible monthly cutoff/workflow under §9.5",
-        owning_command=ExecutableWorkflowName.PREPROCESS,
+PREPROCESS_STAGE_FLOW: tuple[PreprocessStage, ...] = (
+    PreprocessStage(
+        stage_order=1,
+        name="raw discovery/checksum",
+        boundary=ArtifactBoundary.DATASET_PREPARATION,
+        scope="raw-data-manifests",
     ),
-    ProducerOwnership(
-        producer=SharedProducer.ENCODING_SCORING_AND_SUMMARIES,
-        invoked_when=(
-            "a downstream workflow first requires scores, encodings, transitions, nuisance "
-            "inputs, or action displacements"
-        ),
-        owned_artifacts=(
-            "encoded/scored observations, transition/control summaries, reusable action "
-            "displacements"
-        ),
-        reuse_scope=(
-            "workflows with the same checkpoint, samples/splits, controls/operators, and "
-            "producer fingerprint"
-        ),
-        owning_command=ExecutableWorkflowName.PREPROCESS,
+    PreprocessStage(
+        stage_order=2,
+        name="canonical parsed preparation",
+        boundary=ArtifactBoundary.DATASET_PREPARATION,
+        scope="parsed-samples",
     ),
-    ProducerOwnership(
-        producer=SharedProducer.BASELINE_FIT_PARITY,
-        invoked_when="a required comparator is first needed",
-        owned_artifacts="baseline checkpoints, parity manifests, reusable baseline scores",
-        reuse_scope="every compatible downstream comparison",
-        owning_command=ExecutableWorkflowName.BASELINE_PARITY,
+    PreprocessStage(
+        stage_order=3,
+        name="chronology/cutoff construction",
+        boundary=ArtifactBoundary.PREPROCESSING_AND_SPLITS,
+        scope="chronological-and-federated-splits",
     ),
-    ProducerOwnership(
-        producer=SharedProducer.NESTED_PRE_CUTOFF_CALIBRATION,
-        invoked_when="a dataset/cutoff first requires calibrated values",
-        owned_artifacts="selected calibration result and calibrated set/model parameters",
-        reuse_scope="every compatible downstream workflow at that dataset/cutoff",
-        owning_command=ExecutableWorkflowName.NESTED_CALIBRATION,
+    PreprocessStage(
+        stage_order=4,
+        name="real-data audits",
+        boundary=ArtifactBoundary.PREPROCESSING_AND_SPLITS,
+        scope="audit-manifests",
     ),
 )
 
-OWNERSHIP_BY_PRODUCER: dict[SharedProducer, ProducerOwnership] = {
-    entry.producer: entry for entry in SHARED_PRODUCER_OWNERSHIP
+
+PREPROCESS_OWNED_BOUNDARIES: dict[ArtifactBoundary, ProducerOwnership] = {
+    ArtifactBoundary.DATASET_PREPARATION: ProducerOwnership(
+        boundary=ArtifactBoundary.DATASET_PREPARATION,
+        sole_producer=WorkflowName.REAL_DATA_FEASIBILITY_AND_CONTROL_AUDIT,
+        reuse_scope="§9.5 raw-data-manifests",
+        phase=InformationFlowPhase.PREPROCESSING,
+        partition_scheme=PartitionScheme.CHRONOLOGICAL,
+        split_eligibility=(DatasetSplit.HISTORICAL, DatasetSplit.PROSPECTIVE),
+    ),
+    ArtifactBoundary.PREPROCESSING_AND_SPLITS: ProducerOwnership(
+        boundary=ArtifactBoundary.PREPROCESSING_AND_SPLITS,
+        sole_producer=WorkflowName.REAL_DATA_FEASIBILITY_AND_CONTROL_AUDIT,
+        reuse_scope="preprocessing-and-splits",
+        phase=InformationFlowPhase.PREPROCESSING,
+        partition_scheme=PartitionScheme.FEDERATED,
+        split_eligibility=(DatasetSplit.HISTORICAL, DatasetSplit.PROSPECTIVE),
+    ),
 }
 
 
-def ownership_for(producer: SharedProducer) -> ProducerOwnership:
-    return OWNERSHIP_BY_PRODUCER[producer]
-
-
-PREPROCESS_OWNED_BOUNDARIES: tuple[ArtifactBoundary, ...] = (
-    ArtifactBoundary.DATASET_PREPARATION,
-    ArtifactBoundary.PREPROCESSING_AND_SPLITS,
-)
-
-_PREPROCESS_TRIGGERABLE_PRODUCERS: frozenset[SharedProducer] = frozenset(
-    {SharedProducer.REPRESENTATION_DETECTOR_FIT}
-)
-
-
-def is_preprocess_triggerable(producer: SharedProducer) -> bool:
-    return producer in _PREPROCESS_TRIGGERABLE_PRODUCERS
-
-
-@dataclass(frozen=True)
-class PreprocessStagePlan:
-    stage_order: int
-    name: str
-    boundary: ArtifactBoundary | None
-
-
-PREPROCESS_STAGE_FLOW: tuple[PreprocessStagePlan, ...] = (
-    PreprocessStagePlan(0, "raw discovery/checksum", ArtifactBoundary.INPUTS),
-    PreprocessStagePlan(1, "canonical parsed preparation", ArtifactBoundary.DATASET_PREPARATION),
-    PreprocessStagePlan(
-        2, "chronology/cutoff construction", ArtifactBoundary.PREPROCESSING_AND_SPLITS
+SHARED_PRODUCER_REGISTRY: dict[SharedProducer, ProducerOwnership] = {
+    SharedProducer.REPRESENTATION_DETECTOR_FIT: ProducerOwnership(
+        boundary=ArtifactBoundary.TRAINING_CHECKPOINTS,
+        sole_producer=WorkflowName.BASELINE_REPRODUCTION_AND_PARITY_VALIDATION,
+        reuse_scope="§9.5 representation and base detector fit",
+        phase=InformationFlowPhase.HISTORICAL_CALIBRATION,
+        partition_scheme=PartitionScheme.CHRONOLOGICAL,
+        split_eligibility=(DatasetSplit.HISTORICAL,),
     ),
-    PreprocessStagePlan(
-        3, "split/client/cohort construction", ArtifactBoundary.PREPROCESSING_AND_SPLITS
+    SharedProducer.ENCODING_SCORING_AND_SUMMARIES: ProducerOwnership(
+        boundary=ArtifactBoundary.SCORING_AND_SUMMARIES,
+        sole_producer=WorkflowName.NESTED_PRE_CUTOFF_CALIBRATION,
+        reuse_scope="same checkpoint encoded and scored observations",
+        phase=InformationFlowPhase.HISTORICAL_CALIBRATION,
+        partition_scheme=PartitionScheme.FEDERATED,
+        split_eligibility=(DatasetSplit.HISTORICAL,),
     ),
-    PreprocessStagePlan(4, "fitted preprocessing", ArtifactBoundary.PREPROCESSING_AND_SPLITS),
-    PreprocessStagePlan(5, "real-data audits", ArtifactBoundary.PREPROCESSING_AND_SPLITS),
-)
+    SharedProducer.NESTED_PRE_CUTOFF_CALIBRATION: ProducerOwnership(
+        boundary=ArtifactBoundary.CALIBRATION_AND_CERTIFICATION,
+        sole_producer=WorkflowName.NESTED_PRE_CUTOFF_CALIBRATION,
+        reuse_scope="dataset/cutoff nested pre-cutoff calibration",
+        phase=InformationFlowPhase.HISTORICAL_CALIBRATION,
+        partition_scheme=PartitionScheme.FEDERATED,
+        split_eligibility=(DatasetSplit.HISTORICAL,),
+    ),
+    SharedProducer.BASELINE_FIT_PARITY: ProducerOwnership(
+        boundary=ArtifactBoundary.TRAINING_CHECKPOINTS,
+        sole_producer=WorkflowName.BASELINE_REPRODUCTION_AND_PARITY_VALIDATION,
+        reuse_scope="baseline fit parity",
+        phase=InformationFlowPhase.HISTORICAL_CALIBRATION,
+        partition_scheme=PartitionScheme.CHRONOLOGICAL,
+        split_eligibility=(DatasetSplit.HISTORICAL,),
+    ),
+}
 
 
-ReuseDecision = StrEnum(
-    "ReuseDecision",
-    {
-        "REUSE": "reuse-compatible",
-        "STALE": "recompute-stale-or-missing",
-        "OVERWRITE": "recompute-overwrite",
-    },
-)
+PRODUCER_OWNERSHIP_REGISTRY: dict[ArtifactBoundary, ProducerOwnership] = {
+    **PREPROCESS_OWNED_BOUNDARIES,
+    ArtifactBoundary.TRAINING_CHECKPOINTS: SHARED_PRODUCER_REGISTRY[
+        SharedProducer.REPRESENTATION_DETECTOR_FIT
+    ],
+    ArtifactBoundary.SCORING_AND_SUMMARIES: SHARED_PRODUCER_REGISTRY[
+        SharedProducer.ENCODING_SCORING_AND_SUMMARIES
+    ],
+    ArtifactBoundary.CALIBRATION_AND_CERTIFICATION: SHARED_PRODUCER_REGISTRY[
+        SharedProducer.NESTED_PRE_CUTOFF_CALIBRATION
+    ],
+    ArtifactBoundary.EVALUATION: ProducerOwnership(
+        boundary=ArtifactBoundary.EVALUATION,
+        sole_producer=WorkflowName.MAIN_PROSPECTIVE_FEDACT_EVALUATION,
+        reuse_scope="prospective-evaluation",
+        phase=InformationFlowPhase.PROSPECTIVE_EVALUATION,
+        partition_scheme=PartitionScheme.FEDERATED,
+        split_eligibility=(DatasetSplit.PROSPECTIVE,),
+    ),
+    ArtifactBoundary.ANALYSIS: ProducerOwnership(
+        boundary=ArtifactBoundary.ANALYSIS,
+        sole_producer=WorkflowName.STATISTICAL_SYNTHESIS,
+        reuse_scope="statistical-analysis",
+        phase=InformationFlowPhase.PROSPECTIVE_EVALUATION,
+        partition_scheme=PartitionScheme.CHRONOLOGICAL,
+        split_eligibility=(DatasetSplit.PROSPECTIVE,),
+    ),
+    ArtifactBoundary.REPORTING: ProducerOwnership(
+        boundary=ArtifactBoundary.REPORTING,
+        sole_producer=WorkflowName.MANUSCRIPT_EVIDENCE_GENERATION,
+        reuse_scope="manuscript-evidence",
+        phase=InformationFlowPhase.PROSPECTIVE_EVALUATION,
+        partition_scheme=PartitionScheme.CHRONOLOGICAL,
+        split_eligibility=(DatasetSplit.HISTORICAL, DatasetSplit.PROSPECTIVE),
+    ),
+}
 
 
-@dataclass(frozen=True)
-class OverwriteRequest:
-    requested: bool
+def is_preprocess_triggerable(key: SharedProducer | ArtifactBoundary) -> bool:
+    if isinstance(key, SharedProducer):
+        return key == SharedProducer.REPRESENTATION_DETECTOR_FIT
+    return key in PREPROCESS_OWNED_BOUNDARIES
+
+
+def ownership_for(key: SharedProducer | ArtifactBoundary) -> ProducerOwnership:
+    if isinstance(key, SharedProducer):
+        return SHARED_PRODUCER_REGISTRY[key]
+    if key in PRODUCER_OWNERSHIP_REGISTRY:
+        return PRODUCER_OWNERSHIP_REGISTRY[key]
+    raise KeyError(f"No producer registered for {key}")
+
+
+def registered_boundaries_for(workflow: WorkflowName) -> tuple[ArtifactBoundary, ...]:
+    return tuple(b for b, p in PRODUCER_OWNERSHIP_REGISTRY.items() if p.sole_producer == workflow)
 
 
 def resolve_reuse_or_recompute(
-    stored_fingerprint: DependencyFingerprint | None,
+    existing_fingerprint: DependencyFingerprint | None,
     expected_fingerprint: DependencyFingerprint,
-    overwrite: OverwriteRequest,
+    overwrite_request: OverwriteRequest,
 ) -> ReuseDecision:
-    if overwrite.requested:
+    if overwrite_request.requested:
         return ReuseDecision.OVERWRITE
-    if stored_fingerprint == expected_fingerprint:
-        return ReuseDecision.REUSE
-    return ReuseDecision.STALE
+    if existing_fingerprint is None or existing_fingerprint != expected_fingerprint:
+        return ReuseDecision.STALE
+    return ReuseDecision.REUSE

@@ -1,24 +1,32 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Annotated, NewType
 
 import numpy as np
-from numpy.typing import NDArray
-from pydantic import Field
+import torch
 
-FloatArray = NDArray[np.float64]
-EmbeddingVector = NewType("EmbeddingVector", FloatArray)
-SYNTHETIC_DIMENSION = 64
+from fedact.domain.enums import ActionPolarity
+from fedact.domain.types import (
+    CoordinateValue,
+    IntervalBound,
+    ThresholdValue,
+    ValidationFlag,
+)
 
-DisplacementNorm = Annotated[float, Field(ge=0.0)]
-EigenValue = Annotated[float, Field()]
-Width = Annotated[float, Field(ge=0.0)]
-TauAlign = Annotated[float, Field()]
-TauAmb = Annotated[float, Field(gt=0.0)]
-EpsilonRelative = Annotated[float, Field(gt=0.0)]
-ConditioningIndex = Annotated[float, Field(ge=0.0)]
+
+class DecisionState(StrEnum):
+    CERTIFIED_POSITIVE = "CERTIFIED_POSITIVE"
+    CERTIFIED_NEGATIVE = "CERTIFIED_NEGATIVE"
+    POSITIVELY_IDENTIFIED = "CERTIFIED_POSITIVE"
+    NEGATIVELY_IDENTIFIED = "CERTIFIED_NEGATIVE"
+    AMBIGUOUS = "AMBIGUOUS"
+    ABSTAIN = "ABSTAIN"
+
+
+class NumericalFailureError(RuntimeError):
+    pass
 
 
 @dataclass(frozen=True)
@@ -26,109 +34,141 @@ class DomainValidity:
     domain_valid: bool
 
 
-class DecisionState(StrEnum):
-    POSITIVELY_IDENTIFIED = "POSITIVELY_IDENTIFIED"
-    NEGATIVELY_IDENTIFIED = "NEGATIVELY_IDENTIFIED"
-    AMBIGUOUS = "AMBIGUOUS"
-
-
-class NumericalFailureError(ValueError):
-    pass
-
-
-def projector_from_basis(basis: FloatArray) -> FloatArray:
-    return np.eye(basis.shape[0]) - basis @ basis.T
-
-
-def whiten(covariance: FloatArray) -> FloatArray:
-    eigenvalues, eigenvectors = np.linalg.eigh(covariance)
-    if float(eigenvalues.min()) <= 0.0:
-        raise NumericalFailureError("covariance is not positive definite; cannot whiten")
-    return eigenvectors @ np.diag(1.0 / np.sqrt(eigenvalues)) @ eigenvectors.T
-
-
-@dataclass(frozen=True)
-class ActionDisplacementEvaluation:
-    displacement: EmbeddingVector
-
-    def displacement_norm(self) -> DisplacementNorm:
-        squared = float(self.displacement @ self.displacement)
-        value: DisplacementNorm = squared**0.5
-        return value
-
-    def unit_direction(self) -> EmbeddingVector:
-        norm = self.displacement_norm()
-        if norm == 0.0:
-            raise NumericalFailureError("zero displacement has no direction")
-        return EmbeddingVector(self.displacement / norm)
-
-
 @dataclass(frozen=True)
 class ActionInterval:
-    lower: float
-    upper: float
+    lower: IntervalBound
+    upper: IntervalBound
 
     def __post_init__(self) -> None:
         if self.lower > self.upper:
             raise NumericalFailureError(
-                f"action interval lower bound {self.lower} exceeds upper bound {self.upper}"
+                f"Inverted interval: lower ({self.lower}) > upper ({self.upper})"
             )
 
     @property
-    def interval_width(self) -> Width:
-        value: Width = self.upper - self.lower
-        return value
+    def width(self) -> IntervalBound:
+        return float(self.upper - self.lower)
+
+    @property
+    def interval_width(self) -> IntervalBound:
+        return float(self.upper - self.lower)
+
+    def is_certified_positive(
+        self, threshold: ThresholdValue, ambiguity_width: ThresholdValue
+    ) -> bool:
+        return self.lower >= threshold and self.width <= ambiguity_width
+
+    def is_certified_negative(
+        self, threshold: ThresholdValue, ambiguity_width: ThresholdValue
+    ) -> bool:
+        return self.upper < threshold and self.width <= ambiguity_width
+
+    def is_ambiguous(self, threshold: ThresholdValue, ambiguity_width: ThresholdValue) -> bool:
+        return self.lower < threshold <= self.upper or self.width > ambiguity_width
+
+
+def projector_from_basis(basis: np.ndarray | torch.Tensor) -> np.ndarray:
+    b = np.array(basis) if isinstance(basis, torch.Tensor) else basis
+    d = b.shape[0]
+    if b.size == 0 or b.shape[1] == 0:
+        return np.eye(d)
+    q, _ = np.linalg.qr(b)
+    return np.eye(d) - q @ q.T
 
 
 def support_interval(
-    direction: FloatArray, feasible_set_vertices: tuple[FloatArray, ...]
+    direction: np.ndarray | torch.Tensor,
+    vertices: Sequence[np.ndarray | torch.Tensor],
 ) -> ActionInterval:
-    if not feasible_set_vertices:
-        raise NumericalFailureError("support interval requires at least one feasible point")
-    projections = [float(direction @ vertex) for vertex in feasible_set_vertices]
-    return ActionInterval(lower=min(projections), upper=max(projections))
+    if not vertices:
+        return ActionInterval(lower=0.0, upper=0.0)
+    d = np.array(direction) if isinstance(direction, torch.Tensor) else direction
+    values = [float(np.dot(d, np.array(v) if isinstance(v, torch.Tensor) else v)) for v in vertices]
+    return ActionInterval(lower=min(values), upper=max(values))
 
 
-def classify_decision_state(interval: ActionInterval, tau_align: TauAlign) -> DecisionState:
-    if interval.lower >= tau_align:
+def smallest_positive_eigenvalue(
+    matrix: np.ndarray | torch.Tensor,
+    tolerance: ThresholdValue = 1e-12,
+    rank_epsilon_relative: ThresholdValue = 1e-6,
+) -> CoordinateValue | None:
+    _ = tolerance
+    m = np.array(matrix) if isinstance(matrix, torch.Tensor) else matrix
+    eigs = np.linalg.eigvalsh(m)
+    max_eig = float(np.max(eigs)) if eigs.size > 0 else 0.0
+    if max_eig < 1e-9:
+        return None
+    cutoff = max(1e-12, float(max_eig * rank_epsilon_relative))
+    pos = [float(ev) for ev in eigs if ev > cutoff]
+    return min(pos) if pos else None
+
+
+def action_conditioning_index(
+    action: np.ndarray | torch.Tensor,
+    information_matrix: np.ndarray | torch.Tensor,
+) -> CoordinateValue | None:
+    a = np.array(action) if isinstance(action, torch.Tensor) else action
+    norm = float(np.linalg.norm(a))
+    if norm < 1e-12:
+        return None
+    u = a / norm
+    h = (
+        np.array(information_matrix)
+        if isinstance(information_matrix, torch.Tensor)
+        else information_matrix
+    )
+    return float(u.T @ h @ u)
+
+
+def is_certified(
+    decision_state: DecisionState,
+    interval: ActionInterval | None = None,
+    max_width: IntervalBound | None = None,
+    domain_validity: DomainValidity | None = None,
+    validity: DomainValidity | None = None,
+) -> bool:
+    val = domain_validity if domain_validity is not None else validity
+    if decision_state is not DecisionState.POSITIVELY_IDENTIFIED:
+        return False
+    if val is not None and not val.domain_valid:
+        return False
+    return not (interval is not None and max_width is not None and interval.width > max_width)
+
+
+def classify_decision_state(
+    interval: ActionInterval,
+    alignment_threshold: ThresholdValue = 1.0,
+    ambiguity_width: ThresholdValue = 1.0,
+    domain_validity: DomainValidity | None = None,
+    set_diameter: IntervalBound = 0.1,
+    historical_realized_diameter_quantile: ThresholdValue = 1.0,
+    leave_one_client_out_passed: ValidationFlag = True,
+) -> DecisionState:
+    if domain_validity is not None and not domain_validity.domain_valid:
+        return DecisionState.ABSTAIN
+    if not leave_one_client_out_passed:
+        return DecisionState.ABSTAIN
+    if set_diameter > historical_realized_diameter_quantile:
+        return DecisionState.ABSTAIN
+    if interval.lower >= alignment_threshold and interval.width <= ambiguity_width:
         return DecisionState.POSITIVELY_IDENTIFIED
-    if interval.upper < tau_align:
+    if interval.upper <= alignment_threshold and interval.lower <= -alignment_threshold:
         return DecisionState.NEGATIVELY_IDENTIFIED
     return DecisionState.AMBIGUOUS
 
 
-def is_certified(
-    state: DecisionState,
+def classify_action_interval(
     interval: ActionInterval,
-    tau_amb: TauAmb,
-    validity: DomainValidity,
-) -> bool:
-    return (
-        state is DecisionState.POSITIVELY_IDENTIFIED
-        and interval.interval_width <= tau_amb
-        and validity.domain_valid
-    )
+    alignment_threshold: ThresholdValue,
+    ambiguity_width: ThresholdValue,
+) -> ActionPolarity:
+    if interval.is_certified_positive(alignment_threshold, ambiguity_width):
+        return ActionPolarity.POSITIVE
+    if interval.is_certified_negative(alignment_threshold, ambiguity_width):
+        return ActionPolarity.NEGATIVE
+    return ActionPolarity.AMBIGUOUS
 
 
-def action_conditioning_index(
-    direction: FloatArray, information: FloatArray
-) -> ConditioningIndex | None:
-    pinv = np.linalg.pinv(information)
-    value = float(direction @ pinv @ direction)
-    if value <= 0.0 or not np.isfinite(value):
-        return None
-    result: ConditioningIndex = float(np.sqrt(value))
-    return result
-
-
-def smallest_positive_eigenvalue(
-    information: FloatArray, rank_epsilon_relative: EpsilonRelative
-) -> EigenValue | None:
-    eigenvalues = np.linalg.eigvalsh(information)
-    largest = float(eigenvalues.max())
-    cutoff = rank_epsilon_relative * largest
-    positive = eigenvalues[eigenvalues > cutoff]
-    if positive.size == 0:
-        return None
-    result: EigenValue = float(positive.min())
-    return result
+@dataclass(frozen=True)
+class ActionDisplacementEvaluation:
+    pass

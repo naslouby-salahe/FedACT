@@ -69,6 +69,7 @@ REGISTERED_PRODUCTION_MODULES: frozenset[str] = frozenset(
         "src/fedact/domain/operators/enumeration.py",
         "src/fedact/domain/operators/validity.py",
         "src/fedact/domain/records.py",
+        "src/fedact/domain/types.py",
         "src/fedact/evaluation/__init__.py",
         "src/fedact/evaluation/exposure.py",
         "src/fedact/evaluation/later_real.py",

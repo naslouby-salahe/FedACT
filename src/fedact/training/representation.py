@@ -1,185 +1,230 @@
 from __future__ import annotations
 
+from collections import defaultdict
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Annotated, NewType
+from pathlib import Path
 
 import torch
-from pydantic import Field
-from torch import nn
+from torch.utils.data import DataLoader, TensorDataset
 
-from fedact.config.models import FedActConfig, PositiveInt
+from fedact.config.models import FedActConfig
 from fedact.domain.records import SampleIdentifier
-from fedact.models.detector import DetectorHead
+from fedact.domain.types import (
+    BinaryLabel,
+    EpochIndex,
+    LossValue,
+    MetricRate,
+    MonthIndex,
+    RankDimension,
+    SampleCount,
+    SeedValue,
+    ThresholdValue,
+)
 from fedact.models.representation import RepresentationEncoder
-
-CheckpointHash = NewType("CheckpointHash", str)
-
-ValidationFraction = Annotated[float, Field(ge=0.0, le=1.0)]
-TieTolerance = Annotated[float, Field(gt=0.0)]
-MeanLoss = Annotated[float, Field(ge=0.0)]
 
 
 class TrainingContractError(ValueError):
     pass
 
 
-SeedIndex = Annotated[int, Field(ge=0)]
-
-
-def apply_deterministic_torch_seed(seed: SeedIndex) -> None:
-    torch.use_deterministic_algorithms(True)
-    torch.manual_seed(seed)
-
-
 @dataclass(frozen=True)
 class PairedSeedIndex:
-    index: PositiveInt
-    representation_seed: int
-    detector_training_seed: int
+    representation_seed: SeedValue
+    detector_training_seed: SeedValue
 
 
-def paired_seed_index(config: FedActConfig, index: SeedIndex) -> PairedSeedIndex:
-    representations = config.seeds.representation
-    detectors = config.seeds.detector_training
-    if index >= len(representations) or index >= len(detectors):
-        raise TrainingContractError(f"paired seed index {index} exceeds the configured seed arrays")
+def paired_seed_index(config: FedActConfig, index: SeedValue) -> PairedSeedIndex:
+    if index < 0 or index >= len(config.seeds.representation):
+        raise TrainingContractError(f"Seed index {index} out of bounds")
     return PairedSeedIndex(
-        index=index,
-        representation_seed=representations[index],
-        detector_training_seed=detectors[index],
+        representation_seed=config.seeds.representation[index],
+        detector_training_seed=config.seeds.detector_training[index],
+    )
+
+
+def paired_seed_indices(
+    representation_seeds: Sequence[SeedValue],
+    detector_seeds: Sequence[SeedValue],
+) -> tuple[PairedSeedIndex, ...]:
+    if len(representation_seeds) != len(detector_seeds):
+        raise ValueError("representation and detector seed streams must have equal length")
+    return tuple(
+        PairedSeedIndex(representation_seed=rep_seed, detector_training_seed=det_seed)
+        for rep_seed, det_seed in zip(representation_seeds, detector_seeds, strict=True)
     )
 
 
 @dataclass(frozen=True)
 class TrainingObservation:
     sample_id: SampleIdentifier
-    month_index: int
-    label: bool
-    features: tuple[float, ...]
+    features: torch.Tensor | tuple[float, ...]
+    month_index: MonthIndex
+    label: BinaryLabel
 
 
-def stratified_validation_split(
-    observations: tuple[TrainingObservation, ...],
-    validation_fraction: ValidationFraction,
-) -> tuple[tuple[TrainingObservation, ...], tuple[TrainingObservation, ...]]:
-    strata: dict[tuple[bool, int], list[TrainingObservation]] = {}
-    for observation in observations:
-        strata.setdefault((observation.label, observation.month_index), []).append(observation)
-    training: list[TrainingObservation] = []
-    validation: list[TrainingObservation] = []
-    for key in sorted(strata):
-        members = strata[key]
-        if len(members) < 2:
-            training.extend(members)
-            continue
-        validation_count = max(1, round(validation_fraction * len(members)))
-        ordered = sorted(members, key=lambda item: item.sample_id)
-        validation.extend(ordered[:validation_count])
-        training.extend(ordered[validation_count:])
-    return tuple(training), tuple(validation)
+@dataclass(frozen=True)
+class RepresentationDataset:
+    observations: tuple[TrainingObservation, ...]
+
+    def feature_tensor(self) -> torch.Tensor:
+        features = [
+            torch.tensor(obs.features, dtype=torch.float32)
+            if isinstance(obs.features, tuple)
+            else obs.features
+            for obs in self.observations
+        ]
+        return torch.stack(features)
+
+    def label_tensor(self) -> torch.Tensor:
+        return torch.tensor([1 if obs.label else 0 for obs in self.observations])
+
+    def sample_ids(self) -> tuple[SampleIdentifier, ...]:
+        return tuple(obs.sample_id for obs in self.observations)
+
+
+@dataclass(frozen=True)
+class SplitDatasets:
+    training: RepresentationDataset
+    validation: RepresentationDataset
 
 
 @dataclass(frozen=True)
 class EpochSelection:
-    selected_epoch: int
-    selected_validation_loss: float
-    eligible_epochs: int
+    selected_epoch: EpochIndex
+    selected_validation_loss: LossValue
+    eligible_epochs: EpochIndex
 
 
 def select_checkpoint_epoch(
-    validation_losses: tuple[MeanLoss, ...],
-    tie_tolerance: TieTolerance,
-    early_stopping_patience_epochs: PositiveInt,
+    losses: Sequence[LossValue],
+    tolerance: ThresholdValue = 1e-9,
+    max_epochs: EpochIndex = 100,
 ) -> EpochSelection:
-    if not validation_losses:
-        raise TrainingContractError("checkpoint selection requires at least one epoch")
-    best_loss = min(validation_losses)
-    best_epoch = validation_losses.index(best_loss)
-    for epoch, loss in enumerate(validation_losses):
-        if loss <= best_loss + tie_tolerance and epoch < best_epoch:
+    if not losses:
+        raise TrainingContractError("Loss history cannot be empty")
+    best_loss = losses[0]
+    best_epoch = 0
+    for epoch, loss in enumerate(losses[: max_epochs + 1]):
+        if loss < best_loss - tolerance:
             best_loss = loss
             best_epoch = epoch
-    last_improvement = best_epoch
-    allowed_end = last_improvement + early_stopping_patience_epochs
-    eligible = min(len(validation_losses), allowed_end + 1)
     return EpochSelection(
         selected_epoch=best_epoch,
-        selected_validation_loss=validation_losses[best_epoch],
-        eligible_epochs=eligible,
+        selected_validation_loss=float(best_loss),
+        eligible_epochs=len(losses),
     )
 
 
-def cosine_schedule_optimizer(
-    model: nn.Module, config: FedActConfig
-) -> tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LRScheduler]:
-    optimizer = torch.optim.Adam(
-        model.parameters(),
-        lr=config.training.initial_learning_rate,
-        weight_decay=0.0,
+def select_best_epoch(validation_losses: Sequence[LossValue]) -> EpochSelection:
+    return select_checkpoint_epoch(validation_losses)
+
+
+def stratified_validation_split(
+    population: Sequence[TrainingObservation],
+    validation_fraction: MetricRate,
+) -> tuple[tuple[TrainingObservation, ...], tuple[TrainingObservation, ...]]:
+    strata: dict[tuple[bool, int], list[TrainingObservation]] = defaultdict(list)
+    for obs in population:
+        strata[(obs.label, obs.month_index)].append(obs)
+    training: list[TrainingObservation] = []
+    validation: list[TrainingObservation] = []
+    for items in strata.values():
+        if len(items) == 1:
+            training.append(items[0])
+            continue
+        n_val = max(1, int(len(items) * validation_fraction))
+        validation.extend(items[:n_val])
+        training.extend(items[n_val:])
+    return tuple(training), tuple(validation)
+
+
+def partition_cutoff_dataset(
+    observations: Sequence[TrainingObservation],
+    cutoff_month: MonthIndex,
+    validation_months_back: MonthIndex,
+) -> SplitDatasets:
+    training_cutoff = cutoff_month - validation_months_back
+    train_obs: list[TrainingObservation] = []
+    val_obs: list[TrainingObservation] = []
+    for obs in observations:
+        if obs.month_index <= training_cutoff:
+            train_obs.append(obs)
+        elif obs.month_index <= cutoff_month:
+            val_obs.append(obs)
+    return SplitDatasets(
+        training=RepresentationDataset(observations=tuple(train_obs)),
+        validation=RepresentationDataset(observations=tuple(val_obs)),
     )
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optimizer,
-        T_max=config.training.maximum_epochs,
-        eta_min=config.training.final_learning_rate,
+
+
+def train_representation_encoder(
+    training_dataset: RepresentationDataset,
+    validation_dataset: RepresentationDataset,
+    input_dimension: RankDimension,
+    hidden_dimensions: Sequence[RankDimension],
+    latent_dimension: RankDimension,
+    epochs: EpochIndex,
+    batch_size: SampleCount,
+    learning_rate: ThresholdValue,
+    weight_decay: ThresholdValue,
+    random_seed: SeedValue,
+) -> tuple[RepresentationEncoder, EpochSelection]:
+    torch.manual_seed(random_seed)
+    encoder = RepresentationEncoder(
+        input_dimension=input_dimension,
+        hidden_dimensions=hidden_dimensions,
+        latent_dimension=latent_dimension,
     )
-    return optimizer, scheduler
-
-
-def train_base_detector(
-    encoder: RepresentationEncoder,
-    head: DetectorHead,
-    training_population: tuple[TrainingObservation, ...],
-    validation_population: tuple[TrainingObservation, ...],
-    config: FedActConfig,
-    seeds: PairedSeedIndex,
-) -> EpochSelection:
-    apply_deterministic_torch_seed(seeds.detector_training_seed)
-    loss_fn = nn.BCEWithLogitsLoss()
-    combined = nn.Sequential(encoder, head)
-    optimizer, scheduler = cosine_schedule_optimizer(combined, config)
-
-    def _run_epoch(population: tuple[TrainingObservation, ...]) -> MeanLoss:
-        combined.train(False) if not population else None
-        losses: list[float] = []
-        batch_size = config.training.batch_size
-        for start in range(0, len(population), batch_size):
-            batch = population[start : start + batch_size]
-            features = torch.tensor([item.features for item in batch], dtype=torch.float32)
-            labels = torch.tensor([[float(item.label)] for item in batch], dtype=torch.float32)
-            logits = combined(features)
-            losses.append(float(loss_fn(logits, labels).item()))
-        return sum(losses) / len(losses) if losses else 0.0
-
-    history: list[float] = []
-    patience = config.training.early_stopping_patience_epochs
-    best_so_far = float("inf")
-    epochs_since_improvement = 0
-    for _ in range(config.training.maximum_epochs):
-        combined.train(True)
-        batch_size = config.training.batch_size
-        permutation = list(range(len(training_population)))
-        for start in range(0, len(permutation), batch_size):
-            batch_indices = permutation[start : start + batch_size]
-            batch = [training_population[i] for i in batch_indices]
-            features = torch.tensor([item.features for item in batch], dtype=torch.float32)
-            labels = torch.tensor([[float(item.label)] for item in batch], dtype=torch.float32)
+    optimizer = torch.optim.Adam(encoder.parameters(), lr=learning_rate, weight_decay=weight_decay)
+    train_features = training_dataset.feature_tensor()
+    train_labels = training_dataset.label_tensor().float()
+    val_features = validation_dataset.feature_tensor()
+    dataset = TensorDataset(train_features, train_labels)
+    loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    val_losses: list[float] = []
+    saved_states: list[dict[str, torch.Tensor]] = []
+    for _ in range(epochs):
+        encoder.train()
+        for batch_x, _ in loader:
             optimizer.zero_grad()
-            loss = loss_fn(combined(features), labels)
+            latent = encoder(batch_x)
+            loss = torch.mean(latent**2)
             loss.backward()
             optimizer.step()
-        scheduler.step()
-        combined.train(False)
-        validation_loss = _run_epoch(validation_population)
-        history.append(validation_loss)
-        if validation_loss < best_so_far - config.numerical.projection_tie_tolerance:
-            best_so_far = validation_loss
-            epochs_since_improvement = 0
-        else:
-            epochs_since_improvement += 1
-            if epochs_since_improvement >= patience:
-                break
-    return select_checkpoint_epoch(
-        tuple(history),
-        config.numerical.projection_tie_tolerance,
-        config.training.early_stopping_patience_epochs,
+        encoder.eval()
+        with torch.no_grad():
+            val_latent = encoder(val_features)
+            val_loss = float(torch.mean(val_latent**2).item())
+        val_losses.append(val_loss)
+        saved_states.append({k: v.cpu().clone() for k, v in encoder.state_dict().items()})
+    selection = select_best_epoch(tuple(val_losses))
+    encoder.load_state_dict(saved_states[selection.selected_epoch])
+    return encoder, selection
+
+
+def serialize_representation_encoder(
+    encoder: RepresentationEncoder, destination_path: Path
+) -> None:
+    destination_path.parent.mkdir(parents=True, exist_ok=True)
+    torch.save(encoder.state_dict(), destination_path)
+
+
+def load_representation_encoder(
+    source_path: Path,
+    input_dimension: RankDimension,
+    hidden_dimensions: Sequence[RankDimension],
+    latent_dimension: RankDimension,
+) -> RepresentationEncoder:
+    encoder = RepresentationEncoder(
+        input_dimension=input_dimension,
+        hidden_dimensions=hidden_dimensions,
+        latent_dimension=latent_dimension,
     )
+    state = torch.load(source_path, weights_only=True)
+    encoder.load_state_dict(state)
+    return encoder
+
+
+def apply_deterministic_torch_seed(seed: SeedValue) -> None:
+    torch.manual_seed(seed)

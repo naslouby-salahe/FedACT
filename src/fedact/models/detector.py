@@ -7,9 +7,9 @@ from fedact.models.representation import DETECTOR_THRESHOLD, EMBEDDING_DIMENSION
 
 
 class DetectorHead(nn.Module):
-    def __init__(self) -> None:
+    def __init__(self, latent_dimension: int = EMBEDDING_DIMENSION) -> None:
         super().__init__()
-        self.head = nn.Linear(EMBEDDING_DIMENSION, 1)
+        self.head = nn.Linear(latent_dimension, 1)
 
     def forward(self, embeddings: Tensor) -> Tensor:
         return self.head(embeddings)

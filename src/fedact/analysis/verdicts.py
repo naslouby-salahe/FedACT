@@ -1,15 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Annotated
-
-from pydantic import Field
 
 from fedact.domain.enums import ScientificOutcome
-
-FnrThreshold = Annotated[float, Field(ge=0.0, le=1.0)]
-DegradationLimit = Annotated[float, Field(ge=0.0)]
-CoverageBound = Annotated[float, Field(ge=0.0, le=1.0)]
+from fedact.domain.types import DegradationValue, MetricRate
 
 
 @dataclass(frozen=True)
@@ -20,9 +14,9 @@ class ScientificVerdictReport:
 
 
 def evaluate_scientific_verdicts(
-    prospective_fnr: FnrThreshold,
-    clean_fnr_degradation: DegradationLimit,
-    coverage: CoverageBound,
+    prospective_fnr: MetricRate,
+    clean_fnr_degradation: DegradationValue,
+    coverage: MetricRate,
 ) -> ScientificVerdictReport:
     claim = prospective_fnr < 0.15 and coverage >= 0.90
     safety = clean_fnr_degradation <= 2.0

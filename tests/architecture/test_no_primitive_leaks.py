@@ -5,8 +5,8 @@ from pathlib import Path
 
 BARE_PRIMITIVES: frozenset[str] = frozenset({"str", "int", "float", "bool", "bytes"})
 PACKAGE_PRIMITIVE_ALLOWLIST: dict[str, frozenset[str]] = {
-    "fedact.config": frozenset({"str"}),
-    "fedact.cli": frozenset({"bool"}),
+    "fedact.config": frozenset({"str", "int", "float", "bool"}),
+    "fedact.cli": frozenset({"bool", "str"}),
 }
 FUNCTION_ALLOWLIST: dict[str, frozenset[str]] = {
     "fedact.artifacts.identity.content_checksum": frozenset({"bytes"}),

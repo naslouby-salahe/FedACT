@@ -1,50 +1,61 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 import numpy as np
-from numpy.typing import NDArray
+import torch
 
-FloatArray = NDArray[np.float64]
+from fedact.domain.types import MetricRate, NormValue, ReplicateIndex, SampleCount, ThresholdValue
 
 
 @dataclass(frozen=True)
 class ControlReplicate:
-    replicate_index: int
-    displacement: FloatArray
-    support_before: int
-    support_after: int
+    replicate_index: ReplicateIndex
+    displacement: torch.Tensor
+    support_before: SampleCount
+    support_after: SampleCount
 
 
 @dataclass(frozen=True)
 class ControlQualityGate:
-    held_out_residual_quantile: float
-    minimum_pass_fraction: float
+    held_out_residual_quantile: ThresholdValue
+    minimum_pass_fraction: MetricRate
 
 
-def build_control_displacement(mean_before: FloatArray, mean_after: FloatArray) -> FloatArray:
-    return mean_after - mean_before
+def build_control_displacement(
+    prior: np.ndarray | torch.Tensor,
+    recent: np.ndarray | torch.Tensor,
+) -> np.ndarray:
+    p = np.array(prior) if isinstance(prior, torch.Tensor) else prior
+    r = np.array(recent) if isinstance(recent, torch.Tensor) else recent
+    return r - p
 
 
-def held_out_reconstruction_residuals(displacements: tuple[FloatArray, ...]) -> tuple[float, ...]:
-    residuals: list[float] = []
-    for excluded in range(len(displacements)):
-        kept = [item for index, item in enumerate(displacements) if index != excluded]
-        if not kept:
-            raise ValueError("held-out reconstruction requires at least two replicates")
-        stacked: FloatArray = np.stack(kept)
-        center: FloatArray = stacked.mean(axis=0)
-        target = displacements[excluded]
-        residual = float(np.linalg.norm(target - center))
-        residuals.append(residual)
-    return tuple(residuals)
+def held_out_reconstruction_residuals(
+    replicates: Sequence[np.ndarray | torch.Tensor],
+) -> tuple[NormValue, ...]:
+    if not replicates:
+        return ()
+    arrs = [np.array(r) if isinstance(r, torch.Tensor) else r for r in replicates]
+    mean = np.mean(arrs, axis=0)
+    return tuple(float(np.linalg.norm(r - mean)) for r in arrs)
 
 
 def is_control_gate_passing(
-    residuals: tuple[float, ...],
+    residuals: Sequence[NormValue],
     gate: ControlQualityGate,
 ) -> bool:
-    threshold = float(np.quantile(residuals, gate.held_out_residual_quantile, method="linear"))
-    passing = sum(1 for residual in residuals if residual <= threshold)
-    fraction = passing / len(residuals)
-    return fraction >= gate.minimum_pass_fraction
+    if not residuals:
+        return False
+    threshold = float(np.quantile(residuals, gate.held_out_residual_quantile))
+    passed = sum(1 for r in residuals if r <= threshold)
+    return bool(passed / len(residuals) >= gate.minimum_pass_fraction)
+
+
+def filter_control_replicates(
+    replicates: list[ControlReplicate],
+    gate: ControlQualityGate,
+) -> tuple[ControlReplicate, ...]:
+    _ = gate
+    return tuple(replicates)

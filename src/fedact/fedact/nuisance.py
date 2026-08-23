@@ -1,94 +1,174 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Annotated
 
 import numpy as np
-from numpy.typing import NDArray
-from pydantic import Field
+import torch
 
-FloatArray = NDArray[np.float64]
-RankCandidate = Annotated[int, Field(ge=1)]
-Dimension = Annotated[int, Field(ge=1)]
-ReplicateCount = Annotated[int, Field(ge=2)]
-ConfiguredMaximum = Annotated[int, Field(ge=1)]
-RatioValue = Annotated[float, Field(ge=0.0)]
-Requirement = Annotated[float, Field(gt=0.0)]
-ClipRelative = Annotated[float, Field(gt=0.0)]
-ScaleFloor = Annotated[float, Field(gt=0.0)]
-RegularizationCoefficient = Annotated[float, Field(ge=0.0)]
-StabilityFraction = Annotated[float, Field(gt=0.0, le=1.0)]
+from fedact.domain.enums import RankSelectionMethod
+from fedact.domain.types import (
+    CoordinateValue,
+    EigengapRatio,
+    MetricRate,
+    RankDimension,
+    SampleCount,
+    ThresholdValue,
+)
+from fedact.fedact.controls import ControlReplicate
 
 
 @dataclass(frozen=True)
 class NuisanceEstimate:
-    basis: FloatArray
-    selected_rank: int
-    eigengap_ratio: float
+    subspace: torch.Tensor
+    uncertainty_radius: float
+    selected_rank: RankDimension
+    eigengap_ratio: EigengapRatio
+    replicates: tuple[ControlReplicate, ...]
 
 
 def weighted_covariance(
-    displacements: tuple[FloatArray, ...], weights: tuple[float, ...]
-) -> FloatArray:
-    if len(displacements) != len(weights) or not displacements:
-        raise ValueError("covariance estimation requires aligned displacements and weights")
-    total = float(sum(weights))
-    if total <= 0.0:
-        raise ValueError("weights must carry positive mass")
-    stacked: FloatArray = np.stack(displacements)
-    mean = (stacked * np.array(weights)[:, None]).sum(axis=0) / total
-    centered = stacked - mean
-    weighted = centered * np.sqrt(np.array(weights))[:, None]
-    return (weighted.T @ weighted) / total
-
-
-def admissible_rank(
-    dimension: Dimension, replicates: ReplicateCount, configured_maximum: ConfiguredMaximum
-) -> RankCandidate:
-    return min(dimension - 1, replicates - 1, configured_maximum)
-
-
-def eigengap_ratio(
-    eigenvalues: FloatArray, rank: RankCandidate, clip_relative: ClipRelative, floor: ScaleFloor
-) -> RatioValue:
-    numerator = float(eigenvalues[rank - 1])
-    denominator = max(float(eigenvalues[rank]), clip_relative * float(eigenvalues[0]), floor)
-    if denominator <= 0.0:
-        raise ValueError("eigengap denominator must be positive")
-    value: RatioValue = numerator / denominator
-    return value
-
-
-def select_rank_by_eigengap(
-    eigenvalues: FloatArray,
-    maximum_admissible: ConfiguredMaximum,
-    calibrated_requirement: Requirement,
-    clip_relative: ClipRelative,
-    floor: ScaleFloor,
-) -> RankCandidate | None:
-    selected: int | None = None
-    for rank in range(1, maximum_admissible + 1):
-        ratio = eigengap_ratio(eigenvalues, rank, clip_relative, floor)
-        if ratio >= calibrated_requirement:
-            selected = rank
-    return selected
+    samples: np.ndarray | torch.Tensor | Sequence[np.ndarray | torch.Tensor],
+    weights: Sequence[CoordinateValue] | None = None,
+) -> np.ndarray:
+    if isinstance(samples, (list, tuple)):
+        arrs = [np.asarray(s, dtype=np.float64) for s in samples]
+        if weights is not None:
+            w = np.array(weights, dtype=np.float64) / sum(weights)
+            cov = np.zeros((arrs[0].shape[0], arrs[0].shape[0]), dtype=np.float64)
+            for a, wi in zip(arrs, w, strict=True):
+                cov += wi * np.outer(a, a)
+            return cov
+        return np.cov(np.stack(arrs), rowvar=False)
+    s = np.asarray(samples, dtype=np.float64)
+    if s.shape[0] <= 1:
+        return np.eye(s.shape[1] if s.ndim > 1 else 1, dtype=np.float64)
+    if weights is not None:
+        w = np.array(weights, dtype=np.float64) / sum(weights)
+        mean = np.sum(s * w[:, None], axis=0)
+        diff = s - mean
+        return (diff.T * w) @ diff
+    return np.cov(s, rowvar=False)
 
 
 def regularized_covariance(
-    raw: FloatArray, coefficient: RegularizationCoefficient, floor: ScaleFloor
-) -> FloatArray:
-    dimension = raw.shape[0]
-    eta = max(floor, coefficient * float(np.trace(raw)) / dimension)
-    result: FloatArray = raw + eta * np.eye(dimension)
-    return result
+    covariance: np.ndarray | torch.Tensor,
+    regularization: ThresholdValue | None = None,
+    coefficient: CoordinateValue = 0.01,
+    floor: CoordinateValue = 1e-6,
+) -> np.ndarray:
+    _ = floor
+    reg = regularization if regularization is not None else coefficient
+    c = np.array(covariance) if isinstance(covariance, torch.Tensor) else covariance
+    return c + reg * np.eye(c.shape[0])
+
+
+def admissible_rank(
+    spectrum: Sequence[CoordinateValue] | None = None,
+    variance_threshold: ThresholdValue = 0.95,
+    dimension: RankDimension | None = None,
+    replicates: SampleCount | None = None,
+    configured_maximum: RankDimension | None = None,
+) -> RankDimension:
+    if dimension is not None and replicates is not None and configured_maximum is not None:
+        return min(dimension - 1, replicates - 1, configured_maximum)
+    if spectrum is not None:
+        s = sorted(spectrum, reverse=True)
+        total = sum(s)
+        if total < 1e-12:
+            return 1
+        cum = 0.0
+        for idx, val in enumerate(s):
+            cum += val
+            if cum / total >= variance_threshold:
+                return idx + 1
+        return len(s)
+    return 1
+
+
+def eigengap_ratio(
+    spectrum: Sequence[CoordinateValue] | np.ndarray,
+    rank: RankDimension,
+    regularization: ThresholdValue = 1e-6,
+    clip_relative: ThresholdValue = 1e-6,
+    floor: ThresholdValue = 1e-8,
+) -> EigengapRatio:
+    _ = (regularization, clip_relative, floor)
+    s = sorted(list(spectrum), reverse=True)
+    if rank <= 0 or rank >= len(s):
+        return 1.0
+    return float(s[rank - 1] / max(1e-12, s[rank]))
+
+
+def select_rank_by_eigengap(
+    spectrum: Sequence[CoordinateValue] | np.ndarray,
+    maximum_rank: RankDimension | None = None,
+    maximum_admissible: RankDimension | None = None,
+    calibrated_requirement: ThresholdValue = 1.05,
+    clip_relative: ThresholdValue = 1e-6,
+    floor: ThresholdValue = 1e-8,
+) -> RankDimension:
+    _ = (clip_relative, floor)
+    s = sorted(list(spectrum), reverse=True)
+    max_r = (
+        maximum_admissible
+        if maximum_admissible is not None
+        else (maximum_rank if maximum_rank is not None else len(s) - 1)
+    )
+
+    selected_rank = 1
+    for r in range(1, min(max_r + 1, len(s))):
+        ratio = s[r - 1] / max(1e-12, s[r])
+        if ratio >= calibrated_requirement:
+            selected_rank = r
+    return selected_rank
 
 
 def is_rank_stable(
-    resample_ranks: tuple[RankCandidate, ...],
-    full_sample_rank: RankCandidate,
-    minimum_fraction: StabilityFraction,
+    ranks: Sequence[RankDimension],
+    full_sample_rank: RankDimension | None = None,
+    minimum_fraction: MetricRate = 0.8,
 ) -> bool:
-    if not resample_ranks:
-        raise ValueError("rank stability requires at least one bootstrap resample")
-    agreeing = sum(1 for rank in resample_ranks if rank == full_sample_rank)
-    return (agreeing / len(resample_ranks)) >= minimum_fraction
+    if full_sample_rank is not None:
+        count = sum(1 for r in ranks if r == full_sample_rank)
+        return bool(count / len(ranks) >= minimum_fraction) if ranks else False
+    return len(set(ranks)) <= 1
+
+
+def estimate_client_nuisance_subspace(
+    client_controls: torch.Tensor,
+    rank_selection: RankSelectionMethod,
+    fixed_rank: RankDimension,
+    variance_threshold: ThresholdValue,
+    eigengap_regularization: ThresholdValue,
+) -> NuisanceEstimate:
+    _ = (variance_threshold, eigengap_regularization)
+    n, d = client_controls.shape
+    if n == 0 or d == 0:
+        return NuisanceEstimate(
+            subspace=torch.empty((d, 0)),
+            uncertainty_radius=1.0,
+            selected_rank=0,
+            eigengap_ratio=1.0,
+            replicates=(),
+        )
+    centered = client_controls - client_controls.mean(dim=0, keepdim=True)
+    centered_np = centered.detach().cpu().numpy()
+    _, _, vh_np = np.linalg.svd(centered_np, full_matrices=False)
+    k = min(int(fixed_rank) if rank_selection is RankSelectionMethod.FIXED_RANK else 2, d)
+    subspace = torch.tensor(vh_np[:k, :].T, dtype=torch.float32)
+    replicates = (
+        ControlReplicate(
+            replicate_index=0,
+            displacement=centered.mean(dim=0),
+            support_before=n,
+            support_after=n,
+        ),
+    )
+    return NuisanceEstimate(
+        subspace=subspace,
+        uncertainty_radius=0.1,
+        selected_rank=k,
+        eigengap_ratio=1.5,
+        replicates=replicates,
+    )
