@@ -1,3 +1,4 @@
+from fedact.artifacts.dependencies import ArtifactDependencyIndex
 from fedact.artifacts.identity import (
     ArtifactIdentity,
     CanonicalPayload,
@@ -24,6 +25,7 @@ from fedact.artifacts.lifecycle import (
     validate_completion,
     validate_transition,
 )
+from fedact.artifacts.paths import WorkspaceLayout
 from fedact.artifacts.provenance import (
     ArtifactManifest,
     ProvenanceContractError,
@@ -34,6 +36,7 @@ from fedact.artifacts.provenance import (
 __all__ = [
     "REUSABLE_STATES",
     "ArtifactCompletionError",
+    "ArtifactDependencyIndex",
     "ArtifactIdentity",
     "ArtifactManifest",
     "CanonicalPayload",
@@ -46,6 +49,7 @@ __all__ = [
     "ProducerCodeFingerprint",
     "ProvenanceContractError",
     "RunProvenance",
+    "WorkspaceLayout",
     "ScientificKey",
     "assert_reusable",
     "canonical_json",

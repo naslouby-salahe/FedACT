@@ -10,6 +10,8 @@ PACKAGE_PRIMITIVE_ALLOWLIST: dict[str, frozenset[str]] = {
 }
 FUNCTION_ALLOWLIST: dict[str, frozenset[str]] = {
     "fedact.artifacts.identity.content_checksum": frozenset({"bytes"}),
+    "fedact.runtime.logging.configure_execution_logging": frozenset({"int"}),
+    "fedact.runtime.logging.execution_logger": frozenset({"str"}),
 }
 
 

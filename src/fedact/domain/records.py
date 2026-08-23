@@ -14,6 +14,8 @@ CohortDefinition = NewType("CohortDefinition", str)
 OperatorLibraryIdentity = NewType("OperatorLibraryIdentity", str)
 SolverOutcomeRecord = NewType("SolverOutcomeRecord", str)
 RunResultSummary = NewType("RunResultSummary", str)
+ExperimentName = NewType("ExperimentName", str)
+LogNamespace = NewType("LogNamespace", str)
 
 
 @dataclass(frozen=True)

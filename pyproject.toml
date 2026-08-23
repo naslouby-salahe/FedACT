@@ -41,7 +41,7 @@ reportUnknownMemberType = false
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
-addopts = "-n auto --cov=fedact --cov-fail-under=85"
+addopts = "--import-mode=importlib -n auto --cov=fedact --cov-fail-under=85"
 
 [dependency-groups]
 dev = [
