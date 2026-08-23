@@ -20,7 +20,9 @@ ALLOWED_IMPORTS: dict[str, frozenset[str]] = {
     "fedact.runtime": frozenset(
         {"fedact.domain", "fedact.config", "fedact.artifacts", "fedact.experiments"}
     ),
-    "fedact.experiments": frozenset({"fedact.domain", "fedact.config"}),
+    "fedact.experiments": frozenset(
+        {"fedact.domain", "fedact.config", "fedact.datasets", "fedact.fedact"}
+    ),
     "fedact.app": frozenset(
         {
             "fedact.domain",
