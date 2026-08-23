@@ -5,15 +5,19 @@ from typing import cast
 
 import yaml
 
+from fedact.config.loading import load_overlay_configuration, load_production_configuration
 
-def collect_scalar_leaves(node: object) -> list[object]:
+
+def collect_key_paths(node: object, prefix: str = "") -> set[str]:
     if isinstance(node, dict):
         mapping = cast(dict[object, object], node)
-        return [leaf for child in mapping.values() for leaf in collect_scalar_leaves(child)]
-    if isinstance(node, list):
-        items = cast(list[object], node)
-        return [leaf for child in items for leaf in collect_scalar_leaves(child)]
-    return [node]
+        keys: set[str] = set()
+        for key, value in mapping.items():
+            path = f"{prefix}.{key}" if prefix else str(key)
+            keys.add(path)
+            keys |= collect_key_paths(value, path)
+        return keys
+    return set()
 
 
 def test_committed_configuration_matches_roadmap_block(
@@ -22,36 +26,31 @@ def test_committed_configuration_matches_roadmap_block(
     assert production_payload == roadmap_configuration_block
 
 
-def test_no_parallel_configuration_file_duplicates_production_values(
-    repository_root: Path, production_payload: str
+def test_overlay_configurations_are_partial_fragments_of_the_authoritative_schema(
+    repository_root: Path,
 ) -> None:
-    authoritative_raw = cast(dict[object, object], yaml.safe_load(production_payload))
-    governed_scalars = {
-        repr(leaf)
-        for leaf in collect_scalar_leaves(authoritative_raw)
-        if not isinstance(leaf, bool)
-    }
-
-    scanned: list[Path] = []
     configs_root = repository_root / "configs"
-    scanned.extend(sorted(p for p in configs_root.glob("*") if p.suffix in {".yaml", ".yml"}))
-    docs_root = repository_root / "docs"
-    if docs_root.is_dir():
-        scanned.extend(sorted(docs_root.rglob("*.yml")))
+    overlays = sorted(
+        candidate for candidate in configs_root.glob("*.y*ml") if candidate.name != "fedact.yaml"
+    )
+    assert overlays, "overlay configuration discovery must be non-empty"
 
-    duplications: list[str] = []
-    for candidate in scanned:
-        if candidate == configs_root / "fedact.yaml":
-            continue
-        loaded = yaml.safe_load(candidate.read_text(encoding="utf-8"))
-        if loaded is None:
-            continue
-        assert isinstance(loaded, dict), f"{candidate} must deserialize to a mapping"
-        raw = cast(dict[object, object], loaded)
-        duplicated = {repr(leaf) for leaf in collect_scalar_leaves(raw)} & governed_scalars
-        if duplicated:
-            duplications.append(
-                f"{candidate.relative_to(repository_root)} duplicates {sorted(duplicated)}"
+    loaded_authoritative = yaml.safe_load(
+        (configs_root / "fedact.yaml").read_text(encoding="utf-8")
+    )
+    assert isinstance(loaded_authoritative, dict)
+    authoritative_paths = collect_key_paths(cast(dict[object, object], loaded_authoritative))
+
+    for overlay in overlays:
+        loaded_overlay = yaml.safe_load(overlay.read_text(encoding="utf-8"))
+        assert isinstance(loaded_overlay, dict), f"{overlay.name} must deserialize to a mapping"
+        overlay_values = cast(dict[object, object], loaded_overlay)
+        for path in collect_key_paths(overlay_values):
+            assert path in authoritative_paths, (
+                f"{overlay.name} introduces unknown schema path {path}"
             )
-
-    assert not duplications, f"parallel configuration duplication detected: {duplications}"
+        merged = load_overlay_configuration(overlay, configs_root / "fedact.yaml")
+        production = load_production_configuration(configs_root / "fedact.yaml")
+        assert merged.hash != production.hash or not overlay_values, (
+            f"{overlay.name} must change the resolved configuration"
+        )

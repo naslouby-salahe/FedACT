@@ -41,9 +41,18 @@ addopts = "-n auto"
 
 [dependency-groups]
 dev = [
+    "nox>=2026.8.10",
+    "vulture>=2.14",
+    "deptry>=0.23",
     "pytest>=8.0",
     "pytest-xdist>=3.5",
     "ruff>=0.6",
     "pyright>=1.1",
     "types-pyyaml>=6.0",
 ]
+[tool.deptry]
+known_first_party = ["fedact"]
+
+[tool.deptry.per_rule_ignores]
+DEP004 = ["nox"]
+DEP002 = ["types-pyyaml"]

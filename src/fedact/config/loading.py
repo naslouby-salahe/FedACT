@@ -75,6 +75,39 @@ class LoadedConfiguration:
         return cls(path=path, values=values, hash=compute_configuration_hash(values))
 
 
+def parse_raw_configuration_mapping(payload: str) -> dict[str, object]:
+    raw = yaml.load(payload, Loader=_DuplicateKeyRejectingLoader)
+    if not isinstance(raw, dict):
+        raise ValueError("configuration payload must deserialize to a mapping")
+    return cast(dict[str, object], raw)
+
+
+def _deep_merge(base: dict[str, object], overlay: dict[str, object]) -> dict[str, object]:
+    merged: dict[str, object] = dict(base)
+    for key, value in overlay.items():
+        base_value = merged.get(key)
+        if isinstance(value, dict) and isinstance(base_value, dict):
+            merged[key] = _deep_merge(
+                cast(dict[str, object], base_value), cast(dict[str, object], value)
+            )
+        else:
+            merged[key] = value
+    return merged
+
+
+def load_overlay_configuration(overlay_file: Path, production_file: Path) -> LoadedConfiguration:
+    overlay_values = parse_raw_configuration_mapping(overlay_file.read_text(encoding="utf-8"))
+    production_values = parse_raw_configuration_mapping(production_file.read_text(encoding="utf-8"))
+    merged = _deep_merge(production_values, overlay_values)
+    values = FedActConfig.model_validate(merged)
+    validate_configuration_constraints(values)
+    return LoadedConfiguration(
+        path=overlay_file.resolve(),
+        values=values,
+        hash=compute_configuration_hash(values),
+    )
+
+
 def load_production_configuration(configuration_file: Path) -> LoadedConfiguration:
     payload = configuration_file.read_text(encoding="utf-8")
     return LoadedConfiguration.from_payload(configuration_file.resolve(), payload)
