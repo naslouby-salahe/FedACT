@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import NewType
+from typing import Annotated, NewType
+
+from pydantic import Field
 
 from fedact.config.models import FedActConfig, PositiveInt
 from fedact.domain.enums import ScientificOutcome
@@ -50,7 +52,7 @@ class SourceChronology:
                 "source chronology last observed month precedes its first observed month"
             )
 
-    def interval_is_observable(
+    def is_interval_observable(
         self, start_inclusive: CalendarMonth, end_exclusive: CalendarMonth
     ) -> bool:
         if start_inclusive >= end_exclusive:
@@ -60,12 +62,12 @@ class SourceChronology:
         if end_exclusive - 1 > self.last_observed_month:
             return False
         return not any(
-            interval_overlaps_gap(start_inclusive, end_exclusive, gap)
+            is_interval_overlapping_gap(start_inclusive, end_exclusive, gap)
             for gap in self.prohibited_gaps
         )
 
 
-def interval_overlaps_gap(
+def is_interval_overlapping_gap(
     start_inclusive: CalendarMonth, end_exclusive: CalendarMonth, gap: SourceGap
 ) -> bool:
     return (
@@ -108,7 +110,7 @@ def transition_windows(
     )
 
 
-def endpoint_eligible_for_cutoff(
+def is_endpoint_eligible_for_cutoff(
     endpoint_month: CalendarMonth,
     cutoff_exclusive_month: CalendarMonth,
     historical_training_window_months: PositiveInt,
@@ -133,7 +135,7 @@ def enumerate_historical_endpoints(
         candidate = ((candidate + step - 1) // step) * step
     while candidate < cutoff_exclusive_month:
         windows = transition_windows(CalendarMonth(candidate), temporal.transition_interval_months)
-        if source.interval_is_observable(
+        if source.is_interval_observable(
             windows.before_window_start_inclusive, CalendarMonth(candidate)
         ):
             endpoints.append(CalendarMonth(candidate))
@@ -159,7 +161,7 @@ def enumerate_rolling_cutoffs(
     candidate = first_candidate
     while candidate <= last_candidate:
         history_start = candidate - temporal.historical_training_window_months
-        if source.interval_is_observable(CalendarMonth(history_start), CalendarMonth(candidate)):
+        if source.is_interval_observable(CalendarMonth(history_start), CalendarMonth(candidate)):
             identity = SplitCutoffIdentity(f"month-{candidate:06d}")
             horizon_end = month_offset(
                 CalendarMonth(candidate), temporal.primary_confirmatory_horizon_months
@@ -168,7 +170,7 @@ def enumerate_rolling_cutoffs(
                 EligibleCutoff(
                     cutoff_identity=identity,
                     cutoff_exclusive_month=CalendarMonth(candidate),
-                    primary_confirmatory=source.interval_is_observable(
+                    primary_confirmatory=source.is_interval_observable(
                         CalendarMonth(candidate), horizon_end
                     ),
                 )
@@ -194,7 +196,7 @@ def classify_horizon_availability(
         if horizon in seen:
             raise ChronologyError(f"forecast horizon {horizon} is configured more than once")
         seen.add(horizon)
-        observable = source.interval_is_observable(
+        observable = source.is_interval_observable(
             cutoff_exclusive_month,
             month_offset(cutoff_exclusive_month, horizon),
         )
@@ -211,8 +213,11 @@ def classify_horizon_availability(
     return tuple(evaluations)
 
 
+PairedCutoffCount = Annotated[int, Field(ge=0)]
+
+
 def confirmatory_outcome_for_cutoffs(
-    eligible_pair_count: int, minimum_paired_cutoffs: PositiveInt
+    eligible_pair_count: PairedCutoffCount, minimum_paired_cutoffs: PositiveInt
 ) -> ScientificOutcome:
     if eligible_pair_count < minimum_paired_cutoffs:
         return ScientificOutcome.INSUFFICIENT_EVIDENCE

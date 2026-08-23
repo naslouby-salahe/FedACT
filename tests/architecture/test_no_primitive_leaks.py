@@ -6,13 +6,11 @@ from pathlib import Path
 BARE_PRIMITIVES: frozenset[str] = frozenset({"str", "int", "float", "bool", "bytes"})
 PACKAGE_PRIMITIVE_ALLOWLIST: dict[str, frozenset[str]] = {
     "fedact.config": frozenset({"str"}),
-    "fedact.datasets": frozenset({"str", "int", "float", "bool"}),
-    "fedact.models": frozenset({"int", "float", "bool"}),
-    "fedact.training": frozenset({"str", "int", "float", "bool"}),
     "fedact.cli": frozenset({"bool"}),
 }
 FUNCTION_ALLOWLIST: dict[str, frozenset[str]] = {
     "fedact.artifacts.identity.content_checksum": frozenset({"bytes"}),
+    "fedact.datasets.chronology.calendar_month": frozenset({"int"}),
     "fedact.runtime.logging.configure_execution_logging": frozenset({"int"}),
     "fedact.runtime.logging.execution_logger": frozenset({"str"}),
 }

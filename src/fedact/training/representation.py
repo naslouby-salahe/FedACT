@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import NewType
+from typing import Annotated, NewType
 
 import torch
+from pydantic import Field
 from torch import nn
 
 from fedact.config.models import FedActConfig, PositiveInt
@@ -12,12 +13,19 @@ from fedact.models.representation import DetectorHead, RepresentationEncoder
 
 CheckpointHash = NewType("CheckpointHash", str)
 
+ValidationFraction = Annotated[float, Field(ge=0.0, le=1.0)]
+TieTolerance = Annotated[float, Field(gt=0.0)]
+MeanLoss = Annotated[float, Field(ge=0.0)]
+
 
 class TrainingContractError(ValueError):
     pass
 
 
-def apply_deterministic_torch_seed(seed: int) -> None:
+SeedIndex = Annotated[int, Field(ge=0)]
+
+
+def apply_deterministic_torch_seed(seed: SeedIndex) -> None:
     torch.use_deterministic_algorithms(True)
     torch.manual_seed(seed)
 
@@ -29,7 +37,7 @@ class PairedSeedIndex:
     detector_training_seed: int
 
 
-def paired_seed_index(config: FedActConfig, index: int) -> PairedSeedIndex:
+def paired_seed_index(config: FedActConfig, index: SeedIndex) -> PairedSeedIndex:
     representations = config.seeds.representation
     detectors = config.seeds.detector_training
     if index >= len(representations) or index >= len(detectors):
@@ -51,7 +59,7 @@ class TrainingObservation:
 
 def stratified_validation_split(
     observations: tuple[TrainingObservation, ...],
-    validation_fraction: float,
+    validation_fraction: ValidationFraction,
 ) -> tuple[tuple[TrainingObservation, ...], tuple[TrainingObservation, ...]]:
     strata: dict[tuple[bool, int], list[TrainingObservation]] = {}
     for observation in observations:
@@ -78,8 +86,8 @@ class EpochSelection:
 
 
 def select_checkpoint_epoch(
-    validation_losses: tuple[float, ...],
-    tie_tolerance: float,
+    validation_losses: tuple[MeanLoss, ...],
+    tie_tolerance: TieTolerance,
     early_stopping_patience_epochs: PositiveInt,
 ) -> EpochSelection:
     if not validation_losses:
@@ -129,7 +137,7 @@ def train_base_detector(
     combined = nn.Sequential(encoder, head)
     optimizer, scheduler = cosine_schedule_optimizer(combined, config)
 
-    def run_epoch(population: tuple[TrainingObservation, ...]) -> float:
+    def _run_epoch(population: tuple[TrainingObservation, ...]) -> MeanLoss:
         combined.train(False) if not population else None
         losses: list[float] = []
         batch_size = config.training.batch_size
@@ -160,7 +168,7 @@ def train_base_detector(
             optimizer.step()
         scheduler.step()
         combined.train(False)
-        validation_loss = run_epoch(validation_population)
+        validation_loss = _run_epoch(validation_population)
         history.append(validation_loss)
         if validation_loss < best_so_far - config.numerical.projection_tie_tolerance:
             best_so_far = validation_loss

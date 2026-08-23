@@ -8,20 +8,22 @@ from fedact.config.loading import LoadedConfiguration, load_production_configura
 from fedact.config.models import FedActConfig
 from fedact.datasets.ember2024 import (
     EmberRawRecord,
+    WeekIdentifier,
     choose_control_matching_level,
     ember_client_semantics,
 )
 from fedact.datasets.lamda import (
     LamdaRawRecord,
-    audit_released_label,
+    audited_label,
     label_derivation_rule,
     lamda_client_semantics,
-    operator_eligibility,
 )
 from fedact.datasets.preprocessing import (
     FeatureValue,
     PreparedSample,
     PreprocessingRuleError,
+    SupportAssessment,
+    is_adjacent_window_pooling_prohibited,
     prepare_records,
     select_low_variance_features,
 )
@@ -38,7 +40,7 @@ from fedact.datasets.records import (
     SampleIdentifier,
     SchemaChronologyManifest,
     SchemaManifestField,
-    derive_binary_label,
+    is_derived_label_malicious,
 )
 from fedact.domain.enums import DatasetSelector
 from fedact.domain.records import DatasetIdentity, SplitCutoffIdentity
@@ -107,12 +109,12 @@ def test_documented_counts_are_expectations_not_values(config: FedActConfig) -> 
 
 def test_lamda_label_rule_benign_malicious_and_discard_bands(config: FedActConfig) -> None:
     rule = label_derivation_rule(config.datasets.lamda)
-    assert derive_binary_label(rule, 0) is False
-    assert derive_binary_label(rule, 4) is True
-    assert derive_binary_label(rule, 9001) is True
+    assert is_derived_label_malicious(rule, 0) is False
+    assert is_derived_label_malicious(rule, 4) is True
+    assert is_derived_label_malicious(rule, 9001) is True
     for discarded in config.datasets.lamda.labels.discard_detection_counts:
         with pytest.raises(LabelDerivationRuleError):
-            derive_binary_label(rule, discarded)
+            is_derived_label_malicious(rule, discarded)
 
 
 def test_released_label_agreement_is_required(config: FedActConfig) -> None:
@@ -131,8 +133,8 @@ def test_released_label_agreement_is_required(config: FedActConfig) -> None:
         vt_count=30,
         family=None,
     )
-    assert audit_released_label(rule, agreeing) is True
-    assert audit_released_label(rule, conflicting) is None
+    assert audited_label(rule, agreeing).binary_label is True
+    assert audited_label(rule, conflicting).binary_label is None
 
 
 def test_missing_derived_label_uses_vt_count_rule(config: FedActConfig) -> None:
@@ -144,7 +146,7 @@ def test_missing_derived_label_uses_vt_count_rule(config: FedActConfig) -> None:
         vt_count=12,
         family=None,
     )
-    assert audit_released_label(rule, derived) is True
+    assert audited_label(rule, derived).binary_label is True
 
 
 def test_duplicate_identical_rows_keep_one_canonical_row(config: FedActConfig) -> None:
@@ -228,8 +230,6 @@ def test_low_variance_features_removed_by_fitted_transform(config: FedActConfig)
 
 def test_support_gate_applies_per_side_without_pooling(config: FedActConfig) -> None:
     minimum = config.identification.minimum_support_per_class
-    from fedact.datasets.preprocessing import SupportAssessment, no_adjacent_window_pooling
-
     passing = SupportAssessment(
         malicious_support_before=minimum,
         malicious_support_after=minimum,
@@ -242,10 +242,10 @@ def test_support_gate_applies_per_side_without_pooling(config: FedActConfig) -> 
         control_support_before=minimum,
         control_support_after=minimum,
     )
-    assert passing.meets_minimum(minimum)
-    assert not failing_one_side.meets_minimum(minimum)
-    assert no_adjacent_window_pooling(minimum - 1, minimum + 5, minimum) is False
-    assert no_adjacent_window_pooling(minimum, minimum, minimum) is True
+    assert passing.is_meeting_minimum(minimum)
+    assert not failing_one_side.is_meeting_minimum(minimum)
+    assert is_adjacent_window_pooling_prohibited(minimum - 1, minimum + 5, minimum) is False
+    assert is_adjacent_window_pooling_prohibited(minimum, minimum, minimum) is True
 
 
 def test_lamda_is_a_single_corpus_level_client() -> None:
@@ -303,8 +303,10 @@ def test_feasibility_conditions_narrow_role_instead_of_inventing_semantics() -> 
 
 
 def test_operator_ineligibility_follows_raw_artifact_presence() -> None:
-    assert operator_eligibility(True) is True
-    assert operator_eligibility(False) is False
+    from fedact.datasets.lamda import OperatorEligibility
+
+    assert OperatorEligibility(has_matching_raw_artifact=True).is_eligible() is True
+    assert OperatorEligibility(has_matching_raw_artifact=False).is_eligible() is False
 
 
 def test_ember_weekly_vs_monthly_control_level_is_deterministic(config: FedActConfig) -> None:
@@ -332,11 +334,11 @@ def test_ember_weekly_vs_monthly_control_level_is_deterministic(config: FedActCo
 def test_ember_conservative_timestamp_uses_collection_week_start(config: FedActConfig) -> None:
     from fedact.datasets.ember2024 import conservative_timestamp_month
 
-    assert conservative_timestamp_month("2023-W39") == "2023-W39"
+    assert conservative_timestamp_month(WeekIdentifier("2023-W39")) == "2023-W39"
     record = EmberRawRecord(
         sample_hash=SampleIdentifier("x"),
         format_client="win32_pe",
-        collection_week="2023-W39",
+        collection_week=WeekIdentifier("2023-W39"),
         family=None,
     )
     assert record.family is None
