@@ -22,11 +22,12 @@ imports:
 	uv run lint-imports
 
 unit:
-	uv run pytest tests/unit tests/scientific
+	uv run pytest tests/unit
 
 architecture:
 	uv run pytest tests/architecture
 
-tests: unit architecture
+tests:
+	uv run pytest --cov=fedact --cov-fail-under=85
 
 checks: lint typecheck dead-code depcheck imports tests
