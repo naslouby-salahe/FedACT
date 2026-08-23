@@ -22,6 +22,23 @@ class WorkflowName(StrEnum):
     MANUSCRIPT_EVIDENCE_GENERATION = "manuscript-evidence-generation"
 
 
+class ScientificAssumption(StrEnum):
+    CHRONOLOGY = "chronology"
+    SHARED_COMPONENT = "shared-component"
+    INFORMATIVE_CONTROLS = "informative-controls"
+    CONTROL_SPAN_VALIDITY = "control-span-validity"
+    PRIVATE_TRANSITION_ALLOWANCE = "private-transition-allowance"
+    CUTOFF_FIXED_REPRESENTATION = "cutoff-fixed-representation"
+    ACTION_VALIDITY = "action-validity"
+    HISTORICAL_PREDICTABILITY = "historical-predictability"
+    EIGENDECOMPOSITION_STABILITY = "eigendecomposition-stability"
+    MINIMUM_SUPPORT = "minimum-support"
+    PLAUSIBILITY_SET_COVERAGE = "plausibility-set-coverage"
+    HONEST_PRIMARY_FEDERATION = "honest-primary-federation"
+    OPERATOR_COVERAGE = "operator-coverage"
+    TEMPORAL_STABILITY = "temporal-stability"
+
+
 class ScientificOutcome(StrEnum):
     PASS = "PASS"
     FAIL = "FAIL"

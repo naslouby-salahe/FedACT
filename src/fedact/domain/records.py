@@ -6,6 +6,7 @@ from typing import NewType
 from fedact.domain.enums import ArtifactBoundary, WorkflowName
 
 DependencyFingerprint = NewType("DependencyFingerprint", str)
+ContentChecksum = NewType("ContentChecksum", str)
 RepositoryCommit = NewType("RepositoryCommit", str)
 DatasetIdentity = NewType("DatasetIdentity", str)
 PreprocessingIdentity = NewType("PreprocessingIdentity", str)
