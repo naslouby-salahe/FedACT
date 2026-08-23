@@ -8,9 +8,9 @@ from pydantic import Field
 
 from fedact.config.models import PositiveFloat, PositiveInt
 from fedact.datasets.chronology import HorizonAvailability
-from fedact.datasets.records import ExclusionReason, ExclusionRecord, SampleIdentifier
+from fedact.datasets.records import ExclusionReason, ExclusionRecord
 from fedact.domain.enums import DatasetSelector
-from fedact.domain.records import SplitCutoffIdentity
+from fedact.domain.records import SampleIdentifier, SplitCutoffIdentity
 
 FeatureValue = NewType("FeatureValue", float)
 SupportCount = Annotated[int, Field(ge=0)]

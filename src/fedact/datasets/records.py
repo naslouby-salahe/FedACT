@@ -2,15 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Annotated, NewType
+from typing import Annotated
 
 from pydantic import Field
 
 from fedact.config.models import NonNegativeInt, PositiveInt
 from fedact.domain.enums import DatasetSelector
 from fedact.domain.records import DatasetIdentity, SplitCutoffIdentity
-
-SampleIdentifier = NewType("SampleIdentifier", str)
 
 
 class ExclusionReason(StrEnum):

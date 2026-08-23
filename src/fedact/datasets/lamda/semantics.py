@@ -7,10 +7,10 @@ from fedact.config.models import LamdaDatasetConfig
 from fedact.datasets.records import (
     ClientSemanticsAudit,
     LabelDerivationRule,
-    SampleIdentifier,
     corpus_level_client_audit,
 )
 from fedact.domain.enums import DatasetSelector
+from fedact.domain.records import SampleIdentifier
 
 
 @dataclass(frozen=True)

@@ -10,9 +10,9 @@ from fedact.config.models import PositiveInt
 from fedact.datasets.records import (
     ClientSemanticsAudit,
     ClientSemanticsClass,
-    SampleIdentifier,
 )
 from fedact.domain.enums import DatasetSelector
+from fedact.domain.records import SampleIdentifier
 
 WeekIdentifier = NewType("WeekIdentifier", str)
 CalendarMonthCell = NewType("CalendarMonthCell", str)
