@@ -1,0 +1,6 @@
+training:
+  maximum_epochs: 1
+  early_stopping_patience_epochs: 1
+synthetic:
+  independent_draws_per_grid_cell: 1
+  nested_noise_draws_per_seed: 1

@@ -11,6 +11,7 @@ from fedact.config.loading import (
     LoadedConfiguration,
     canonical_configuration_payload,
     compute_configuration_hash,
+    load_overlay_configuration,
     load_production_configuration,
     parse_configuration_payload,
 )
@@ -64,3 +65,33 @@ def test_duplicate_yaml_keys_are_rejected() -> None:
 def test_non_mapping_payloads_are_rejected() -> None:
     with pytest.raises((ValueError, ValidationError)):
         parse_configuration_payload("- 1\n- 2\n")
+
+
+def test_overlay_resolves_deep_merge_over_production(
+    production_configuration_path: Path,
+) -> None:
+    overlay = production_configuration_path.parents[1] / "configs" / "tests.yml"
+    resolved = load_overlay_configuration(overlay, production_configuration_path)
+    assert resolved.values.training.maximum_epochs == 2
+    assert resolved.values.training.batch_size == 256
+    assert resolved.values.statistics.bootstrap.resamples == 200
+    assert resolved.values.temporal.forecast_horizons_months == [1, 3, 6, 12]
+
+
+def test_overlay_changes_the_resolved_configuration_hash(
+    production_configuration: LoadedConfiguration,
+    production_configuration_path: Path,
+) -> None:
+    overlay = production_configuration_path.parents[1] / "configs" / "tests.yml"
+    resolved = load_overlay_configuration(overlay, production_configuration_path)
+    assert resolved.hash != production_configuration.hash
+
+
+def test_unknown_overlay_keys_are_rejected(
+    tmp_path: Path,
+    production_configuration_path: Path,
+) -> None:
+    invalid_overlay = tmp_path / "invalid.yml"
+    invalid_overlay.write_text("unknown_section:\n  value: 1\n", encoding="utf-8")
+    with pytest.raises(ValidationError):
+        load_overlay_configuration(invalid_overlay, production_configuration_path)
