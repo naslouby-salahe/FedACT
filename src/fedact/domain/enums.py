@@ -82,3 +82,25 @@ class RequiredScientificArtifact(StrEnum):
     HARDENED_AND_BASELINE_CHECKPOINTS = "hardened-and-baseline-checkpoints"
     WORKFLOW_RESULTS_AND_STATISTICAL_SUMMARIES = "workflow-results-and-statistical-summaries"
     MANUSCRIPT_FACING_EVIDENCE = "manuscript-facing-evidence"
+
+
+class ExecutableWorkflowName(StrEnum):
+    PREPROCESS = "preprocess"
+    SMOKE = "smoke"
+    BASELINE_PARITY = "baseline-parity"
+    NESTED_CALIBRATION = "nested-calibration"
+    MATH_VERIFICATION = "math-verification"
+    SYNTHETIC_GEOMETRY = "synthetic-geometry"
+    ACTION_CERTIFICATE_VALIDATION = "action-certificate-validation"
+    PROSPECTIVE_EVALUATION = "prospective-evaluation"
+    ABLATIONS = "ablations"
+    FEDERATION = "federation"
+    FAILURE_BOUNDARIES = "failure-boundaries"
+    CROSS_CORPUS = "cross-corpus"
+    CLIENT_SELECTION = "client-selection"
+    STATISTICAL_SYNTHESIS = "statistical-synthesis"
+
+
+class DatasetSelector(StrEnum):
+    LAMDA = "lamda"
+    EMBER2024 = "ember2024"

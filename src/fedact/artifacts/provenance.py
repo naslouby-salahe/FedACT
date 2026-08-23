@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Annotated
+
+from pydantic import Field
 
 from fedact.artifacts.identity import (
     ArtifactIdentity,
@@ -10,40 +13,54 @@ from fedact.artifacts.identity import (
     ProducerCodeFingerprint,
     ScientificKey,
 )
+from fedact.config.loading import ConfigurationHash
 from fedact.domain.enums import (
     ArtifactLifecycleState,
     RequiredScientificArtifact,
     ScientificOutcome,
     WorkflowName,
 )
-from fedact.domain.records import DependencyFingerprint
+from fedact.domain.records import (
+    CohortDefinition,
+    DatasetIdentity,
+    DependencyFingerprint,
+    OperatorLibraryIdentity,
+    PreprocessingIdentity,
+    RepositoryCommit,
+    RunResultSummary,
+    SolverOutcomeRecord,
+    SplitCutoffIdentity,
+)
 
 
 class ProvenanceContractError(ValueError):
     pass
 
 
+PositiveHorizonMonths = Annotated[int, Field(gt=0)]
+
+
 @dataclass(frozen=True)
 class RunProvenance:
     workflow_name: WorkflowName
-    configuration_hash: str
-    repository_commit: str
-    dataset_identity: str | None = None
-    raw_checksum: str | None = None
-    preprocessing_identity: str | None = None
-    split_and_cutoff: str | None = None
-    client_cohort_definition: str | None = None
-    horizon: str | None = None
-    representation_checkpoint_hash: str | None = None
-    detector_checkpoint_hash: str | None = None
+    configuration_hash: ConfigurationHash
+    repository_commit: RepositoryCommit
+    dataset_identity: DatasetIdentity | None = None
+    raw_checksum: ContentChecksum | None = None
+    preprocessing_identity: PreprocessingIdentity | None = None
+    split_and_cutoff_identity: SplitCutoffIdentity | None = None
+    client_cohort_definition: CohortDefinition | None = None
+    horizon_months: PositiveHorizonMonths | None = None
+    representation_checkpoint_hash: ContentChecksum | None = None
+    detector_checkpoint_hash: ContentChecksum | None = None
     seed_streams: tuple[str, ...] = ()
     upstream_artifact_identities: tuple[ArtifactIdentity, ...] = ()
-    operator_library_identity: str | None = None
-    solver_outcome: str | None = None
+    operator_library_identity: OperatorLibraryIdentity | None = None
+    solver_outcome: SolverOutcomeRecord | None = None
     producer_code_fingerprint: ProducerCodeFingerprint | None = None
     environment_fingerprint: EnvironmentFingerprint | None = None
     scientific_outcome: ScientificOutcome | None = None
-    run_result: str | None = None
+    run_result: RunResultSummary | None = None
 
 
 @dataclass(frozen=True)

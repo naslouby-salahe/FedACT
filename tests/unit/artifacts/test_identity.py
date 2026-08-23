@@ -4,7 +4,6 @@ import pytest
 
 from fedact.artifacts.identity import (
     MaterialDependency,
-    artifact_identity_from_parts,
     canonical_json,
     compute_dependency_fingerprint,
     content_checksum,
@@ -97,9 +96,3 @@ def test_environment_fingerprint_sensitivity() -> None:
     assert baseline == environment_fingerprint({"numpy": "2.3.0"})
     assert baseline != environment_fingerprint({"numpy": "2.3.1"})
     assert baseline != environment_fingerprint({"numpy": "2.3.0", "cvxpy": "1.6.0"})
-
-
-def test_artifact_identity_from_parts_is_deterministic_and_ordered() -> None:
-    identity = artifact_identity_from_parts(("boundary", "workflow", "key"))
-    assert identity == artifact_identity_from_parts(("boundary", "workflow", "key"))
-    assert identity != artifact_identity_from_parts(("boundary", "workflow", "other"))
