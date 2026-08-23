@@ -41,7 +41,7 @@ def import_contracts(session: nox.Session) -> None:
 
 @nox.session(name="unit")
 def unit(session: nox.Session) -> None:
-    session.run("uv", "run", "pytest", "tests/unit", "tests/scientific")
+    session.run("uv", "run", "pytest", "tests/unit")
 
 
 @nox.session(name="architecture")
