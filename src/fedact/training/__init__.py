@@ -1,5 +1,8 @@
+from fedact.training.detector import (
+    BaseDetectorTrainingRun,
+    train_base_detector_head,
+)
 from fedact.training.representation import (
-    CheckpointHash,
     EpochSelection,
     PairedSeedIndex,
     TrainingContractError,
@@ -8,11 +11,10 @@ from fedact.training.representation import (
     paired_seed_index,
     select_checkpoint_epoch,
     stratified_validation_split,
-    train_base_detector,
 )
 
 __all__ = [
-    "CheckpointHash",
+    "BaseDetectorTrainingRun",
     "EpochSelection",
     "PairedSeedIndex",
     "TrainingContractError",
@@ -21,5 +23,5 @@ __all__ = [
     "paired_seed_index",
     "select_checkpoint_epoch",
     "stratified_validation_split",
-    "train_base_detector",
+    "train_base_detector_head",
 ]
