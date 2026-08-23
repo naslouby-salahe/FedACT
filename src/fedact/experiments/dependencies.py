@@ -1,12 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import NewType
 
 from fedact.domain.enums import ArtifactBoundary, WorkflowName
-from fedact.domain.records import ArtifactBoundaryContract
-
-DependencyFingerprint = NewType("DependencyFingerprint", str)
+from fedact.domain.records import ArtifactBoundaryContract, DependencyFingerprint
 
 WORKFLOW_ORDER: tuple[WorkflowName, ...] = (
     WorkflowName.SCIENTIFIC_AND_CONFIGURATION_AUTHORITY,
