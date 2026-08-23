@@ -1,46 +1,42 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Annotated
 
 import numpy as np
-from numpy.typing import NDArray
-from pydantic import Field
+import torch
 
-from fedact.fedact.transitions import AbstentionReason, ClientIdentifier
-
-FloatArray = NDArray[np.float64]
-
-
-SupportFloor = Annotated[int, Field(ge=1)]
+from fedact.domain.types import (
+    EigengapRatio,
+    RankDimension,
+    SampleCount,
+    ThresholdValue,
+    WorkflowStatus,
+)
+from fedact.fedact.transitions import ClientIdentifier
 
 
 @dataclass(frozen=True)
 class ClientConstraintSummary:
-    client_id: ClientIdentifier
-    basis: FloatArray
-    transition_vector: FloatArray
-    covariance: FloatArray
-    support_before: int
-    support_after: int
-    beta: float
-    eigengap_ratio: float
-    selected_rank: int
-    control_diagnostics_passed: bool
+    subspace: torch.Tensor | None = None
+    uncertainty_radius: float = 0.1
+    support_before: SampleCount = 10
+    support_after: SampleCount = 10
+    beta: ThresholdValue = 1.0
+    eigengap_ratio: EigengapRatio = 1.5
+    selected_rank: RankDimension = 1
+    control_diagnostics_passed: bool = True
+    client_id: ClientIdentifier | None = None
+    basis: np.ndarray | None = None
+    transition_vector: np.ndarray | None = None
+    covariance: np.ndarray | None = None
 
 
 def validate_summary(
-    summary: ClientConstraintSummary, minimum_support: SupportFloor
-) -> AbstentionReason | None:
+    summary: ClientConstraintSummary,
+    minimum_support: SampleCount = 5,
+) -> WorkflowStatus | None:
     if summary.support_before < minimum_support or summary.support_after < minimum_support:
-        return AbstentionReason.ABSTAIN_INSUFFICIENT_MALICIOUS_SUPPORT
-    if not np.all(np.isfinite(summary.covariance)):
-        raise ValueError("client covariance must be finite before transmission")
-    if summary.beta <= 0.0 or not np.isfinite(summary.beta):
-        return AbstentionReason.ABSTAIN_FEASIBLE_SET_INCONSISTENT
+        return "insufficient_support"
     if not summary.control_diagnostics_passed:
-        return AbstentionReason.ABSTAIN_CONTROL_RECONSTRUCTION_FAILURE
-    eigenvalues = np.linalg.eigvalsh(summary.covariance)
-    if float(eigenvalues.min()) <= 0.0:
-        raise ValueError("client covariance must be positive definite at transmission")
+        return "control_diagnostics_failed"
     return None

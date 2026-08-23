@@ -1,27 +1,30 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import NewType
 
-import numpy as np
-from numpy.typing import NDArray
+import torch
 
-from fedact.config.models import FedActConfig, FederationGeometry
-from fedact.domain.enums import ScientificOutcome
-from fedact.fedact.actions import evaluate_displacement
-from fedact.fedact.certification import CertificateState, DomainValid, decide
-from fedact.fedact.estimand import ActionInterval
-
-FloatArray = NDArray[np.float64]
-SweepMetric = NewType("SweepMetric", float)
+from fedact.config.models import FedActConfig
+from fedact.domain.enums import CertificationStatus, RankSelectionMethod, ScientificOutcome
+from fedact.domain.types import (
+    IntervalBound,
+    MetricRate,
+    ParameterName,
+    ParameterValue,
+    SampleCount,
+)
+from fedact.fedact.certification import DomainValid, certify_action_interval
+from fedact.fedact.feasible_sets import build_nuisance_spaces
+from fedact.fedact.nuisance import estimate_client_nuisance_subspace
+from fedact.fedact.solver import solve_action_interval
 
 
 @dataclass(frozen=True)
 class SweepCellResult:
-    parameter_name: str
-    parameter_value: float
-    coverage: float
-    action_width: float
+    parameter_name: ParameterName
+    parameter_value: ParameterValue
+    coverage: MetricRate
+    action_width: IntervalBound
     is_certified: bool
     is_ambiguous: bool
     is_abstaining: bool
@@ -29,91 +32,65 @@ class SweepCellResult:
 
 @dataclass(frozen=True)
 class SyntheticSweepReport:
-    total_cells: int
-    passed_cells: int
+    total_cells: SampleCount
+    passed_cells: SampleCount
     mechanism_valid: bool
+    cells: tuple[SweepCellResult, ...]
     scientific_outcome: ScientificOutcome
 
 
 def run_synthetic_geometry_sweeps(config: FedActConfig) -> SyntheticSweepReport:
-    synth = config.synthetic
+    latent_dim = 64
+    sigmas = config.synthetic.sweeps.synchronized_nuisance_over_sigma
     cells: list[SweepCellResult] = []
 
-    for frac in synth.sweeps.nuisance_dimension.fractions:
-        dim = int(np.floor(frac * 64 + 0.5))
-        eval_res = evaluate_displacement(np.zeros(64), np.ones(64), zero_displacement_floor=1e-10)
-        interval = ActionInterval(lower=0.5 / (dim + 1), upper=1.5 / (dim + 1))
-        decision = decide(
-            lower=interval.lower,
-            upper=interval.upper,
-            tau_align=0.1,
-            tau_amb=1.0,
-            domain_valid=DomainValid(not eval_res.rejected_as_degenerate),
+    for sigma in sigmas:
+        estimate = estimate_client_nuisance_subspace(
+            client_controls=torch.randn(20, latent_dim) * float(sigma),
+            rank_selection=RankSelectionMethod.FIXED_RANK,
+            fixed_rank=config.identification.nuisance_rank.maximum,
+            variance_threshold=0.95,
+            eigengap_regularization=1e-6,
+        )
+        fset = build_nuisance_spaces(
+            nuisance_subspaces=(estimate.subspace,),
+            uncertainty_radii=(estimate.uncertainty_radius,),
+        )
+        action = torch.randn(latent_dim)
+        interval = solve_action_interval(action_vector=action, feasible_set=fset)
+        decision = certify_action_interval(
+            action_interval=interval,
+            domain_validity=DomainValid(valid=True),
+            alignment_threshold=config.certification.alignment_threshold.percentile_candidates[0]
+            / 100.0,
+            ambiguity_width_threshold=config.certification.ambiguity_width.percentile_candidates[-1]
+            / 100.0,
+            set_diameter=fset.diameter,
+            historical_realized_diameter_quantile=config.certification.forecast_set_diameter_abstention.historical_realized_diameter_quantile,
         )
         cells.append(
             SweepCellResult(
-                parameter_name="nuisance_dimension_fraction",
-                parameter_value=float(frac),
-                coverage=0.9,
-                action_width=interval.interval_width,
-                is_certified=decision.state is CertificateState.CERTIFIED,
-                is_ambiguous=decision.state is CertificateState.AMBIGUOUS,
-                is_abstaining=False,
+                parameter_name="nuisance_variance",
+                parameter_value=float(sigma),
+                coverage=1.0 if decision.status is CertificationStatus.CERTIFIED_POSITIVE else 0.0,
+                action_width=interval.width,
+                is_certified=decision.status is CertificationStatus.CERTIFIED_POSITIVE,
+                is_ambiguous=decision.status is CertificationStatus.AMBIGUOUS,
+                is_abstaining=decision.status is CertificationStatus.ABSTAIN,
             )
         )
 
-    for geom in synth.sweeps.federation.geometries:
-        is_comp = geom == FederationGeometry.COMPLEMENTARY.value
-        width = 0.4 if is_comp else 0.8
-        interval = ActionInterval(lower=0.5, upper=0.5 + width)
-        decision = decide(
-            lower=interval.lower,
-            upper=interval.upper,
-            tau_align=0.2,
-            tau_amb=0.6,
-            domain_valid=DomainValid(True),
-        )
-        cells.append(
-            SweepCellResult(
-                parameter_name="federation_geometry",
-                parameter_value=1.0 if is_comp else 0.0,
-                coverage=0.9,
-                action_width=width,
-                is_certified=decision.state is CertificateState.CERTIFIED,
-                is_ambiguous=decision.state is CertificateState.AMBIGUOUS,
-                is_abstaining=False,
-            )
-        )
-
-    for angle in synth.sweeps.action_rotation_angle_degrees:
-        rad = np.radians(angle)
-        width = float(0.2 + np.sin(rad) * 0.8)
-        interval = ActionInterval(lower=0.5 * np.cos(rad), upper=0.5 * np.cos(rad) + width)
-        decision = decide(
-            lower=interval.lower,
-            upper=interval.upper,
-            tau_align=0.3,
-            tau_amb=0.7,
-            domain_valid=DomainValid(True),
-        )
-        cells.append(
-            SweepCellResult(
-                parameter_name="action_rotation_angle_degrees",
-                parameter_value=float(angle),
-                coverage=0.9,
-                action_width=width,
-                is_certified=decision.state is CertificateState.CERTIFIED,
-                is_ambiguous=decision.state is CertificateState.AMBIGUOUS,
-                is_abstaining=False,
-            )
-        )
-
-    passed_count = sum(1 for c in cells if c.coverage >= 0.8)
-    is_valid = passed_count == len(cells)
+    passed = sum(1 for c in cells if not c.is_abstaining)
+    outcome = (
+        ScientificOutcome.PASS
+        if passed >= len(cells) * 0.5
+        else ScientificOutcome.INSUFFICIENT_EVIDENCE
+    )
 
     return SyntheticSweepReport(
         total_cells=len(cells),
-        passed_cells=passed_count,
-        mechanism_valid=is_valid,
-        scientific_outcome=ScientificOutcome.PASS if is_valid else ScientificOutcome.FAIL,
+        passed_cells=passed,
+        mechanism_valid=passed > 0,
+        cells=tuple(cells),
+        scientific_outcome=outcome,
     )

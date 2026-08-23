@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-from typing import Annotated
+from collections.abc import Sequence
 
-from pydantic import Field
-
+from fedact.domain.types import RankDimension
 from fedact.scoring.encoding import EncodedSample
-
-TargetDimension = Annotated[int, Field(ge=1)]
 
 
 class ScoreValidationError(ValueError):
@@ -14,8 +11,13 @@ class ScoreValidationError(ValueError):
 
 
 def validate_encoded_samples(
-    samples: tuple[EncodedSample, ...], expected_dimension: TargetDimension
+    samples: Sequence[EncodedSample],
+    expected_dimension: RankDimension,
 ) -> None:
-    for s in samples:
-        if s.embedding.shape != (expected_dimension,):
-            raise ScoreValidationError(f"embedding dimension mismatch: {s.embedding.shape}")
+    for sample in samples:
+        emb_shape = sample.embedding.shape
+        dim = emb_shape[0] if len(emb_shape) > 0 else 0
+        if dim != expected_dimension:
+            raise ScoreValidationError(
+                f"Expected embedding dimension {expected_dimension}, got {dim}"
+            )

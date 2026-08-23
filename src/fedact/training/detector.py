@@ -1,96 +1,84 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 
 import torch
-from torch import nn
+from torch.utils.data import DataLoader, TensorDataset
 
-from fedact.config.models import FedActConfig
+from fedact.domain.types import EpochIndex, RankDimension, SampleCount, SeedValue, ThresholdValue
 from fedact.models.detector import DetectorHead
 from fedact.models.representation import RepresentationEncoder
-from fedact.training.representation import (
-    EpochSelection,
-    PairedSeedIndex,
-    TrainingObservation,
-    apply_deterministic_torch_seed,
-    select_checkpoint_epoch,
-)
-
-
-class DetectorTrainingError(ValueError):
-    pass
+from fedact.training.representation import EpochSelection, select_best_epoch
 
 
 @dataclass(frozen=True)
 class BaseDetectorTrainingRun:
-    encoder: RepresentationEncoder
-    head: DetectorHead
+    detector: DetectorHead
     selection: EpochSelection
-    representation_seed: int
-    detector_seed: int
+    representation_seed: SeedValue
+    detector_seed: SeedValue
 
 
-def train_base_detector_head(
+def train_base_detector(
     encoder: RepresentationEncoder,
-    head: DetectorHead,
-    training_population: tuple[TrainingObservation, ...],
-    validation_population: tuple[TrainingObservation, ...],
-    config: FedActConfig,
-    seeds: PairedSeedIndex,
+    training_features: torch.Tensor,
+    training_labels: torch.Tensor,
+    validation_features: torch.Tensor,
+    validation_labels: torch.Tensor,
+    epochs: EpochIndex,
+    batch_size: SampleCount,
+    learning_rate: ThresholdValue,
+    weight_decay: ThresholdValue,
+    representation_seed: SeedValue,
+    detector_seed: SeedValue,
 ) -> BaseDetectorTrainingRun:
-    apply_deterministic_torch_seed(seeds.detector_training_seed)
-    loss_fn = nn.BCEWithLogitsLoss()
-    optimizer = torch.optim.Adam(
-        head.parameters(),
-        lr=config.training.initial_learning_rate,
-        weight_decay=0.0,
-    )
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optimizer, T_max=config.training.maximum_epochs, eta_min=config.training.final_learning_rate
-    )
-
-    def _evaluate(population: tuple[TrainingObservation, ...]) -> float:
-        if not population:
-            raise DetectorTrainingError("validation population must not be empty")
-        encoder.eval()
-        head.eval()
-        with torch.no_grad():
-            features = torch.tensor([item.features for item in population], dtype=torch.float32)
-            labels = torch.tensor([[float(item.label)] for item in population], dtype=torch.float32)
-            frozen = encoder(features).detach()
-            logits = head(frozen)
-            return float(loss_fn(logits, labels).item())
-
-    history: list[float] = []
-    batch_size = config.training.batch_size
-    for _ in range(config.training.maximum_epochs):
-        head.train()
-        encoder.eval()
-        with torch.no_grad():
-            frozen = encoder(
-                torch.tensor([item.features for item in training_population], dtype=torch.float32)
-            ).detach()
-        labels_all = torch.tensor(
-            [[float(item.label)] for item in training_population], dtype=torch.float32
-        )
-        permutation = [int(index) for index in torch.randperm(len(training_population))]
-        for start in range(0, len(permutation), batch_size):
-            indices = permutation[start : start + batch_size]
+    encoder.eval()
+    with torch.no_grad():
+        train_h = encoder(training_features)
+        val_h = encoder(validation_features)
+    torch.manual_seed(detector_seed)
+    detector = DetectorHead(latent_dimension=train_h.shape[1])
+    optimizer = torch.optim.Adam(detector.parameters(), lr=learning_rate, weight_decay=weight_decay)
+    criterion = torch.nn.BCEWithLogitsLoss()
+    dataset = TensorDataset(train_h, training_labels.float())
+    loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    val_losses: list[float] = []
+    detector_states: list[dict[str, torch.Tensor]] = []
+    for _ in range(epochs):
+        detector.train()
+        for batch_h, batch_y in loader:
             optimizer.zero_grad()
-            loss = loss_fn(head(frozen[indices]), labels_all[indices])
+            logits = detector(batch_h)
+            loss = criterion(logits, batch_y)
             loss.backward()
             optimizer.step()
-        scheduler.step()
-        history.append(_evaluate(validation_population))
-    selection = select_checkpoint_epoch(
-        tuple(history),
-        config.numerical.projection_tie_tolerance,
-        config.training.early_stopping_patience_epochs,
-    )
+        detector.eval()
+        with torch.no_grad():
+            val_logits = detector(val_h)
+            val_loss = float(criterion(val_logits, validation_labels.float()).item())
+        val_losses.append(val_loss)
+        detector_states.append({k: v.cpu().clone() for k, v in detector.state_dict().items()})
+    selection = select_best_epoch(tuple(val_losses))
+    detector.load_state_dict(detector_states[selection.selected_epoch])
     return BaseDetectorTrainingRun(
-        encoder=encoder,
-        head=head,
+        detector=detector,
         selection=selection,
-        representation_seed=seeds.representation_seed,
-        detector_seed=seeds.detector_training_seed,
+        representation_seed=representation_seed,
+        detector_seed=detector_seed,
     )
+
+
+def serialize_trained_detector(detector: DetectorHead, destination_path: Path) -> None:
+    destination_path.parent.mkdir(parents=True, exist_ok=True)
+    torch.save(detector.state_dict(), destination_path)
+
+
+def load_trained_detector(source_path: Path, latent_dimension: RankDimension) -> DetectorHead:
+    detector = DetectorHead(latent_dimension=latent_dimension)
+    state = torch.load(source_path, weights_only=True)
+    detector.load_state_dict(state)
+    return detector
+
+
+train_base_detector_head = train_base_detector

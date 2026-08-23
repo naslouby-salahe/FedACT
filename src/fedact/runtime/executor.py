@@ -4,7 +4,9 @@ from dataclasses import dataclass
 
 from fedact.artifacts.dependencies import ArtifactDependencyIndex
 from fedact.artifacts.identity import ArtifactIdentity, DependencyFingerprint
-from fedact.domain.enums import ArtifactBoundary, ExecutableWorkflowName
+from fedact.domain.enums import ArtifactBoundary, ExecutableWorkflowName, WorkflowName
+from fedact.domain.types import ActionDecision, ExecutionReason
+from fedact.experiments.producers import ReuseDecision, registered_boundaries_for
 from fedact.runtime.state import ArtifactExecutionState
 
 
@@ -20,9 +22,9 @@ class IndexedArtifact:
 @dataclass(frozen=True)
 class BoundaryDecision:
     boundary: ArtifactBoundary
-    action: str
+    action: ActionDecision
     reused_identity: ArtifactIdentity | None
-    reason: str
+    reason: ExecutionReason
 
 
 @dataclass(frozen=True)
@@ -43,132 +45,131 @@ class ResolutionPlan:
         )
 
 
+EXECUTABLE_WORKFLOW_BOUNDARY_MAP: dict[ExecutableWorkflowName, tuple[ArtifactBoundary, ...]] = {
+    ExecutableWorkflowName.PREPROCESS: (
+        ArtifactBoundary.DATASET_PREPARATION,
+        ArtifactBoundary.PREPROCESSING_AND_SPLITS,
+    ),
+    ExecutableWorkflowName.BASELINE_PARITY: (ArtifactBoundary.TRAINING_CHECKPOINTS,),
+    ExecutableWorkflowName.NESTED_CALIBRATION: (ArtifactBoundary.CALIBRATION_AND_CERTIFICATION,),
+    ExecutableWorkflowName.PROSPECTIVE_EVALUATION: (ArtifactBoundary.EVALUATION,),
+    ExecutableWorkflowName.STATISTICAL_SYNTHESIS: (ArtifactBoundary.ANALYSIS,),
+}
+
+
+def owned_boundaries_for_workflow(
+    workflow: ExecutableWorkflowName | WorkflowName,
+) -> tuple[ArtifactBoundary, ...]:
+    if isinstance(workflow, ExecutableWorkflowName):
+        if workflow in EXECUTABLE_WORKFLOW_BOUNDARY_MAP:
+            return EXECUTABLE_WORKFLOW_BOUNDARY_MAP[workflow]
+        return ()
+    return registered_boundaries_for(workflow)
+
+
 def _active_candidate_for_boundary(
     boundary: ArtifactBoundary,
     indexed: tuple[IndexedArtifact, ...],
     index: ArtifactDependencyIndex,
-    expected_fingerprint: DependencyFingerprint,
+    expected_fingerprint: DependencyFingerprint | None,
 ) -> IndexedArtifact | None:
     candidates = [
         artifact
         for artifact in indexed
         if artifact.boundary is boundary
         and artifact.state is ArtifactExecutionState.COMPLETE
-        and artifact.dependency_fingerprint == expected_fingerprint
+        and (
+            expected_fingerprint is None or artifact.dependency_fingerprint == expected_fingerprint
+        )
         and index.is_active(artifact.identity)
+        and all(index.is_active(upstream) for upstream in artifact.upstream_identities)
     ]
     if not candidates:
         return None
-    for candidate in candidates:
-        upstreams_active = all(
-            index.is_active(upstream) for upstream in candidate.upstream_identities
-        )
-        upstreams_complete = all(
-            any(
-                other.identity == upstream and other.state is ArtifactExecutionState.COMPLETE
-                for other in indexed
-            )
-            for upstream in candidate.upstream_identities
-        )
-        if upstreams_active and upstreams_complete:
-            return candidate
-    return None
+    return candidates[0]
 
 
 def resolve_execution_requirements(
     required_boundaries: tuple[ArtifactBoundary, ...],
-    expected_fingerprints: dict[ArtifactBoundary, DependencyFingerprint],
-    indexed: tuple[IndexedArtifact, ...],
-    index: ArtifactDependencyIndex,
+    indexed: tuple[IndexedArtifact, ...] | None = None,
+    index: ArtifactDependencyIndex | None = None,
+    expected_fingerprints: dict[ArtifactBoundary, DependencyFingerprint] | None = None,
+    force_recompute_boundaries: frozenset[ArtifactBoundary] = frozenset(),
     overwrite_boundaries: frozenset[ArtifactBoundary] = frozenset(),
+    indexed_artifacts: tuple[IndexedArtifact, ...] | None = None,
+    dependency_index: ArtifactDependencyIndex | None = None,
 ) -> ResolutionPlan:
+    actual_indexed = (
+        indexed
+        if indexed is not None
+        else (indexed_artifacts if indexed_artifacts is not None else ())
+    )
+    actual_index = (
+        index
+        if index is not None
+        else (dependency_index if dependency_index is not None else ArtifactDependencyIndex())
+    )
+
     decisions: list[BoundaryDecision] = []
     newly_stale: list[ArtifactIdentity] = []
+    recompute_cascading = False
+    forces = force_recompute_boundaries | overwrite_boundaries
+
+    if expected_fingerprints:
+        for candidate_artifact in actual_indexed:
+            exp_fp = expected_fingerprints.get(candidate_artifact.boundary)
+            if exp_fp is not None and candidate_artifact.dependency_fingerprint != exp_fp:
+                actual_index.deactivate(candidate_artifact.identity)
+                for desc in actual_index.descendants(candidate_artifact.identity):
+                    actual_index.deactivate(desc)
+
     for boundary in required_boundaries:
-        expected = expected_fingerprints.get(boundary)
-        if expected is None:
-            decisions.append(
-                BoundaryDecision(
-                    boundary=boundary,
-                    action="blocked",
-                    reused_identity=None,
-                    reason="no expected dependency fingerprint configured",
-                )
-            )
-            continue
-        if boundary in overwrite_boundaries:
+        expected_fp = expected_fingerprints.get(boundary) if expected_fingerprints else None
+        candidate = _active_candidate_for_boundary(
+            boundary, actual_indexed, actual_index, expected_fp
+        )
+        must_recompute = boundary in forces or recompute_cascading or candidate is None
+        if must_recompute:
+            recompute_cascading = True
+            if candidate is not None and boundary in forces:
+                newly_stale.append(candidate.identity)
             decisions.append(
                 BoundaryDecision(
                     boundary=boundary,
                     action="recompute",
                     reused_identity=None,
-                    reason="overwrite forces regeneration of this command-owned scope",
+                    reason="forced" if boundary in forces else "upstream_modified_or_missing",
                 )
             )
-            continue
-        candidate = _active_candidate_for_boundary(boundary, indexed, index, expected)
-        if candidate is not None:
+        else:
+            assert candidate is not None
             decisions.append(
                 BoundaryDecision(
                     boundary=boundary,
                     action="reuse",
                     reused_identity=candidate.identity,
-                    reason="COMPLETE artifact with matching dependency fingerprint",
-                )
-            )
-            continue
-        stale_candidate = next(
-            (
-                artifact
-                for artifact in indexed
-                if artifact.boundary is boundary and artifact.dependency_fingerprint != expected
-            ),
-            None,
-        )
-        if stale_candidate is not None:
-            newly_stale.extend(index.invalidate(stale_candidate.identity))
-            decisions.append(
-                BoundaryDecision(
-                    boundary=boundary,
-                    action="recompute",
-                    reused_identity=None,
-                    reason="dependency fingerprint changed; invalidating nearest boundary",
-                )
-            )
-        else:
-            decisions.append(
-                BoundaryDecision(
-                    boundary=boundary,
-                    action="recompute",
-                    reused_identity=None,
-                    reason="no existing artifact for this boundary",
+                    reason="fingerprint_matched_active",
                 )
             )
     return ResolutionPlan(decisions=tuple(decisions), newly_stale=tuple(newly_stale))
 
 
-def owned_boundaries_for_workflow(
-    workflow: ExecutableWorkflowName,
-) -> tuple[ArtifactBoundary, ...]:
-    mapping: dict[ExecutableWorkflowName, tuple[ArtifactBoundary, ...]] = {
-        ExecutableWorkflowName.PREPROCESS: (
-            ArtifactBoundary.DATASET_PREPARATION,
-            ArtifactBoundary.PREPROCESSING_AND_SPLITS,
-        ),
-        ExecutableWorkflowName.SMOKE: (),
-        ExecutableWorkflowName.BASELINE_PARITY: (ArtifactBoundary.TRAINING_CHECKPOINTS,),
-        ExecutableWorkflowName.NESTED_CALIBRATION: (
-            ArtifactBoundary.CALIBRATION_AND_CERTIFICATION,
-        ),
-        ExecutableWorkflowName.MATH_VERIFICATION: (),
-        ExecutableWorkflowName.SYNTHETIC_GEOMETRY: (ArtifactBoundary.EVALUATION,),
-        ExecutableWorkflowName.ACTION_CERTIFICATE_VALIDATION: (ArtifactBoundary.EVALUATION,),
-        ExecutableWorkflowName.PROSPECTIVE_EVALUATION: (ArtifactBoundary.EVALUATION,),
-        ExecutableWorkflowName.ABLATIONS: (ArtifactBoundary.EVALUATION,),
-        ExecutableWorkflowName.FEDERATION: (ArtifactBoundary.EVALUATION,),
-        ExecutableWorkflowName.FAILURE_BOUNDARIES: (ArtifactBoundary.EVALUATION,),
-        ExecutableWorkflowName.CROSS_CORPUS: (ArtifactBoundary.EVALUATION,),
-        ExecutableWorkflowName.CLIENT_SELECTION: (ArtifactBoundary.EVALUATION,),
-        ExecutableWorkflowName.STATISTICAL_SYNTHESIS: (ArtifactBoundary.ANALYSIS,),
-    }
-    return mapping.get(workflow, ())
+def resolve_workflow_boundaries(
+    workflow_name: ExecutableWorkflowName,
+    required_boundaries: tuple[ArtifactBoundary, ...],
+    indexed: tuple[IndexedArtifact, ...],
+    index: ArtifactDependencyIndex,
+    expected_fingerprints: dict[ArtifactBoundary, DependencyFingerprint],
+    force_recompute: frozenset[ArtifactBoundary] = frozenset(),
+) -> ResolutionPlan:
+    _ = workflow_name
+    return resolve_execution_requirements(
+        required_boundaries=required_boundaries,
+        indexed=indexed,
+        index=index,
+        expected_fingerprints=expected_fingerprints,
+        force_recompute_boundaries=force_recompute,
+    )
+
+
+_ = ReuseDecision.REUSE.value

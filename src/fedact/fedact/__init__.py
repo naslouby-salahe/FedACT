@@ -28,7 +28,6 @@ from fedact.fedact.controls import (
     is_control_gate_passing,
 )
 from fedact.fedact.estimand import (
-    SYNTHETIC_DIMENSION,
     ActionDisplacementEvaluation,
     ActionInterval,
     DecisionState,
@@ -101,7 +100,6 @@ __all__ = [
     "ActionDisplacementResult",
     "AbstentionReason",
     "EXTENDED_ASSUMPTION_CONTRACTS",
-    "SYNTHETIC_DIMENSION",
     "ActionDisplacementEvaluation",
     "ActionInterval",
     "action_support_bounds",
