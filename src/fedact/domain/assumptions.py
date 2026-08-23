@@ -135,3 +135,22 @@ def verify_encoder_hash_lock(
             f"{observed_checkpoint_hash} does not match the locked hash "
             f"{lock.representation_checkpoint_hash}; mechanistic attribution is invalid"
         )
+
+
+class LaterRealReadError(ValueError):
+    pass
+
+
+@dataclass(frozen=True)
+class LaterRealIsolationGate:
+    cutoff_identity: SplitCutoffIdentity
+    required_scientific_inputs_complete: bool
+
+
+def open_later_real_evaluation(gate: LaterRealIsolationGate) -> None:
+    if not gate.required_scientific_inputs_complete:
+        raise LaterRealReadError(
+            f"later-real observations for {gate.cutoff_identity} may be read only by "
+            "evaluation producers after all corresponding scientific inputs and decision "
+            "artifacts have reached COMPLETE; later-real data are evaluation-only"
+        )

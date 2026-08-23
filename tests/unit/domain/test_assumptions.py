@@ -9,10 +9,13 @@ from fedact.domain.assumptions import (
     AssumptionContractError,
     CutoffManifest,
     CutoffManifestEntry,
+    LaterRealIsolationGate,
+    LaterRealReadError,
     LeakageAuditFinding,
     assumption_consequence,
     audit_chronology,
     lock_encoder_hash,
+    open_later_real_evaluation,
     verify_encoder_hash_lock,
 )
 from fedact.domain.enums import ScientificAssumption, ScientificOutcome
@@ -127,3 +130,20 @@ def test_encoder_hash_change_invalidates_mechanistic_attribution() -> None:
     assert CUTOFF_FIXED_REPRESENTATION_CONSEQUENCE.failure_outcome is (
         ScientificOutcome.ASSUMPTION_VIOLATION
     )
+
+
+def test_later_real_observations_stay_sealed_until_inputs_complete() -> None:
+    gate = LaterRealIsolationGate(
+        cutoff_identity=SplitCutoffIdentity("month-000024"),
+        required_scientific_inputs_complete=False,
+    )
+    with pytest.raises(LaterRealReadError, match="evaluation-only"):
+        open_later_real_evaluation(gate)
+
+
+def test_completed_scientific_inputs_open_later_real_evaluation() -> None:
+    gate = LaterRealIsolationGate(
+        cutoff_identity=SplitCutoffIdentity("month-000024"),
+        required_scientific_inputs_complete=True,
+    )
+    open_later_real_evaluation(gate)
