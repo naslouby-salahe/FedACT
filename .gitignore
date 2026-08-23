@@ -216,3 +216,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# FedACT generated computational workspace and verified evidence exports
+outputs/
+results/
+
+# Agent scratch space
+docs/temp/
