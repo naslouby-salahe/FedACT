@@ -6,11 +6,10 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import NewType
 
-from fedact.domain.records import DependencyFingerprint
+from fedact.domain.records import ContentChecksum, DependencyFingerprint
 
 CanonicalPayload = NewType("CanonicalPayload", str)
 HexDigest = NewType("HexDigest", str)
-ContentChecksum = NewType("ContentChecksum", str)
 ProducerCodeFingerprint = NewType("ProducerCodeFingerprint", str)
 EnvironmentFingerprint = NewType("EnvironmentFingerprint", str)
 MaterialConfigurationHash = NewType("MaterialConfigurationHash", str)

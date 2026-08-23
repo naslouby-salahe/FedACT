@@ -8,6 +8,7 @@ REGISTERED_PRODUCTION_MODULES: frozenset[str] = frozenset(
         "src/fedact/domain/__init__.py",
         "src/fedact/domain/enums.py",
         "src/fedact/domain/records.py",
+        "src/fedact/domain/assumptions.py",
         "src/fedact/config/__init__.py",
         "src/fedact/config/models.py",
         "src/fedact/config/loading.py",
