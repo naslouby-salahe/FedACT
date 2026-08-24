@@ -17,6 +17,7 @@ from fedact.domain.enums import DatasetSelector
 from fedact.experiments.producers import (
     PREPROCESS_OWNED_BOUNDARIES,
     PREPROCESS_STAGE_FLOW,
+    ReuseDecision,
     SharedProducer,
     is_preprocess_triggerable,
     ownership_for,
@@ -34,7 +35,8 @@ def run(dataset: DatasetSelector | None, overwrite: bool, repository_root: Path)
     scope = [dataset] if dataset is not None else list(DatasetSelector)
     typer.echo(f"preprocess scope: {' '.join(item.value for item in scope)}")
     if overwrite:
-        typer.echo("overwrite: scoped to preprocess-owned artifacts")
+        decision = ReuseDecision.OVERWRITE
+        typer.echo(f"overwrite: scoped to preprocess-owned artifacts ({decision.value})")
 
     for stage in PREPROCESS_STAGE_FLOW:
         typer.echo(f"stage[{stage.stage_order}]: {stage.name}")

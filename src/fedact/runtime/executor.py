@@ -6,7 +6,7 @@ from fedact.artifacts.dependencies import ArtifactDependencyIndex
 from fedact.artifacts.identity import ArtifactIdentity, DependencyFingerprint
 from fedact.domain.enums import ArtifactBoundary, ExecutableWorkflowName, WorkflowName
 from fedact.domain.types import ActionDecision, ExecutionReason
-from fedact.experiments.producers import ReuseDecision, registered_boundaries_for
+from fedact.experiments.producers import registered_boundaries_for
 from fedact.runtime.state import ArtifactExecutionState
 
 
@@ -170,6 +170,3 @@ def resolve_workflow_boundaries(
         expected_fingerprints=expected_fingerprints,
         force_recompute_boundaries=force_recompute,
     )
-
-
-_ = ReuseDecision.REUSE.value
