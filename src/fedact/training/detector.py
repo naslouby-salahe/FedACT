@@ -78,6 +78,7 @@ def load_trained_detector(source_path: Path, latent_dimension: RankDimension) ->
     detector = DetectorHead(latent_dimension=latent_dimension)
     state = torch.load(source_path, weights_only=True)
     detector.load_state_dict(state)
+    detector.eval()
     return detector
 
 
