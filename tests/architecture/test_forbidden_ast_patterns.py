@@ -16,9 +16,10 @@ FORBIDDEN_DIRECT_CALLS = frozenset({"print", "eval", "exec", "compile", "breakpo
 SILENT_STATEMENTS = (ast.Pass, ast.Continue)
 
 
-def import_aliases(tree: ast.Module) -> tuple[set[str], set[str], set[str]]:
+def import_aliases(tree: ast.Module) -> tuple[set[str], set[str], set[str], set[str]]:
     builtins_modules = {"builtins"}
     pdb_modules = {"pdb"}
+    importlib_modules = {"importlib"}
     forbidden_functions = set(FORBIDDEN_DIRECT_CALLS)
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
@@ -27,6 +28,8 @@ def import_aliases(tree: ast.Module) -> tuple[set[str], set[str], set[str]]:
                     builtins_modules.add(alias.asname or alias.name)
                 elif alias.name == "pdb":
                     pdb_modules.add(alias.asname or alias.name)
+                elif alias.name == "importlib":
+                    importlib_modules.add(alias.asname or alias.name)
         elif isinstance(node, ast.ImportFrom) and node.module == "builtins":
             for alias in node.names:
                 if alias.name in FORBIDDEN_DIRECT_CALLS:
@@ -35,7 +38,7 @@ def import_aliases(tree: ast.Module) -> tuple[set[str], set[str], set[str]]:
             for alias in node.names:
                 if alias.name == "set_trace":
                     forbidden_functions.add(alias.asname or alias.name)
-    return builtins_modules, pdb_modules, forbidden_functions
+    return builtins_modules, pdb_modules, importlib_modules, forbidden_functions
 
 
 def constant_string(node: ast.AST) -> str | None:
@@ -44,27 +47,83 @@ def constant_string(node: ast.AST) -> str | None:
     return None
 
 
+def module_reference_name(
+    node: ast.AST,
+    builtins_modules: set[str],
+    pdb_modules: set[str],
+    importlib_modules: set[str],
+) -> str | None:
+    if isinstance(node, ast.Name):
+        if node.id in builtins_modules:
+            return "builtins"
+        if node.id in pdb_modules:
+            return "pdb"
+        return None
+    if isinstance(node, ast.Call):
+        if isinstance(node.func, ast.Name) and node.func.id == "__import__" and node.args:
+            imported = constant_string(node.args[0])
+            if imported in {"builtins", "pdb"}:
+                return imported
+        if (
+            isinstance(node.func, ast.Attribute)
+            and isinstance(node.func.value, ast.Name)
+            and node.func.value.id in importlib_modules
+            and node.func.attr == "import_module"
+            and node.args
+        ):
+            imported = constant_string(node.args[0])
+            if imported in {"builtins", "pdb"}:
+                return imported
+    return None
+
+
 def dynamic_lookup_name(
     node: ast.AST,
     builtins_modules: set[str],
     pdb_modules: set[str],
+    importlib_modules: set[str],
 ) -> str | None:
     if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "getattr":
-        if len(node.args) >= 2 and isinstance(node.args[0], ast.Name):
+        if len(node.args) >= 2:
+            module = module_reference_name(
+                node.args[0], builtins_modules, pdb_modules, importlib_modules
+            )
             attribute = constant_string(node.args[1])
-            if node.args[0].id in builtins_modules and attribute in FORBIDDEN_DIRECT_CALLS:
-                return f"{node.args[0].id}.{attribute}"
-            if node.args[0].id in pdb_modules and attribute == "set_trace":
-                return f"{node.args[0].id}.set_trace"
-    if isinstance(node, ast.Subscript) and isinstance(node.value, ast.Name):
+            if module == "builtins" and attribute in FORBIDDEN_DIRECT_CALLS:
+                return f"builtins.{attribute}"
+            if module == "pdb" and attribute == "set_trace":
+                return "pdb.set_trace"
+    if isinstance(node, ast.Subscript):
         key = constant_string(node.slice)
-        if node.value.id == "__builtins__" and key in FORBIDDEN_DIRECT_CALLS:
-            return f"__builtins__[{key!r}]"
+        if isinstance(node.value, ast.Name) and node.value.id == "__builtins__":
+            if key in FORBIDDEN_DIRECT_CALLS:
+                return f"__builtins__[{key!r}]"
+        if isinstance(node.value, ast.Attribute) and node.value.attr == "__dict__":
+            module = module_reference_name(
+                node.value.value, builtins_modules, pdb_modules, importlib_modules
+            )
+            if module == "builtins" and key in FORBIDDEN_DIRECT_CALLS:
+                return f"builtins.__dict__[{key!r}]"
+            if module == "pdb" and key == "set_trace":
+                return f"pdb.__dict__[{key!r}]"
+        if (
+            isinstance(node.value, ast.Call)
+            and isinstance(node.value.func, ast.Name)
+            and node.value.func.id == "vars"
+            and node.value.args
+        ):
+            module = module_reference_name(
+                node.value.args[0], builtins_modules, pdb_modules, importlib_modules
+            )
+            if module == "builtins" and key in FORBIDDEN_DIRECT_CALLS:
+                return f"vars(builtins)[{key!r}]"
+            if module == "pdb" and key == "set_trace":
+                return f"vars(pdb)[{key!r}]"
     return None
 
 
 def dynamic_call_violations(path: str, tree: ast.Module) -> list[str]:
-    builtins_modules, pdb_modules, forbidden_functions = import_aliases(tree)
+    builtins_modules, pdb_modules, importlib_modules, forbidden_functions = import_aliases(tree)
     violations: list[str] = []
     for node in ast.walk(tree):
         if not isinstance(node, ast.Call):
@@ -83,7 +142,9 @@ def dynamic_call_violations(path: str, tree: ast.Module) -> list[str]:
                     f"{path}:{node.lineno}: forbidden {node.func.value.id}.set_trace()"
                 )
                 continue
-        dynamic_name = dynamic_lookup_name(node.func, builtins_modules, pdb_modules)
+        dynamic_name = dynamic_lookup_name(
+            node.func, builtins_modules, pdb_modules, importlib_modules
+        )
         if dynamic_name is not None:
             violations.append(f"{path}:{node.lineno}: forbidden dynamic lookup {dynamic_name}()")
     return violations
@@ -166,7 +227,10 @@ def test_production_contains_no_dynamic_debug_suppression_or_silent_exception_pa
         "from builtins import eval as e\ne('1 + 1')\n",
         "getattr(__import__('builtins'), 'eval')('1 + 1')\n",
         "import builtins as b\ngetattr(b, 'eval')('1 + 1')\n",
+        "import importlib as il\ngetattr(il.import_module('builtins'), 'eval')('1 + 1')\n",
         "__builtins__['eval']('1 + 1')\n",
+        "import builtins as b\nb.__dict__['eval']('1 + 1')\n",
+        "import builtins as b\nvars(b)['eval']('1 + 1')\n",
         "import pdb\npdb.set_trace()\n",
         "import pdb as p\np.set_trace()\n",
         "from pdb import set_trace as trace\ntrace()\n",
