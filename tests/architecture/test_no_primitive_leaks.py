@@ -101,3 +101,68 @@ def test_allowlists_reference_real_targets(repository_root: Path) -> None:
         tree = ast.parse(source_file.read_text(encoding="utf-8"))
         names = {node.name for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)}
         assert function_name in names, f"stale function allowlist: {qualified}"
+
+
+def dataclass_primitive_violations(repository_root: Path) -> list[str]:
+    package_root = repository_root / "src"
+    violations: list[str] = []
+    for source_file in sorted(package_root.rglob("*.py")):
+        relative = source_file.relative_to(repository_root / "src").with_suffix("")
+        module_path = str(relative).replace("/", ".")
+        if "fedact.config" in module_path:
+            continue
+        owning_package = _matching_allowlist_package(module_path)
+        allowed_primitives = PACKAGE_PRIMITIVE_ALLOWLIST.get(owning_package, frozenset())
+        tree = ast.parse(source_file.read_text(encoding="utf-8"), filename=str(source_file))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ClassDef):
+                is_dc = any(
+                    (isinstance(d, ast.Name) and d.id == "dataclass")
+                    or (
+                        isinstance(d, ast.Call)
+                        and isinstance(d.func, ast.Name)
+                        and d.func.id == "dataclass"
+                    )
+                    for d in node.decorator_list
+                )
+                if is_dc:
+                    for item in node.body:
+                        if isinstance(item, ast.AnnAssign) and isinstance(item.target, ast.Name):
+                            field_name = item.target.id
+                            is_predicate = field_name.startswith(
+                                ("is_", "has_", "should_")
+                            ) or field_name.endswith(
+                                (
+                                    "_passed",
+                                    "_supported",
+                                    "_valid",
+                                    "_flag",
+                                    "_present",
+                                    "_ok",
+                                    "_recorded",
+                                    "_validate",
+                                    "_verified",
+                                    "_confirmed",
+                                    "_characterized",
+                                    "_satisfied",
+                                    "_committed",
+                                    "_only",
+                                    "_name",
+                                )
+                            )
+                            leaked = annotation_primitives(item.annotation) - allowed_primitives
+                            if is_predicate and leaked == {"bool"}:
+                                continue
+                            if field_name.endswith("_name") and leaked == {"str"}:
+                                continue
+                            if leaked:
+                                loc = f"{relative.as_posix()}:{item.lineno}"
+                                violations.append(
+                                    f"{loc}: {node.name}.{field_name}: {sorted(leaked)}"
+                                )
+    return violations
+
+
+def test_dataclasses_do_not_leak_bare_primitives(repository_root: Path) -> None:
+    violations = dataclass_primitive_violations(repository_root)
+    assert not violations, f"primitive leakage in dataclass fields: {violations}"

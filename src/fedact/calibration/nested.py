@@ -3,17 +3,18 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from fedact.config.models import FedActConfig
+from fedact.domain.types import DegradationValue, DetailMessage, MetricRate, ThresholdValue
 
 
 @dataclass(frozen=True)
 class CalibrationCandidate:
-    candidate_id: str
-    tau_align: float
-    tau_amb: float
-    hardening_weight: float
-    observed_coverage: float
-    observed_certification_rate: float
-    clean_degradation: float
+    candidate_id: DetailMessage
+    tau_align: ThresholdValue
+    tau_amb: ThresholdValue
+    hardening_weight: ThresholdValue
+    observed_coverage: MetricRate
+    observed_certification_rate: MetricRate
+    clean_degradation: DegradationValue
 
 
 def generate_calibration_candidates(config: FedActConfig) -> tuple[CalibrationCandidate, ...]:

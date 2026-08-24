@@ -4,7 +4,13 @@ from dataclasses import dataclass
 from typing import NewType
 
 from fedact.domain.enums import ArtifactBoundary, WorkflowName
-from fedact.domain.types import WorkflowDescription
+from fedact.domain.types import (
+    FilePath,
+    IntegrityCheckName,
+    ManifestFieldName,
+    ScientificInvariantName,
+    WorkflowDescription,
+)
 
 DependencyFingerprint = NewType("DependencyFingerprint", str)
 ContentChecksum = NewType("ContentChecksum", str)
@@ -42,16 +48,16 @@ class ArtifactBoundaryContract:
 
 @dataclass(frozen=True)
 class CompletionRequirements:
-    required_files: frozenset[str]
-    required_manifest_fields: frozenset[str]
-    required_integrity_checks: frozenset[str]
-    required_scientific_invariants: frozenset[str]
+    required_files: frozenset[FilePath]
+    required_manifest_fields: frozenset[ManifestFieldName]
+    required_integrity_checks: frozenset[IntegrityCheckName]
+    required_scientific_invariants: frozenset[ScientificInvariantName]
 
 
 @dataclass(frozen=True)
 class CompletionEvidence:
-    present_files: frozenset[str]
-    populated_manifest_fields: frozenset[str]
-    passed_integrity_checks: frozenset[str]
-    passed_scientific_invariants: frozenset[str]
+    present_files: frozenset[FilePath]
+    populated_manifest_fields: frozenset[ManifestFieldName]
+    passed_integrity_checks: frozenset[IntegrityCheckName]
+    passed_scientific_invariants: frozenset[ScientificInvariantName]
     completion_record_committed: bool

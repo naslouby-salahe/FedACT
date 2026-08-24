@@ -7,6 +7,8 @@ import numpy as np
 from numpy.typing import NDArray
 from pydantic import Field
 
+from fedact.domain.types import FamilyName
+
 FloatArray = NDArray[np.float64]
 SpaceDimension = Annotated[int, Field(ge=1)]
 SeedIdentifier = Annotated[int, Field(ge=0)]
@@ -15,7 +17,7 @@ SeedIdentifier = Annotated[int, Field(ge=0)]
 @dataclass(frozen=True)
 class SecurityComparatorResult:
     predicted_shift: FloatArray
-    comparator_family: str
+    comparator_family: FamilyName
 
 
 def static_security_baseline(dimension: SpaceDimension = 64) -> SecurityComparatorResult:

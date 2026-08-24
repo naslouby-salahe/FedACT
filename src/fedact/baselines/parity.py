@@ -5,6 +5,8 @@ from typing import Annotated
 
 from pydantic import Field
 
+from fedact.domain.types import DetailMessage
+
 BudgetAmount = Annotated[float, Field(ge=0.0)]
 ComparatorIdentifier = Annotated[str, Field(min_length=1)]
 
@@ -16,7 +18,7 @@ class BaselineParityViolationError(ValueError):
 @dataclass(frozen=True)
 class ParityVerificationResult:
     is_valid: bool
-    details: str
+    details: DetailMessage
 
 
 def verify_chronology_and_budget_parity(

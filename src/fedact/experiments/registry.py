@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from fedact.domain.enums import ExecutableWorkflowName
-from fedact.domain.types import RoadmapSectionId, WorkflowDescription
+from fedact.domain.types import OptionalFlag, RoadmapSectionId, WorkflowDescription
 
 
 @dataclass(frozen=True)
@@ -11,7 +11,7 @@ class RegisteredWorkflow:
     name: ExecutableWorkflowName
     roadmap_section: RoadmapSectionId
     dependencies: tuple[ExecutableWorkflowName, ...]
-    optional: bool
+    optional: OptionalFlag
     description: WorkflowDescription
 
     @property

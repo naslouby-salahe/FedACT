@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import numpy as np
 import torch
 
-from fedact.domain.types import IntervalBound, NormValue, ThresholdValue
+from fedact.domain.types import IntervalBound, NormValue, ThresholdValue, ValidationFlag
 from fedact.fedact.estimand import ActionInterval
 
 
@@ -14,7 +14,7 @@ from fedact.fedact.estimand import ActionInterval
 class ActionDisplacementResult:
     displacement_vector: torch.Tensor | np.ndarray
     displacement_norm: NormValue
-    rejected_as_degenerate: bool
+    rejected_as_degenerate: ValidationFlag
 
 
 def evaluate_displacement(

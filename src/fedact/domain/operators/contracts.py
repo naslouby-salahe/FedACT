@@ -5,6 +5,17 @@ from enum import StrEnum
 from typing import NewType
 
 from fedact.domain.records import SampleIdentifier, SplitCutoffIdentity
+from fedact.domain.types import (
+    CanonicalFormText,
+    DatasetName,
+    FamilyName,
+    NormValue,
+    OrderIndex,
+    ProvenanceText,
+    RuleDescription,
+    ThresholdValue,
+    UsageCount,
+)
 
 OperatorName = NewType("OperatorName", str)
 CanonicalParameterString = NewType("CanonicalParameterString", str)
@@ -18,26 +29,26 @@ class OperatorDomain(StrEnum):
 
 @dataclass(frozen=True)
 class OperatorFamily:
-    name: str
+    name: FamilyName
     domain: OperatorDomain
-    listed_order: int
+    listed_order: OrderIndex
     parameter_grid: tuple[CanonicalParameterString, ...]
 
 
 @dataclass(frozen=True)
 class OperatorRecord:
     operator_name: OperatorName
-    dataset: str
+    dataset: DatasetName
     domain: OperatorDomain
-    semantic_validity_contract: str
-    construction_function: str
+    semantic_validity_contract: RuleDescription
+    construction_function: RuleDescription
     parameter_domain: tuple[CanonicalParameterString, ...]
-    eligibility_rule: str
-    rejection_rule: str
-    representation_displacement_rule: str
-    zero_displacement_rule: str
-    maximum_uses_per_sample: int
-    provenance: str
+    eligibility_rule: RuleDescription
+    rejection_rule: RuleDescription
+    representation_displacement_rule: RuleDescription
+    zero_displacement_rule: RuleDescription
+    maximum_uses_per_sample: UsageCount
+    provenance: ProvenanceText
 
 
 @dataclass(frozen=True)
@@ -58,7 +69,7 @@ class OperatorComposition:
 @dataclass(frozen=True)
 class OperatorCandidate:
     composition: OperatorComposition
-    canonical_form: str
+    canonical_form: CanonicalFormText
     source_sample_id: SampleIdentifier
     cutoff_identity: SplitCutoffIdentity
 
@@ -66,14 +77,14 @@ class OperatorCandidate:
 @dataclass(frozen=True)
 class ActionDisplacement:
     candidate: OperatorCandidate
-    displacement_norm: float
+    displacement_norm: NormValue
 
 
 @dataclass(frozen=True)
 class ZeroDisplacementRejection:
     candidate: OperatorCandidate
-    observed_norm: float
-    floor: float
+    observed_norm: NormValue
+    floor: ThresholdValue
 
     def __post_init__(self) -> None:
         if self.observed_norm >= self.floor:

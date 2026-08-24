@@ -21,7 +21,7 @@ from fedact.fedact.controls import ControlReplicate
 @dataclass(frozen=True)
 class NuisanceEstimate:
     subspace: torch.Tensor
-    uncertainty_radius: float
+    uncertainty_radius: ThresholdValue
     selected_rank: RankDimension
     eigengap_ratio: EigengapRatio
     replicates: tuple[ControlReplicate, ...]

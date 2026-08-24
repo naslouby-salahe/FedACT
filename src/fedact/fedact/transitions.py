@@ -43,7 +43,7 @@ class AbstentionReason(StrEnum):
 @dataclass(frozen=True)
 class ClientTransmission:
     subspace: torch.Tensor
-    uncertainty_radius: float
+    uncertainty_radius: ThresholdValue
     support_before: SampleCount
     support_after: SampleCount
     control_displacement_norm: NormValue

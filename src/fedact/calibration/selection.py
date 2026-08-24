@@ -6,6 +6,7 @@ from typing import Annotated
 from pydantic import Field
 
 from fedact.calibration.nested import CalibrationCandidate
+from fedact.domain.types import RankDimension
 
 CoverageThreshold = Annotated[float, Field(ge=0.0, le=1.0)]
 DegradationBound = Annotated[float, Field(ge=0.0)]
@@ -18,7 +19,7 @@ class CalibrationSelectionError(ValueError):
 @dataclass(frozen=True)
 class SelectedCalibration:
     selected_candidate: CalibrationCandidate
-    selection_rank: int
+    selection_rank: RankDimension
 
 
 def select_best_calibration_candidate(

@@ -6,7 +6,7 @@ import torch
 
 from fedact.config.models import FedActConfig
 from fedact.domain.enums import RankSelectionMethod, ScientificOutcome
-from fedact.domain.types import DegradationValue, EvaluationCount
+from fedact.domain.types import AblationIdentifier, DegradationValue, EvaluationCount
 from fedact.fedact.feasible_sets import build_nuisance_spaces
 from fedact.fedact.nuisance import estimate_client_nuisance_subspace
 from fedact.fedact.solver import solve_action_interval
@@ -14,7 +14,7 @@ from fedact.fedact.solver import solve_action_interval
 
 @dataclass(frozen=True)
 class AblationResult:
-    ablation_name: str
+    ablation_name: AblationIdentifier
     degradation_percentage_points: DegradationValue
     hypothesis_confirmed: bool
 

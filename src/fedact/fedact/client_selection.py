@@ -8,6 +8,8 @@ import numpy as np
 from numpy.typing import NDArray
 from pydantic import Field
 
+from fedact.domain.types import MetricRate, SampleCount
+
 FloatArray = NDArray[np.float64]
 Ridge = Annotated[float, Field(gt=0.0)]
 LogDeterminantGain = Annotated[float, Field()]
@@ -17,8 +19,8 @@ SelectedCount = Annotated[int, Field(ge=1)]
 
 @dataclass(frozen=True)
 class SelectionBudget:
-    budget_fraction: float
-    eligible_clients: int
+    budget_fraction: MetricRate
+    eligible_clients: SampleCount
 
     @property
     def selected_count(self) -> SelectedCount:

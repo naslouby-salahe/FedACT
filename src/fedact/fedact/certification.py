@@ -28,17 +28,17 @@ class CertificateState(StrEnum):
 
 @dataclass(frozen=True)
 class DomainValid:
-    valid: bool
+    valid: ValidationFlag
 
 
 @dataclass(frozen=True)
 class CertificateDecision:
     status: CertificationStatus
-    lower_bound: float
-    upper_bound: float
-    width: float
-    alignment_threshold: float
-    ambiguity_width_threshold: float
+    lower_bound: IntervalBound
+    upper_bound: IntervalBound
+    width: IntervalBound
+    alignment_threshold: ThresholdValue
+    ambiguity_width_threshold: ThresholdValue
     diameter_gate_passed: bool
     leave_one_client_out_passed: bool
     leave_one_client_out_note: DiagnosisMessage | None

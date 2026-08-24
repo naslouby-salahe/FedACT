@@ -13,6 +13,12 @@ from fedact.datasets.records import (
 )
 from fedact.domain.enums import DatasetSelector
 from fedact.domain.records import SampleIdentifier
+from fedact.domain.types import (
+    CalendarMonthString,
+    DetailMessage,
+    FamilyName,
+    ValidationFlag,
+)
 
 WeekIdentifier = NewType("WeekIdentifier", str)
 CalendarMonthCell = NewType("CalendarMonthCell", str)
@@ -22,9 +28,9 @@ SupportCount = Annotated[int, Field(ge=0)]
 @dataclass(frozen=True)
 class EmberRawRecord:
     sample_hash: SampleIdentifier
-    format_client: str
+    format_client: DetailMessage
     collection_week: WeekIdentifier
-    family: str | None
+    family: FamilyName | None
 
 
 def conservative_timestamp_month(collection_week: WeekIdentifier) -> WeekIdentifier:
@@ -37,7 +43,7 @@ def monthly_matching_cell(collection_week: WeekIdentifier) -> CalendarMonthCell:
 
 @dataclass(frozen=True)
 class ControlMatchingLevel:
-    weekly: bool
+    weekly: ValidationFlag
 
 
 def choose_control_matching_level(
@@ -56,9 +62,9 @@ def choose_control_matching_level(
 class EmberControlMatch:
     malicious_sample_id: SampleIdentifier
     control_sample_id: SampleIdentifier
-    matched_week: str | None
-    matched_month: str | None
-    weekly_level: bool
+    matched_week: CalendarMonthString | None
+    matched_month: CalendarMonthString | None
+    weekly_level: ValidationFlag
 
 
 def _matching_key(
