@@ -83,30 +83,35 @@ def test_complete_evidence_passes_completion_validation() -> None:
 
 
 def test_missing_required_file_blocks_completion() -> None:
+    reqs = _requirements()
     evidence = _evidence(present_files=frozenset({"payload.bin"}))
     with pytest.raises(ArtifactCompletionError, match="required files"):
-        validate_completion(_requirements(), evidence)
+        validate_completion(reqs, evidence)
 
 
 def test_missing_manifest_field_blocks_completion() -> None:
+    reqs = _requirements()
     evidence = _evidence(populated_manifest_fields=frozenset({"artifact_id"}))
     with pytest.raises(ArtifactCompletionError, match="manifest fields"):
-        validate_completion(_requirements(), evidence)
+        validate_completion(reqs, evidence)
 
 
 def test_failed_integrity_check_blocks_completion() -> None:
+    reqs = _requirements()
     evidence = _evidence(passed_integrity_checks=frozenset())
     with pytest.raises(ArtifactCompletionError, match="integrity"):
-        validate_completion(_requirements(), evidence)
+        validate_completion(reqs, evidence)
 
 
 def test_failed_scientific_invariant_blocks_completion() -> None:
+    reqs = _requirements()
     evidence = _evidence(passed_scientific_invariants=frozenset())
     with pytest.raises(ArtifactCompletionError, match="scientific invariants"):
-        validate_completion(_requirements(), evidence)
+        validate_completion(reqs, evidence)
 
 
 def test_uncommitted_completion_record_blocks_reusability() -> None:
+    reqs = _requirements()
     evidence = _evidence(completion_record_committed=False)
     with pytest.raises(ArtifactCompletionError, match="atomically committed"):
-        validate_completion(_requirements(), evidence)
+        validate_completion(reqs, evidence)

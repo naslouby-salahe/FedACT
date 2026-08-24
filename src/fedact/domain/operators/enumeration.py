@@ -36,7 +36,6 @@ def _ordered_composition(
 
 
 def _compositions_of_length(
-    families: tuple[OperatorFamily, ...],
     selections: tuple[tuple[OperatorFamily, CanonicalParameterString], ...],
     length: int,
 ) -> list[OperatorComposition]:
@@ -74,9 +73,7 @@ def enumerate_candidates(
     candidates: list[OperatorCandidate] = []
     seen: set[str] = set()
     for length in range(1, maximum_composed_atomic_actions + 1):
-        for composition in _compositions_of_length(
-            tuple(ordered_families), tuple(selections), length
-        ):
+        for composition in _compositions_of_length(tuple(selections), length):
             canonical = _canonical_form(composition.families, composition.parameters)
             if canonical in seen:
                 continue

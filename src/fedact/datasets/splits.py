@@ -37,7 +37,7 @@ class CutoffSplit:
     assignments: tuple[SplitAssignment, ...]
 
     def partition_counts(self) -> dict[SplitPartition, int]:
-        counts: dict[SplitPartition, int] = {partition: 0 for partition in SplitPartition}
+        counts: dict[SplitPartition, int] = dict.fromkeys(SplitPartition, 0)
         for assignment in self.assignments:
             counts[assignment.partition] += 1
         return counts

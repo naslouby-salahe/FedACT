@@ -111,8 +111,9 @@ def test_chronology_failure_makes_prospective_claims_invalid() -> None:
 
 
 def test_encoder_hash_lock_requires_at_least_one_locked_boundary() -> None:
+    checksum = ContentChecksum("sha256:abc")
     with pytest.raises(AssumptionContractError):
-        lock_encoder_hash(ContentChecksum("sha256:abc"), ())
+        lock_encoder_hash(checksum, ())
 
 
 def test_encoder_hash_lock_verification_passes_for_matching_checkpoint() -> None:
@@ -125,8 +126,9 @@ def test_encoder_hash_lock_verification_passes_for_matching_checkpoint() -> None
 
 def test_encoder_hash_change_invalidates_mechanistic_attribution() -> None:
     locked = lock_encoder_hash(ContentChecksum("sha256:abc"), ("nuisance",))
+    different = ContentChecksum("sha256:different")
     with pytest.raises(AssumptionContractError, match="mechanistic attribution is invalid"):
-        verify_encoder_hash_lock(locked, ContentChecksum("sha256:different"))
+        verify_encoder_hash_lock(locked, different)
     assert CUTOFF_FIXED_REPRESENTATION_CONSEQUENCE.failure_outcome is (
         ScientificOutcome.ASSUMPTION_VIOLATION
     )

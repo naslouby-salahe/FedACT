@@ -89,6 +89,41 @@ def _active_candidate_for_boundary(
     return candidates[0]
 
 
+def _normalize_indexed(
+    indexed: tuple[IndexedArtifact, ...] | None,
+    indexed_artifacts: tuple[IndexedArtifact, ...] | None,
+) -> tuple[IndexedArtifact, ...]:
+    if indexed is not None:
+        return indexed
+    if indexed_artifacts is not None:
+        return indexed_artifacts
+    return ()
+
+
+def _normalize_index(
+    index: ArtifactDependencyIndex | None,
+    dependency_index: ArtifactDependencyIndex | None,
+) -> ArtifactDependencyIndex:
+    if index is not None:
+        return index
+    if dependency_index is not None:
+        return dependency_index
+    return ArtifactDependencyIndex()
+
+
+def _deactivate_mismatches(
+    actual_indexed: tuple[IndexedArtifact, ...],
+    actual_index: ArtifactDependencyIndex,
+    expected_fingerprints: dict[ArtifactBoundary, DependencyFingerprint],
+) -> None:
+    for candidate_artifact in actual_indexed:
+        exp_fp = expected_fingerprints.get(candidate_artifact.boundary)
+        if exp_fp is not None and candidate_artifact.dependency_fingerprint != exp_fp:
+            actual_index.deactivate(candidate_artifact.identity)
+            for desc in actual_index.descendants(candidate_artifact.identity):
+                actual_index.deactivate(desc)
+
+
 def resolve_execution_requirements(
     required_boundaries: tuple[ArtifactBoundary, ...],
     indexed: tuple[IndexedArtifact, ...] | None = None,
@@ -99,16 +134,8 @@ def resolve_execution_requirements(
     indexed_artifacts: tuple[IndexedArtifact, ...] | None = None,
     dependency_index: ArtifactDependencyIndex | None = None,
 ) -> ResolutionPlan:
-    actual_indexed = (
-        indexed
-        if indexed is not None
-        else (indexed_artifacts if indexed_artifacts is not None else ())
-    )
-    actual_index = (
-        index
-        if index is not None
-        else (dependency_index if dependency_index is not None else ArtifactDependencyIndex())
-    )
+    actual_indexed = _normalize_indexed(indexed, indexed_artifacts)
+    actual_index = _normalize_index(index, dependency_index)
 
     decisions: list[BoundaryDecision] = []
     newly_stale: list[ArtifactIdentity] = []
@@ -116,12 +143,7 @@ def resolve_execution_requirements(
     forces = force_recompute_boundaries | overwrite_boundaries
 
     if expected_fingerprints:
-        for candidate_artifact in actual_indexed:
-            exp_fp = expected_fingerprints.get(candidate_artifact.boundary)
-            if exp_fp is not None and candidate_artifact.dependency_fingerprint != exp_fp:
-                actual_index.deactivate(candidate_artifact.identity)
-                for desc in actual_index.descendants(candidate_artifact.identity):
-                    actual_index.deactivate(desc)
+        _deactivate_mismatches(actual_indexed, actual_index, expected_fingerprints)
 
     for boundary in required_boundaries:
         expected_fp = expected_fingerprints.get(boundary) if expected_fingerprints else None
@@ -133,12 +155,13 @@ def resolve_execution_requirements(
             recompute_cascading = True
             if candidate is not None and boundary in forces:
                 newly_stale.append(candidate.identity)
+            reason = "forced" if boundary in forces else "upstream_modified_or_missing"
             decisions.append(
                 BoundaryDecision(
                     boundary=boundary,
                     action="recompute",
                     reused_identity=None,
-                    reason="forced" if boundary in forces else "upstream_modified_or_missing",
+                    reason=reason,
                 )
             )
         else:

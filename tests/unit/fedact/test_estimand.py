@@ -161,8 +161,10 @@ def test_action_conditioning_and_spectrum_diagnostics() -> None:
     information = np.diag([4.0, 1.0])
     direction = np.array([0.0, 1.0])
     index = action_conditioning_index(direction, information)
-    assert index is not None and index == pytest.approx(1.0)
+    assert index is not None
+    assert index == pytest.approx(1.0)
     smallest = smallest_positive_eigenvalue(information, rank_epsilon_relative=1e-6)
-    assert smallest is not None and smallest == pytest.approx(1.0)
+    assert smallest is not None
+    assert smallest == pytest.approx(1.0)
     zero_spectrum = np.zeros((2, 2))
     assert smallest_positive_eigenvalue(zero_spectrum, 1e-6) is None

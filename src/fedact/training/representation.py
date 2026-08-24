@@ -181,7 +181,7 @@ def train_representation_encoder(
     train_labels = training_dataset.label_tensor().float()
     val_features = validation_dataset.feature_tensor()
     dataset = TensorDataset(train_features, train_labels)
-    loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0)
     val_losses: list[float] = []
     saved_states: list[dict[str, torch.Tensor]] = []
     for _ in range(epochs):

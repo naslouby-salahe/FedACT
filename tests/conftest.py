@@ -27,8 +27,8 @@ def production_configuration_path() -> Path:
 
 
 @pytest.fixture(scope="session")
-def production_configuration() -> Iterator[LoadedConfiguration]:
-    yield load_production_configuration(PRODUCTION_CONFIGURATION_PATH)
+def production_configuration() -> LoadedConfiguration:
+    return load_production_configuration(PRODUCTION_CONFIGURATION_PATH)
 
 
 @pytest.fixture(scope="session")

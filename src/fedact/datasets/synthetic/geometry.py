@@ -58,7 +58,7 @@ def action_rotation(
     theta = np.deg2rad(angle_degrees)
     rotated = np.cos(theta) * range_direction + np.sin(theta) * null_direction
     norm = _norm(rotated)
-    if norm == 0.0:
+    if norm < 1e-12:
         raise GeometryValidationError("action rotation produced a zero direction")
     return rotated / norm
 

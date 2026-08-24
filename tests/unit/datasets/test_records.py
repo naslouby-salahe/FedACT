@@ -325,8 +325,10 @@ def test_ember_weekly_vs_monthly_control_level_is_deterministic(config: FedActCo
         minimum_support_per_class=minimum,
         monthly_support_per_side=minimum - 1,
     )
-    assert weekly_ok is not None and weekly_ok.weekly is True
-    assert monthly_only is not None and monthly_only.weekly is False
+    assert weekly_ok is not None
+    assert weekly_ok.weekly is True
+    assert monthly_only is not None
+    assert monthly_only.weekly is False
     assert neither is None
 
 

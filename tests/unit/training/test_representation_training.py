@@ -51,7 +51,8 @@ def test_validation_split_is_stratified_by_label_and_month(config: FedActConfig)
     training, validation = stratified_validation_split(
         population, config.training.validation_fraction
     )
-    assert training and validation
+    assert bool(training)
+    assert bool(validation)
     validation_strata = {(item.label, item.month_index) for item in validation}
     expected_strata = {(label, month) for label in (True, False) for month in range(3)}
     assert validation_strata == expected_strata

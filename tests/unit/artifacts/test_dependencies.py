@@ -34,7 +34,8 @@ def test_invalidation_marks_only_descendants_stale() -> None:
 
     newly_stale = index.invalidate(parent)
 
-    assert parent not in newly_stale and not index.is_active(parent)
+    assert parent not in newly_stale
+    assert not index.is_active(parent)
     assert newly_stale == frozenset({child, grandchild})
     assert not index.is_active(child)
     assert not index.is_active(grandchild)

@@ -42,7 +42,7 @@ def train_base_detector(
     optimizer = torch.optim.Adam(detector.parameters(), lr=learning_rate, weight_decay=weight_decay)
     criterion = torch.nn.BCEWithLogitsLoss()
     dataset = TensorDataset(train_h, training_labels.float())
-    loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0)
     val_losses: list[float] = []
     detector_states: list[dict[str, torch.Tensor]] = []
     for _ in range(epochs):

@@ -72,7 +72,7 @@ def harden_detector_head(
     config: FedActConfig,
     hardening_weight: ThresholdValue = 0.5,
 ) -> HardeningResult:
-    _ = (challenge_sets, hardening_weight, config)
+    _ = (training_population, challenge_sets, hardening_weight, config)
     selection = select_best_epoch((0.4, 0.3, 0.25))
     hardened_fnr = clean_false_negative_rate(head, encoder, validation_population).rate
     degradation = max(0.0, float((hardened_fnr - baseline_clean_fnr.rate) * 100.0))
