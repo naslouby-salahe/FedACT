@@ -127,16 +127,20 @@ def context_tokens(node: ast.AST, parents: dict[ast.AST, ast.AST]) -> set[str]:
     return name_tokens(" ".join(names))
 
 
+def node_within(node: ast.AST, root: ast.AST) -> bool:
+    return any(candidate is node for candidate in ast.walk(root))
+
+
 def is_function_default(node: ast.AST, parents: dict[ast.AST, ast.AST]) -> bool:
     current = node
     while current in parents:
         parent = parents[current]
         if isinstance(parent, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            return node in parent.args.defaults or node in [
-                default for default in parent.args.kw_defaults if default is not None
+            defaults = [
+                *parent.args.defaults,
+                *(default for default in parent.args.kw_defaults if default is not None),
             ]
-        if isinstance(parent, (ast.Assign, ast.AnnAssign, ast.Call, ast.Return)):
-            return False
+            return any(node_within(node, default) for default in defaults)
         current = parent
     return False
 
@@ -215,6 +219,8 @@ def test_governed_values_are_read_from_typed_configuration(
         "BOOTSTRAP_RESAMPLES = 500\n",
         "resamples_used_here = 500\n",
         "def execute(resamples: int = 500) -> None:\n    pass\n",
+        "def execute(schedule: tuple[int, int] = (200, 500)) -> None:\n    pass\n",
+        "def execute(config: object = factory(500)) -> None:\n    pass\n",
         "def execute() -> None:\n    bootstrap(resamples=500)\n",
         "def execute(resamples: int) -> bool:\n    return resamples >= 500\n",
         "def execute() -> None:\n    bootstrap(500)\n",
