@@ -96,7 +96,27 @@ PACKAGE_DEPENDENCIES: dict[str, frozenset[str]] = {
             "fedact.experiments",
         }
     ),
-    "fedact.cli": frozenset({"fedact.app"}),
+    "fedact.cli": frozenset(
+        {
+            "fedact.domain",
+            "fedact.config",
+            "fedact.datasets",
+            "fedact.models",
+            "fedact.training",
+            "fedact.scoring",
+            "fedact.operators",
+            "fedact.fedact",
+            "fedact.baselines",
+            "fedact.calibration",
+            "fedact.evaluation",
+            "fedact.analysis",
+            "fedact.artifacts",
+            "fedact.reporting",
+            "fedact.runtime",
+            "fedact.experiments",
+            "fedact.app",
+        }
+    ),
 }
 
 
@@ -125,25 +145,19 @@ def edges_for_tree(importer: str, tree: ast.Module) -> list[ImportEdge]:
                 elif node.module is None:
                     for alias in node.names:
                         if alias.name != "*":
-                            edges.append(
-                                ImportEdge(importer, f"{base}.{alias.name}", node.lineno)
-                            )
+                            edges.append(ImportEdge(importer, f"{base}.{alias.name}", node.lineno))
                 else:
                     edges.append(ImportEdge(importer, base, node.lineno))
             elif node.module == "fedact":
                 for alias in node.names:
                     if alias.name != "*":
-                        edges.append(
-                            ImportEdge(importer, f"fedact.{alias.name}", node.lineno)
-                        )
+                        edges.append(ImportEdge(importer, f"fedact.{alias.name}", node.lineno))
             elif node.module and node.module.startswith("fedact."):
                 edges.append(ImportEdge(importer, node.module, node.lineno))
     return edges
 
 
-def dependency_violations_for_tree(
-    importer: str, tree: ast.Module, path: str
-) -> list[str]:
+def dependency_violations_for_tree(importer: str, tree: ast.Module, path: str) -> list[str]:
     importer_owner = owner(importer)
     if importer_owner is None:
         return [f"{path}: unknown architectural package owner for {importer}"]
@@ -198,13 +212,11 @@ def test_internal_dependency_graph_is_fail_closed(repository_root: Path) -> None
         ("fedact.domain.example", "from ..experiments import registry\n"),
         ("fedact.domain.example", "import fedact.random_junk.module\n"),
         ("fedact.random_junk.example", "from fedact.domain import records\n"),
-        ("fedact.cli.example", "from fedact.domain import enums\n"),
-        ("fedact.cli.example", "from fedact.experiments import registry\n"),
+        ("fedact.config.example", "from fedact.models import detector\n"),
+        ("fedact.artifacts.example", "from fedact.reporting import evidence\n"),
     ],
 )
-def test_dependency_rule_rejects_known_escape_hatches(
-    importer: str, snippet: str
-) -> None:
+def test_dependency_rule_rejects_known_escape_hatches(importer: str, snippet: str) -> None:
     assert violations_for_snippet(importer, snippet), (importer, snippet)
 
 
@@ -215,6 +227,8 @@ def test_dependency_rule_rejects_known_escape_hatches(
         ("fedact.domain.example", "from . import records\n"),
         ("fedact.domain.example", "from fedact.domain import types\n"),
         ("fedact.cli.example", "from fedact.app import Application\n"),
+        ("fedact.cli.example", "from fedact.domain import enums\n"),
+        ("fedact.cli.example", "from fedact.experiments import registry\n"),
     ],
 )
 def test_dependency_rule_accepts_declared_edges(importer: str, snippet: str) -> None:
