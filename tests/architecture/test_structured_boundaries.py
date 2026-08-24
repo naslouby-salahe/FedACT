@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+from collections import defaultdict
 from pathlib import Path
 
 import pytest
@@ -17,11 +18,22 @@ from tests.architecture.architecture_rules import (
     relative_source_path,
 )
 
-EXACT_RAW_MAPPING_ADAPTERS = frozenset(
+EXACT_RAW_MAPPING_ADAPTER_SITES = frozenset(
     {
-        "fedact.config.loading.parse_raw_configuration_mapping",
+        ("fedact.config.loading.parse_raw_configuration_mapping", "return"),
     }
 )
+
+
+def structured_issue_names(annotation: ast.expr) -> set[str]:
+    issues: set[str] = set()
+    if annotation_contains_names(annotation, ANY_NAMES):
+        issues.add("Any")
+    if annotation_contains_names(annotation, OBJECT_NAMES):
+        issues.add("object")
+    if annotation_mapping_names(annotation):
+        issues.add("mapping")
+    return issues
 
 
 def structured_boundary_violations_for_tree(
@@ -29,11 +41,11 @@ def structured_boundary_violations_for_tree(
 ) -> list[str]:
     violations: list[str] = []
     for site in annotation_sites(module, tree):
+        if (site.symbol, site.kind) in EXACT_RAW_MAPPING_ADAPTER_SITES:
+            continue
         any_names = annotation_contains_names(site.annotation, ANY_NAMES)
         object_names = annotation_contains_names(site.annotation, OBJECT_NAMES)
         mappings = annotation_mapping_names(site.annotation)
-        if site.symbol in EXACT_RAW_MAPPING_ADAPTERS:
-            continue
         rendered = ast.unparse(site.annotation)
         if any_names:
             violations.append(
@@ -62,6 +74,15 @@ def structured_boundary_violations(repository_root: Path) -> list[str]:
             )
         )
     return violations
+
+
+def observed_structured_sites(repository_root: Path) -> dict[tuple[str, str], set[str]]:
+    observed: dict[tuple[str, str], set[str]] = defaultdict(set)
+    for source_file in production_source_files(repository_root):
+        module = module_name(repository_root, source_file)
+        for site in annotation_sites(module, parse_source(source_file)):
+            observed[(site.symbol, site.kind)] |= structured_issue_names(site.annotation)
+    return dict(observed)
 
 
 def violations_for_snippet(snippet: str) -> list[str]:
@@ -107,7 +128,16 @@ def test_structured_boundary_rule_accepts_named_payloads(snippet: str) -> None:
     assert violations_for_snippet(snippet) == []
 
 
-def test_raw_mapping_exemptions_are_exact_adapter_symbols() -> None:
-    assert EXACT_RAW_MAPPING_ADAPTERS
-    assert all(symbol.count(".") >= 3 for symbol in EXACT_RAW_MAPPING_ADAPTERS)
-    assert all(not symbol.endswith(".*") for symbol in EXACT_RAW_MAPPING_ADAPTERS)
+def test_raw_mapping_exemptions_are_exact_real_and_necessary(repository_root: Path) -> None:
+    assert EXACT_RAW_MAPPING_ADAPTER_SITES
+    observed = observed_structured_sites(repository_root)
+    for symbol, kind in EXACT_RAW_MAPPING_ADAPTER_SITES:
+        assert symbol.count(".") >= 3
+        assert not symbol.endswith(".*")
+        assert kind in {"return", "parameter", "field", "vararg", "kwarg"} or kind.startswith(
+            ("parameter:", "field:", "vararg:", "kwarg:")
+        )
+        assert (symbol, kind) in observed, f"stale structured-boundary exemption: {symbol} {kind}"
+        assert observed[(symbol, kind)], (
+            f"unnecessary structured-boundary exemption: {symbol} {kind}"
+        )
