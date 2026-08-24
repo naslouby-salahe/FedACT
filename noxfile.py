@@ -49,11 +49,18 @@ def architecture(session: nox.Session) -> None:
     session.run("uv", "run", "pytest", "tests/architecture")
 
 
+@nox.session(name="quality")
+def quality(session: nox.Session) -> None:
+    session.run("uv", "run", "pytest", "tests/quality")
+
+
 @nox.session(name="checks")
 def checks(session: nox.Session) -> None:
     session.notify("lint")
     session.notify("typing")
     session.notify("dead-code")
     session.notify("dependency-hygiene")
+    session.notify("import-contracts")
     session.notify("unit")
     session.notify("architecture")
+    session.notify("quality")
