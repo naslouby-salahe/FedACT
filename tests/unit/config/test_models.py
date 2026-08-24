@@ -303,20 +303,23 @@ def test_unknown_fields_are_rejected(production_payload: str) -> None:
     mutated = production_payload.replace(
         "datasets:", "datasets:\n  unexpected_section:\n    value: 1", 1
     )
+    raw_data = yaml.safe_load(mutated)
     with pytest.raises(ValidationError):
-        FedActConfig.model_validate(yaml.safe_load(mutated))
+        FedActConfig.model_validate(raw_data)
 
 
 def test_out_of_range_values_are_rejected(production_payload: str) -> None:
     mutated = production_payload.replace("confidence_level: 0.95", "confidence_level: 1.5", 1)
+    raw_data = yaml.safe_load(mutated)
     with pytest.raises(ValidationError):
-        FedActConfig.model_validate(yaml.safe_load(mutated))
+        FedActConfig.model_validate(raw_data)
 
 
 def test_wrong_scalar_types_are_rejected(production_payload: str) -> None:
     mutated = production_payload.replace("batch_size: 256", "batch_size: many", 1)
+    raw_data = yaml.safe_load(mutated)
     with pytest.raises(ValidationError):
-        FedActConfig.model_validate(yaml.safe_load(mutated))
+        FedActConfig.model_validate(raw_data)
 
 
 def test_unknown_enum_tokens_are_rejected(production_payload: str) -> None:
@@ -325,8 +328,9 @@ def test_unknown_enum_tokens_are_rejected(production_payload: str) -> None:
         "confirmatory_formats: [win32_pe, win128_pe]",
         1,
     )
+    raw_data = yaml.safe_load(mutated)
     with pytest.raises(ValidationError):
-        FedActConfig.model_validate(yaml.safe_load(mutated))
+        FedActConfig.model_validate(raw_data)
 
 
 def test_frozen_models_reject_mutation(production_configuration: LoadedConfiguration) -> None:
