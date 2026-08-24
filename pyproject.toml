@@ -61,6 +61,7 @@ dev = [
     "import-linter>=2.13",
     "pytest-cov>=7.1.0",
 ]
+
 [tool.deptry]
 known_first_party = ["fedact"]
 
@@ -75,16 +76,86 @@ DEP002 = ["types-pyyaml", "torch", "cvxpy", "ecos", "scipy", "pandas"]
 root_packages = ["fedact"]
 
 [[tool.importlinter.contracts]]
-name = "Layered package architecture"
-type = "layers"
-layers = [
-    "fedact.cli",
-    "fedact.app",
+name = "Domain is independent of implementation packages"
+type = "forbidden"
+source_modules = ["fedact.domain"]
+forbidden_modules = [
+    "fedact.config",
+    "fedact.datasets",
+    "fedact.models",
+    "fedact.training",
+    "fedact.operators",
+    "fedact.fedact",
+    "fedact.scoring",
+    "fedact.artifacts",
+    "fedact.baselines",
+    "fedact.calibration",
+    "fedact.evaluation",
+    "fedact.analysis",
+    "fedact.reporting",
     "fedact.runtime",
     "fedact.experiments",
+    "fedact.app",
+    "fedact.cli",
+]
+
+[[tool.importlinter.contracts]]
+name = "Configuration depends only inward on domain"
+type = "forbidden"
+source_modules = ["fedact.config"]
+forbidden_modules = [
+    "fedact.datasets",
+    "fedact.models",
+    "fedact.training",
+    "fedact.operators",
+    "fedact.fedact",
+    "fedact.scoring",
     "fedact.artifacts",
-    "fedact.config",
+    "fedact.baselines",
+    "fedact.calibration",
+    "fedact.evaluation",
+    "fedact.analysis",
+    "fedact.reporting",
+    "fedact.runtime",
+    "fedact.experiments",
+    "fedact.app",
+    "fedact.cli",
+]
+
+[[tool.importlinter.contracts]]
+name = "Lower layers never depend on orchestration surfaces"
+type = "forbidden"
+source_modules = [
     "fedact.domain",
+    "fedact.config",
+    "fedact.datasets",
+    "fedact.models",
+    "fedact.training",
+    "fedact.operators",
+    "fedact.fedact",
+    "fedact.scoring",
+    "fedact.artifacts",
+    "fedact.baselines",
+    "fedact.calibration",
+    "fedact.evaluation",
+    "fedact.analysis",
+]
+forbidden_modules = [
+    "fedact.reporting",
+    "fedact.runtime",
+    "fedact.experiments",
+    "fedact.app",
+    "fedact.cli",
+]
+
+[[tool.importlinter.contracts]]
+name = "Peer infrastructure packages remain independent"
+type = "independence"
+modules = [
+    "fedact.datasets",
+    "fedact.models",
+    "fedact.operators",
+    "fedact.artifacts",
 ]
 
 [tool.coverage.run]

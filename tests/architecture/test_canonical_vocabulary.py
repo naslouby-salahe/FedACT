@@ -139,13 +139,9 @@ def source_vocabulary_violations(repository_root: Path) -> list[str]:
                         f"{relative}: file name contains forbidden alias '{forbidden}'"
                     )
             if ARTIFICIAL_VERSION_PATTERN.search(source_file.stem):
-                violations.append(
-                    f"{relative}: file name uses artificial version naming"
-                )
+                violations.append(f"{relative}: file name uses artificial version naming")
             if lower_stem in FORBIDDEN_GENERIC_NAMES:
-                violations.append(
-                    f"{relative}: file name uses forbidden generic terminology"
-                )
+                violations.append(f"{relative}: file name uses forbidden generic terminology")
             try:
                 tree = ast.parse(source_file.read_text(encoding="utf-8"), filename=str(source_file))
             except SyntaxError as parse_error:
@@ -188,19 +184,32 @@ def test_configurations_use_only_canonical_fedact_vocabulary(repository_root: Pa
     assert not violations, f"stale non-FedACT vocabulary found in configuration: {violations}"
 
 
-def test_ast_visitor_detects_forbidden_predecessors_and_artificial_versions() -> None:
+def test_ast_visitor_detects_forbidden_predecessors_generic_names_and_artificial_versions() -> None:
     snippet = """
 class FedSiraModel_v2:
-    def execute_datp_run(self, old_param: int) -> None:
-        fabrid_metric = old_param + 1
+    def execute_datp_run(self, helper: int) -> None:
+        fabrid_metric = helper + 1
         exp1 = "some_value"
 """
     tree = ast.parse(snippet)
     visitor = VocabularyAstVisitor("test_snippet.py")
     visitor.visit(tree)
-    assert len(visitor.violations) >= 4
     joined = " ".join(visitor.violations)
     assert "fedsira" in joined
     assert "datp" in joined
-    assert "old_param" in joined
+    assert "helper" in joined
     assert "fabrid" in joined
+    assert "artificial version" in joined
+    assert "machine-style" in joined
+
+
+def test_ast_visitor_accepts_canonical_descriptive_vocabulary() -> None:
+    snippet = """
+class ActionCertificate:
+    def evaluate_prospective_action(self, sample_count: int) -> int:
+        evaluated_count = sample_count + 1
+        return evaluated_count
+"""
+    visitor = VocabularyAstVisitor("test_snippet.py")
+    visitor.visit(ast.parse(snippet))
+    assert visitor.violations == []
