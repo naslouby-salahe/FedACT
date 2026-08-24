@@ -51,8 +51,9 @@ def test_transition_windows_are_half_open_and_adjacent(config: FedActConfig) -> 
 
 
 def test_transition_endpoint_must_precede_two_full_windows() -> None:
+    endpoint = calendar_month(5)
     with pytest.raises(ChronologyError):
-        transition_windows(calendar_month(5), 3)
+        transition_windows(endpoint, 3)
 
 
 def test_historical_interval_is_exactly_the_configured_window(config: FedActConfig) -> None:
@@ -162,12 +163,11 @@ def test_unavailable_horizon_is_missing_source_data_and_never_shortened(
 
 
 def test_duplicate_configured_horizons_are_rejected(config: FedActConfig) -> None:
+    source = continuous_source()
+    cutoff = calendar_month(24)
+    horizons = (config.temporal.early_horizon_months, config.temporal.early_horizon_months)
     with pytest.raises(ChronologyError):
-        classify_horizon_availability(
-            continuous_source(),
-            calendar_month(24),
-            (config.temporal.early_horizon_months, config.temporal.early_horizon_months),
-        )
+        classify_horizon_availability(source, cutoff, horizons)
 
 
 def test_fewer_than_minimum_paired_cutoffs_is_insufficient_evidence(
@@ -192,8 +192,9 @@ def test_intermediate_cutoffs_reuse_most_recent_compatible_checkpoint(
         reuse_source_checkpoint_month(calendar_month(owner + interval), interval)
         == owner + interval
     )
+    invalid_month = calendar_month(interval - 1)
     with pytest.raises(ChronologyError):
-        reuse_source_checkpoint_month(calendar_month(interval - 1), interval)
+        reuse_source_checkpoint_month(invalid_month, interval)
 
 
 def test_enumerated_endpoints_respect_half_open_history_and_gaps(config: FedActConfig) -> None:
@@ -219,5 +220,7 @@ def test_enumerated_endpoints_respect_half_open_history_and_gaps(config: FedActC
 
 
 def test_empty_observability_interval_is_rejected() -> None:
+    source = continuous_source()
+    m10 = calendar_month(10)
     with pytest.raises(ChronologyError):
-        continuous_source().is_interval_observable(calendar_month(10), calendar_month(10))
+        source.is_interval_observable(m10, m10)

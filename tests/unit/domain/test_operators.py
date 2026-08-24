@@ -128,8 +128,9 @@ def test_coverage_below_minimum_is_operationally_empty() -> None:
 
 def test_composition_repeats_of_one_family_are_invalid() -> None:
     f1 = family("append", 0)
+    params = (CanonicalParameterString("64"), CanonicalParameterString("64"))
     with pytest.raises(ValueError, match="may not repeat"):
-        OperatorComposition(families=(f1, f1), parameters=(CanonicalParameterString("64"),) * 2)
+        OperatorComposition(families=(f1, f1), parameters=params)
 
 
 def test_composition_requires_aligned_families_and_parameters() -> None:
@@ -170,10 +171,12 @@ def test_enumeration_is_deterministic_across_calls() -> None:
 
 
 def test_enumeration_rejects_invalid_maximum() -> None:
+    fams = (family("append", 0),)
     with pytest.raises(EnumerationContractError):
-        enumerate_candidates((family("append", 0),), 0, SAMPLE, CUTOFF)
+        enumerate_candidates(fams, 0, SAMPLE, CUTOFF)
 
 
 def test_enumeration_rejects_duplicate_listed_orders() -> None:
+    fams = (family("a", 0), family("b", 0))
     with pytest.raises(EnumerationContractError, match="unique listed orders"):
-        enumerate_candidates((family("a", 0), family("b", 0)), 1, SAMPLE, CUTOFF)
+        enumerate_candidates(fams, 1, SAMPLE, CUTOFF)

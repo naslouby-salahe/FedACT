@@ -48,8 +48,9 @@ def test_complete_evidence_passes() -> None:
 
 
 def test_missing_provenance_blocks_completion() -> None:
+    bad_evidence = evidence(workflow_provenance_present=False)
     with pytest.raises(WorkflowCompletionError, match="provenance"):
-        validate_workflow_completion(evidence(workflow_provenance_present=False))
+        validate_workflow_completion(bad_evidence)
 
 
 def test_configuration_hash_must_be_whole_run_consistent() -> None:
@@ -59,25 +60,27 @@ def test_configuration_hash_must_be_whole_run_consistent() -> None:
 
 
 def test_missing_seed_streams_block_completion() -> None:
+    bad_evidence = evidence(seed_streams_recorded=False)
     with pytest.raises(WorkflowCompletionError, match="seed"):
-        validate_workflow_completion(evidence(seed_streams_recorded=False))
+        validate_workflow_completion(bad_evidence)
 
 
 def test_missing_mandatory_outputs_block_completion() -> None:
+    bad_evidence = evidence(mandatory_outputs_present=frozenset[ArtifactIdentity]())
     with pytest.raises(WorkflowCompletionError, match="mandatory outputs"):
-        validate_workflow_completion(
-            evidence(mandatory_outputs_present=frozenset[ArtifactIdentity]())
-        )
+        validate_workflow_completion(bad_evidence)
 
 
 def test_invalid_metrics_block_completion() -> None:
+    bad_evidence = evidence(metrics_validate=False)
     with pytest.raises(WorkflowCompletionError, match="metrics"):
-        validate_workflow_completion(evidence(metrics_validate=False))
+        validate_workflow_completion(bad_evidence)
 
 
 def test_non_success_outcomes_require_diagnostic_evidence() -> None:
+    bad_evidence = evidence(diagnostic_evidence_checksum=None)
     with pytest.raises(WorkflowCompletionError, match="diagnostic"):
-        validate_workflow_completion(evidence(diagnostic_evidence_checksum=None))
+        validate_workflow_completion(bad_evidence)
 
 
 def test_pass_outcomes_do_not_require_diagnostic_evidence() -> None:

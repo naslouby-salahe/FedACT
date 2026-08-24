@@ -57,7 +57,7 @@ def greedy_d_optimal(
             name: d_optimal_gain(accumulated, information_matrices[name], ridge_lambda)
             for name in remaining
         }
-        best = sorted(gains.items(), key=lambda item: (-item[1], item[0]))[0][0]
+        best = min(gains.items(), key=lambda item: (-item[1], item[0]))[0]
         selected.append(best)
         remaining.remove(best)
         accumulated = accumulated + information_matrices[best]

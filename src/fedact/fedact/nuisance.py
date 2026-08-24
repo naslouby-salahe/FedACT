@@ -94,7 +94,7 @@ def eigengap_ratio(
     floor: ThresholdValue = 1e-8,
 ) -> EigengapRatio:
     _ = (regularization, clip_relative, floor)
-    s = sorted(list(spectrum), reverse=True)
+    s = sorted(spectrum, reverse=True)
     if rank <= 0 or rank >= len(s):
         return 1.0
     return float(s[rank - 1] / max(1e-12, s[rank]))
@@ -109,12 +109,13 @@ def select_rank_by_eigengap(
     floor: ThresholdValue = 1e-8,
 ) -> RankDimension:
     _ = (clip_relative, floor)
-    s = sorted(list(spectrum), reverse=True)
-    max_r = (
-        maximum_admissible
-        if maximum_admissible is not None
-        else (maximum_rank if maximum_rank is not None else len(s) - 1)
-    )
+    s = sorted(spectrum, reverse=True)
+    if maximum_admissible is not None:
+        max_r = maximum_admissible
+    elif maximum_rank is not None:
+        max_r = maximum_rank
+    else:
+        max_r = len(s) - 1
 
     selected_rank = 1
     for r in range(1, min(max_r + 1, len(s))):

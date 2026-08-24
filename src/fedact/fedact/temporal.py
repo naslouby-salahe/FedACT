@@ -50,21 +50,26 @@ def propagate_radius(
     coefficient: CoordinateValue | None = None,
     process_radius: NormValue | None = None,
 ) -> NormValue:
-    r0 = (
-        initial_radius
-        if initial_radius is not None
-        else (initial_set_radius if initial_set_radius is not None else 1.0)
-    )
-    a = (
-        a_coefficient
-        if a_coefficient is not None
-        else (coefficient if coefficient is not None else 1.0)
-    )
-    rw = (
-        process_noise_radius
-        if process_noise_radius is not None
-        else (process_radius if process_radius is not None else 0.1)
-    )
+    if initial_radius is not None:
+        r0 = initial_radius
+    elif initial_set_radius is not None:
+        r0 = initial_set_radius
+    else:
+        r0 = 1.0
+
+    if a_coefficient is not None:
+        a = a_coefficient
+    elif coefficient is not None:
+        a = coefficient
+    else:
+        a = 1.0
+
+    if process_noise_radius is not None:
+        rw = process_noise_radius
+    elif process_radius is not None:
+        rw = process_radius
+    else:
+        rw = 0.1
 
     r = r0
     for _ in range(horizon_steps):

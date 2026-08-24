@@ -94,8 +94,10 @@ def test_matching_fingerprint_allows_reuse() -> None:
 
 
 def test_fingerprint_mismatch_blocks_reuse() -> None:
+    m = manifest()
+    target_fp = DependencyFingerprint("sha256:" + "9" * 64)
     with pytest.raises(ProvenanceContractError, match="fingerprint"):
-        assert_reusable(manifest(), DependencyFingerprint("sha256:" + "9" * 64))
+        assert_reusable(m, target_fp)
 
 
 def test_run_provenance_supports_every_reconstruction_item() -> None:

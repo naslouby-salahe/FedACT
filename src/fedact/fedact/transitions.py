@@ -85,7 +85,7 @@ def geometric_median(
         distances = np.linalg.norm(diffs, axis=1)
         zero_dist = distances < 1e-12
         if np.any(zero_dist):
-            return arr[np.where(zero_dist)[0][0]]
+            return arr[np.nonzero(zero_dist)[0][0]]
         weights = 1.0 / distances
         weights /= np.sum(weights)
         next_val = np.sum(arr * weights[:, None], axis=0)
