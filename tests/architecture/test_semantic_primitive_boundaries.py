@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+from collections import defaultdict
 from pathlib import Path
 
 import pytest
@@ -20,13 +21,10 @@ EXACT_PRIMITIVE_EXEMPTIONS: dict[str, frozenset[str]] = {
     "fedact.config.loading.canonical_configuration_payload": frozenset({"str"}),
     "fedact.config.loading.parse_configuration_payload": frozenset({"str"}),
     "fedact.config.loading.parse_raw_configuration_mapping": frozenset({"str"}),
-    "fedact.cli.commands.doctor.run": frozenset({"str", "bool"}),
-    "fedact.cli.commands.plan.run": frozenset({"str", "bool"}),
-    "fedact.cli.commands.preprocess.run": frozenset({"str", "bool"}),
-    "fedact.cli.commands.report.run": frozenset({"str", "bool"}),
-    "fedact.cli.commands.run.run": frozenset({"str", "bool"}),
-    "fedact.cli.commands.smoke.run": frozenset({"str", "bool"}),
-    "fedact.cli.commands.status.run": frozenset({"str", "bool"}),
+    "fedact.cli.commands.preprocess.run": frozenset({"bool"}),
+    "fedact.cli.commands.report.run": frozenset({"bool"}),
+    "fedact.cli.commands.run.run": frozenset({"bool"}),
+    "fedact.cli.commands.smoke.run": frozenset({"bool"}),
 }
 
 
@@ -50,6 +48,17 @@ def primitive_violations(repository_root: Path) -> list[str]:
         path = relative_source_path(repository_root, source_file)
         violations.extend(primitive_violations_for_tree(module, parse_source(source_file), path))
     return violations
+
+
+def observed_boundary_primitives(repository_root: Path) -> dict[str, set[str]]:
+    observed: dict[str, set[str]] = defaultdict(set)
+    for source_file in production_source_files(repository_root):
+        module = module_name(repository_root, source_file)
+        tree = parse_source(source_file)
+        aliases = collect_type_aliases(tree)
+        for site in annotation_sites(module, tree):
+            observed[site.symbol] |= primitive_names(site.annotation, aliases)
+    return dict(observed)
 
 
 def violations_for_snippet(snippet: str) -> list[str]:
@@ -92,7 +101,15 @@ def test_primitive_rule_accepts_semantic_types(snippet: str) -> None:
     assert violations_for_snippet(snippet) == []
 
 
-def test_primitive_exemptions_are_exact_symbols_and_not_packages() -> None:
+def test_primitive_exemptions_are_exact_real_and_necessary(repository_root: Path) -> None:
     assert EXACT_PRIMITIVE_EXEMPTIONS
-    assert all(symbol.count(".") >= 3 for symbol in EXACT_PRIMITIVE_EXEMPTIONS)
-    assert all(not symbol.endswith(".*") for symbol in EXACT_PRIMITIVE_EXEMPTIONS)
+    observed = observed_boundary_primitives(repository_root)
+    for symbol, exempted in EXACT_PRIMITIVE_EXEMPTIONS.items():
+        assert symbol.count(".") >= 3
+        assert not symbol.endswith(".*")
+        assert symbol in observed, f"stale primitive exemption: {symbol}"
+        assert exempted, f"empty primitive exemption: {symbol}"
+        assert exempted <= observed[symbol], (
+            f"unnecessary primitive exemption for {symbol}: "
+            f"{sorted(exempted - observed[symbol])}"
+        )
