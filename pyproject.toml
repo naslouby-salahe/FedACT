@@ -123,10 +123,9 @@ forbidden_modules = [
 ]
 
 [[tool.importlinter.contracts]]
-name = "CLI composes only through the application boundary"
+name = "Lower layers never depend on orchestration surfaces"
 type = "forbidden"
-source_modules = ["fedact.cli"]
-forbidden_modules = [
+source_modules = [
     "fedact.domain",
     "fedact.config",
     "fedact.datasets",
@@ -140,9 +139,13 @@ forbidden_modules = [
     "fedact.calibration",
     "fedact.evaluation",
     "fedact.analysis",
+]
+forbidden_modules = [
     "fedact.reporting",
     "fedact.runtime",
     "fedact.experiments",
+    "fedact.app",
+    "fedact.cli",
 ]
 
 [[tool.importlinter.contracts]]
