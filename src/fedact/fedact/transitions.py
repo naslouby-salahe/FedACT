@@ -170,5 +170,7 @@ def leave_one_client_reference(
     transmissions: Sequence[ClientTransmission],
     excluded_index: ClientIndex,
 ) -> ClientTransmission:
-    _ = excluded_index
-    return transmissions[0]
+    remaining = [t for i, t in enumerate(transmissions) if i != excluded_index]
+    if not remaining:
+        return transmissions[0]
+    return remaining[0]

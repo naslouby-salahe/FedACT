@@ -171,4 +171,6 @@ def classify_action_interval(
 
 @dataclass(frozen=True)
 class ActionDisplacementEvaluation:
-    pass
+    interval: ActionInterval
+    polarity: ActionPolarity
+    decision_state: DecisionState

@@ -125,9 +125,21 @@ def compute_chebyshev_center(feasible_set: FeasibleSet) -> torch.Tensor:
     if not feasible_set.nuisance_subspaces:
         return torch.zeros(1)
     d = feasible_set.nuisance_subspaces[0].shape[0]
-    return torch.zeros(d)
+    return torch.zeros(d, dtype=feasible_set.nuisance_subspaces[0].dtype)
 
 
 def is_constraint_satisfied(constraint: ClientConstraint, point: np.ndarray | torch.Tensor) -> bool:
-    _ = (constraint, point)
+    pt = point.detach().cpu().numpy() if isinstance(point, torch.Tensor) else point
+    if constraint.projector is not None:
+        proj_res = pt - constraint.projector @ pt
+        return float(np.linalg.norm(proj_res)) <= constraint.uncertainty_radius + 1e-7
+    if constraint.subspace is not None:
+        sub = (
+            constraint.subspace.detach().cpu().numpy()
+            if isinstance(constraint.subspace, torch.Tensor)
+            else constraint.subspace
+        )
+        proj = sub @ np.linalg.pinv(sub) @ pt
+        proj_res = pt - proj
+        return float(np.linalg.norm(proj_res)) <= constraint.uncertainty_radius + 1e-7
     return True
