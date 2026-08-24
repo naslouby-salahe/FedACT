@@ -44,7 +44,9 @@ FORBIDDEN_GENERATED_COMPONENTS = frozenset(
     }
 )
 ALLOWED_CLI_ROOT_FILES = frozenset({"__init__.py", "main.py"})
-REQUIRED_TEST_AREAS = frozenset({"architecture", "integration", "scientific", "smoke", "unit"})
+REQUIRED_TEST_AREAS = frozenset(
+    {"architecture", "integration", "quality", "scientific", "smoke", "unit"}
+)
 
 
 def architecture_shape_violations(repository_root: Path) -> list[str]:
@@ -129,6 +131,14 @@ def test_repository_shape_rejects_known_structural_escape_hatches(
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(content, encoding="utf-8")
     assert architecture_shape_violations(tmp_path), relative_path
+
+
+def test_repository_shape_requires_every_test_area(tmp_path: Path) -> None:
+    seed_minimal_valid_tree(tmp_path)
+    quality_root = tmp_path / "tests" / "quality"
+    quality_root.rmdir()
+    violations = architecture_shape_violations(tmp_path)
+    assert "missing test area: tests/quality" in violations
 
 
 def test_new_module_inside_known_component_does_not_require_registry_edit(tmp_path: Path) -> None:
