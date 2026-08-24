@@ -3,12 +3,13 @@ from __future__ import annotations
 import logging
 
 from fedact.domain.records import LogNamespace
+from fedact.domain.types import LogLevel
 
 LOG_FORMAT = "%(asctime)s %(levelname)s %(name)s %(message)s"
 FEDACT_LOG_NAMESPACE = "fedact"
 
 
-def configure_execution_logging(level: int = logging.INFO) -> None:
+def configure_execution_logging(level: LogLevel = logging.INFO) -> None:
     namespace = logging.getLogger(FEDACT_LOG_NAMESPACE)
     namespace.setLevel(level)
     if not namespace.handlers:

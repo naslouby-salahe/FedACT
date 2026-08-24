@@ -8,15 +8,7 @@ PACKAGE_PRIMITIVE_ALLOWLIST: dict[str, frozenset[str]] = {
     "fedact.config": frozenset({"str", "int", "float", "bool"}),
     "fedact.cli": frozenset({"bool", "str"}),
 }
-FUNCTION_ALLOWLIST: dict[str, frozenset[str]] = {
-    "fedact.artifacts.identity.content_checksum": frozenset({"bytes"}),
-    "fedact.datasets.chronology.calendar_month": frozenset({"int"}),
-    "fedact.datasets.synthetic.generator.grid_cell_identity": frozenset({"str"}),
-    "fedact.datasets.synthetic.generator.structural_identity": frozenset({"int"}),
-    "fedact.datasets.synthetic.generator.noise_identity": frozenset({"int"}),
-    "fedact.runtime.logging.configure_execution_logging": frozenset({"int"}),
-    "fedact.runtime.logging.execution_logger": frozenset({"str"}),
-}
+FUNCTION_ALLOWLIST: dict[str, frozenset[str]] = {}
 
 
 def _matching_allowlist_package(module_path: str) -> str:

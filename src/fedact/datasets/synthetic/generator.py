@@ -14,7 +14,7 @@ from fedact.config.models import (
 )
 from fedact.datasets.chronology import CalendarMonth
 from fedact.domain.records import SplitCutoffIdentity
-from fedact.domain.types import ReplicateIndex, SampleCount
+from fedact.domain.types import DrawIndex, GridCellLabel, ReplicateIndex, SampleCount, SeedValue
 
 FloatArray = NDArray[np.float64]
 GridCellIdentity = NewType("GridCellIdentity", str)
@@ -174,15 +174,15 @@ def paired_seed_streams(
     return [np.random.default_rng(child) for child in children]
 
 
-def grid_cell_identity(label: str) -> GridCellIdentity:
+def grid_cell_identity(label: GridCellLabel) -> GridCellIdentity:
     return GridCellIdentity(label)
 
 
-def structural_identity(seed_index: int) -> StructuralSeedIdentity:
+def structural_identity(seed_index: SeedValue) -> StructuralSeedIdentity:
     return StructuralSeedIdentity(f"structural-{seed_index}")
 
 
-def noise_identity(seed_index: int, draw_index: int) -> NoiseSeedIdentity:
+def noise_identity(seed_index: SeedValue, draw_index: DrawIndex) -> NoiseSeedIdentity:
     return NoiseSeedIdentity(f"noise-{seed_index}-{draw_index}")
 
 

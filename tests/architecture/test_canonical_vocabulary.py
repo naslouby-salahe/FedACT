@@ -9,7 +9,6 @@ FORBIDDEN_ALIASES: frozenset[str] = frozenset(
 FORBIDDEN_ALIAS_PATTERN = re.compile(
     r"\b(" + "|".join(sorted(FORBIDDEN_ALIASES)) + r")\b", re.IGNORECASE
 )
-ALLOWED_DOCUMENT_FILES: frozenset[str] = frozenset({"README.md", "docs/Roadmap.md"})
 
 
 def alias_violations(repository_root: Path) -> list[str]:
