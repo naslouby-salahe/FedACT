@@ -5,13 +5,15 @@ from dataclasses import dataclass
 import numpy as np
 from numpy.typing import NDArray
 
+from fedact.domain.types import SampleCount
+
 FloatArray = NDArray[np.float64]
 
 
 @dataclass(frozen=True)
 class LaterRealTransitionProxy:
     observed_transition: FloatArray
-    sample_count: int
+    sample_count: SampleCount
 
 
 def build_later_real_proxy(

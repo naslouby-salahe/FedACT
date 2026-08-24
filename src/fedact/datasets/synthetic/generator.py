@@ -14,6 +14,7 @@ from fedact.config.models import (
 )
 from fedact.datasets.chronology import CalendarMonth
 from fedact.domain.records import SplitCutoffIdentity
+from fedact.domain.types import ReplicateIndex, SampleCount
 
 FloatArray = NDArray[np.float64]
 GridCellIdentity = NewType("GridCellIdentity", str)
@@ -52,7 +53,7 @@ def deterministic_orthonormal_basis(
 
 @dataclass(frozen=True)
 class ClientNuisanceGeometry:
-    client_index: int
+    client_index: ClientIndex
     basis: FloatArray
 
 
@@ -118,10 +119,10 @@ def draw_shared_transition(
 
 @dataclass(frozen=True)
 class ControlReplicate:
-    replicate_index: int
+    replicate_index: ReplicateIndex
     displacement: FloatArray
-    support_before: int
-    support_after: int
+    support_before: SampleCount
+    support_after: SampleCount
 
 
 @dataclass(frozen=True)

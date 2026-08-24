@@ -10,6 +10,8 @@ from fedact.domain.enums import FederationGeometry
 from fedact.domain.types import (
     ClientIndex,
     CoordinateValue,
+    IntervalBound,
+    NormValue,
     SampleCount,
     ThresholdValue,
 )
@@ -18,7 +20,7 @@ from fedact.domain.types import (
 @dataclass(frozen=True)
 class L2Ball:
     center: np.ndarray | torch.Tensor
-    radius: float
+    radius: NormValue
 
     def is_containing(
         self, point: np.ndarray | torch.Tensor, tolerance: ThresholdValue = 1e-6
@@ -33,17 +35,17 @@ class L2Ball:
 class ClientConstraint:
     client_index: ClientIndex
     subspace: torch.Tensor | np.ndarray | None = None
-    uncertainty_radius: float = 0.1
+    uncertainty_radius: ThresholdValue = 0.1
     projector: np.ndarray | None = None
     covariance: np.ndarray | None = None
-    beta: float = 1.0
+    beta: ThresholdValue = 1.0
 
 
 @dataclass(frozen=True)
 class FeasibleSet:
     nuisance_subspaces: tuple[torch.Tensor, ...]
-    uncertainty_radii: tuple[float, ...]
-    diameter: float
+    uncertainty_radii: tuple[ThresholdValue, ...]
+    diameter: IntervalBound
     constraints: tuple[ClientConstraint, ...] = ()
     center: np.ndarray | torch.Tensor | None = None
     plausibility_ball: L2Ball | None = None

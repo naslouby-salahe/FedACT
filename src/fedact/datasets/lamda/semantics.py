@@ -11,15 +11,16 @@ from fedact.datasets.records import (
 )
 from fedact.domain.enums import DatasetSelector
 from fedact.domain.records import SampleIdentifier
+from fedact.domain.types import BinaryLabel, CalendarMonthString, FamilyName, SampleCount
 
 
 @dataclass(frozen=True)
 class LamdaRawRecord:
     sample_hash: SampleIdentifier
-    year_month: str
-    label: bool | None
-    vt_count: int | None
-    family: str | None
+    year_month: CalendarMonthString
+    label: BinaryLabel | None
+    vt_count: SampleCount | None
+    family: FamilyName | None
 
 
 def label_derivation_rule(config: LamdaDatasetConfig) -> LabelDerivationRule:
@@ -32,7 +33,7 @@ def label_derivation_rule(config: LamdaDatasetConfig) -> LabelDerivationRule:
 
 @dataclass(frozen=True)
 class LabelAuditOutcome:
-    binary_label: bool | None
+    binary_label: BinaryLabel | None
 
 
 def audited_label(rule: LabelDerivationRule, record: LamdaRawRecord) -> LabelAuditOutcome:
@@ -48,7 +49,7 @@ def audited_label(rule: LabelDerivationRule, record: LamdaRawRecord) -> LabelAud
     return LabelAuditOutcome(binary_label=None)
 
 
-def _expected_label(rule: LabelDerivationRule, vt_count: int) -> bool | None:
+def _expected_label(rule: LabelDerivationRule, vt_count: SampleCount) -> bool | None:
     if vt_count == rule.benign_detection_count:
         return False
     if vt_count >= rule.malware_minimum_detection_count:
@@ -62,7 +63,7 @@ def _expected_label(rule: LabelDerivationRule, vt_count: int) -> bool | None:
 class LamdaControlMatch:
     malicious_sample_id: SampleIdentifier
     control_sample_id: SampleIdentifier
-    calendar_month: str
+    calendar_month: CalendarMonthString
 
 
 MaximumMatchesPerSample = NewType("MaximumMatchesPerSample", int)

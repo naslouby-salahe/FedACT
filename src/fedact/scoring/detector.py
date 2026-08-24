@@ -8,7 +8,13 @@ import numpy as np
 import torch
 
 from fedact.domain.records import SampleIdentifier
-from fedact.domain.types import BinaryLabel, LogitValue, ProbabilityValue, SampleCount
+from fedact.domain.types import (
+    BinaryLabel,
+    LogitValue,
+    ProbabilityValue,
+    SampleCount,
+    ValidationFlag,
+)
 from fedact.models.detector import DetectorHead
 from fedact.models.representation import RepresentationEncoder
 from fedact.scoring.encoding import EncodedSample
@@ -91,8 +97,8 @@ def compute_detector_scores(
 class ScoringValidationReport:
     expected_sample_count: SampleCount
     scored_sample_count: SampleCount
-    all_probabilities_finite: bool
-    identity_preserved: bool
+    all_probabilities_finite: ValidationFlag
+    identity_preserved: ValidationFlag
 
     @property
     def is_passing(self) -> bool:

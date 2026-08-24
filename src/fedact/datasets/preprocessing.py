@@ -11,11 +11,16 @@ from fedact.datasets.chronology import HorizonAvailability
 from fedact.datasets.records import ExclusionReason, ExclusionRecord
 from fedact.domain.enums import DatasetSelector
 from fedact.domain.records import SampleIdentifier, SplitCutoffIdentity
+from fedact.domain.types import (
+    BinaryLabel,
+    FamilyName,
+    MonthIndex,
+    SampleCount,
+)
 
 FeatureValue = NewType("FeatureValue", float)
 SupportCount = Annotated[int, Field(ge=0)]
 FeatureColumnIndex = NewType("FeatureColumnIndex", int)
-SampleCount = NewType("SampleCount", int)
 
 
 class PreprocessingRuleError(ValueError):
@@ -25,9 +30,9 @@ class PreprocessingRuleError(ValueError):
 @dataclass(frozen=True)
 class PreparedSample:
     sample_id: SampleIdentifier
-    month_index: int
-    label: bool | None
-    family: str | None
+    month_index: MonthIndex
+    label: BinaryLabel | None
+    family: FamilyName | None
     features: tuple[FeatureValue, ...]
 
 

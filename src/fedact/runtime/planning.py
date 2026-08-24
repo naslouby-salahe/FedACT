@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from fedact.domain.enums import ExecutableWorkflowName, ScientificOutcome
-from fedact.domain.types import WorkflowStatus
+from fedact.domain.types import OptionalFlag, WorkflowStatus
 
 WORKFLOW_DEPENDENCIES: dict[ExecutableWorkflowName, tuple[ExecutableWorkflowName, ...]] = {
     ExecutableWorkflowName.PREPROCESS: (),
@@ -55,7 +55,7 @@ class WorkflowPlanEntry:
     workflow: ExecutableWorkflowName
     status: WorkflowStatus
     blocking_reasons: tuple[str, ...]
-    optional: bool
+    optional: OptionalFlag
     blocking_dependencies: tuple[ExecutableWorkflowName, ...] = ()
     recorded_outcome: ScientificOutcome | None = None
 

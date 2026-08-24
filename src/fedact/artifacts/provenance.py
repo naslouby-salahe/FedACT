@@ -31,6 +31,7 @@ from fedact.domain.records import (
     SolverOutcomeRecord,
     SplitCutoffIdentity,
 )
+from fedact.domain.types import CommitHash, ProducerIdentifier
 
 
 class ProvenanceContractError(ValueError):
@@ -67,7 +68,7 @@ class RunProvenance:
 class ArtifactManifest:
     artifact_type: RequiredScientificArtifact
     artifact_identity: ArtifactIdentity
-    producer: str
+    producer: ProducerIdentifier
     owner_workflow: WorkflowName
     dependency_fingerprint: DependencyFingerprint
     material_configuration_hash: MaterialConfigurationHash
@@ -78,7 +79,7 @@ class ArtifactManifest:
     content_checksum_or_checkpoint_hash: ContentChecksum
     state: ArtifactLifecycleState
     completion_record_checksum: ContentChecksum
-    created_by_repository_commit: str
+    created_by_repository_commit: CommitHash
 
     def __post_init__(self) -> None:
         if self.state is not ArtifactLifecycleState.COMPLETE:

@@ -11,6 +11,7 @@ from fedact.datasets.records import (
 )
 from fedact.domain.enums import DatasetSelector
 from fedact.domain.records import SplitCutoffIdentity
+from fedact.domain.types import SampleCount, ValidationFlag
 
 
 class AuditContractError(ValueError):
@@ -21,9 +22,9 @@ class AuditContractError(ValueError):
 class ChronologyAuditResult:
     dataset: DatasetSelector
     cutoff_identity: SplitCutoffIdentity
-    source_observable_history: bool
-    no_future_derived_labels_used: bool
-    ordering_complete: bool
+    source_observable_history: ValidationFlag
+    no_future_derived_labels_used: ValidationFlag
+    ordering_complete: ValidationFlag
 
     @property
     def is_passing(self) -> bool:
@@ -36,10 +37,10 @@ class ChronologyAuditResult:
 
 @dataclass(frozen=True)
 class SupportAuditResult:
-    malicious_count: int
-    control_count: int
-    control_strata_count: int
-    operator_eligible_count: int
+    malicious_count: SampleCount
+    control_count: SampleCount
+    control_strata_count: SampleCount
+    operator_eligible_count: SampleCount
 
     def has_temporal_overlap_with(self, other: SupportAuditResult) -> bool:
         return self.malicious_count > 0 and other.malicious_count > 0

@@ -9,6 +9,9 @@ from pydantic import Field
 from fedact.config.models import FedActConfig, PositiveInt
 from fedact.domain.enums import ScientificOutcome
 from fedact.domain.records import SplitCutoffIdentity
+from fedact.domain.types import (
+    ValidationFlag,
+)
 
 CalendarMonth = NewType("CalendarMonth", int)
 
@@ -147,7 +150,7 @@ def enumerate_historical_endpoints(
 class EligibleCutoff:
     cutoff_identity: SplitCutoffIdentity
     cutoff_exclusive_month: CalendarMonth
-    primary_confirmatory: bool
+    primary_confirmatory: ValidationFlag
 
 
 def enumerate_rolling_cutoffs(

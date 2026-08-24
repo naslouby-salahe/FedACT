@@ -18,7 +18,7 @@ from fedact.fedact.transitions import ClientIdentifier
 @dataclass(frozen=True)
 class ClientConstraintSummary:
     subspace: torch.Tensor | None = None
-    uncertainty_radius: float = 0.1
+    uncertainty_radius: ThresholdValue = 0.1
     support_before: SampleCount = 10
     support_after: SampleCount = 10
     beta: ThresholdValue = 1.0

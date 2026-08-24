@@ -14,6 +14,7 @@ from fedact.datasets.synthetic.generator import (
     SyntheticGeneratorError,
     deterministic_orthonormal_basis,
 )
+from fedact.domain.types import DetailMessage, IntegrityCheckName, ValidationFlag
 
 
 class SmokeValidationError(ValueError):
@@ -26,9 +27,9 @@ ToleranceValue = Annotated[float, Field(gt=0.0)]
 
 @dataclass(frozen=True)
 class SmokeCheckResult:
-    check_name: str
-    passed: bool
-    detail: str
+    check_name: IntegrityCheckName
+    passed: ValidationFlag
+    detail: DetailMessage
 
 
 @dataclass(frozen=True)

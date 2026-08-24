@@ -9,6 +9,18 @@ from pydantic import Field
 from fedact.config.models import NonNegativeInt, PositiveInt
 from fedact.domain.enums import DatasetSelector
 from fedact.domain.records import DatasetIdentity, SplitCutoffIdentity
+from fedact.domain.types import (
+    CalendarMonthString,
+    CohortIdentifier,
+    DetailMessage,
+    DimensionValue,
+    FieldName,
+    HashDigest,
+    MonthIndex,
+    SampleCount,
+    ValidationFlag,
+    WindowMonth,
+)
 
 
 class ExclusionReason(StrEnum):
@@ -95,20 +107,20 @@ def is_derived_label_malicious(
 
 @dataclass(frozen=True)
 class SchemaManifestField:
-    name: str
-    observed: bool
+    name: FieldName
+    observed: ValidationFlag
 
 
 @dataclass(frozen=True)
 class SchemaChronologyManifest:
     dataset: DatasetIdentity
-    acquisition_checksum: str
+    acquisition_checksum: HashDigest
     fields: tuple[SchemaManifestField, ...]
-    observed_row_count: int
-    observed_feature_dimension: int | None
-    chronology_granularity: str
-    first_observed_month: int
-    last_observed_month: int
+    observed_row_count: SampleCount
+    observed_feature_dimension: DimensionValue | None
+    chronology_granularity: CalendarMonthString
+    first_observed_month: MonthIndex
+    last_observed_month: MonthIndex
 
     def __post_init__(self) -> None:
         if self.observed_row_count < 0:
@@ -124,29 +136,29 @@ class ExclusionRecord:
     dataset: DatasetSelector
     cutoff_identity: SplitCutoffIdentity
     reason: ExclusionReason
-    excluded_count: int
+    excluded_count: SampleCount
 
 
 @dataclass(frozen=True)
 class CohortRecord:
-    cohort_id: str
-    definition: str
-    availability_timestamp: str
+    cohort_id: CohortIdentifier
+    definition: DetailMessage
+    availability_timestamp: CalendarMonthString
     dataset_id: DatasetIdentity
-    client_id: str
-    support_count: int
-    window_start: int
-    window_end: int
+    client_id: DetailMessage
+    support_count: SampleCount
+    window_start: WindowMonth
+    window_end: WindowMonth
     eligibility_status: EligibilityStatus
 
 
 @dataclass(frozen=True)
 class ClientSemanticsAudit:
     dataset: DatasetSelector
-    source_field: str
+    source_field: FieldName
     classification: ClientSemanticsClass
     observed_values: tuple[str, ...]
-    supports_natural_federation_claim: bool
+    supports_natural_federation_claim: ValidationFlag
 
     def __post_init__(self) -> None:
         strong = self.classification in (

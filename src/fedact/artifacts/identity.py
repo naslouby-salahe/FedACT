@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from typing import NewType
 
 from fedact.domain.records import ContentChecksum, DependencyFingerprint
+from fedact.domain.types import HashDigest, ParameterName
 
 CanonicalPayload = NewType("CanonicalPayload", str)
 HexDigest = NewType("HexDigest", str)
@@ -39,8 +40,8 @@ def content_checksum(content: bytes) -> ContentChecksum:
 
 @dataclass(frozen=True)
 class MaterialDependency:
-    name: str
-    canonical_value: str
+    name: ParameterName
+    canonical_value: HashDigest
 
 
 def compute_dependency_fingerprint(

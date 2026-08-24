@@ -3,13 +3,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from fedact.domain.enums import ScientificOutcome
-from fedact.domain.types import DegradationValue, MetricRate
+from fedact.domain.types import DegradationValue, MetricRate, ValidationFlag
 
 
 @dataclass(frozen=True)
 class ScientificVerdictReport:
     primary_claim_confirmed: bool
-    safety_guarantee_preserved: bool
+    safety_guarantee_preserved: ValidationFlag
     overall_scientific_outcome: ScientificOutcome
 
 

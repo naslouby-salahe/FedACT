@@ -26,7 +26,7 @@ class ValidityLayerError(ValueError):
 class StructuralValidity:
     parser_primary_ok: bool
     parser_secondary_ok: bool
-    expected_machine_type: bool
+    expected_machine_type: ValidationFlag
 
     @property
     def is_valid(self) -> bool:
@@ -35,9 +35,9 @@ class StructuralValidity:
 
 @dataclass(frozen=True)
 class ExecutionSmokeValidity:
-    source_launched: bool
-    transformed_launched: bool
-    no_new_crash_or_anr: bool
+    source_launched: ValidationFlag
+    transformed_launched: ValidationFlag
+    no_new_crash_or_anr: ValidationFlag
     sandbox_identity_recorded: bool
     within_timeout_seconds: TimeoutSeconds
 
@@ -54,8 +54,8 @@ class ExecutionSmokeValidity:
 
 @dataclass(frozen=True)
 class MaliciousnessValidity:
-    source_detected: bool
-    transformed_detected: bool
+    source_detected: ValidationFlag
+    transformed_detected: ValidationFlag
 
     @property
     def is_valid(self) -> bool:
@@ -66,7 +66,7 @@ class MaliciousnessValidity:
 class BehaviorValidity:
     jaccard_similarity: SimilarityScore
     minimum_behavior_jaccard: SimilarityScore
-    both_event_sets_empty: bool
+    both_event_sets_empty: ValidationFlag
 
     @property
     def is_valid(self) -> bool:

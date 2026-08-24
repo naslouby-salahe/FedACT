@@ -2,15 +2,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from fedact.domain.types import MetricRate
 from fedact.evaluation.records import EvaluationRecord
 
 
 @dataclass(frozen=True)
 class EvaluationMetrics:
-    false_negative_rate: float
-    certification_rate: float
-    clean_fnr: float
-    cumulative_exposure: float
+    false_negative_rate: MetricRate
+    certification_rate: MetricRate
+    clean_fnr: MetricRate
+    cumulative_exposure: MetricRate
 
 
 def compute_evaluation_metrics(records: tuple[EvaluationRecord, ...]) -> EvaluationMetrics:

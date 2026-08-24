@@ -7,6 +7,12 @@ from fedact.domain.assumptions import AssumptionConsequence
 from fedact.domain.enums import ScientificAssumption, ScientificOutcome
 from fedact.domain.operators.contracts import OperatorDomain
 from fedact.domain.records import SplitCutoffIdentity
+from fedact.domain.types import (
+    MetricRate,
+    OperatorIdentifier,
+    SampleCount,
+    ValidationFlag,
+)
 
 CoverageRatio = NewType("CoverageRatio", float)
 
@@ -32,13 +38,13 @@ OPERATOR_COVERAGE_CONSEQUENCE = AssumptionConsequence(
 
 @dataclass(frozen=True)
 class ValidityAuditEntry:
-    operator_name: str
+    operator_name: OperatorIdentifier
     domain: OperatorDomain
     cutoff_identity: SplitCutoffIdentity
     structural_valid: bool
     execution_valid: bool
-    maliciousness_preserved: bool
-    behavior_preserved: bool
+    maliciousness_preserved: ValidationFlag
+    behavior_preserved: ValidationFlag
 
     def is_domain_valid(self) -> bool:
         return (
@@ -62,9 +68,9 @@ def run_validity_audit(entries: tuple[ValidityAuditEntry, ...]) -> tuple[Validit
 @dataclass(frozen=True)
 class OperatorCoverageAudit:
     cutoff_identity: SplitCutoffIdentity
-    operator_eligible_source_samples: int
-    samples_with_valid_nondegenerate_candidate: int
-    minimum_valid_coverage: float
+    operator_eligible_source_samples: SampleCount
+    samples_with_valid_nondegenerate_candidate: SampleCount
+    minimum_valid_coverage: MetricRate
 
     @property
     def observed_coverage(self) -> CoverageRatio | None:

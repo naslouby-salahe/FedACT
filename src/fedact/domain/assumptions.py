@@ -4,6 +4,14 @@ from dataclasses import dataclass
 
 from fedact.domain.enums import ScientificAssumption, ScientificOutcome
 from fedact.domain.records import ContentChecksum, SplitCutoffIdentity
+from fedact.domain.types import (
+    ArtifactName,
+    DetailMessage,
+    MonthIndex,
+    OperationalizationText,
+    UnitCount,
+    ValidationFlag,
+)
 
 
 class AssumptionContractError(ValueError):
@@ -14,8 +22,8 @@ class AssumptionContractError(ValueError):
 class AssumptionConsequence:
     assumption: ScientificAssumption
     failure_outcome: ScientificOutcome
-    operationalization: str
-    validation: str
+    operationalization: OperationalizationText
+    validation: DetailMessage
 
 
 CHRONOLOGY_CONSEQUENCE = AssumptionConsequence(
@@ -53,9 +61,9 @@ def assumption_consequence(assumption: ScientificAssumption) -> AssumptionConseq
 @dataclass(frozen=True)
 class CutoffManifestEntry:
     cutoff_identity: SplitCutoffIdentity
-    historical_window_start_month: int
-    cutoff_exclusive_end_month: int
-    source_observable: bool
+    historical_window_start_month: MonthIndex
+    cutoff_exclusive_end_month: MonthIndex
+    source_observable: ValidationFlag
 
 
 @dataclass(frozen=True)
@@ -79,12 +87,12 @@ class CutoffManifest:
 @dataclass(frozen=True)
 class LeakageAuditFinding:
     violating_unit: SplitCutoffIdentity
-    information_available_at_or_after_cutoff: bool
+    information_available_at_or_after_cutoff: ValidationFlag
 
 
 @dataclass(frozen=True)
 class LeakageAuditResult:
-    audited_units: int
+    audited_units: UnitCount
     findings: tuple[LeakageAuditFinding, ...]
 
     @property
@@ -110,7 +118,7 @@ def audit_chronology(findings: tuple[LeakageAuditFinding, ...]) -> LeakageAuditR
 @dataclass(frozen=True)
 class EncoderHashLock:
     representation_checkpoint_hash: ContentChecksum
-    locked_for_boundaries: frozenset[str]
+    locked_for_boundaries: frozenset[ArtifactName]
 
 
 def lock_encoder_hash(
@@ -144,7 +152,7 @@ class LaterRealReadError(ValueError):
 @dataclass(frozen=True)
 class LaterRealIsolationGate:
     cutoff_identity: SplitCutoffIdentity
-    required_scientific_inputs_complete: bool
+    required_scientific_inputs_complete: ValidationFlag
 
 
 def open_later_real_evaluation(gate: LaterRealIsolationGate) -> None:
