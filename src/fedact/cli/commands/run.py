@@ -108,7 +108,7 @@ def run(workflow: ExecutableWorkflowName, overwrite: bool, repository_root: Path
     if workflow is ExecutableWorkflowName.STATISTICAL_SYNTHESIS:
         from fedact.analysis.verdicts import evaluate_scientific_verdicts
 
-        verd_report = evaluate_scientific_verdicts(0.08, 1.0, 0.94)
+        verd_report = evaluate_scientific_verdicts(0.08, 1.0, 0.94, config.statistics)
         typer.echo(
             f"statistical synthesis completed: {verd_report.overall_scientific_outcome.value}"
         )
