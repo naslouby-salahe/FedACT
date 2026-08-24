@@ -200,6 +200,7 @@ def train_representation_encoder(
         saved_states.append({k: v.cpu().clone() for k, v in encoder.state_dict().items()})
     selection = select_best_epoch(tuple(val_losses))
     encoder.load_state_dict(saved_states[selection.selected_epoch])
+    encoder.eval()
     return encoder, selection
 
 
@@ -223,6 +224,7 @@ def load_representation_encoder(
     )
     state = torch.load(source_path, weights_only=True)
     encoder.load_state_dict(state)
+    encoder.eval()
     return encoder
 
 
