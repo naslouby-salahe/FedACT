@@ -69,3 +69,10 @@ AbstentionFlag = bool
 BinaryLabel = bool
 EligibilityFlag = bool
 OptionalFlag = bool
+
+RawPayloadBytes = bytes
+GridCellLabel = str
+DrawIndex = int
+LogLevel = int
+LoggerName = str
+JsonEncodableValue = object

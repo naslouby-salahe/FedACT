@@ -10,13 +10,14 @@ from fedact.config.models import FedActConfig, PositiveInt
 from fedact.domain.enums import ScientificOutcome
 from fedact.domain.records import SplitCutoffIdentity
 from fedact.domain.types import (
+    MonthIndex,
     ValidationFlag,
 )
 
 CalendarMonth = NewType("CalendarMonth", int)
 
 
-def calendar_month(value: int) -> CalendarMonth:
+def calendar_month(value: MonthIndex) -> CalendarMonth:
     if value < 0:
         raise ChronologyError(f"calendar month must be nonnegative; got {value}")
     return CalendarMonth(value)

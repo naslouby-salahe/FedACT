@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import NewType
 
 from fedact.domain.records import ContentChecksum, DependencyFingerprint
-from fedact.domain.types import HashDigest, ParameterName
+from fedact.domain.types import HashDigest, JsonEncodableValue, ParameterName, RawPayloadBytes
 
 CanonicalPayload = NewType("CanonicalPayload", str)
 HexDigest = NewType("HexDigest", str)
@@ -18,7 +18,7 @@ ArtifactIdentity = NewType("ArtifactIdentity", str)
 ScientificKey = NewType("ScientificKey", str)
 
 
-def canonical_json(value: object) -> CanonicalPayload:
+def canonical_json(value: JsonEncodableValue) -> CanonicalPayload:
     return CanonicalPayload(
         json.dumps(
             value,
@@ -34,7 +34,7 @@ def sha256_digest(payload: CanonicalPayload) -> HexDigest:
     return HexDigest(f"sha256:{hashlib.sha256(payload.encode('utf-8')).hexdigest()}")
 
 
-def content_checksum(content: bytes) -> ContentChecksum:
+def content_checksum(content: RawPayloadBytes) -> ContentChecksum:
     return ContentChecksum(f"sha256:{hashlib.sha256(content).hexdigest()}")
 
 
@@ -55,7 +55,9 @@ def compute_dependency_fingerprint(
     return DependencyFingerprint(sha256_digest(payload))
 
 
-def material_configuration_hash(selected_values: Mapping[str, object]) -> MaterialConfigurationHash:
+def material_configuration_hash(
+    selected_values: Mapping[str, JsonEncodableValue],
+) -> MaterialConfigurationHash:
     return MaterialConfigurationHash(sha256_digest(canonical_json(selected_values)))
 
 

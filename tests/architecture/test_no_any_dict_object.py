@@ -4,10 +4,8 @@ import ast
 from pathlib import Path
 
 PRIMITIVE_KEYED_DICT_PATTERN = ("dict", "dict[str", "dict[int", "dict[float", "dict[bool")
-OBJECT_BOUNDARY_ALLOWED_FILES: frozenset[str] = frozenset({"src/fedact/artifacts/identity.py"})
-DICT_BOUNDARY_ALLOWED_FILES: frozenset[str] = frozenset(
-    {"src/fedact/config/loading.py", "src/fedact/runtime/environment.py"}
-)
+OBJECT_BOUNDARY_ALLOWED_FILES: frozenset[str] = frozenset()
+DICT_BOUNDARY_ALLOWED_FILES: frozenset[str] = frozenset({"src/fedact/config/loading.py"})
 
 
 def collect_annotation_nodes(tree: ast.AST) -> list[ast.expr]:
@@ -84,5 +82,7 @@ def test_public_boundaries_use_typed_payloads_not_anonymous_dicts(
 def test_boundary_allowlists_reference_existing_files_and_stay_narrow(
     repository_root: Path,
 ) -> None:
-    for relative in {*OBJECT_BOUNDARY_ALLOWED_FILES, *DICT_BOUNDARY_ALLOWED_FILES}:
-        assert (repository_root / relative).is_file(), f"stale allowlist entry: {relative}"
+    assert len(OBJECT_BOUNDARY_ALLOWED_FILES) == 0
+    assert len(DICT_BOUNDARY_ALLOWED_FILES) == 1
+    for relative in DICT_BOUNDARY_ALLOWED_FILES:
+        assert (repository_root / relative).is_file()
