@@ -18,8 +18,8 @@ class EquivalenceTestResult:
 def tost_equivalence(
     treatment: Sequence[MetricRate],
     control: Sequence[MetricRate],
-    equivalence_margin: ThresholdValue = 0.05,
-    alpha: ProbabilityValue = 0.05,
+    equivalence_margin: ThresholdValue = 0.05, #TODO: value should be in yaml
+    alpha: ProbabilityValue = 0.05, #TODO:  value should be in yaml
 ) -> EquivalenceTestResult:
     if len(treatment) != len(control) or len(treatment) < 2:
         return EquivalenceTestResult(t_lower=0.0, t_upper=0.0, p_value=1.0, is_equivalent=False)

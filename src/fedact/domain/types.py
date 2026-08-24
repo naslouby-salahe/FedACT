@@ -1,78 +1,210 @@
 from __future__ import annotations
 
-SampleCount = int
-EvaluationCount = int
-ReplicateIndex = int
-RoundCount = int
-EpochIndex = int
-RankDimension = int
-SeedValue = int
-MonthIndex = int
-IterationCount = int
-ClientIndex = int
-HorizonStep = int
-WindowMonth = int
-UsageCount = int
-UnitCount = int
-DimensionValue = int
-OrderIndex = int
+from pathlib import Path
+from typing import Annotated
 
-LossValue = float
-ProbabilityValue = float
-LogitValue = float
-NormValue = float
-CoordinateValue = float
-MetricRate = float
-IntervalBound = float
-DegradationValue = float
-ThresholdValue = float
-EigengapRatio = float
-SimilarityScore = float
-TimeoutSeconds = float
+from pydantic import Field, JsonValue, StringConstraints
 
-ActionDecision = str
-ExecutionReason = str
-ArtifactName = str
-WorkflowStatus = str
-DiagnosisMessage = str
-ToolchainIdentifier = str
-HashDigest = str
-RoadmapSectionId = str
-WorkflowDescription = str
-ParameterName = str
-ParameterValue = float
-ManifestFieldName = str
-FilePath = str
-IntegrityCheckName = str
-ScientificInvariantName = str
-CohortIdentifier = str
-OperatorIdentifier = str
-FamilyName = str
-AblationIdentifier = str
-CommitHash = str
-ProducerIdentifier = str
-DetailMessage = str
-OperationalizationText = str
-RequirementId = str
-RuleDescription = str
-ProvenanceText = str
-CanonicalFormText = str
-CalendarMonthString = str
-DatasetName = str
-FieldName = str
 
-ValidationFlag = bool
-DomainValidityFlag = bool
-CertificationFlag = bool
-AmbiguityFlag = bool
-AbstentionFlag = bool
-BinaryLabel = bool
-EligibilityFlag = bool
-OptionalFlag = bool
+# =============================================================================
+# Reusable constrained primitives
+# =============================================================================
 
-RawPayloadBytes = bytes
-GridCellLabel = str
-DrawIndex = int
-LogLevel = int
-LoggerName = str
-JsonEncodableValue = object
+type StrictInteger = Annotated[
+    int,
+    Field(strict=True),
+]
+
+type NonNegativeInteger = Annotated[
+    int,
+    Field(ge=0, strict=True),
+]
+
+type PositiveInteger = Annotated[
+    int,
+    Field(gt=0, strict=True),
+]
+
+type FiniteFloat = Annotated[
+    float,
+    Field(allow_inf_nan=False),
+]
+
+type NonNegativeFloat = Annotated[
+    float,
+    Field(ge=0, allow_inf_nan=False),
+]
+
+type PositiveFloat = Annotated[
+    float,
+    Field(gt=0, allow_inf_nan=False),
+]
+
+type Probability = Annotated[
+    float,
+    Field(ge=0.0, le=1.0, allow_inf_nan=False),
+]
+
+type NonEmptyString = Annotated[
+    str,
+    Field(strict=True),
+    StringConstraints(
+        strip_whitespace=True,
+        min_length=1,
+    ),
+]
+
+type StrictBoolean = Annotated[
+    bool,
+    Field(strict=True),
+]
+
+type StrictBytes = Annotated[
+    bytes,
+    Field(strict=True),
+]
+
+
+# =============================================================================
+# Counts, indices, dimensions, and integer-valued quantities
+# =============================================================================
+
+type SampleCount = NonNegativeInteger
+type EvaluationCount = NonNegativeInteger
+type ReplicateIndex = NonNegativeInteger
+type RoundCount = NonNegativeInteger
+type EpochIndex = NonNegativeInteger
+
+type RankDimension = PositiveInteger
+type DimensionValue = PositiveInteger
+
+type SeedValue = StrictInteger
+
+type MonthIndex = NonNegativeInteger
+type IterationCount = NonNegativeInteger
+type ClientIndex = NonNegativeInteger
+type HorizonStep = NonNegativeInteger
+type WindowMonth = NonNegativeInteger
+type UsageCount = NonNegativeInteger
+type UnitCount = NonNegativeInteger
+type OrderIndex = NonNegativeInteger
+type DrawIndex = NonNegativeInteger
+
+type LogLevel = StrictInteger
+
+
+# =============================================================================
+# Scientific and numeric values
+# =============================================================================
+
+type LossValue = FiniteFloat
+type ProbabilityValue = Probability
+type LogitValue = FiniteFloat
+type NormValue = NonNegativeFloat
+type CoordinateValue = FiniteFloat
+type MetricRate = Probability
+type IntervalBound = FiniteFloat
+type DegradationValue = FiniteFloat
+type ThresholdValue = FiniteFloat
+type EigengapRatio = NonNegativeFloat
+type SimilarityScore = FiniteFloat
+type TimeoutSeconds = NonNegativeFloat
+type ParameterValue = FiniteFloat
+
+
+# =============================================================================
+# Decisions, statuses, reasons, and descriptions
+# =============================================================================
+
+type ActionDecision = NonEmptyString
+type ExecutionReason = NonEmptyString
+type WorkflowStatus = NonEmptyString
+type DiagnosisMessage = NonEmptyString
+type WorkflowDescription = NonEmptyString
+type DetailMessage = NonEmptyString
+type OperationalizationText = NonEmptyString
+type RuleDescription = NonEmptyString
+type ProvenanceText = NonEmptyString
+type CanonicalFormText = NonEmptyString
+
+
+# =============================================================================
+# Names and identifiers
+# =============================================================================
+
+type ArtifactName = NonEmptyString
+type ToolchainIdentifier = NonEmptyString
+type RoadmapSectionId = NonEmptyString
+type ParameterName = NonEmptyString
+type ManifestFieldName = NonEmptyString
+type IntegrityCheckName = NonEmptyString
+type ScientificInvariantName = NonEmptyString
+type CohortIdentifier = NonEmptyString
+type OperatorIdentifier = NonEmptyString
+type FamilyName = NonEmptyString
+type AblationIdentifier = NonEmptyString
+type ProducerIdentifier = NonEmptyString
+type RequirementId = NonEmptyString
+type DatasetName = NonEmptyString
+type FieldName = NonEmptyString
+type GridCellLabel = NonEmptyString
+type LoggerName = NonEmptyString
+
+
+# =============================================================================
+# Hashes and provenance identifiers
+# =============================================================================
+
+type HashDigest = NonEmptyString
+
+type CommitHash = Annotated[
+    str,
+    Field(strict=True),
+    StringConstraints(
+        strip_whitespace=True,
+        pattern=r"^[0-9a-fA-F]{7,64}$",
+    ),
+]
+
+
+# =============================================================================
+# Temporal values
+# =============================================================================
+
+type CalendarMonthString = Annotated[
+    str,
+    Field(strict=True),
+    StringConstraints(
+        strip_whitespace=True,
+        pattern=r"^\d{4}-(0[1-9]|1[0-2])$",
+    ),
+]
+
+
+# =============================================================================
+# Files and binary payloads
+# =============================================================================
+
+type FilePath = Path
+type RawPayloadBytes = StrictBytes
+
+
+# =============================================================================
+# Validation and scientific-state flags
+# =============================================================================
+
+type ValidationFlag = StrictBoolean
+type DomainValidityFlag = StrictBoolean
+type CertificationFlag = StrictBoolean
+type AmbiguityFlag = StrictBoolean
+type AbstentionFlag = StrictBoolean
+type BinaryLabel = StrictBoolean
+type EligibilityFlag = StrictBoolean
+type OptionalFlag = StrictBoolean
+
+
+# =============================================================================
+# JSON-compatible values
+# =============================================================================
+
+type JsonEncodableValue = JsonValue
