@@ -4,13 +4,14 @@ import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-from fedact.domain.types import ArtifactName, MetricRate, WorkflowStatus
+from fedact.domain.enums import ScientificOutcome
+from fedact.domain.types import ArtifactName, MetricRate
 
 
 @dataclass(frozen=True)
 class ProjectSummaryPayload:
     project: ArtifactName
-    verdict: WorkflowStatus
+    verdict: ScientificOutcome
     prospective_fnr: MetricRate
     certification_rate: MetricRate
 

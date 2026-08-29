@@ -7,7 +7,7 @@ from typing import Annotated, NewType
 from pydantic import Field
 
 from fedact.config.models import FedActConfig, PositiveInt
-from fedact.domain.enums import ScientificOutcome
+from fedact.domain.enums import DatasetSelector, ScientificOutcome
 from fedact.domain.records import SplitCutoffIdentity
 from fedact.domain.types import (
     MonthIndex,
@@ -69,6 +69,23 @@ class SourceChronology:
             is_interval_overlapping_gap(start_inclusive, end_exclusive, gap)
             for gap in self.prohibited_gaps
         )
+
+
+DATASET_SOURCE_CHRONOLOGY: dict[DatasetSelector, SourceChronology] = {
+    DatasetSelector.LAMDA: SourceChronology(
+        first_observed_month=calendar_month(0),
+        last_observed_month=calendar_month(143),
+        prohibited_gaps=(LAMDA_MISSING_2015_GAP,),
+    ),
+    DatasetSelector.EMBER2024: SourceChronology(
+        first_observed_month=calendar_month(0),
+        last_observed_month=calendar_month(14),
+    ),
+}
+
+
+def dataset_source_chronology(dataset: DatasetSelector) -> SourceChronology:
+    return DATASET_SOURCE_CHRONOLOGY[dataset]
 
 
 def is_interval_overlapping_gap(

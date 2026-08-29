@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import numpy as np
 import typer
 
 from fedact.app import Application, discover_repository_root
@@ -12,6 +11,7 @@ from fedact.datasets.synthetic.generator import (
     build_nuisance_spaces,
     draw_shared_transition,
     nuisance_dimension,
+    seeded_generator,
 )
 from fedact.datasets.synthetic.validation import run_smoke_validation
 
@@ -22,7 +22,7 @@ def run(overwrite: bool, repository_root: Path) -> None:
     typer.echo("synthetic generator smoke validation")
     if overwrite:
         typer.echo("overwrite: scoped to smoke-owned artifacts")
-    rng = np.random.default_rng(config.seeds.synthetic_generation[0])
+    rng = seeded_generator(config.seeds.synthetic_generation[0])
     synth = config.synthetic
     nuis_dim = nuisance_dimension(synth.defaults.nuisance_dimension_fraction, SYNTHETIC_DIMENSION)
     spaces = build_nuisance_spaces(

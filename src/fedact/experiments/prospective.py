@@ -12,7 +12,7 @@ from fedact.domain.enums import (
     ScientificOutcome,
 )
 from fedact.domain.records import SampleIdentifier, SplitCutoffIdentity
-from fedact.domain.types import EvaluationCount, MetricRate
+from fedact.domain.types import DegradationValue, EvaluationCount, MetricRate
 from fedact.evaluation.metrics import compute_evaluation_metrics
 from fedact.evaluation.records import EvaluationRecord
 from fedact.fedact.certification import DomainValid, certify_action_interval
@@ -31,6 +31,7 @@ class ProspectiveEvaluationReport:
     total_evaluations: EvaluationCount
     mean_false_negative_rate: MetricRate
     mean_certification_rate: MetricRate
+    clean_fnr_degradation_percentage_points: DegradationValue
     scientific_outcome: ScientificOutcome
 
 
@@ -101,7 +102,7 @@ def run_prospective_fedact_evaluation(config: FedActConfig) -> ProspectiveEvalua
     )
     challenges = {"t_0": tuple(tuple(float(x) for x in a) for a in certified_actions)}
     base_fnr = clean_false_negative_rate(detector, encoder, val_pop)
-    _ = harden_detector_head(
+    hardening_result = harden_detector_head(
         encoder=encoder,
         head=detector,
         training_population=train_pop,
@@ -140,5 +141,8 @@ def run_prospective_fedact_evaluation(config: FedActConfig) -> ProspectiveEvalua
         total_evaluations=len(eval_records),
         mean_false_negative_rate=metrics.false_negative_rate,
         mean_certification_rate=cert_rate,
+        clean_fnr_degradation_percentage_points=(
+            hardening_result.clean_fnr_degradation_percentage_points
+        ),
         scientific_outcome=outcome,
     )

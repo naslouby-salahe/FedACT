@@ -3,8 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from fedact.artifacts.paths import WorkspaceLayout
+from fedact.artifacts.results import read_workflow_result
 from fedact.config.loading import LoadedConfiguration, load_production_configuration
 from fedact.domain.enums import ExecutableWorkflowName, ScientificOutcome
+from fedact.domain.records import ExperimentName
 from fedact.runtime.planning import ExecutionPlan, resolve_execution_plan
 
 SYSEXITS_EX_UNAVAILABLE = 69
@@ -21,14 +24,23 @@ class Application:
         configuration = load_production_configuration(repository_root / "configs" / "fedact.yaml")
         return cls(repository_root=repository_root.resolve(), configuration=configuration)
 
+    def workspace_layout(self) -> WorkspaceLayout:
+        return WorkspaceLayout(
+            repository_root=self.repository_root,
+            artifacts=self.configuration.values.artifacts,
+        )
+
     def artifact_index_path(self) -> Path:
-        return self.repository_root / self.configuration.values.artifacts.active_artifact_index
+        return self.workspace_layout().active_artifact_index()
 
     def dependency_index_path(self) -> Path:
-        return self.repository_root / self.configuration.values.artifacts.dependency_index
+        return self.workspace_layout().dependency_index()
 
     def evidence_index_path(self) -> Path:
-        return self.repository_root / self.configuration.values.artifacts.evidence_index
+        return self.workspace_layout().evidence_index()
+
+    def result_experiment_directory(self, workflow: ExecutableWorkflowName) -> Path:
+        return self.workspace_layout().result_experiment_directory(ExperimentName(workflow.value))
 
     def raw_data_root(self) -> Path:
         return self.repository_root / "data" / "raw"
@@ -37,13 +49,17 @@ class Application:
         raw_root = self.raw_data_root()
         return raw_root.is_dir() and any(raw_root.iterdir())
 
-    def plan(
-        self,
-        completed: frozenset[ExecutableWorkflowName] = frozenset(),
-        failed: frozenset[ExecutableWorkflowName] = frozenset(),
-        outcomes: dict[ExecutableWorkflowName, ScientificOutcome] | None = None,
-    ) -> ExecutionPlan:
-        return resolve_execution_plan(completed=completed, failed=failed, outcomes=outcomes)
+    def recorded_outcomes(self) -> dict[ExecutableWorkflowName, ScientificOutcome]:
+        return {
+            workflow: record.scientific_outcome
+            for workflow in ExecutableWorkflowName
+            if (record := read_workflow_result(self.result_experiment_directory(workflow)))
+            is not None
+        }
+
+    def plan(self) -> ExecutionPlan:
+        outcomes = self.recorded_outcomes()
+        return resolve_execution_plan(completed=frozenset(outcomes), outcomes=outcomes)
 
 
 def discover_repository_root(start: Path) -> Path:

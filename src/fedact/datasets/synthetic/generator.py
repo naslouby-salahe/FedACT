@@ -71,6 +71,10 @@ class NuisanceSpaces:
                 )
 
 
+def seeded_generator(seed: SeedValue) -> np.random.Generator:
+    return np.random.default_rng(seed)
+
+
 def build_nuisance_spaces(
     generator: np.random.Generator,
     dimension: Dimension,

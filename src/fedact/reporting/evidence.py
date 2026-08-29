@@ -4,13 +4,14 @@ import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-from fedact.domain.types import ArtifactName, WorkflowStatus
+from fedact.domain.enums import EvidenceVerificationStatus
+from fedact.domain.types import ArtifactName
 
 
 @dataclass(frozen=True)
 class EvidenceArtifactRecord:
     artifact: ArtifactName
-    status: WorkflowStatus
+    status: EvidenceVerificationStatus
 
 
 def package_evidence_index(

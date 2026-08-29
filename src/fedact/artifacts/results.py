@@ -1,0 +1,33 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+from fedact.config.models import StrictModel
+from fedact.domain.enums import ExecutableWorkflowName, ScientificOutcome
+from fedact.domain.types import DegradationValue, MetricRate
+
+
+class WorkflowResultRecord(StrictModel):
+    workflow: ExecutableWorkflowName
+    scientific_outcome: ScientificOutcome
+    mean_false_negative_rate: MetricRate | None = None
+    mean_certification_rate: MetricRate | None = None
+    clean_fnr_degradation_percentage_points: DegradationValue | None = None
+
+
+def workflow_result_path(experiment_directory: Path) -> Path:
+    return experiment_directory / "result.json"
+
+
+def write_workflow_result(experiment_directory: Path, record: WorkflowResultRecord) -> Path:
+    destination = workflow_result_path(experiment_directory)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(record.model_dump_json(indent=2), encoding="utf-8")
+    return destination
+
+
+def read_workflow_result(experiment_directory: Path) -> WorkflowResultRecord | None:
+    source = workflow_result_path(experiment_directory)
+    if not source.is_file():
+        return None
+    return WorkflowResultRecord.model_validate_json(source.read_text(encoding="utf-8"))

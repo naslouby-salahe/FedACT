@@ -10,6 +10,9 @@ from fedact.domain.types import DetailMessage
 BudgetAmount = Annotated[float, Field(ge=0.0)]
 ComparatorIdentifier = Annotated[str, Field(min_length=1)]
 
+SUBTRACTION_COMPARATOR_NAME: ComparatorIdentifier = "subtraction"
+SUBTRACTION_COMPARATOR_BUDGET: BudgetAmount = 10.0
+
 
 class BaselineParityViolationError(ValueError):
     pass
@@ -32,4 +35,12 @@ def verify_chronology_and_budget_parity(
     return ParityVerificationResult(
         is_valid=True,
         details=f"{comparator_name} satisfies budget and chronology parity",
+    )
+
+
+def verify_subtraction_comparator_parity() -> ParityVerificationResult:
+    return verify_chronology_and_budget_parity(
+        SUBTRACTION_COMPARATOR_NAME,
+        SUBTRACTION_COMPARATOR_BUDGET,
+        SUBTRACTION_COMPARATOR_BUDGET,
     )

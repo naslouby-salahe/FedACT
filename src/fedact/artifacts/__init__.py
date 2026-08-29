@@ -32,6 +32,12 @@ from fedact.artifacts.provenance import (
     RunProvenance,
     assert_reusable,
 )
+from fedact.artifacts.results import (
+    WorkflowResultRecord,
+    read_workflow_result,
+    workflow_result_path,
+    write_workflow_result,
+)
 
 __all__ = [
     "REUSABLE_STATES",
@@ -49,6 +55,7 @@ __all__ = [
     "ProducerCodeFingerprint",
     "ProvenanceContractError",
     "RunProvenance",
+    "WorkflowResultRecord",
     "WorkspaceLayout",
     "ScientificKey",
     "assert_reusable",
@@ -59,7 +66,10 @@ __all__ = [
     "is_reusable",
     "material_configuration_hash",
     "producer_code_fingerprint",
+    "read_workflow_result",
     "sha256_digest",
     "validate_completion",
     "validate_transition",
+    "workflow_result_path",
+    "write_workflow_result",
 ]

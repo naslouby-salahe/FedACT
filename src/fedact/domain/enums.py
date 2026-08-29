@@ -60,6 +60,11 @@ class ArtifactLifecycleState(StrEnum):
     CLEANED = "cleaned"
 
 
+class EvidenceVerificationStatus(StrEnum):
+    VERIFIED = "verified"
+    MISSING = "missing"
+
+
 class ArtifactBoundary(StrEnum):
     INPUTS = "inputs"
     DATASET_PREPARATION = "dataset-preparation"
