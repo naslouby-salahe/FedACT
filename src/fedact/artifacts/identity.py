@@ -58,7 +58,7 @@ def compute_dependency_fingerprint(
 def material_configuration_hash(
     selected_values: Mapping[str, JsonEncodableValue],
 ) -> MaterialConfigurationHash:
-    return MaterialConfigurationHash(sha256_digest(canonical_json(selected_values)))
+    return MaterialConfigurationHash(sha256_digest(canonical_json(dict(selected_values))))
 
 
 def producer_code_fingerprint(sources: tuple[tuple[str, str], ...]) -> ProducerCodeFingerprint:

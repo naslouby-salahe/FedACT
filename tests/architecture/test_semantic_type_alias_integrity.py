@@ -47,7 +47,7 @@ def alias_like(node: ast.expr) -> bool:
 def top_level_aliases(tree: ast.Module) -> dict[str, ast.expr]:
     aliases: dict[str, ast.expr] = {}
     for node in tree.body:
-        if isinstance(node, ast.TypeAlias) and isinstance(node.name, ast.Name):
+        if isinstance(node, ast.TypeAlias):
             aliases[node.name.id] = node.value
             continue
         if isinstance(node, ast.Assign) and len(node.targets) == 1:

@@ -82,7 +82,7 @@ def qualified_name(node: ast.expr | ast.AST | None) -> str | None:
 def collect_type_aliases(tree: ast.Module) -> dict[str, ast.expr]:
     aliases: dict[str, ast.expr] = {}
     for node in tree.body:
-        if isinstance(node, ast.TypeAlias) and isinstance(node.name, ast.Name):
+        if isinstance(node, ast.TypeAlias):
             aliases[node.name.id] = node.value
         elif isinstance(node, ast.Assign) and len(node.targets) == 1:
             target = node.targets[0]

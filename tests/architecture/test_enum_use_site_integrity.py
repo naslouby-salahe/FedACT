@@ -207,9 +207,12 @@ def enum_semantic_use_site(
             match_node: ast.AST = parent
             while match_node in parents and not isinstance(parents[match_node], ast.Match):
                 match_node = parents[match_node]
-            if match_node in parents and isinstance(parents[match_node], ast.Match):
-                subject = parents[match_node].subject
-                return any(name_is_enum_shaped(name, owners) for name in target_names(subject))
+            enclosing_match = parents.get(match_node)
+            if isinstance(enclosing_match, ast.Match):
+                return any(
+                    name_is_enum_shaped(name, owners)
+                    for name in target_names(enclosing_match.subject)
+                )
             return False
         if isinstance(parent, ast.Return):
             function = enclosing_function(parent, parents)

@@ -42,9 +42,7 @@ class PreparationOutcome:
     exclusions: tuple[ExclusionRecord, ...]
 
     def exclusion_count(self, reason: ExclusionReason) -> SampleCount:
-        return SampleCount(
-            sum(record.excluded_count for record in self.exclusions if record.reason is reason)
-        )
+        return sum(record.excluded_count for record in self.exclusions if record.reason is reason)
 
 
 def canonical_source_order_key(sample_id: SampleIdentifier) -> SampleIdentifier:

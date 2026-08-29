@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from fedact.artifacts.lifecycle import (
@@ -55,7 +57,7 @@ def test_only_complete_states_are_reusable() -> None:
 
 def _requirements() -> CompletionRequirements:
     return CompletionRequirements(
-        required_files=frozenset({"payload.bin", "manifest.json"}),
+        required_files=frozenset({Path("payload.bin"), Path("manifest.json")}),
         required_manifest_fields=frozenset({"artifact_id", "configuration_hash"}),
         required_integrity_checks=frozenset({"sha256_payload"}),
         required_scientific_invariants=frozenset({"coverage_invariant"}),
@@ -63,7 +65,7 @@ def _requirements() -> CompletionRequirements:
 
 
 def _evidence(
-    present_files: frozenset[str] = frozenset({"payload.bin", "manifest.json"}),
+    present_files: frozenset[Path] = frozenset({Path("payload.bin"), Path("manifest.json")}),
     populated_manifest_fields: frozenset[str] = frozenset({"artifact_id", "configuration_hash"}),
     passed_integrity_checks: frozenset[str] = frozenset({"sha256_payload"}),
     passed_scientific_invariants: frozenset[str] = frozenset({"coverage_invariant"}),
@@ -84,7 +86,7 @@ def test_complete_evidence_passes_completion_validation() -> None:
 
 def test_missing_required_file_blocks_completion() -> None:
     reqs = _requirements()
-    evidence = _evidence(present_files=frozenset({"payload.bin"}))
+    evidence = _evidence(present_files=frozenset({Path("payload.bin")}))
     with pytest.raises(ArtifactCompletionError, match="required files"):
         validate_completion(reqs, evidence)
 
