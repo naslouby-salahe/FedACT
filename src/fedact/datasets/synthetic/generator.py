@@ -45,7 +45,7 @@ def deterministic_orthonormal_basis(
     generator: np.random.Generator, rows: Dimension, columns: Dimension
 ) -> FloatArray:
     raw = generator.standard_normal((rows, columns))
-    basis, _ = np.linalg.qr(raw)
+    basis, _unused = np.linalg.qr(raw)
     signs = np.sign(basis[np.abs(basis).argmax(axis=0), np.arange(basis.shape[1])])
     signs[signs == 0] = 1.0
     return basis * signs
@@ -98,7 +98,7 @@ def build_nuisance_spaces(
         generator, dimension, nuisance_dimension - intersection + dimension
     )
     projected = complement - common @ (common.T @ complement)
-    reorthonormalized, _ = np.linalg.qr(projected)
+    reorthonormalized, _unused = np.linalg.qr(projected)
     clients: list[ClientNuisanceGeometry] = []
     for index in range(client_count):
         block = reorthonormalized[:, : nuisance_dimension - intersection]

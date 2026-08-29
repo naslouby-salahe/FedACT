@@ -109,7 +109,7 @@ def run_smoke_validation(
 ) -> SmokeValidationReport:
     if transition.vector.shape != (SYNTHETIC_DIMENSION,):
         raise SyntheticGeneratorError(f"shared transition must live in R^{SYNTHETIC_DIMENSION}")
-    _ = deterministic_orthonormal_basis
+    _unused = deterministic_orthonormal_basis
     return SmokeValidationReport(
         results=(
             _check_nuisance_dimensions(spaces, requested_nuisance_dimension),

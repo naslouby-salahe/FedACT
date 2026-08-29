@@ -185,7 +185,7 @@ def resolve_workflow_boundaries(
     expected_fingerprints: dict[ArtifactBoundary, DependencyFingerprint],
     force_recompute: frozenset[ArtifactBoundary] = frozenset(),
 ) -> ResolutionPlan:
-    _ = workflow_name
+    _unused = workflow_name
     return resolve_execution_requirements(
         required_boundaries=required_boundaries,
         indexed=indexed,

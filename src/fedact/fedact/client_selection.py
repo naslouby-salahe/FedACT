@@ -68,4 +68,4 @@ def uniform_action_weights(action_count: ActionCount) -> tuple[float, ...]:
     if action_count == 0:
         return ()
     weight = 1.0 / action_count
-    return tuple(weight for _ in range(action_count))
+    return tuple(weight for _unused in range(action_count))

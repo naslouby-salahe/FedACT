@@ -12,7 +12,7 @@ def benjamini_hochberg_correction(
     n = len(p_values)
     if n == 0:
         return ()
-    _ = false_discovery_rate
+    _unused = false_discovery_rate
     sorted_pairs = sorted(enumerate(p_values), key=lambda x: x[1])
     adjusted: list[float] = [0.0] * n
     for rank, (original_idx, p_val) in enumerate(sorted_pairs, start=1):

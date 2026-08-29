@@ -58,7 +58,7 @@ def intersect_constraints(
     *args: L2Ball | Sequence[ClientConstraint],
     vertices: SampleCount = 512,
 ) -> FeasibleSet:
-    _ = vertices
+    _unused = vertices
     plausibility_ball: L2Ball | None = None
     constraints_list: list[ClientConstraint] = []
     for arg in args:
@@ -104,7 +104,7 @@ def minimum_uniform_inflation(
     *args: L2Ball | Sequence[ClientConstraint] | int,
     vertices: SampleCount = 100,
 ) -> CoordinateValue:
-    _ = (args, vertices)
+    _unused = (args, vertices)
     return 1.0
 
 
@@ -113,7 +113,7 @@ def build_nuisance_spaces(
     uncertainty_radii: Sequence[ThresholdValue],
     geometry: FederationGeometry = FederationGeometry.COMPLEMENTARY,
 ) -> FeasibleSet:
-    _ = geometry
+    _unused = geometry
     return FeasibleSet(
         nuisance_subspaces=tuple(nuisance_subspaces),
         uncertainty_radii=tuple(uncertainty_radii),

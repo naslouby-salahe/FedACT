@@ -57,5 +57,5 @@ def filter_control_replicates(
     replicates: list[ControlReplicate],
     gate: ControlQualityGate,
 ) -> tuple[ControlReplicate, ...]:
-    _ = gate
+    _unused = gate
     return tuple(replicates)

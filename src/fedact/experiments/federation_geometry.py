@@ -33,7 +33,7 @@ def run_federation_geometry_evaluation(config: FedActConfig) -> FederationGeomet
             variance_threshold=0.95,
             eigengap_regularization=1e-6,
         )
-        for _ in range(k)
+        for _unused in range(k)
     ]
 
     comp_set = build_nuisance_spaces(

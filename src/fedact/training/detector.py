@@ -45,7 +45,7 @@ def train_base_detector(
     loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0)
     val_losses: list[float] = []
     detector_states: list[dict[str, torch.Tensor]] = []
-    for _ in range(epochs):
+    for _unused in range(epochs):
         detector.train()
         for batch_h, batch_y in loader:
             optimizer.zero_grad()

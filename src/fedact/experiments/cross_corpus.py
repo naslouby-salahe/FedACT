@@ -25,7 +25,7 @@ class CrossCorpusReport:
 
 
 def run_cross_corpus_generalization(config: FedActConfig) -> CrossCorpusReport:
-    _ = config
+    _unused = config
     latent_dim = EMBEDDING_DIMENSION
     encoder = RepresentationEncoder(input_dimension=512)
     encoder.eval()

@@ -48,7 +48,7 @@ def verify_exact_identified_set(basis: FloatArray, known_solution: FloatArray) -
 
 
 def null_space_basis(matrix: FloatArray) -> FloatArray:
-    _, singular_values, vh = np.linalg.svd(matrix, full_matrices=True)
+    _unused_u, singular_values, vh = np.linalg.svd(matrix, full_matrices=True)
     largest = float(singular_values.max()) if singular_values.size else 0.0
     tolerance = max(matrix.shape) * largest * np.finfo(float).eps
     rank = int(np.count_nonzero(singular_values > tolerance))
@@ -57,7 +57,7 @@ def null_space_basis(matrix: FloatArray) -> FloatArray:
 
 
 def is_functionally_identifiable(direction: FloatArray, stacked_system: FloatArray) -> bool:
-    _, singular_values, vh = np.linalg.svd(stacked_system)
+    _unused_u, singular_values, vh = np.linalg.svd(stacked_system)
     tolerance = max(stacked_system.shape) * float(singular_values.max()) * np.finfo(float).eps
     rank = int(np.count_nonzero(singular_values > tolerance))
     projected = direction @ vh[:rank].T
@@ -134,7 +134,7 @@ def run_mathematical_verification() -> MathVerificationReport:
 
     centers = tuple(0.9**step * np.ones(2) for step in range(5))
     try:
-        fitted, _ = fit_scalar_model(centers, maximum_coefficient=0.99)
+        fitted, _unused = fit_scalar_model(centers, maximum_coefficient=0.99)
     except NumericalFailureError:
         fitted = None
     temporal_ok = fitted is not None and 0.0 <= fitted <= 0.99

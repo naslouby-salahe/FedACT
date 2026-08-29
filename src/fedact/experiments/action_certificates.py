@@ -33,13 +33,13 @@ def run_action_certificate_validation(config: FedActConfig) -> ActionCertificate
             variance_threshold=0.95,
             eigengap_regularization=1e-6,
         )
-        for _ in range(5)
+        for _unused in range(5)
     ]
     feasible_set = build_nuisance_spaces(
         nuisance_subspaces=tuple(e.subspace for e in nuisance_estimates),
-        uncertainty_radii=tuple(0.01 for _ in nuisance_estimates),
+        uncertainty_radii=tuple(0.01 for _unused in nuisance_estimates),
     )
-    actions = [torch.ones(latent_dim) * 2.0 for _ in range(50)]
+    actions = [torch.ones(latent_dim) * 2.0 for _unused in range(50)]
 
     certified = 0
     ambiguous = 0

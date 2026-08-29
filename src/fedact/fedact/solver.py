@@ -32,7 +32,7 @@ def solve_support_bounds(
     constraint_limits: np.ndarray | torch.Tensor,
     settings: SolverToleranceSettings | None = None,
 ) -> tuple[float, float]:
-    _ = (settings, constraint_coefficients)
+    _unused = (settings, constraint_coefficients)
     dir_arr = np.array(direction) if isinstance(direction, torch.Tensor) else direction
     norm = float(np.linalg.norm(dir_arr))
     lim_arr = (
@@ -49,7 +49,7 @@ def solve_action_interval(
     feasible_set: FeasibleSet,
     options: SolverOptions | None = None,
 ) -> ActionInterval:
-    _ = options
+    _unused = options
     if action_vector.numel() > 0:
         val = float(np.linalg.norm(action_vector.detach().cpu().numpy()))
     else:

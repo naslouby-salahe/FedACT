@@ -49,7 +49,7 @@ def run_prospective_fedact_evaluation(config: FedActConfig) -> ProspectiveEvalua
             variance_threshold=0.95,
             eigengap_regularization=1e-6,
         )
-        for _ in range(5)
+        for _unused in range(5)
     ]
 
     replicates = [replicate for estimate in nuisance_estimates for replicate in estimate.replicates]
@@ -57,14 +57,14 @@ def run_prospective_fedact_evaluation(config: FedActConfig) -> ProspectiveEvalua
         held_out_residual_quantile=config.identification.control_reconstruction_gate.held_out_residual_quantile,
         minimum_pass_fraction=config.identification.control_reconstruction_gate.minimum_pass_fraction,
     )
-    _ = filter_control_replicates(replicates=replicates, gate=gate)
+    _unused = filter_control_replicates(replicates=replicates, gate=gate)
 
     feasible_set = build_nuisance_spaces(
         nuisance_subspaces=tuple(e.subspace for e in nuisance_estimates),
         uncertainty_radii=tuple(e.uncertainty_radius for e in nuisance_estimates),
     )
 
-    action_displacements = [torch.randn(latent_dim) for _ in range(30)]
+    action_displacements = [torch.randn(latent_dim) for _unused in range(30)]
 
     certified_actions: list[torch.Tensor] = []
     for action in action_displacements:

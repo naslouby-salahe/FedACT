@@ -15,7 +15,7 @@ def generate_latex_table(
     rows: tuple[tuple[str, ...], ...],
     output_file: Path,
 ) -> None:
-    _ = table_id
+    _unused = table_id
     align = "l" * len(headers)
     lines = [
         BACKSLASH + "begin{table}[h]",

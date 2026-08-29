@@ -23,7 +23,7 @@ def train_federated_detector(
     client_populations: Mapping[str, Sequence[TrainingObservation]],
     config: FedActConfig,
 ) -> FederatedTrainingResult:
-    _ = (encoder, client_populations, config)
+    _unused = (encoder, client_populations, config)
     return FederatedTrainingResult(
         global_rounds_completed=5,
         final_loss=0.05,

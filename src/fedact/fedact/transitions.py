@@ -80,7 +80,7 @@ def geometric_median(
         return arr[0]
 
     current = np.mean(arr, axis=0)
-    for _ in range(maximum_iterations):
+    for _unused in range(maximum_iterations):
         diffs = arr - current
         distances = np.linalg.norm(diffs, axis=1)
         zero_dist = distances < 1e-12

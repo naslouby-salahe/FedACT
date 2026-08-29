@@ -30,8 +30,8 @@ def _ordered_composition(
     families: tuple[OperatorFamily, ...], parameters: tuple[CanonicalParameterString, ...]
 ) -> OperatorComposition:
     paired = sorted(zip(families, parameters, strict=True), key=lambda pair: pair[0].listed_order)
-    ordered_families = tuple(family for family, _ in paired)
-    ordered_parameters = tuple(parameter for _, parameter in paired)
+    ordered_families = tuple(family for family, _unused in paired)
+    ordered_parameters = tuple(parameter for _unused, parameter in paired)
     return OperatorComposition(families=ordered_families, parameters=ordered_parameters)
 
 
@@ -41,11 +41,11 @@ def _compositions_of_length(
 ) -> list[OperatorComposition]:
     compositions: list[OperatorComposition] = []
     for chosen in combinations(selections, length):
-        chosen_families = tuple(family for family, _ in chosen)
+        chosen_families = tuple(family for family, _unused in chosen)
         names = [family.name for family in chosen_families]
         if len(set(names)) != len(names):
             continue
-        parameters = tuple(parameter for _, parameter in chosen)
+        parameters = tuple(parameter for _unused, parameter in chosen)
         compositions.append(_ordered_composition(chosen_families, parameters))
     return compositions
 

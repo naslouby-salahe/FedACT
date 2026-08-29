@@ -18,7 +18,7 @@ class CalibrationCandidate:
 
 
 def generate_calibration_candidates(config: FedActConfig) -> tuple[CalibrationCandidate, ...]:
-    _ = config
+    _unused = config
     candidates: list[CalibrationCandidate] = []
     align_grid = [0.1, 0.2, 0.3]
     amb_grid = [0.5, 0.8, 1.0]

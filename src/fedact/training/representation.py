@@ -184,9 +184,9 @@ def train_representation_encoder(
     loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0)
     val_losses: list[float] = []
     saved_states: list[dict[str, torch.Tensor]] = []
-    for _ in range(epochs):
+    for _unused in range(epochs):
         encoder.train()
-        for batch_x, _ in loader:
+        for batch_x, _unused in loader:
             optimizer.zero_grad()
             latent = encoder(batch_x)
             loss = torch.mean(latent**2)

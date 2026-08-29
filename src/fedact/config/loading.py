@@ -26,7 +26,7 @@ def _construct_mapping(loader: yaml.Loader, node: yaml.Node) -> dict[object, obj
     if not isinstance(node, yaml.MappingNode):
         raise TypeError("configuration mappings must deserialize from YAML mapping nodes")
     seen: set[object] = set()
-    for key_node, _ in node.value:
+    for key_node, _unused in node.value:
         key = cast(object, loader.construct_object(key_node))
         if key in seen:
             raise DuplicateYamlKeyError(f"duplicate configuration key encountered: {key!r}")

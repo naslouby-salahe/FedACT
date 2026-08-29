@@ -72,7 +72,7 @@ def propagate_radius(
         rw = 0.1
 
     r = r0
-    for _ in range(horizon_steps):
+    for _unused in range(horizon_steps):
         r = abs(a) * r + rw
     return float(r)
 

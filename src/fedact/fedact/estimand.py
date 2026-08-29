@@ -72,7 +72,7 @@ def projector_from_basis(basis: np.ndarray | torch.Tensor) -> np.ndarray:
     d = b.shape[0]
     if b.size == 0 or b.shape[1] == 0:
         return np.eye(d)
-    q, _ = np.linalg.qr(b)
+    q, _unused = np.linalg.qr(b)
     return np.eye(d) - q @ q.T
 
 
@@ -92,7 +92,7 @@ def smallest_positive_eigenvalue(
     tolerance: ThresholdValue = 1e-12,
     rank_epsilon_relative: ThresholdValue = 1e-6,
 ) -> CoordinateValue | None:
-    _ = tolerance
+    _unused = tolerance
     m = np.array(matrix) if isinstance(matrix, torch.Tensor) else matrix
     eigs = np.linalg.eigvalsh(m)
     max_eig = float(np.max(eigs)) if eigs.size > 0 else 0.0
