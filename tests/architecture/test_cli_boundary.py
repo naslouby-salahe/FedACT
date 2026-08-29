@@ -71,7 +71,9 @@ def snippet_violations(snippet: str) -> list[str]:
     return cli_tree_violations("cli_example.py", ast.parse(snippet))
 
 
-def test_cli_contains_only_parsing_validation_invocation_and_rendering(repository_root: Path) -> None:
+def test_cli_contains_only_parsing_validation_invocation_and_rendering(
+    repository_root: Path,
+) -> None:
     violations = cli_boundary_violations(repository_root)
     assert not violations, "CLI boundary violations:\n" + "\n".join(violations)
 

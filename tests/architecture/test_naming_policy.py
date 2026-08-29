@@ -92,9 +92,7 @@ class NamingVisitor(ast.NodeVisitor):
 
     def visit_Name(self, node: ast.Name) -> None:
         if isinstance(node.ctx, ast.Store):
-            self.violations.extend(
-                checked_identifier(node.id, "variable", node.lineno, self.path)
-            )
+            self.violations.extend(checked_identifier(node.id, "variable", node.lineno, self.path))
             if self.function_depth and not SNAKE_CASE_PATTERN.fullmatch(node.id):
                 self.violations.append(
                     f"{self.path}:{node.lineno}: local variable {node.id} violates snake_case"
@@ -103,9 +101,7 @@ class NamingVisitor(ast.NodeVisitor):
 
     def visit_alias(self, node: ast.alias) -> None:
         if node.asname:
-            self.violations.extend(
-                checked_identifier(node.asname, "import alias", 1, self.path)
-            )
+            self.violations.extend(checked_identifier(node.asname, "import alias", 1, self.path))
             if not SNAKE_CASE_PATTERN.fullmatch(node.asname):
                 self.violations.append(
                     f"{self.path}:1: import alias {node.asname} violates snake_case"

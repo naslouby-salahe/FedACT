@@ -5,7 +5,6 @@ from typing import Annotated
 
 from pydantic import Field, JsonValue, StringConstraints
 
-
 # =============================================================================
 # Reusable constrained primitives
 # =============================================================================

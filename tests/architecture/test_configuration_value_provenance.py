@@ -65,9 +65,12 @@ def path_tokens(paths: frozenset[str]) -> set[str]:
 
 
 def numeric_value(node: ast.AST) -> int | float | None:
-    if isinstance(node, ast.Constant) and not isinstance(node.value, bool):
-        if isinstance(node.value, (int, float)):
-            return node.value
+    if (
+        isinstance(node, ast.Constant)
+        and not isinstance(node.value, bool)
+        and isinstance(node.value, (int, float))
+    ):
+        return node.value
     if (
         isinstance(node, ast.UnaryOp)
         and isinstance(node.op, ast.USub)
@@ -183,9 +186,7 @@ def hardcoded_configuration_violations_for_tree(
     return violations
 
 
-def hardcoded_configuration_violations(
-    repository_root: Path, payload: str
-) -> list[str]:
+def hardcoded_configuration_violations(repository_root: Path, payload: str) -> list[str]:
     values = config_value_index(payload)
     violations: list[str] = []
     for source_file in production_source_files(repository_root):

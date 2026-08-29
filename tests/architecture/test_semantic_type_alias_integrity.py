@@ -55,9 +55,14 @@ def top_level_aliases(tree: ast.Module) -> dict[str, ast.expr]:
             if isinstance(target, ast.Name) and target.id[:1].isupper() and alias_like(node.value):
                 aliases[target.id] = node.value
             continue
-        if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) and node.value:
-            if node.target.id[:1].isupper() and alias_like(node.value):
-                aliases[node.target.id] = node.value
+        if (
+            isinstance(node, ast.AnnAssign)
+            and isinstance(node.target, ast.Name)
+            and node.value
+            and node.target.id[:1].isupper()
+            and alias_like(node.value)
+        ):
+            aliases[node.target.id] = node.value
     return aliases
 
 
@@ -162,7 +167,9 @@ def snippet_violations(snippet: str) -> list[str]:
     return alias_integrity_violations_for_tree("fedact.example", ast.parse(snippet), "example.py")
 
 
-def test_production_type_aliases_are_semantic_not_primitive_disguises(repository_root: Path) -> None:
+def test_production_type_aliases_are_semantic_not_primitive_disguises(
+    repository_root: Path,
+) -> None:
     violations = alias_integrity_violations(repository_root)
     assert not violations, "unsafe semantic type aliases:\n" + "\n".join(violations)
 
@@ -187,8 +194,13 @@ def test_alias_rule_rejects_primitive_and_container_disguises(snippet: str) -> N
 @pytest.mark.parametrize(
     "snippet",
     [
-        "from typing import Annotated\nfrom pydantic import Field\ntype SampleCount = Annotated[int, Field(ge=0)]\n",
-        "from typing import Annotated\nfrom pydantic import Field\ntype Base = Annotated[int, Field(gt=0)]\ntype Count = Base\n",
+        "from typing import Annotated\n"
+        "from pydantic import Field\n"
+        "type SampleCount = Annotated[int, Field(ge=0)]\n",
+        "from typing import Annotated\n"
+        "from pydantic import Field\n"
+        "type Base = Annotated[int, Field(gt=0)]\n"
+        "type Count = Base\n",
         "from typing import NewType\nClientIdentifier = NewType('ClientIdentifier', str)\n",
         "from pathlib import Path\ntype FilePath = Path\n",
         "class DomainRecord:\n    pass\ntype Record = DomainRecord\n",

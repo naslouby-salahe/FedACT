@@ -92,8 +92,15 @@ def test_primitive_rule_rejects_known_escape_hatches(snippet: str) -> None:
 @pytest.mark.parametrize(
     "snippet",
     [
-        "from typing import Annotated\nfrom pydantic import Field\ntype SampleCount = Annotated[int, Field(ge=0)]\ndef expose(value: SampleCount) -> None:\n    pass\n",
-        "from typing import NewType\nClientIdentifier = NewType('ClientIdentifier', str)\ndef expose(value: ClientIdentifier) -> None:\n    pass\n",
+        "from typing import Annotated\n"
+        "from pydantic import Field\n"
+        "type SampleCount = Annotated[int, Field(ge=0)]\n"
+        "def expose(value: SampleCount) -> None:\n"
+        "    pass\n",
+        "from typing import NewType\n"
+        "ClientIdentifier = NewType('ClientIdentifier', str)\n"
+        "def expose(value: ClientIdentifier) -> None:\n"
+        "    pass\n",
         "class DomainValue:\n    pass\ndef expose(value: DomainValue) -> None:\n    pass\n",
     ],
 )
@@ -110,6 +117,5 @@ def test_primitive_exemptions_are_exact_real_and_necessary(repository_root: Path
         assert symbol in observed, f"stale primitive exemption: {symbol}"
         assert exempted, f"empty primitive exemption: {symbol}"
         assert exempted <= observed[symbol], (
-            f"unnecessary primitive exemption for {symbol}: "
-            f"{sorted(exempted - observed[symbol])}"
+            f"unnecessary primitive exemption for {symbol}: {sorted(exempted - observed[symbol])}"
         )

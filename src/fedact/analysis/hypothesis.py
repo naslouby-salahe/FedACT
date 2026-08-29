@@ -17,7 +17,7 @@ class HypothesisTestResult:
 def paired_t_test(
     treatment: Sequence[MetricRate],
     control: Sequence[MetricRate],
-    alpha: ProbabilityValue = 0.05, #TODO: this value should be in yaml
+    alpha: ProbabilityValue = 0.05,  # TODO: this value should be in yaml
 ) -> HypothesisTestResult:
     if len(treatment) != len(control) or len(treatment) < 2:
         return HypothesisTestResult(test_statistic=0.0, p_value=1.0, is_significant=False)

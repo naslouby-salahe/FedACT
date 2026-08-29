@@ -101,9 +101,7 @@ def collect_type_aliases(tree: ast.Module) -> dict[str, ast.expr]:
 def _is_semantic_alias_expression(node: ast.expr) -> bool:
     if isinstance(node, ast.Call) and terminal_name(node.func) == "NewType":
         return True
-    if isinstance(node, ast.Subscript) and terminal_name(node.value) in SEMANTIC_WRAPPERS:
-        return True
-    return False
+    return isinstance(node, ast.Subscript) and terminal_name(node.value) in SEMANTIC_WRAPPERS
 
 
 def primitive_names(
@@ -308,9 +306,7 @@ def import_edges(importer: str, tree: ast.Module) -> list[ImportEdge]:
                 resolved = resolve_relative_import(importer, node.level, node.module)
                 if resolved:
                     edges.append(ImportEdge(importer, resolved, node.lineno))
-            elif node.module and (
-                node.module == "fedact" or node.module.startswith("fedact.")
-            ):
+            elif node.module and (node.module == "fedact" or node.module.startswith("fedact.")):
                 if node.module == "fedact":
                     for imported in node.names:
                         if imported.name != "*":
@@ -344,9 +340,12 @@ def silent_exception_sites(path: str, tree: ast.Module) -> list[str]:
 def forbidden_dynamic_call_sites(path: str, tree: ast.Module) -> list[str]:
     violations: list[str] = []
     for node in ast.walk(tree):
-        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
-            if node.func.id in FORBIDDEN_DYNAMIC_CALLS:
-                violations.append(f"{path}:{node.lineno}: forbidden {node.func.id}()")
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id in FORBIDDEN_DYNAMIC_CALLS
+        ):
+            violations.append(f"{path}:{node.lineno}: forbidden {node.func.id}()")
     return violations
 
 
@@ -422,7 +421,9 @@ def numeric_defaults(tree: ast.Module) -> list[tuple[str, int, int | float]]:
     return violations
 
 
-def governed_keyword_literals(tree: ast.Module, governed: frozenset[str]) -> list[tuple[str, int, str]]:
+def governed_keyword_literals(
+    tree: ast.Module, governed: frozenset[str]
+) -> list[tuple[str, int, str]]:
     violations: list[tuple[str, int, str]] = []
     for node in ast.walk(tree):
         if not isinstance(node, ast.Call):
@@ -454,9 +455,12 @@ def governed_collection_literals(
 
 
 def _numeric_value(node: ast.AST) -> int | float | None:
-    if isinstance(node, ast.Constant) and not isinstance(node.value, bool):
-        if isinstance(node.value, (int, float)):
-            return node.value
+    if (
+        isinstance(node, ast.Constant)
+        and not isinstance(node.value, bool)
+        and isinstance(node.value, (int, float))
+    ):
+        return node.value
     if (
         isinstance(node, ast.UnaryOp)
         and isinstance(node.op, ast.USub)
@@ -477,10 +481,14 @@ def enum_definitions(tree: ast.Module) -> dict[str, frozenset[str]]:
             continue
         values: set[str] = set()
         for item in node.body:
-            if isinstance(item, ast.Assign) and len(item.targets) == 1:
-                if isinstance(item.targets[0], ast.Name) and isinstance(item.value, ast.Constant):
-                    if isinstance(item.value.value, str):
-                        values.add(item.value.value)
+            if (
+                isinstance(item, ast.Assign)
+                and len(item.targets) == 1
+                and isinstance(item.targets[0], ast.Name)
+                and isinstance(item.value, ast.Constant)
+                and isinstance(item.value.value, str)
+            ):
+                values.add(item.value.value)
         definitions[node.name] = frozenset(values)
     return definitions
 

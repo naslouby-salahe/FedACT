@@ -16,7 +16,9 @@ BANNED_FAIL_OPEN_IDENTIFIERS = frozenset(
     }
 )
 NEGATIVE_CANARY_TOKENS = frozenset({"bypass", "detect", "escape", "reject"})
-POSITIVE_CANARY_TOKENS = frozenset({"accept", "clean", "complete", "does_not", "ignore", "private", "valid"})
+POSITIVE_CANARY_TOKENS = frozenset(
+    {"accept", "clean", "complete", "does_not", "ignore", "private", "valid"}
+)
 SELF_FILE = "test_architecture_suite_self_integrity.py"
 
 
@@ -40,7 +42,7 @@ def string_literals(node: ast.AST) -> list[str]:
     ]
 
 
-def detector_helpers(tree: ast.Module) -> list[ast.FunctionDef | ast.AsyncFunctionDef]:
+def violation_detector_functions(tree: ast.Module) -> list[ast.FunctionDef | ast.AsyncFunctionDef]:
     return [
         node
         for node in tree.body
@@ -50,11 +52,12 @@ def detector_helpers(tree: ast.Module) -> list[ast.FunctionDef | ast.AsyncFuncti
     ]
 
 
-def test_function_names(tree: ast.Module) -> set[str]:
+def defined_test_names(tree: ast.Module) -> set[str]:
     return {
         node.name
         for node in tree.body
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test_")
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+        and node.name.startswith("test_")
     }
 
 
@@ -71,7 +74,8 @@ def manual_module_registry_violations(path: str, tree: ast.Module) -> list[str]:
         python_paths = [value for value in literals if value.endswith(".py")]
         if len(python_paths) >= 8:
             violations.append(
-                f"{path}: manual production-module registry contains {len(python_paths)} Python paths"
+                f"{path}: manual production-module registry contains "
+                f"{len(python_paths)} Python paths"
             )
     return violations
 
@@ -88,9 +92,9 @@ def broad_exception_policy_violations(path: str, tree: ast.Module) -> list[str]:
 
 
 def detector_canary_violations(path: str, tree: ast.Module) -> list[str]:
-    if not detector_helpers(tree):
+    if not violation_detector_functions(tree):
         return []
-    names = test_function_names(tree)
+    names = defined_test_names(tree)
     violations: list[str] = []
     if not any(has_token(name, NEGATIVE_CANARY_TOKENS) for name in names):
         violations.append(f"{path}: detector has no adversarial rejection/detection canary")

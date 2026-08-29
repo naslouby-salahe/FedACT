@@ -83,21 +83,28 @@ def dynamic_lookup_name(
     pdb_modules: set[str],
     importlib_modules: set[str],
 ) -> str | None:
-    if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "getattr":
-        if len(node.args) >= 2:
-            module = module_reference_name(
-                node.args[0], builtins_modules, pdb_modules, importlib_modules
-            )
-            attribute = constant_string(node.args[1])
-            if module == "builtins" and attribute in FORBIDDEN_DIRECT_CALLS:
-                return f"builtins.{attribute}"
-            if module == "pdb" and attribute == "set_trace":
-                return "pdb.set_trace"
+    if (
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id == "getattr"
+        and len(node.args) >= 2
+    ):
+        module = module_reference_name(
+            node.args[0], builtins_modules, pdb_modules, importlib_modules
+        )
+        attribute = constant_string(node.args[1])
+        if module == "builtins" and attribute in FORBIDDEN_DIRECT_CALLS:
+            return f"builtins.{attribute}"
+        if module == "pdb" and attribute == "set_trace":
+            return "pdb.set_trace"
     if isinstance(node, ast.Subscript):
         key = constant_string(node.slice)
-        if isinstance(node.value, ast.Name) and node.value.id == "__builtins__":
-            if key in FORBIDDEN_DIRECT_CALLS:
-                return f"__builtins__[{key!r}]"
+        if (
+            isinstance(node.value, ast.Name)
+            and node.value.id == "__builtins__"
+            and key in FORBIDDEN_DIRECT_CALLS
+        ):
+            return f"__builtins__[{key!r}]"
         if isinstance(node.value, ast.Attribute) and node.value.attr == "__dict__":
             module = module_reference_name(
                 node.value.value, builtins_modules, pdb_modules, importlib_modules
@@ -237,7 +244,11 @@ def test_production_contains_no_dynamic_debug_suppression_or_silent_exception_pa
         "import pdb as p\ngetattr(p, 'set_trace')()\n",
         "try:\n    work()\nexcept Exception:\n    pass\n",
         "try:\n    work()\nexcept Exception:\n    ...\n",
-        "for item in values:\n    try:\n        work(item)\n    except Exception:\n        continue\n",
+        "for item in values:\n"
+        "    try:\n"
+        "        work(item)\n"
+        "    except Exception:\n"
+        "        continue\n",
         "try:\n    work()\nexcept:\n    raise\n",
         "value: int = source  # type: ignore\n",
         "value = source  # noqa: F841\n",

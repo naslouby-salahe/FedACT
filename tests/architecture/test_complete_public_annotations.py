@@ -17,7 +17,9 @@ def public_annotation_violations(repository_root: Path) -> list[str]:
     violations: list[str] = []
     for source_file in production_source_files(repository_root):
         violations.extend(
-            missing_public_annotations(module_name(repository_root, source_file), parse_source(source_file))
+            missing_public_annotations(
+                module_name(repository_root, source_file), parse_source(source_file)
+            )
         )
     return violations
 

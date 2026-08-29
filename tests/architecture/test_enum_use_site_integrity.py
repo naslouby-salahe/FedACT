@@ -52,9 +52,7 @@ def enum_classes(tree: ast.Module) -> dict[str, list[str]]:
     for node in tree.body:
         if not isinstance(node, ast.ClassDef):
             continue
-        if not any(
-            terminal_name(base) in {"Enum", "StrEnum", "IntEnum"} for base in node.bases
-        ):
+        if not any(terminal_name(base) in {"Enum", "StrEnum", "IntEnum"} for base in node.bases):
             continue
         values: list[str] = []
         for item in node.body:
@@ -189,9 +187,9 @@ def enum_semantic_use_site(
     while current in parents:
         parent = parents[current]
         if isinstance(parent, ast.AnnAssign):
-            return any(name_is_enum_shaped(name, owners) for name in target_names(parent.target)) or (
-                annotation_mentions_owner(parent.annotation, owners)
-            )
+            return any(
+                name_is_enum_shaped(name, owners) for name in target_names(parent.target)
+            ) or annotation_mentions_owner(parent.annotation, owners)
         if isinstance(parent, ast.Assign):
             return any(
                 name_is_enum_shaped(name, owners)
@@ -201,7 +199,9 @@ def enum_semantic_use_site(
         if isinstance(parent, ast.keyword) and parent.arg:
             return name_is_enum_shaped(parent.arg, owners)
         if isinstance(parent, ast.Compare):
-            names = [name for child in [parent.left, *parent.comparators] for name in target_names(child)]
+            names = [
+                name for child in [parent.left, *parent.comparators] for name in target_names(child)
+            ]
             return any(name_is_enum_shaped(name, owners) for name in names)
         if isinstance(parent, ast.MatchValue):
             match_node: ast.AST = parent
@@ -307,9 +307,14 @@ def test_duplicate_enum_values_are_rejected() -> None:
     [
         "status = 'PASS'\n",
         "def accepted(status: object) -> bool:\n    return status == 'PASS'\n",
-        "def choose(status: object) -> None:\n    match status:\n        case 'PASS':\n            return\n",
+        "def choose(status: object) -> None:\n"
+        "    match status:\n"
+        "        case 'PASS':\n"
+        "            return\n",
         "def execute(status: str = 'PASS') -> None:\n    pass\n",
-        "from fedact.domain.enums import ScientificOutcome\ndef outcome() -> ScientificOutcome:\n    return 'PASS'\n",
+        "from fedact.domain.enums import ScientificOutcome\n"
+        "def outcome() -> ScientificOutcome:\n"
+        "    return 'PASS'\n",
     ],
 )
 def test_raw_enum_value_rule_rejects_use_site_bypasses(snippet: str) -> None:
@@ -332,29 +337,31 @@ def test_raw_enum_value_rule_ignores_non_semantic_string_uses(snippet: str) -> N
         "PASS": {("fedact.domain.enums", "ScientificOutcome")},
         "analysis": {("fedact.domain.enums", "ArtifactBoundary")},
     }
-    assert raw_enum_literal_violations_for_tree(
-        "fedact.example", ast.parse(snippet), "example.py", catalog
-    ) == []
+    assert (
+        raw_enum_literal_violations_for_tree(
+            "fedact.example", ast.parse(snippet), "example.py", catalog
+        )
+        == []
+    )
 
 
 def test_enum_member_usage_is_accepted() -> None:
-    snippet = (
-        "from fedact.domain.enums import ScientificOutcome\n"
-        "status = ScientificOutcome.PASS\n"
-    )
+    snippet = "from fedact.domain.enums import ScientificOutcome\nstatus = ScientificOutcome.PASS\n"
     catalog = {"PASS": {("fedact.domain.enums", "ScientificOutcome")}}
-    assert raw_enum_literal_violations_for_tree(
-        "fedact.example", ast.parse(snippet), "example.py", catalog
-    ) == []
+    assert (
+        raw_enum_literal_violations_for_tree(
+            "fedact.example", ast.parse(snippet), "example.py", catalog
+        )
+        == []
+    )
 
 
 def test_enum_definition_literals_are_not_reported_as_bypasses() -> None:
-    snippet = (
-        "from enum import StrEnum\n"
-        "class ScientificOutcome(StrEnum):\n"
-        "    PASS = 'PASS'\n"
-    )
+    snippet = "from enum import StrEnum\nclass ScientificOutcome(StrEnum):\n    PASS = 'PASS'\n"
     catalog = {"PASS": {("fedact.example", "ScientificOutcome")}}
-    assert raw_enum_literal_violations_for_tree(
-        "fedact.example", ast.parse(snippet), "example.py", catalog
-    ) == []
+    assert (
+        raw_enum_literal_violations_for_tree(
+            "fedact.example", ast.parse(snippet), "example.py", catalog
+        )
+        == []
+    )

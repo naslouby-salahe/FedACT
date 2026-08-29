@@ -5,12 +5,14 @@ from typing import Annotated
 
 from pydantic import Field
 
-PValue = Annotated[float, Field(ge=0.0, le=1.0)] #TODO: Use ProbabilityValue from fedact.domain.types when it is available
+PValue = Annotated[
+    float, Field(ge=0.0, le=1.0)
+]  # TODO: Use ProbabilityValue from fedact.domain.types when it is available
 
 
 def benjamini_hochberg_correction(
     p_values: Sequence[PValue],
-    false_discovery_rate: PValue = 0.05, #TODO: value should be in yaml
+    false_discovery_rate: PValue = 0.05,  # TODO: value should be in yaml
 ) -> tuple[PValue, ...]:
     n = len(p_values)
     if n == 0:

@@ -45,8 +45,10 @@ def direct_forward_call(node: ast.AST, imports: set[str]) -> bool:
     if not all(simple_forward_argument(argument) for argument in node.args):
         return False
     return all(
-        keyword.arg is None and isinstance(keyword.value, ast.Name)
-        or keyword.arg is not None and isinstance(keyword.value, ast.Name)
+        keyword.arg is None
+        and isinstance(keyword.value, ast.Name)
+        or keyword.arg is not None
+        and isinstance(keyword.value, ast.Name)
         for keyword in node.keywords
     )
 
@@ -146,9 +148,12 @@ def meaningful_local_behavior(tree: ast.Module, imports: set[str]) -> bool:
             continue
         if isinstance(node, (ast.If, ast.Try, ast.With, ast.For, ast.While, ast.Match)):
             return True
-        if isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant):
-            if isinstance(node.value.value, str):
-                continue
+        if (
+            isinstance(node, ast.Expr)
+            and isinstance(node.value, ast.Constant)
+            and isinstance(node.value.value, str)
+        ):
+            continue
         if isinstance(node, ast.Pass):
             continue
         return True
@@ -208,8 +213,14 @@ def test_redirect_rule_rejects_known_shim_escape_hatches(snippet: str) -> None:
     [
         "import math\ndef magnitude(value):\n    return math.sqrt(value * value + 1)\n",
         "from package.core import Item\nITEMS = (Item('a'), Item('b'))\n",
-        "import package.core as core\ndef run(value):\n    validated = validate(value)\n    return core.execute(validated)\n",
-        "from package.core import Service\nclass Adapter(Service):\n    def execute(self, value):\n        return transform(value)\n",
+        "import package.core as core\n"
+        "def run(value):\n"
+        "    validated = validate(value)\n"
+        "    return core.execute(validated)\n",
+        "from package.core import Service\n"
+        "class Adapter(Service):\n"
+        "    def execute(self, value):\n"
+        "        return transform(value)\n",
         "VALUE = 1\n",
     ],
 )

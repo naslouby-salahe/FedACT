@@ -28,9 +28,11 @@ def docstring_violations(path: Path) -> list[str]:
     tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
     violations: list[str] = []
     for node in ast.walk(tree):
-        if isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
-            if ast.get_docstring(node) is not None:
-                violations.append(f"{path}:{getattr(node, 'lineno', 1)}: docstring")
+        if (
+            isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef))
+            and ast.get_docstring(node) is not None
+        ):
+            violations.append(f"{path}:{getattr(node, 'lineno', 1)}: docstring")
     return violations
 
 
@@ -89,7 +91,10 @@ def placeholder_implementation_violations(path: Path) -> list[str]:
         for statement in body:
             if not isinstance(statement, ast.Raise) or not isinstance(statement.exc, ast.Call):
                 continue
-            if isinstance(statement.exc.func, ast.Name) and statement.exc.func.id == "NotImplementedError":
+            if (
+                isinstance(statement.exc.func, ast.Name)
+                and statement.exc.func.id == "NotImplementedError"
+            ):
                 violations.append(f"{path}:{statement.lineno}: NotImplementedError in {node.name}")
     return violations
 
@@ -120,7 +125,7 @@ def test_python_sources_are_free_of_comments_docstrings_and_temporary_residue(
         "def execute() -> None:\n    pass\n",
         "def execute() -> None:\n    ...\n",
         "def execute() -> None:\n    raise NotImplementedError()\n",
-        "def execute() -> None:\n    \"\"\"temporary docs\"\"\"\n    return None\n",
+        'def execute() -> None:\n    """temporary docs"""\n    return None\n',
     ],
 )
 def test_source_hygiene_detectors_reject_known_residue(tmp_path: Path, snippet: str) -> None:

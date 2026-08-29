@@ -66,22 +66,28 @@ class VocabularyAstVisitor(ast.NodeVisitor):
         for forbidden in FORBIDDEN_PREDECESSOR_ALIASES:
             if forbidden in lower_name or forbidden in tokens:
                 self.violations.append(
-                    f"{self.relative_path}:{lineno}: {node_type} '{name}' contains forbidden alias '{forbidden}'"
+                    f"{self.relative_path}:{lineno}: {node_type} '{name}' "
+                    f"contains forbidden alias '{forbidden}'"
                 )
 
         if ARTIFICIAL_VERSION_PATTERN.search(name):
             self.violations.append(
-                f"{self.relative_path}:{lineno}: {node_type} '{name}' uses artificial version naming"
+                f"{self.relative_path}:{lineno}: {node_type} '{name}' "
+                "uses artificial version naming"
             )
 
-        if lower_name in FORBIDDEN_GENERIC_NAMES or any(t in FORBIDDEN_GENERIC_NAMES for t in tokens):
+        if lower_name in FORBIDDEN_GENERIC_NAMES or any(
+            t in FORBIDDEN_GENERIC_NAMES for t in tokens
+        ):
             self.violations.append(
-                f"{self.relative_path}:{lineno}: {node_type} '{name}' uses forbidden generic terminology"
+                f"{self.relative_path}:{lineno}: {node_type} '{name}' "
+                "uses forbidden generic terminology"
             )
 
         if MACHINE_STYLE_EXPERIMENT_PATTERN.search(name):
             self.violations.append(
-                f"{self.relative_path}:{lineno}: {node_type} '{name}' uses machine-style/numbered naming"
+                f"{self.relative_path}:{lineno}: {node_type} '{name}' "
+                "uses machine-style/numbered naming"
             )
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
@@ -119,7 +125,8 @@ class VocabularyAstVisitor(ast.NodeVisitor):
             for forbidden in FORBIDDEN_PREDECESSOR_ALIASES:
                 if forbidden in lower_val:
                     self.violations.append(
-                        f"{self.relative_path}:{node.lineno}: string literal '{node.value}' contains forbidden alias '{forbidden}'"
+                        f"{self.relative_path}:{node.lineno}: string literal '{node.value}' "
+                        f"contains forbidden alias '{forbidden}'"
                     )
         self.generic_visit(node)
 
@@ -145,7 +152,9 @@ def source_vocabulary_violations(repository_root: Path) -> list[str]:
             try:
                 tree = ast.parse(source_file.read_text(encoding="utf-8"), filename=str(source_file))
             except SyntaxError as parse_error:
-                violations.append(f"{relative}:{parse_error.lineno}: syntax error {parse_error.msg}")
+                violations.append(
+                    f"{relative}:{parse_error.lineno}: syntax error {parse_error.msg}"
+                )
                 continue
             visitor = VocabularyAstVisitor(relative)
             visitor.visit(tree)
@@ -169,7 +178,8 @@ def configuration_vocabulary_violations(repository_root: Path) -> list[str]:
             for forbidden in FORBIDDEN_PREDECESSOR_ALIASES:
                 if forbidden in lower_line:
                     violations.append(
-                        f"{relative}:{line_number}: configuration line contains forbidden alias '{forbidden}'"
+                        f"{relative}:{line_number}: configuration line contains "
+                        f"forbidden alias '{forbidden}'"
                     )
     return violations
 
