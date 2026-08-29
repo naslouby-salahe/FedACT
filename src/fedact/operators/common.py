@@ -148,22 +148,3 @@ def pe_mutation_families() -> tuple[OperatorFamily, ...]:
             ),
         ),
     )
-
-
-def apk_mutation_families() -> tuple[OperatorFamily, ...]:
-    return (
-        OperatorFamily(
-            name="unreachable-benign-gadget-injection",
-            domain=OperatorDomain.ANDROID_APK,
-            listed_order=0,
-            parameter_grid=(CanonicalParameterString("gadget=cutoff-safe-benign-library"),),
-        ),
-        OperatorFamily(
-            name="permission-neutral-resource-injection",
-            domain=OperatorDomain.ANDROID_APK,
-            listed_order=1,
-            parameter_grid=tuple(
-                CanonicalParameterString(f"payload={size}") for size in sorted(APK_PAYLOAD_SIZES)
-            ),
-        ),
-    )

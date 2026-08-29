@@ -6,11 +6,9 @@ from fedact.operators.common import (
     PeImportName,
     PeSectionRenameTarget,
     UpxAction,
-    apk_mutation_families,
     is_degenerate_displacement,
     pe_mutation_families,
 )
-from fedact.operators.ember2024 import ember2024_families
 from fedact.operators.lamda import BENIGN_GADGET_LIBRARY, gadget_library_identity, lamda_families
 from fedact.operators.validation import (
     BehaviorValidity,
@@ -39,8 +37,6 @@ __all__ = [
     "UpxAction",
     "ValidityLayerError",
     "ValidityStatus",
-    "apk_mutation_families",
-    "ember2024_families",
     "gadget_library_identity",
     "is_degenerate_displacement",
     "lamda_families",

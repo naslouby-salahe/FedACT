@@ -1,5 +1,7 @@
 .PHONY: setup format lint typecheck dead-code depcheck imports unit architecture quality tests checks
 
+export PYTHONDONTWRITEBYTECODE := 1
+
 setup:
 	uv sync
 

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import shutil
 from pathlib import Path
 
 from typer.testing import CliRunner, Result
@@ -116,35 +115,30 @@ def test_report_forms_validate_workflow_names(repository_root: Path) -> None:
     invalid = invoke("report", "bogus", "--repository-root", str(repository_root))
     assert invalid.exit_code == 2
 
-    results_dir = repository_root / "results"
-    shutil.rmtree(results_dir, ignore_errors=True)
-    try:
-        without_data = invoke("report", "--repository-root", str(repository_root))
-        assert without_data.exit_code == 1
-        assert "requires a completed prospective evaluation result" in without_data.output
+    without_data = invoke("report", "--repository-root", str(repository_root))
+    assert without_data.exit_code == 1
+    assert "requires a completed prospective evaluation result" in without_data.output
 
-        application = Application.from_repository_root(discover_repository_root(repository_root))
-        write_workflow_result(
-            application.result_experiment_directory(ExecutableWorkflowName.PROSPECTIVE_EVALUATION),
-            WorkflowResultRecord(
-                workflow=ExecutableWorkflowName.PROSPECTIVE_EVALUATION,
-                scientific_outcome=ScientificOutcome.PASS,
-                mean_false_negative_rate=0.08,
-                mean_certification_rate=0.82,
-                clean_fnr_degradation_percentage_points=0.9,
-            ),
-        )
-        valid = invoke(
-            "report",
-            "prospective-evaluation",
-            "--overwrite",
-            "--repository-root",
-            str(repository_root),
-        )
-        assert valid.exit_code == 0
-        assert "manuscript evidence reporting completed: PASS" in valid.output
-        summary = (results_dir / "project_summary.json").read_text(encoding="utf-8")
-        assert "0.08" in summary
-        assert "0.82" in summary
-    finally:
-        shutil.rmtree(results_dir, ignore_errors=True)
+    application = Application.from_repository_root(discover_repository_root(repository_root))
+    write_workflow_result(
+        application.result_experiment_directory(ExecutableWorkflowName.PROSPECTIVE_EVALUATION),
+        WorkflowResultRecord(
+            workflow=ExecutableWorkflowName.PROSPECTIVE_EVALUATION,
+            scientific_outcome=ScientificOutcome.PASS,
+            mean_false_negative_rate=0.08,
+            mean_certification_rate=0.82,
+            clean_fnr_degradation_percentage_points=0.9,
+        ),
+    )
+    valid = invoke(
+        "report",
+        "prospective-evaluation",
+        "--overwrite",
+        "--repository-root",
+        str(repository_root),
+    )
+    assert valid.exit_code == 0
+    assert "manuscript evidence reporting completed: PASS" in valid.output
+    summary = (repository_root / "results" / "project_summary.json").read_text(encoding="utf-8")
+    assert "0.08" in summary
+    assert "0.82" in summary

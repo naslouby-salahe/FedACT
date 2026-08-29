@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import os
+
 import nox
 
 nox.options.default_venv_backend = "none"
+os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
 
 
 @nox.session(name="lint")
