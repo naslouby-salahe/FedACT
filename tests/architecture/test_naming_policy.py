@@ -34,7 +34,7 @@ def checked_identifier(name: str, kind: str, lineno: int, path: str) -> list[str
     violations: list[str] = []
     normalized = name.lower()
     if normalized in FORBIDDEN_PLACEHOLDER_NAMES:
-        violations.append(f"{path}:{lineno}: {kind} uses placeholder name {name}")
+        violations.append(f"{path}:{lineno}: {kind} uses forbidden generic filler name {name}")
     return violations
 
 
@@ -134,7 +134,9 @@ def naming_violations(repository_root: Path) -> list[str]:
         if source_file.name != "__init__.py" and not SNAKE_CASE_PATTERN.fullmatch(source_file.stem):
             violations.append(f"{relative}: module name violates snake_case")
         if source_file.stem.lower() in FORBIDDEN_PLACEHOLDER_NAMES:
-            violations.append(f"{relative}: module uses placeholder name {source_file.stem}")
+            violations.append(
+                f"{relative}: module uses forbidden generic filler name {source_file.stem}"
+            )
         tree = ast.parse(source_file.read_text(encoding="utf-8"), filename=str(source_file))
         violations.extend(naming_violations_for_tree(relative, tree))
     return violations

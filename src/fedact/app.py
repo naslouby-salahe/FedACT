@@ -7,8 +7,8 @@ from fedact.config.loading import LoadedConfiguration, load_production_configura
 from fedact.domain.enums import ExecutableWorkflowName, ScientificOutcome
 from fedact.runtime.planning import ExecutionPlan, resolve_execution_plan
 
-# sysexits.h EX_UNAVAILABLE; os.EX_UNAVAILABLE is POSIX-only and unavailable on win32.
-PRODUCER_NOT_REGISTERED_EXIT_CODE = 69
+SYSEXITS_EX_UNAVAILABLE = 69
+PRODUCER_NOT_REGISTERED_EXIT_CODE = SYSEXITS_EX_UNAVAILABLE
 
 
 @dataclass(frozen=True)

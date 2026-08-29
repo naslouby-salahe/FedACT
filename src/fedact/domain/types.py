@@ -5,10 +5,6 @@ from typing import Annotated
 
 from pydantic import Field, JsonValue, StringConstraints
 
-# =============================================================================
-# Reusable constrained primitives
-# =============================================================================
-
 type StrictInteger = Annotated[
     int,
     Field(strict=True),
@@ -64,10 +60,6 @@ type StrictBytes = Annotated[
 ]
 
 
-# =============================================================================
-# Counts, indices, dimensions, and integer-valued quantities
-# =============================================================================
-
 type SampleCount = NonNegativeInteger
 type EvaluationCount = NonNegativeInteger
 type ReplicateIndex = NonNegativeInteger
@@ -92,10 +84,6 @@ type DrawIndex = NonNegativeInteger
 type LogLevel = StrictInteger
 
 
-# =============================================================================
-# Scientific and numeric values
-# =============================================================================
-
 type LossValue = FiniteFloat
 type ProbabilityValue = Probability
 type LogitValue = FiniteFloat
@@ -111,10 +99,6 @@ type TimeoutSeconds = NonNegativeFloat
 type ParameterValue = FiniteFloat
 
 
-# =============================================================================
-# Decisions, statuses, reasons, and descriptions
-# =============================================================================
-
 type ActionDecision = NonEmptyString
 type ExecutionReason = NonEmptyString
 type WorkflowStatus = NonEmptyString
@@ -126,10 +110,6 @@ type RuleDescription = NonEmptyString
 type ProvenanceText = NonEmptyString
 type CanonicalFormText = NonEmptyString
 
-
-# =============================================================================
-# Names and identifiers
-# =============================================================================
 
 type ArtifactName = NonEmptyString
 type ToolchainIdentifier = NonEmptyString
@@ -150,10 +130,6 @@ type GridCellLabel = NonEmptyString
 type LoggerName = NonEmptyString
 
 
-# =============================================================================
-# Hashes and provenance identifiers
-# =============================================================================
-
 type HashDigest = NonEmptyString
 
 type CommitHash = Annotated[
@@ -166,10 +142,6 @@ type CommitHash = Annotated[
 ]
 
 
-# =============================================================================
-# Temporal values
-# =============================================================================
-
 type CalendarMonthString = Annotated[
     str,
     Field(strict=True),
@@ -180,17 +152,9 @@ type CalendarMonthString = Annotated[
 ]
 
 
-# =============================================================================
-# Files and binary payloads
-# =============================================================================
-
 type FilePath = Path
 type RawPayloadBytes = StrictBytes
 
-
-# =============================================================================
-# Validation and scientific-state flags
-# =============================================================================
 
 type ValidationFlag = StrictBoolean
 type DomainValidityFlag = StrictBoolean
@@ -201,9 +165,5 @@ type BinaryLabel = StrictBoolean
 type EligibilityFlag = StrictBoolean
 type OptionalFlag = StrictBoolean
 
-
-# =============================================================================
-# JSON-compatible values
-# =============================================================================
 
 type JsonEncodableValue = JsonValue
