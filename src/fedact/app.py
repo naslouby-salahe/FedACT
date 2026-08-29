@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -8,7 +7,8 @@ from fedact.config.loading import LoadedConfiguration, load_production_configura
 from fedact.domain.enums import ExecutableWorkflowName, ScientificOutcome
 from fedact.runtime.planning import ExecutionPlan, resolve_execution_plan
 
-PRODUCER_NOT_REGISTERED_EXIT_CODE = os.EX_UNAVAILABLE
+# sysexits.h EX_UNAVAILABLE; os.EX_UNAVAILABLE is POSIX-only and unavailable on win32.
+PRODUCER_NOT_REGISTERED_EXIT_CODE = 69
 
 
 @dataclass(frozen=True)
@@ -35,7 +35,7 @@ class Application:
 
     def is_raw_data_available(self) -> bool:
         raw_root = self.raw_data_root()
-        return raw_root.exists() and any(raw_root.iterdir())
+        return raw_root.is_dir() and any(raw_root.iterdir())
 
     def plan(
         self,
