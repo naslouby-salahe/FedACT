@@ -16,6 +16,7 @@ from fedact.artifacts.results import (
 from fedact.config.models import FedActConfig
 from fedact.domain.enums import ExecutableWorkflowName, ScientificOutcome
 from fedact.experiments.registry import registered_workflow
+from fedact.runtime.state import WorkflowExecutionState
 
 
 def _persist(application: Application, record: WorkflowResultRecord) -> None:
@@ -233,7 +234,7 @@ def run(workflow: ExecutableWorkflowName, overwrite: bool, repository_root: Path
     selected = registered_workflow(workflow)
     application = Application.from_repository_root(discover_repository_root(repository_root))
     entry = application.plan().entry(workflow)
-    if entry.status == "blocked":
+    if entry.status is WorkflowExecutionState.BLOCKED:
         typer.echo(
             f"workflow '{workflow.value}' is blocked by: "
             f"{' '.join(dep.value for dep in entry.blocking_dependencies)}",

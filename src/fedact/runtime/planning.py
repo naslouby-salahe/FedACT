@@ -3,7 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from fedact.domain.enums import ExecutableWorkflowName, ScientificOutcome
-from fedact.domain.types import OptionalFlag, WorkflowStatus
+from fedact.domain.types import OptionalFlag
+from fedact.runtime.state import WorkflowExecutionState
 
 WORKFLOW_DEPENDENCIES: dict[ExecutableWorkflowName, tuple[ExecutableWorkflowName, ...]] = {
     ExecutableWorkflowName.PREPROCESS: (),
@@ -53,7 +54,7 @@ OPTIONAL_WORKFLOWS: frozenset[ExecutableWorkflowName] = frozenset(
 @dataclass(frozen=True)
 class WorkflowPlanEntry:
     workflow: ExecutableWorkflowName
-    status: WorkflowStatus
+    status: WorkflowExecutionState
     blocking_reasons: tuple[str, ...]
     optional: OptionalFlag
     blocking_dependencies: tuple[ExecutableWorkflowName, ...] = ()
@@ -70,17 +71,31 @@ class ExecutionPlan:
 
     @property
     def blocked(self) -> tuple[WorkflowPlanEntry, ...]:
-        return tuple(entry for entry in self.entries if entry.status == "blocked")
+        return tuple(
+            entry for entry in self.entries if entry.status is WorkflowExecutionState.BLOCKED
+        )
 
     @property
     def executable(self) -> frozenset[ExecutableWorkflowName]:
-        return frozenset(entry.workflow for entry in self.entries if entry.status == "executable")
+        return frozenset(
+            entry.workflow
+            for entry in self.entries
+            if entry.status is WorkflowExecutionState.NOT_STARTED
+        )
 
     def executable_workflows(self) -> tuple[ExecutableWorkflowName, ...]:
-        return tuple(entry.workflow for entry in self.entries if entry.status == "executable")
+        return tuple(
+            entry.workflow
+            for entry in self.entries
+            if entry.status is WorkflowExecutionState.NOT_STARTED
+        )
 
     def blocked_workflows(self) -> tuple[ExecutableWorkflowName, ...]:
-        return tuple(entry.workflow for entry in self.entries if entry.status == "blocked")
+        return tuple(
+            entry.workflow
+            for entry in self.entries
+            if entry.status is WorkflowExecutionState.BLOCKED
+        )
 
     def entry(self, workflow: ExecutableWorkflowName) -> WorkflowPlanEntry:
         for item in self.entries:
@@ -125,10 +140,10 @@ def _build_entry_for_workflow(
     outcome = outcomes.get(workflow) if outcomes is not None else None
 
     if workflow in completed or (outcomes is not None and workflow in outcomes):
-        status: WorkflowStatus = (
-            "completed"
+        status: WorkflowExecutionState = (
+            WorkflowExecutionState.COMPLETED
             if workflow in completed or (outcome is not None and outcome != ScientificOutcome.FAIL)
-            else "failed"
+            else WorkflowExecutionState.FAILED
         )
         reasons = () if outcome is None else (outcome.value,)
         return WorkflowPlanEntry(
@@ -143,7 +158,7 @@ def _build_entry_for_workflow(
     if workflow in failed:
         return WorkflowPlanEntry(
             workflow=workflow,
-            status="failed",
+            status=WorkflowExecutionState.FAILED,
             blocking_reasons=("execution_failure",),
             optional=is_optional,
             blocking_dependencies=(),
@@ -153,7 +168,9 @@ def _build_entry_for_workflow(
     blocking, blocking_deps = _evaluate_dependency_blockers(
         dependencies, completed, failed, outcomes
     )
-    plan_status: WorkflowStatus = "executable" if not blocking else "blocked"
+    plan_status: WorkflowExecutionState = (
+        WorkflowExecutionState.NOT_STARTED if not blocking else WorkflowExecutionState.BLOCKED
+    )
     return WorkflowPlanEntry(
         workflow=workflow,
         status=plan_status,

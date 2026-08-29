@@ -17,10 +17,8 @@ from fedact.domain.types import (
 
 
 class DecisionState(StrEnum):
-    CERTIFIED_POSITIVE = "CERTIFIED_POSITIVE"
-    CERTIFIED_NEGATIVE = "CERTIFIED_NEGATIVE"
-    POSITIVELY_IDENTIFIED = "CERTIFIED_POSITIVE"
-    NEGATIVELY_IDENTIFIED = "CERTIFIED_NEGATIVE"
+    POSITIVELY_IDENTIFIED = "POSITIVELY_IDENTIFIED"
+    NEGATIVELY_IDENTIFIED = "NEGATIVELY_IDENTIFIED"
     AMBIGUOUS = "AMBIGUOUS"
     ABSTAIN = "ABSTAIN"
 
@@ -138,7 +136,6 @@ def is_certified(
 def classify_decision_state(
     interval: ActionInterval,
     alignment_threshold: ThresholdValue = 1.0,
-    ambiguity_width: ThresholdValue = 1.0,
     domain_validity: DomainValidity | None = None,
     set_diameter: IntervalBound = 0.1,
     historical_realized_diameter_quantile: ThresholdValue = 1.0,
@@ -150,9 +147,9 @@ def classify_decision_state(
         return DecisionState.ABSTAIN
     if set_diameter > historical_realized_diameter_quantile:
         return DecisionState.ABSTAIN
-    if interval.lower >= alignment_threshold and interval.width <= ambiguity_width:
+    if interval.lower >= alignment_threshold:
         return DecisionState.POSITIVELY_IDENTIFIED
-    if interval.upper <= alignment_threshold and interval.lower <= -alignment_threshold:
+    if interval.upper < alignment_threshold:
         return DecisionState.NEGATIVELY_IDENTIFIED
     return DecisionState.AMBIGUOUS
 

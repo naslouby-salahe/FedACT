@@ -36,14 +36,14 @@ def test_doctor_reports_configuration_hash_and_readiness(repository_root: Path) 
 def test_status_without_argument_lists_all_workflows(repository_root: Path) -> None:
     result = invoke("status", "--repository-root", str(repository_root))
     assert result.exit_code == 0
-    assert "math-verification: executable" in result.output
+    assert "math-verification: NOT_STARTED" in result.output
 
 
 def test_status_for_named_workflow_reports_state(repository_root: Path) -> None:
     result = invoke("status", "synthetic-geometry", "--repository-root", str(repository_root))
     assert result.exit_code == 0
     assert "workflow: synthetic-geometry" in result.output
-    assert "status: blocked" in result.output
+    assert "status: BLOCKED" in result.output
 
 
 def test_unknown_workflow_is_rejected(repository_root: Path) -> None:

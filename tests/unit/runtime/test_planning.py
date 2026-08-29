@@ -3,6 +3,7 @@ from __future__ import annotations
 from fedact.domain.enums import ExecutableWorkflowName as W
 from fedact.domain.enums import ScientificOutcome
 from fedact.runtime.planning import resolve_execution_plan
+from fedact.runtime.state import WorkflowExecutionState
 
 
 def test_fresh_plan_offers_preprocess_smoke_and_math_verification() -> None:
@@ -17,7 +18,7 @@ def test_fresh_plan_offers_preprocess_smoke_and_math_verification() -> None:
 def test_downstream_workflows_stay_blocked_until_prerequisites_complete() -> None:
     plan = resolve_execution_plan(completed=frozenset({W.MATH_VERIFICATION}))
     entry = plan.entry(W.SYNTHETIC_GEOMETRY)
-    assert entry.status == "blocked"
+    assert entry.status is WorkflowExecutionState.BLOCKED
     assert entry.blocking_dependencies == (W.SMOKE,)
 
 
@@ -35,14 +36,14 @@ def test_completing_internal_chain_unlocks_certificate_validation() -> None:
 
 def test_completed_workflows_report_completed_status() -> None:
     plan = resolve_execution_plan(completed=frozenset({W.PREPROCESS}))
-    assert plan.entry(W.PREPROCESS).status == "completed"
+    assert plan.entry(W.PREPROCESS).status is WorkflowExecutionState.COMPLETED
 
 
 def test_failed_workflow_reports_failed_without_blocking_siblings() -> None:
     completed = frozenset({W.PREPROCESS, W.SMOKE, W.MATH_VERIFICATION})
     plan = resolve_execution_plan(completed=completed, failed=frozenset({W.SYNTHETIC_GEOMETRY}))
-    assert plan.entry(W.SYNTHETIC_GEOMETRY).status == "failed"
-    assert plan.entry(W.BASELINE_PARITY).status == "executable"
+    assert plan.entry(W.SYNTHETIC_GEOMETRY).status is WorkflowExecutionState.FAILED
+    assert plan.entry(W.BASELINE_PARITY).status is WorkflowExecutionState.NOT_STARTED
 
 
 def test_recorded_outcomes_surface_in_plan_entries() -> None:
