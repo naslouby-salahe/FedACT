@@ -16,4 +16,4 @@ def test_validate_calibration_outcome() -> None:
         clean_degradation=1.0,
     )
     selected = SelectedCalibration(selected_candidate=cand, selection_rank=1)
-    validate_calibration_outcome(selected)
+    validate_calibration_outcome(selected, minimum_coverage=0.8)

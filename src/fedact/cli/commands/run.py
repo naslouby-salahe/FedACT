@@ -54,16 +54,18 @@ def _dispatch_foundational_workflow(
     if workflow is ExecutableWorkflowName.BASELINE_PARITY:
         from fedact.baselines.parity import verify_subtraction_comparator_parity
 
-        parity_result = verify_subtraction_comparator_parity()
+        parity_result = verify_subtraction_comparator_parity(
+            config.numerical.projection_tie_tolerance
+        )
         outcome = ScientificOutcome.PASS if parity_result.is_valid else ScientificOutcome.FAIL
         _persist(application, WorkflowResultRecord(workflow=workflow, scientific_outcome=outcome))
         typer.echo(f"baseline parity completed: {outcome.value}")
         return True
 
     if workflow is ExecutableWorkflowName.NESTED_CALIBRATION:
-        from fedact.calibration.nested import generate_calibration_candidates
+        from fedact.experiments.nested_calibration import run_nested_calibration
 
-        cands = generate_calibration_candidates(config)
+        cands = run_nested_calibration(config)
         outcome = ScientificOutcome.PASS if cands else ScientificOutcome.INSUFFICIENT_EVIDENCE
         _persist(application, WorkflowResultRecord(workflow=workflow, scientific_outcome=outcome))
         typer.echo(f"nested calibration completed: {len(cands)} candidates")
