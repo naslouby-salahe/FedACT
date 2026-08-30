@@ -57,8 +57,7 @@ def regularized_covariance(
     coefficient: CoordinateValue = 0.01,
     floor: CoordinateValue = 1e-6,
 ) -> np.ndarray:
-    _unused = floor
-    reg = regularization if regularization is not None else coefficient
+    reg = max(regularization if regularization is not None else coefficient, floor)
     c = np.array(covariance) if isinstance(covariance, torch.Tensor) else covariance
     return c + reg * np.eye(c.shape[0])
 
@@ -89,15 +88,14 @@ def admissible_rank(
 def eigengap_ratio(
     spectrum: Sequence[CoordinateValue] | np.ndarray,
     rank: RankDimension,
-    regularization: ThresholdValue = 1e-6,
     clip_relative: ThresholdValue = 1e-6,
     floor: ThresholdValue = 1e-8,
 ) -> EigengapRatio:
-    _unused = (regularization, clip_relative, floor)
     s = sorted(spectrum, reverse=True)
     if rank <= 0 or rank >= len(s):
         return 1.0
-    return float(s[rank - 1] / max(1e-12, s[rank]))
+    denominator = max(s[rank], clip_relative * s[0], floor)
+    return float(s[rank - 1] / denominator)
 
 
 def select_rank_by_eigengap(
@@ -108,7 +106,6 @@ def select_rank_by_eigengap(
     clip_relative: ThresholdValue = 1e-6,
     floor: ThresholdValue = 1e-8,
 ) -> RankDimension:
-    _unused = (clip_relative, floor)
     s = sorted(spectrum, reverse=True)
     if maximum_admissible is not None:
         max_r = maximum_admissible
@@ -119,7 +116,7 @@ def select_rank_by_eigengap(
 
     selected_rank = 1
     for r in range(1, min(max_r + 1, len(s))):
-        ratio = s[r - 1] / max(1e-12, s[r])
+        ratio = eigengap_ratio(s, rank=r, clip_relative=clip_relative, floor=floor)
         if ratio >= calibrated_requirement:
             selected_rank = r
     return selected_rank
@@ -143,7 +140,6 @@ def estimate_client_nuisance_subspace(
     variance_threshold: ThresholdValue,
     eigengap_regularization: ThresholdValue,
 ) -> NuisanceEstimate:
-    _unused = (variance_threshold, eigengap_regularization)
     n, d = client_controls.shape
     if n == 0 or d == 0:
         return NuisanceEstimate(
@@ -155,9 +151,23 @@ def estimate_client_nuisance_subspace(
         )
     centered = client_controls - client_controls.mean(dim=0, keepdim=True)
     centered_np = centered.detach().cpu().numpy()
-    _unused_u, _unused_s, vh_np = np.linalg.svd(centered_np, full_matrices=False)
-    k = min(int(fixed_rank) if rank_selection is RankSelectionMethod.FIXED_RANK else 2, d)
-    subspace = torch.tensor(vh_np[:k, :].T, dtype=torch.float32)
+    covariance_raw = weighted_covariance(centered_np)
+    covariance = regularized_covariance(covariance_raw, coefficient=eigengap_regularization)
+    eigenvalues, eigenvectors = np.linalg.eigh(covariance)
+    order = np.argsort(eigenvalues)[::-1]
+    eigenvalues = eigenvalues[order]
+    eigenvectors = eigenvectors[:, order]
+
+    if rank_selection is RankSelectionMethod.FIXED_RANK:
+        k = min(int(fixed_rank), d)
+    else:
+        k = admissible_rank(
+            spectrum=[float(value) for value in eigenvalues], variance_threshold=variance_threshold
+        )
+        k = min(k, int(fixed_rank), d)
+    k = max(1, k)
+    subspace = torch.tensor(eigenvectors[:, :k], dtype=torch.float32)
+    ratio = eigengap_ratio(eigenvalues, rank=k, clip_relative=eigengap_regularization)
     replicates = (
         ControlReplicate(
             replicate_index=0,
@@ -170,6 +180,6 @@ def estimate_client_nuisance_subspace(
         subspace=subspace,
         uncertainty_radius=0.1,
         selected_rank=k,
-        eigengap_ratio=1.5,
+        eigengap_ratio=ratio,
         replicates=replicates,
     )
