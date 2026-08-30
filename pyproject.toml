@@ -68,7 +68,7 @@ known_first_party = ["fedact"]
 
 [tool.deptry.per_rule_ignores]
 DEP004 = ["nox"]
-DEP002 = ["types-pyyaml", "torch", "cvxpy", "ecos", "scipy", "pandas"]
+DEP002 = ["types-pyyaml", "torch", "cvxpy", "ecos", "scipy", "pandas", "pyarrow"]
 
 [tool.ruff.lint.per-file-ignores]
 "src/fedact/cli/main.py" = ["UP045"]
