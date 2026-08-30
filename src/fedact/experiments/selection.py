@@ -14,6 +14,8 @@ from fedact.fedact.client_selection import (
     greedy_d_optimal,
 )
 
+_CLIENT_MATRIX_NOISE_SCALE = 0.05
+
 
 @dataclass(frozen=True)
 class SelectionExperimentReport:
@@ -29,7 +31,8 @@ def run_communication_limited_client_selection(config: FedActConfig) -> Selectio
 
     matrices = {
         ClientIdentifier(f"c_{i}"): np.eye(latent_dim, dtype=np.float64)
-        + 0.05 * np.random.default_rng(i).standard_normal((latent_dim, latent_dim))
+        + _CLIENT_MATRIX_NOISE_SCALE
+        * np.random.default_rng(i).standard_normal((latent_dim, latent_dim))
         for i in range(k)
     }
     spd_matrices = tuple(

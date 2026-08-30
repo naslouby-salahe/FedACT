@@ -21,6 +21,8 @@ from fedact.models.detector import DetectorHead
 from fedact.models.representation import RepresentationEncoder
 from fedact.training.representation import EpochSelection, TrainingObservation
 
+_COSINE_ANNEALING_HALF_RANGE = 0.5
+
 
 @dataclass(frozen=True)
 class CleanFnr:
@@ -82,7 +84,10 @@ def _cosine_annealed_learning_rate(
         return float(terminal_rate)
     progress = epoch_index / (total_epochs - 1)
     return float(
-        terminal_rate + 0.5 * (initial_rate - terminal_rate) * (1.0 + math.cos(math.pi * progress))
+        terminal_rate
+        + _COSINE_ANNEALING_HALF_RANGE
+        * (initial_rate - terminal_rate)
+        * (1.0 + math.cos(math.pi * progress))
     )
 
 

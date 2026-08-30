@@ -48,7 +48,7 @@ def box_diameter_bound(
     uppers: Sequence[IntervalBound],
 ) -> IntervalBound:
     diffs = [u_val - l_val for l_val, u_val in zip(lowers, uppers, strict=True)]
-    return float(np.sqrt(sum(d**2 for d in diffs)))
+    return float(np.sqrt(sum(d * d for d in diffs)))
 
 
 def displace_sample_representation(

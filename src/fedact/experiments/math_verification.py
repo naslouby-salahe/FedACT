@@ -24,6 +24,15 @@ from fedact.fedact.temporal import fit_scalar_model
 FloatArray = NDArray[np.float64]
 VerificationMetric = NewType("VerificationMetric", float)
 
+_WIDTH_BOUND_MULTIPLIER = 2.0
+_BALL_DIAMETER_MULTIPLIER = 2.0
+_AUTOREGRESSIVE_EXAMPLE_COEFFICIENT = 0.9
+_AUTOREGRESSIVE_EXAMPLE_UPPER_BOUND = 0.99
+_DIAMETER_EXAMPLE_DIMENSION = 3
+_SHARED_COMPONENT_DIMENSION = 3
+_SHARED_COMPONENT_FILL_VALUE = 0.5
+_DIAMETER_EXAMPLE_HALF_WIDTH = 1.5
+
 
 @dataclass(frozen=True)
 class MathVerificationReport:
@@ -81,7 +90,7 @@ def verify_action_width_bound(
     direction: FloatArray, information: FloatArray, epsilon: Epsilon
 ) -> tuple[WidthValue, WidthValue]:
     pinv = np.linalg.pinv(information)
-    bound = 2.0 * epsilon * float(np.sqrt(direction @ pinv @ direction))
+    bound = _WIDTH_BOUND_MULTIPLIER * epsilon * float(np.sqrt(direction @ pinv @ direction))
     center = np.zeros(direction.shape[0])
     ball_vertices = tuple(
         center + epsilon * np.eye(direction.shape[0])[i] for i in range(direction.shape[0])
@@ -116,7 +125,7 @@ def is_diameter_upper_bound_valid(ball: L2Ball) -> BoundValidityFlag:
     lowers = tuple(float(ball.center[j] - ball.radius) for j in range(dimension))
     uppers = tuple(float(ball.center[j] + ball.radius) for j in range(dimension))
     box = box_diameter_bound(lowers, uppers)
-    exact = 2.0 * ball.radius
+    exact = _BALL_DIAMETER_MULTIPLIER * ball.radius
     return box >= exact - 1e-12
 
 
@@ -144,12 +153,14 @@ def run_mathematical_verification() -> MathVerificationReport:
     observed_width, upper_bound = verify_action_width_bound(direction, information, epsilon=0.5)
     width_ok = observed_width <= upper_bound + 1e-12
 
-    centers = tuple(0.9**step * np.ones(2) for step in range(5))
+    centers = tuple(_AUTOREGRESSIVE_EXAMPLE_COEFFICIENT**step * np.ones(2) for step in range(5))
     try:
-        fitted = fit_scalar_model(centers, maximum_coefficient=0.99).coefficient
+        fitted = fit_scalar_model(
+            centers, maximum_coefficient=_AUTOREGRESSIVE_EXAMPLE_UPPER_BOUND
+        ).coefficient
     except NumericalFailureError:
         fitted = None
-    temporal_ok = fitted is not None and 0.0 <= fitted <= 0.99
+    temporal_ok = fitted is not None and 0.0 <= fitted <= _AUTOREGRESSIVE_EXAMPLE_UPPER_BOUND
 
     report = MathVerificationReport(
         exact_set_verified=bool(exact_set_ok),
@@ -158,10 +169,14 @@ def run_mathematical_verification() -> MathVerificationReport:
         monotonicity_verified=True,
         degenerate_rejection_verified=is_degenerate_rejection_correct(1e-14, 1e-10),
         diameter_bound_verified=is_diameter_upper_bound_valid(
-            L2Ball(center=np.zeros(3), radius=1.5)
+            L2Ball(
+                center=np.zeros(_DIAMETER_EXAMPLE_DIMENSION),
+                radius=_DIAMETER_EXAMPLE_HALF_WIDTH,
+            )
         ),
         synchronized_nuisance_verified=is_synchronized_nuisance_non_identifiable(
-            np.ones(3), np.full(3, 0.5)
+            np.ones(_SHARED_COMPONENT_DIMENSION),
+            np.full(_SHARED_COMPONENT_DIMENSION, _SHARED_COMPONENT_FILL_VALUE),
         ),
         scientific_outcome=ScientificOutcome.PASS,
     )

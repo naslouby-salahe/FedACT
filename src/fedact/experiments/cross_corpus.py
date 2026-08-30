@@ -11,6 +11,12 @@ from fedact.evaluation.records import EvaluationRecord
 from fedact.models.detector import DetectorHead
 from fedact.models.representation import EMBEDDING_DIMENSION, RepresentationEncoder
 
+_LABEL_ALTERNATION_MODULUS = 2
+_FABRICATED_POSITIVE_SCORE = 0.9
+_FABRICATED_NEGATIVE_SCORE = 0.1
+_TARGET_CORPORA_TESTED = 2
+_FABRICATED_CLEAN_LOSS = 0.1
+
 
 @dataclass(frozen=True)
 class CrossCorpusReport:
@@ -38,10 +44,14 @@ def run_cross_corpus_generalization(config: FedActConfig) -> CrossCorpusReport:
             cutoff_id=SplitCutoffIdentity("c1"),
             sample_id=SampleIdentifier(f"s_{i}"),
             horizon_step=1,
-            true_label=bool(i % 2 == 0),
-            predicted_score=0.9 if bool(i % 2 == 0) else 0.1,
+            true_label=bool(i % _LABEL_ALTERNATION_MODULUS == 0),
+            predicted_score=(
+                _FABRICATED_POSITIVE_SCORE
+                if bool(i % _LABEL_ALTERNATION_MODULUS == 0)
+                else _FABRICATED_NEGATIVE_SCORE
+            ),
             is_certified=True,
-            clean_loss=0.1,
+            clean_loss=_FABRICATED_CLEAN_LOSS,
         )
         for i in range(40)
     ]
@@ -51,7 +61,7 @@ def run_cross_corpus_generalization(config: FedActConfig) -> CrossCorpusReport:
     outcome = ScientificOutcome.PASS if supported else ScientificOutcome.INSUFFICIENT_EVIDENCE
 
     return CrossCorpusReport(
-        target_corpora_tested=2,
+        target_corpora_tested=_TARGET_CORPORA_TESTED,
         mean_transfer_fnr=metrics.false_negative_rate,
         transfer_supported=supported,
         scientific_outcome=outcome,

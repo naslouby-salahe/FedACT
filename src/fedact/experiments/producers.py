@@ -55,31 +55,21 @@ class ProducerOwnership:
         return self.sole_producer
 
 
-PREPROCESS_STAGE_FLOW: tuple[PreprocessStage, ...] = (
-    PreprocessStage(
-        stage_order=1,
-        name="raw discovery/checksum",
-        boundary=ArtifactBoundary.DATASET_PREPARATION,
-        scope="raw-data-manifests",
+_PREPROCESS_STAGE_DEFINITIONS: tuple[
+    tuple[ArtifactName, ArtifactBoundary, WorkflowDescription], ...
+] = (
+    ("raw discovery/checksum", ArtifactBoundary.DATASET_PREPARATION, "raw-data-manifests"),
+    ("normalized parsed preparation", ArtifactBoundary.DATASET_PREPARATION, "parsed-samples"),
+    (
+        "chronology/cutoff construction",
+        ArtifactBoundary.PREPROCESSING_AND_SPLITS,
+        "chronological-and-federated-splits",
     ),
-    PreprocessStage(
-        stage_order=2,
-        name="normalized parsed preparation",
-        boundary=ArtifactBoundary.DATASET_PREPARATION,
-        scope="parsed-samples",
-    ),
-    PreprocessStage(
-        stage_order=3,
-        name="chronology/cutoff construction",
-        boundary=ArtifactBoundary.PREPROCESSING_AND_SPLITS,
-        scope="chronological-and-federated-splits",
-    ),
-    PreprocessStage(
-        stage_order=4,
-        name="real-data audits",
-        boundary=ArtifactBoundary.PREPROCESSING_AND_SPLITS,
-        scope="audit-manifests",
-    ),
+    ("real-data audits", ArtifactBoundary.PREPROCESSING_AND_SPLITS, "audit-manifests"),
+)
+PREPROCESS_STAGE_FLOW: tuple[PreprocessStage, ...] = tuple(
+    PreprocessStage(stage_order=index, name=name, boundary=boundary, scope=scope)
+    for index, (name, boundary, scope) in enumerate(_PREPROCESS_STAGE_DEFINITIONS, start=1)
 )
 
 

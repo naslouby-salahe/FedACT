@@ -15,6 +15,7 @@ from fedact.models.representation import RepresentationEncoder
 from fedact.training.representation import RepresentationDataset, TrainingObservation
 
 _MINIMUM_LOCAL_BATCH_SIZE = 2
+_COSINE_ANNEALING_HALF_RANGE = 0.5
 
 
 @dataclass(frozen=True)
@@ -40,7 +41,10 @@ def _cosine_annealed_learning_rate(
         return float(terminal_rate)
     progress = round_index / (total_rounds - 1)
     return float(
-        terminal_rate + 0.5 * (initial_rate - terminal_rate) * (1.0 + math.cos(math.pi * progress))
+        terminal_rate
+        + _COSINE_ANNEALING_HALF_RANGE
+        * (initial_rate - terminal_rate)
+        * (1.0 + math.cos(math.pi * progress))
     )
 
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import shutil
 import struct
 import subprocess
@@ -69,7 +70,7 @@ class DisplacementVector:
 
     def displacement_norm(self) -> DisplacementNorm:
         squared = sum(component * component for component in self.components)
-        value: DisplacementNorm = squared**0.5
+        value: DisplacementNorm = math.sqrt(squared)
         return value
 
     def normalized(self) -> DisplacementVector:
@@ -148,6 +149,10 @@ def add_read_only_section(pe_bytes: PeFileBytes, payload_size: PayloadBytes) -> 
     return _dump_pe(binary)
 
 
+_JMP_REL32_OPCODE_OFFSET = 2
+_JMP_REL32_INSTRUCTION_LENGTH = 5
+
+
 def add_entry_point_trampoline(pe_bytes: PeFileBytes) -> PeFileBytes:
     binary = _load_pe(pe_bytes)
     original_entry_rva = binary.optional_header.addressof_entrypoint
@@ -161,8 +166,8 @@ def add_entry_point_trampoline(pe_bytes: PeFileBytes) -> PeFileBytes:
     added = binary.add_section(section)
     if added is None:
         raise PeMutationError("failed to add entry-point trampoline section")
-    jump_instruction_rva = added.virtual_address + 2
-    relative_offset = original_entry_rva - (jump_instruction_rva + 5)
+    jump_instruction_rva = added.virtual_address + _JMP_REL32_OPCODE_OFFSET
+    relative_offset = original_entry_rva - (jump_instruction_rva + _JMP_REL32_INSTRUCTION_LENGTH)
     packed_offset = struct.pack("<i", relative_offset)
     content = list(added.content)
     content[3:7] = list(packed_offset)

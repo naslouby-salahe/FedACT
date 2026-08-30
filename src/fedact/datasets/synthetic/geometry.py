@@ -79,4 +79,5 @@ def spectral_conditioning_ratio(singular_values: np.ndarray) -> ConditioningRati
         raise GeometryValidationError(
             "spectral conditioning requires at least two nonzero singular values"
         )
-    return float((positive.min() / positive.max()) ** 2)
+    ratio = positive.min() / positive.max()
+    return float(ratio * ratio)

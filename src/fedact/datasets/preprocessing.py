@@ -138,7 +138,7 @@ def select_low_variance_features(
     for column in range(dimension):
         values = [record.features[column] for record in training_population]
         mean = sum(values) / len(values)
-        variance = sum((value - mean) ** 2 for value in values) / len(values)
+        variance = sum((value - mean) * (value - mean) for value in values) / len(values)
         if variance < scale_standardization_floor * scale_standardization_floor:
             low_variance.add(FeatureColumnIndex(column))
     return frozenset(low_variance)

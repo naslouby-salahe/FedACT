@@ -186,13 +186,13 @@ def train_representation_encoder(
         for batch_x, _unused in loader:
             optimizer.zero_grad()
             latent = encoder(batch_x)
-            loss = torch.mean(latent**2)
+            loss = torch.mean(latent * latent)
             loss.backward()
             optimizer.step()
         encoder.eval()
         with torch.no_grad():
             val_latent = encoder(val_features)
-            val_loss = float(torch.mean(val_latent**2).item())
+            val_loss = float(torch.mean(val_latent * val_latent).item())
         val_losses.append(val_loss)
         saved_states.append({k: v.cpu().clone() for k, v in encoder.state_dict().items()})
     selection = select_checkpoint_epoch(tuple(val_losses), tie_tolerance, epochs)

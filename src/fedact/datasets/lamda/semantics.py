@@ -28,6 +28,7 @@ from fedact.domain.types import (
 )
 
 _LAMDA_EPOCH_YEAR = 2013
+_CALENDAR_YEAR_LENGTH = 12
 
 
 @dataclass(frozen=True)
@@ -132,7 +133,7 @@ class OperatorEligibility:
 
 def year_month_to_calendar_month(year_month: CalendarMonthString) -> CalendarMonth:
     year_text, month_text = year_month.split("-")
-    ordinal = (int(year_text) - _LAMDA_EPOCH_YEAR) * 12 + (int(month_text) - 1)
+    ordinal = (int(year_text) - _LAMDA_EPOCH_YEAR) * _CALENDAR_YEAR_LENGTH + (int(month_text) - 1)
     return calendar_month(ordinal)
 
 

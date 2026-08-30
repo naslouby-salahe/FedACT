@@ -22,6 +22,7 @@ StructuralSeedIdentity = NewType("StructuralSeedIdentity", str)
 NoiseSeedIdentity = NewType("NoiseSeedIdentity", str)
 
 SYNTHETIC_DIMENSION = 64
+_NEAREST_INTEGER_ROUNDING_OFFSET = 0.5
 
 SeedIndex = NewType("SeedIndex", int)
 NuisanceFraction = Annotated[float, Field(ge=0.0, le=1.0)]
@@ -38,7 +39,10 @@ class SyntheticGeneratorError(ValueError):
 def nuisance_dimension(
     fraction: NuisanceFraction, dimension: Dimension = SYNTHETIC_DIMENSION
 ) -> Dimension:
-    return max(1, min(dimension - 1, int(np.floor(fraction * dimension + 0.5))))
+    return max(
+        1,
+        min(dimension - 1, int(np.floor(fraction * dimension + _NEAREST_INTEGER_ROUNDING_OFFSET))),
+    )
 
 
 def deterministic_orthonormal_basis(
@@ -155,7 +159,10 @@ def draw_private_transition(
     if sparsity_mode is PrivateTransitionSparsityMode.DENSE:
         direction = generator.standard_normal(SYNTHETIC_DIMENSION)
     else:
-        count = max(1, int(np.floor(sparse_fraction * SYNTHETIC_DIMENSION + 0.5)))
+        count = max(
+            1,
+            int(np.floor(sparse_fraction * SYNTHETIC_DIMENSION + _NEAREST_INTEGER_ROUNDING_OFFSET)),
+        )
         coordinates = generator.choice(SYNTHETIC_DIMENSION, size=count, replace=False)
         direction = np.zeros(SYNTHETIC_DIMENSION)
         direction[coordinates] = generator.standard_normal(count)

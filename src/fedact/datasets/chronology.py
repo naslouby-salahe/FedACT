@@ -19,6 +19,8 @@ from fedact.domain.types import (
 
 CalendarMonth = NewType("CalendarMonth", int)
 
+_TRANSITION_WINDOW_SPAN_MULTIPLIER = 2
+
 
 def calendar_month(value: MonthIndex) -> CalendarMonth:
     if value < 0:
@@ -119,14 +121,14 @@ class TransitionWindows:
 def transition_windows(
     endpoint_month: CalendarMonth, transition_interval_months: PositiveInt
 ) -> TransitionWindows:
-    if endpoint_month < 2 * transition_interval_months:
+    if endpoint_month < _TRANSITION_WINDOW_SPAN_MULTIPLIER * transition_interval_months:
         raise ChronologyError(
             "transition endpoint precedes the start of two complete transition windows"
         )
     return TransitionWindows(
         endpoint_month=endpoint_month,
         before_window_start_inclusive=CalendarMonth(
-            endpoint_month - 2 * transition_interval_months
+            endpoint_month - _TRANSITION_WINDOW_SPAN_MULTIPLIER * transition_interval_months
         ),
         before_window_end_exclusive=CalendarMonth(endpoint_month - transition_interval_months),
         after_window_start_inclusive=CalendarMonth(endpoint_month - transition_interval_months),
@@ -152,8 +154,10 @@ def enumerate_historical_endpoints(
     history_start = cutoff_exclusive_month - temporal.historical_training_window_months
     endpoints: list[CalendarMonth] = []
     step = temporal.cutoff_step_months
-    earliest_complete = history_start + 2 * temporal.transition_interval_months
-    floor_from_origin = 2 * temporal.transition_interval_months
+    earliest_complete = (
+        history_start + _TRANSITION_WINDOW_SPAN_MULTIPLIER * temporal.transition_interval_months
+    )
+    floor_from_origin = _TRANSITION_WINDOW_SPAN_MULTIPLIER * temporal.transition_interval_months
     candidate = max(earliest_complete, floor_from_origin)
     if step > 1:
         candidate = ((candidate + step - 1) // step) * step
