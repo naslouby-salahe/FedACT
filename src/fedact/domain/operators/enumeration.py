@@ -74,14 +74,14 @@ def enumerate_candidates(
     seen: set[str] = set()
     for length in range(1, maximum_composed_atomic_actions + 1):
         for composition in _compositions_of_length(tuple(selections), length):
-            canonical = _normalized_form(composition.families, composition.parameters)
-            if canonical in seen:
+            normalized_form = _normalized_form(composition.families, composition.parameters)
+            if normalized_form in seen:
                 continue
-            seen.add(canonical)
+            seen.add(normalized_form)
             candidates.append(
                 OperatorCandidate(
                     composition=composition,
-                    normalized_form=canonical,
+                    normalized_form=normalized_form,
                     source_sample_id=source_sample_id,
                     cutoff_identity=cutoff_identity,
                 )

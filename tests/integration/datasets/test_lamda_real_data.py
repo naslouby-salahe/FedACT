@@ -9,9 +9,9 @@ import torch
 from fedact.config.loading import LoadedConfiguration
 from fedact.datasets.chronology import calendar_month
 from fedact.datasets.lamda.loader import load_lamda_records
-from fedact.datasets.lamda.semantics import label_derivation_rule
-from fedact.datasets.lamda.transitions import (
+from fedact.datasets.lamda.semantics import (
     control_transition_replicates,
+    label_derivation_rule,
     malicious_transition_displacement,
     replicate_weights,
     year_month_to_calendar_month,
@@ -48,7 +48,7 @@ def test_real_lamda_control_transitions_drive_a_genuine_nuisance_estimate(
     cutoff_endpoint = year_month_to_calendar_month("2023-11")
 
     malicious_signal = malicious_transition_displacement(
-        dataset, rule, cutoff_endpoint, transition_interval_months
+        dataset.records, dataset.features, rule, cutoff_endpoint, transition_interval_months
     )
     assert malicious_signal is not None
     assert malicious_signal.support_before >= config.identification.minimum_support_per_class
@@ -60,7 +60,7 @@ def test_real_lamda_control_transitions_drive_a_genuine_nuisance_estimate(
         for month in range(int(cutoff_endpoint) - 6, int(cutoff_endpoint))
     ]
     replicates = control_transition_replicates(
-        dataset, rule, historical_endpoints, transition_interval_months
+        dataset.records, dataset.features, rule, historical_endpoints, transition_interval_months
     )
     assert len(replicates) >= config.identification.minimum_control_transition_replicates
     for replicate in replicates:
