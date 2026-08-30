@@ -20,6 +20,7 @@ from fedact.operators.pe_mutations import (
     rename_section,
     zero_pe_checksum,
 )
+from fedact.operators.validation import ValidityStatus
 
 
 class UnsupportedOperatorFamilyError(ValueError):
@@ -63,11 +64,17 @@ def apply_pe_operator_family(
     raise UnsupportedOperatorFamilyError(f"unsupported PE operator family: {family.name}")
 
 
+def structural_validity_status(pe_bytes: PeFileBytes) -> ValidityStatus:
+    if lief.PE.parse(list(pe_bytes)) is None:
+        return ValidityStatus.INVALID
+    return ValidityStatus.VALID
+
+
 def apply_and_verify_pe_operator_family(
     family: OperatorFamily, parameter: NormalizedParameterString, pe_bytes: PeFileBytes
 ) -> PeFileBytes:
     mutated = apply_pe_operator_family(family, parameter, pe_bytes)
-    if lief.PE.parse(list(mutated)) is None:
+    if structural_validity_status(mutated) is ValidityStatus.INVALID:
         raise MutationStructuralIntegrityError(
             f"mutation family {family.name!r} produced a structurally invalid PE file"
         )
