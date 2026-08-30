@@ -131,6 +131,9 @@ type LoggerName = NonEmptyString
 
 
 type HashDigest = NonEmptyString
+type ModuleQualifiedName = NonEmptyString
+type SourceText = NonEmptyString
+type VersionText = NonEmptyString
 
 type CommitHash = Annotated[
     str,
@@ -164,6 +167,27 @@ type AbstentionFlag = StrictBoolean
 type BinaryLabel = StrictBoolean
 type EligibilityFlag = StrictBoolean
 type OptionalFlag = StrictBoolean
+type OverwriteRequested = StrictBoolean
+type DataAvailabilityFlag = StrictBoolean
+type ActivationFlag = StrictBoolean
+type ReusabilityFlag = StrictBoolean
+type PassingFlag = StrictBoolean
+type OverlapFlag = StrictBoolean
+type ObservabilityFlag = StrictBoolean
+type SufficiencyFlag = StrictBoolean
+type ProhibitionFlag = StrictBoolean
+type MaliciousnessFlag = StrictBoolean
+type IdentifiabilityFlag = StrictBoolean
+type MonotonicityFlag = StrictBoolean
+type CorrectnessFlag = StrictBoolean
+type BoundValidityFlag = StrictBoolean
+type NonIdentifiabilityFlag = StrictBoolean
+type TriggerabilityFlag = StrictBoolean
+type GateComplianceFlag = StrictBoolean
+type StabilityFlag = StrictBoolean
+type ContainmentFlag = StrictBoolean
+type SatisfactionFlag = StrictBoolean
+type DegeneracyFlag = StrictBoolean
 
 
 type JsonEncodableValue = JsonValue

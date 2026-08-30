@@ -4,7 +4,12 @@ from dataclasses import dataclass
 
 from fedact.domain.enums import ExecutableWorkflowName, ScientificOutcome
 from fedact.domain.types import OptionalFlag
-from fedact.runtime.state import WorkflowExecutionState
+from fedact.runtime.state import (
+    WorkflowExecutionState,
+    WorkflowOutcomeHistory,
+    outcome_for_workflow,
+    workflows_with_recorded_outcomes,
+)
 
 WORKFLOW_DEPENDENCIES: dict[ExecutableWorkflowName, tuple[ExecutableWorkflowName, ...]] = {
     ExecutableWorkflowName.PREPROCESS: (),
@@ -106,24 +111,16 @@ class ExecutionPlan:
 
 def _evaluate_dependency_blockers(
     dependencies: tuple[ExecutableWorkflowName, ...],
-    completed: frozenset[ExecutableWorkflowName],
-    failed: frozenset[ExecutableWorkflowName],
-    outcomes: dict[ExecutableWorkflowName, ScientificOutcome] | None,
+    outcomes: WorkflowOutcomeHistory,
 ) -> tuple[tuple[str, ...], tuple[ExecutableWorkflowName, ...]]:
+    recorded = workflows_with_recorded_outcomes(outcomes)
     blocking: list[str] = []
     blocking_deps: list[ExecutableWorkflowName] = []
     for dependency in dependencies:
-        if dependency in failed:
-            blocking.append(f"dependency_failed: {dependency.value}")
-            blocking_deps.append(dependency)
-        elif dependency not in completed:
+        if dependency not in recorded:
             blocking.append(f"dependency_unmet: {dependency.value}")
             blocking_deps.append(dependency)
-        elif (
-            outcomes is not None
-            and dependency in outcomes
-            and outcomes[dependency] is ScientificOutcome.FAIL
-        ):
+        elif outcome_for_workflow(outcomes, dependency) is ScientificOutcome.FAIL:
             blocking.append(f"dependency_outcome_failed: {dependency.value}")
             blocking_deps.append(dependency)
     return tuple(blocking), tuple(blocking_deps)
@@ -132,43 +129,28 @@ def _evaluate_dependency_blockers(
 def _build_entry_for_workflow(
     workflow: ExecutableWorkflowName,
     dependencies: tuple[ExecutableWorkflowName, ...],
-    completed: frozenset[ExecutableWorkflowName],
-    failed: frozenset[ExecutableWorkflowName],
-    outcomes: dict[ExecutableWorkflowName, ScientificOutcome] | None,
+    outcomes: WorkflowOutcomeHistory,
 ) -> WorkflowPlanEntry:
     is_optional = workflow in OPTIONAL_WORKFLOWS
-    outcome = outcomes.get(workflow) if outcomes is not None else None
+    outcome = outcome_for_workflow(outcomes, workflow)
 
-    if workflow in completed or (outcomes is not None and workflow in outcomes):
-        status: WorkflowExecutionState = (
+    if outcome is not None:
+        status = (
             WorkflowExecutionState.COMPLETED
-            if workflow in completed or (outcome is not None and outcome != ScientificOutcome.FAIL)
+            if outcome != ScientificOutcome.FAIL
             else WorkflowExecutionState.FAILED
         )
-        reasons = () if outcome is None else (outcome.value,)
         return WorkflowPlanEntry(
             workflow=workflow,
             status=status,
-            blocking_reasons=reasons,
+            blocking_reasons=(outcome.value,),
             optional=is_optional,
             blocking_dependencies=(),
             recorded_outcome=outcome,
         )
 
-    if workflow in failed:
-        return WorkflowPlanEntry(
-            workflow=workflow,
-            status=WorkflowExecutionState.FAILED,
-            blocking_reasons=("execution_failure",),
-            optional=is_optional,
-            blocking_dependencies=(),
-            recorded_outcome=None,
-        )
-
-    blocking, blocking_deps = _evaluate_dependency_blockers(
-        dependencies, completed, failed, outcomes
-    )
-    plan_status: WorkflowExecutionState = (
+    blocking, blocking_deps = _evaluate_dependency_blockers(dependencies, outcomes)
+    plan_status = (
         WorkflowExecutionState.NOT_STARTED if not blocking else WorkflowExecutionState.BLOCKED
     )
     return WorkflowPlanEntry(
@@ -181,13 +163,9 @@ def _build_entry_for_workflow(
     )
 
 
-def resolve_execution_plan(
-    completed: frozenset[ExecutableWorkflowName] = frozenset(),
-    failed: frozenset[ExecutableWorkflowName] = frozenset(),
-    outcomes: dict[ExecutableWorkflowName, ScientificOutcome] | None = None,
-) -> ExecutionPlan:
+def resolve_execution_plan(outcomes: WorkflowOutcomeHistory = ()) -> ExecutionPlan:
     entries = [
-        _build_entry_for_workflow(workflow, dependencies, completed, failed, outcomes)
+        _build_entry_for_workflow(workflow, dependencies, outcomes)
         for workflow, dependencies in WORKFLOW_DEPENDENCIES.items()
     ]
     return ExecutionPlan(entries=tuple(entries))

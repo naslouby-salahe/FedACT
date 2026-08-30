@@ -4,6 +4,9 @@ import pytest
 
 from fedact.artifacts.identity import (
     MaterialDependency,
+    ProducerSourceModule,
+    RuntimeComponentVersion,
+    SelectedConfigurationValue,
     compute_dependency_fingerprint,
     content_checksum,
     deterministic_json,
@@ -70,18 +73,23 @@ def test_duplicate_material_dependency_names_are_rejected() -> None:
 
 
 def test_material_configuration_hash_depends_only_on_selected_subset() -> None:
-    full_values = {"training.batch_size": "256", "reporting.p_value_display_threshold": "0.0001"}
-    subset = {"training.batch_size": "256"}
+    full_values = (
+        SelectedConfigurationValue(name="training.batch_size", value="256"),
+        SelectedConfigurationValue(name="reporting.p_value_display_threshold", value="0.0001"),
+    )
+    subset = (SelectedConfigurationValue(name="training.batch_size", value="256"),)
     assert material_configuration_hash(subset) != material_configuration_hash(full_values)
     assert material_configuration_hash(subset).startswith("sha256:")
 
 
 def test_producer_code_fingerprint_tracks_semantics_relevant_sources() -> None:
-    sources = (("producer_a", "def run():\n    return 1\n"),)
+    sources = (ProducerSourceModule(module="producer_a", source="def run():\n    return 1\n"),)
     baseline = producer_code_fingerprint(sources)
     assert baseline == producer_code_fingerprint(sources)
-    assert baseline != producer_code_fingerprint((("producer_a", "def run():\n    return 2\n"),))
-    unrelated = (("unrelated_module", "value = 1\n"),)
+    assert baseline != producer_code_fingerprint(
+        (ProducerSourceModule(module="producer_a", source="def run():\n    return 2\n"),)
+    )
+    unrelated = (ProducerSourceModule(module="unrelated_module", source="value = 1\n"),)
     assert baseline != producer_code_fingerprint(sources + unrelated)
 
 
@@ -91,7 +99,18 @@ def test_empty_producer_source_set_is_rejected() -> None:
 
 
 def test_environment_fingerprint_sensitivity() -> None:
-    baseline = environment_fingerprint({"numpy": "2.3.0"})
-    assert baseline == environment_fingerprint({"numpy": "2.3.0"})
-    assert baseline != environment_fingerprint({"numpy": "2.3.1"})
-    assert baseline != environment_fingerprint({"numpy": "2.3.0", "cvxpy": "1.6.0"})
+    baseline = environment_fingerprint(
+        (RuntimeComponentVersion(component="numpy", version="2.3.0"),)
+    )
+    assert baseline == environment_fingerprint(
+        (RuntimeComponentVersion(component="numpy", version="2.3.0"),)
+    )
+    assert baseline != environment_fingerprint(
+        (RuntimeComponentVersion(component="numpy", version="2.3.1"),)
+    )
+    assert baseline != environment_fingerprint(
+        (
+            RuntimeComponentVersion(component="numpy", version="2.3.0"),
+            RuntimeComponentVersion(component="cvxpy", version="1.6.0"),
+        )
+    )

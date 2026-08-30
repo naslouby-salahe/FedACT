@@ -5,7 +5,7 @@ from enum import StrEnum
 
 from fedact.artifacts.identity import ArtifactIdentity, ContentChecksum
 from fedact.config.loading import ConfigurationHash
-from fedact.domain.enums import ScientificOutcome
+from fedact.domain.enums import ExecutableWorkflowName, ScientificOutcome
 
 
 class WorkflowExecutionState(StrEnum):
@@ -15,6 +15,30 @@ class WorkflowExecutionState(StrEnum):
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
     INVALID = "INVALID"
+
+
+@dataclass(frozen=True)
+class WorkflowOutcomeRecord:
+    workflow: ExecutableWorkflowName
+    outcome: ScientificOutcome
+
+
+type WorkflowOutcomeHistory = tuple[WorkflowOutcomeRecord, ...]
+
+
+def outcome_for_workflow(
+    history: WorkflowOutcomeHistory, workflow: ExecutableWorkflowName
+) -> ScientificOutcome | None:
+    for record in history:
+        if record.workflow is workflow:
+            return record.outcome
+    return None
+
+
+def workflows_with_recorded_outcomes(
+    history: WorkflowOutcomeHistory,
+) -> frozenset[ExecutableWorkflowName]:
+    return frozenset(record.workflow for record in history)
 
 
 class ArtifactExecutionState(StrEnum):

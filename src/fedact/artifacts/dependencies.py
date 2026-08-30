@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from fedact.artifacts.identity import ArtifactIdentity
+from fedact.domain.types import ActivationFlag
 
 
 class ArtifactDependencyIndex:
@@ -18,7 +19,7 @@ class ArtifactDependencyIndex:
     def deactivate(self, identity: ArtifactIdentity) -> None:
         self._inactive.add(identity)
 
-    def is_active(self, identity: ArtifactIdentity) -> bool:
+    def is_active(self, identity: ArtifactIdentity) -> ActivationFlag:
         return identity not in self._inactive
 
     def direct_consumers(self, identity: ArtifactIdentity) -> frozenset[ArtifactIdentity]:

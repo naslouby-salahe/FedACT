@@ -2,12 +2,20 @@ from __future__ import annotations
 
 import hashlib
 import json
-from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import NewType
 
 from fedact.domain.records import ContentChecksum, DependencyFingerprint
-from fedact.domain.types import HashDigest, JsonEncodableValue, ParameterName, RawPayloadBytes
+from fedact.domain.types import (
+    HashDigest,
+    JsonEncodableValue,
+    ModuleQualifiedName,
+    ParameterName,
+    RawPayloadBytes,
+    SourceText,
+    ToolchainIdentifier,
+    VersionText,
+)
 
 DeterministicJsonPayload = NewType("DeterministicJsonPayload", str)
 HexDigest = NewType("HexDigest", str)
@@ -55,21 +63,49 @@ def compute_dependency_fingerprint(
     return DependencyFingerprint(sha256_digest(payload))
 
 
+@dataclass(frozen=True)
+class SelectedConfigurationValue:
+    name: ParameterName
+    value: JsonEncodableValue
+
+
 def material_configuration_hash(
-    selected_values: Mapping[str, JsonEncodableValue],
+    selected_values: tuple[SelectedConfigurationValue, ...],
 ) -> MaterialConfigurationHash:
-    return MaterialConfigurationHash(sha256_digest(deterministic_json(dict(selected_values))))
+    ordered = sorted(selected_values, key=lambda selected: selected.name)
+    payload = deterministic_json([{"name": s.name, "value": s.value} for s in ordered])
+    return MaterialConfigurationHash(sha256_digest(payload))
 
 
-def producer_code_fingerprint(sources: tuple[tuple[str, str], ...]) -> ProducerCodeFingerprint:
-    ordered = sorted(sources, key=lambda entry: entry[0])
+@dataclass(frozen=True)
+class ProducerSourceModule:
+    module: ModuleQualifiedName
+    source: SourceText
+
+
+def producer_code_fingerprint(
+    sources: tuple[ProducerSourceModule, ...],
+) -> ProducerCodeFingerprint:
+    ordered = sorted(sources, key=lambda entry: entry.module)
     if not ordered:
         raise ValueError("producer code fingerprint requires at least one source module")
-    payload = deterministic_json([{"module": name, "source": source} for name, source in ordered])
+    payload = deterministic_json(
+        [{"module": entry.module, "source": entry.source} for entry in ordered]
+    )
     return ProducerCodeFingerprint(sha256_digest(payload))
 
 
-def environment_fingerprint(recorded_versions: Mapping[str, str]) -> EnvironmentFingerprint:
-    return EnvironmentFingerprint(
-        sha256_digest(deterministic_json(dict(sorted(recorded_versions.items()))))
+@dataclass(frozen=True)
+class RuntimeComponentVersion:
+    component: ToolchainIdentifier
+    version: VersionText
+
+
+def environment_fingerprint(
+    recorded_versions: tuple[RuntimeComponentVersion, ...],
+) -> EnvironmentFingerprint:
+    ordered = sorted(recorded_versions, key=lambda entry: entry.component)
+    payload = deterministic_json(
+        [{"component": entry.component, "version": entry.version} for entry in ordered]
     )
+    return EnvironmentFingerprint(sha256_digest(payload))

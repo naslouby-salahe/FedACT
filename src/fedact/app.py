@@ -6,9 +6,11 @@ from pathlib import Path
 from fedact.artifacts.paths import WorkspaceLayout
 from fedact.artifacts.results import read_workflow_result
 from fedact.config.loading import LoadedConfiguration, load_production_configuration
-from fedact.domain.enums import ExecutableWorkflowName, ScientificOutcome
+from fedact.domain.enums import ExecutableWorkflowName
 from fedact.domain.records import ExperimentName
+from fedact.domain.types import DataAvailabilityFlag
 from fedact.runtime.planning import ExecutionPlan, resolve_execution_plan
+from fedact.runtime.state import WorkflowOutcomeHistory, WorkflowOutcomeRecord
 
 SYSEXITS_EX_UNAVAILABLE = 69
 PRODUCER_NOT_REGISTERED_EXIT_CODE = SYSEXITS_EX_UNAVAILABLE
@@ -45,21 +47,20 @@ class Application:
     def raw_data_root(self) -> Path:
         return self.repository_root / "data" / "raw"
 
-    def is_raw_data_available(self) -> bool:
+    def is_raw_data_available(self) -> DataAvailabilityFlag:
         raw_root = self.raw_data_root()
         return raw_root.is_dir() and any(raw_root.iterdir())
 
-    def recorded_outcomes(self) -> dict[ExecutableWorkflowName, ScientificOutcome]:
-        return {
-            workflow: record.scientific_outcome
+    def recorded_outcomes(self) -> WorkflowOutcomeHistory:
+        return tuple(
+            WorkflowOutcomeRecord(workflow=workflow, outcome=record.scientific_outcome)
             for workflow in ExecutableWorkflowName
             if (record := read_workflow_result(self.result_experiment_directory(workflow)))
             is not None
-        }
+        )
 
     def plan(self) -> ExecutionPlan:
-        outcomes = self.recorded_outcomes()
-        return resolve_execution_plan(completed=frozenset(outcomes), outcomes=outcomes)
+        return resolve_execution_plan(self.recorded_outcomes())
 
 
 def discover_repository_root(start: Path) -> Path:
