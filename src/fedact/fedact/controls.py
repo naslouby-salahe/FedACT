@@ -27,8 +27,8 @@ def build_control_displacement(
     prior: np.ndarray | torch.Tensor,
     recent: np.ndarray | torch.Tensor,
 ) -> np.ndarray:
-    p = np.array(prior) if isinstance(prior, torch.Tensor) else prior
-    r = np.array(recent) if isinstance(recent, torch.Tensor) else recent
+    p = prior.detach().cpu().numpy() if isinstance(prior, torch.Tensor) else prior
+    r = recent.detach().cpu().numpy() if isinstance(recent, torch.Tensor) else recent
     return r - p
 
 
@@ -37,7 +37,7 @@ def held_out_reconstruction_residuals(
 ) -> tuple[NormValue, ...]:
     if not replicates:
         return ()
-    arrs = [np.array(r) if isinstance(r, torch.Tensor) else r for r in replicates]
+    arrs = [r.detach().cpu().numpy() if isinstance(r, torch.Tensor) else r for r in replicates]
     mean = np.mean(arrs, axis=0)
     return tuple(float(np.linalg.norm(r - mean)) for r in arrs)
 
@@ -57,5 +57,12 @@ def filter_control_replicates(
     replicates: list[ControlReplicate],
     gate: ControlQualityGate,
 ) -> tuple[ControlReplicate, ...]:
-    _unused = gate
-    return tuple(replicates)
+    if not replicates:
+        return ()
+    residuals = held_out_reconstruction_residuals([r.displacement for r in replicates])
+    threshold = float(np.quantile(residuals, gate.held_out_residual_quantile))
+    return tuple(
+        replicate
+        for replicate, residual in zip(replicates, residuals, strict=True)
+        if residual <= threshold
+    )
