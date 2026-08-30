@@ -8,6 +8,7 @@ import numpy as np
 from numpy.typing import NDArray
 from pydantic import Field
 
+from fedact.domain.records import ClientIdentifier
 from fedact.domain.types import MetricRate, SampleCount
 
 FloatArray = NDArray[np.float64]
@@ -43,24 +44,31 @@ def d_optimal_gain(
     return value
 
 
+@dataclass(frozen=True)
+class ClientInformationMatrix:
+    client: ClientIdentifier
+    matrix: FloatArray
+
+
 def greedy_d_optimal(
-    information_matrices: dict[str, FloatArray],
+    information_matrices: tuple[ClientInformationMatrix, ...],
     ridge_lambda: Ridge,
     budget: SelectionBudget,
-) -> tuple[str, ...]:
-    selected: list[str] = []
-    remaining = sorted(information_matrices)
-    dimension = next(iter(information_matrices.values())).shape[0]
+) -> tuple[ClientIdentifier, ...]:
+    by_client = {entry.client: entry.matrix for entry in information_matrices}
+    selected: list[ClientIdentifier] = []
+    remaining = sorted(by_client)
+    dimension = next(iter(by_client.values())).shape[0]
     accumulated: FloatArray = np.zeros((dimension, dimension))
     while len(selected) < budget.selected_count and remaining:
         gains = {
-            name: d_optimal_gain(accumulated, information_matrices[name], ridge_lambda)
-            for name in remaining
+            client: d_optimal_gain(accumulated, by_client[client], ridge_lambda)
+            for client in remaining
         }
         best = min(gains.items(), key=lambda item: (-item[1], item[0]))[0]
         selected.append(best)
         remaining.remove(best)
-        accumulated = accumulated + information_matrices[best]
+        accumulated = accumulated + by_client[best]
     return tuple(selected)
 
 

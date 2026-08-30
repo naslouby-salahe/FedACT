@@ -1,25 +1,26 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, NewType
 
 from pydantic import Field
 
 TableIdentifier = Annotated[str, Field(min_length=1)]
+LatexTableCell = NewType("LatexTableCell", str)
 BACKSLASH = chr(92)
 
 
 def generate_latex_table(
     table_id: TableIdentifier,
-    headers: tuple[str, ...],
-    rows: tuple[tuple[str, ...], ...],
+    headers: tuple[LatexTableCell, ...],
+    rows: tuple[tuple[LatexTableCell, ...], ...],
     output_file: Path,
 ) -> None:
-    _unused = table_id
     align = "l" * len(headers)
     lines = [
         BACKSLASH + "begin{table}[h]",
         BACKSLASH + "centering",
+        BACKSLASH + "label{tab:" + table_id + "}",
         BACKSLASH + "begin{tabular}{" + align + "}",
         BACKSLASH + "hline",
         " & ".join(headers) + " " + BACKSLASH + BACKSLASH,

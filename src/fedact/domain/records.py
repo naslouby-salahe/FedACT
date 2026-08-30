@@ -25,6 +25,7 @@ SolverOutcomeRecord = NewType("SolverOutcomeRecord", str)
 RunResultSummary = NewType("RunResultSummary", str)
 ExperimentName = NewType("ExperimentName", str)
 LogNamespace = NewType("LogNamespace", str)
+ClientIdentifier = NewType("ClientIdentifier", str)
 
 
 @dataclass(frozen=True)

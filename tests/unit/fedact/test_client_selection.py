@@ -3,7 +3,9 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
+from fedact.domain.records import ClientIdentifier
 from fedact.fedact.client_selection import (
+    ClientInformationMatrix,
     SelectionBudget,
     d_optimal_gain,
     greedy_d_optimal,
@@ -29,7 +31,11 @@ def test_greedy_d_optimal_selects_budget_clients() -> None:
     h2 = np.diag([0.0, 1.0, 0.0])
     h3 = np.diag([0.0, 0.0, 1.0])
     selected = greedy_d_optimal(
-        information_matrices={"c1": h1, "c2": h2, "c3": h3},
+        information_matrices=(
+            ClientInformationMatrix(client=ClientIdentifier("c1"), matrix=h1),
+            ClientInformationMatrix(client=ClientIdentifier("c2"), matrix=h2),
+            ClientInformationMatrix(client=ClientIdentifier("c3"), matrix=h3),
+        ),
         ridge_lambda=1e-6,
         budget=SelectionBudget(budget_fraction=0.5, eligible_clients=3),
     )

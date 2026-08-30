@@ -6,8 +6,13 @@ import numpy as np
 
 from fedact.config.models import FedActConfig
 from fedact.domain.enums import ScientificOutcome
+from fedact.domain.records import ClientIdentifier
 from fedact.domain.types import EvaluationCount
-from fedact.fedact.client_selection import FloatArray, SelectionBudget, greedy_d_optimal
+from fedact.fedact.client_selection import (
+    ClientInformationMatrix,
+    SelectionBudget,
+    greedy_d_optimal,
+)
 
 
 @dataclass(frozen=True)
@@ -22,14 +27,17 @@ def run_communication_limited_client_selection(config: FedActConfig) -> Selectio
     k = 5
     fractions = config.client_selection.budget_fractions
 
-    matrices: dict[str, FloatArray] = {
-        f"c_{i}": np.eye(latent_dim, dtype=np.float64)
+    matrices = {
+        ClientIdentifier(f"c_{i}"): np.eye(latent_dim, dtype=np.float64)
         + 0.05 * np.random.default_rng(i).standard_normal((latent_dim, latent_dim))
         for i in range(k)
     }
-    spd_matrices = {
-        name: np.ascontiguousarray((m.T @ m), dtype=np.float64) for name, m in matrices.items()
-    }
+    spd_matrices = tuple(
+        ClientInformationMatrix(
+            client=client, matrix=np.ascontiguousarray((matrix.T @ matrix), dtype=np.float64)
+        )
+        for client, matrix in matrices.items()
+    )
 
     results = [
         greedy_d_optimal(

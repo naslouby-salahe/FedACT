@@ -6,9 +6,14 @@ from fedact.artifacts.results import WorkflowResultRecord
 from fedact.domain.enums import EvidenceVerificationStatus, ScientificOutcome
 from fedact.reporting.evidence import EvidenceArtifactRecord, package_evidence_index
 from fedact.reporting.figures import generate_prospective_metrics_figure
-from fedact.reporting.latex import synthesize_latex_macros
+from fedact.reporting.latex import (
+    LatexMacro,
+    LatexMacroName,
+    LatexMacroValue,
+    synthesize_latex_macros,
+)
 from fedact.reporting.summary import ProjectSummaryPayload, generate_project_summary
-from fedact.reporting.tables import generate_latex_table
+from fedact.reporting.tables import LatexTableCell, generate_latex_table
 
 
 def _verification_status(artifact_file: Path) -> EvidenceVerificationStatus:
@@ -34,13 +39,24 @@ def generate_project_report(
     table_file = results_directory / "tables" / "table_1_main.tex"
     generate_latex_table(
         table_id="main_results",
-        headers=("Method", "Prospective FNR", "Certification Rate", "Clean FNR Degradation"),
+        headers=tuple(
+            LatexTableCell(header)
+            for header in (
+                "Method",
+                "Prospective FNR",
+                "Certification Rate",
+                "Clean FNR Degradation",
+            )
+        ),
         rows=(
-            (
-                "FedACT (Ours)",
-                f"{fnr:.2f}",
-                f"{certification_rate:.2f}",
-                f"{degradation:.1f}%",
+            tuple(
+                LatexTableCell(cell)
+                for cell in (
+                    "FedACT (Ours)",
+                    f"{fnr:.2f}",
+                    f"{certification_rate:.2f}",
+                    f"{degradation:.1f}%",
+                )
             ),
         ),
         output_file=table_file,
@@ -52,11 +68,14 @@ def generate_project_report(
         results_directory / "figures" / "fig_1.tex",
     )
     synthesize_latex_macros(
-        {
-            "fedactFNR": f"{fnr:.2f}",
-            "fedactCertRate": f"{certification_rate:.2f}",
-            "fedactCleanDegradation": f"{degradation:.1f}%",
-        },
+        tuple(
+            LatexMacro(name=LatexMacroName(name), value=LatexMacroValue(value))
+            for name, value in (
+                ("fedactFNR", f"{fnr:.2f}"),
+                ("fedactCertRate", f"{certification_rate:.2f}"),
+                ("fedactCleanDegradation", f"{degradation:.1f}%"),
+            )
+        ),
         results_directory / "latex" / "macros.tex",
     )
     summary_file = results_directory / "project_summary.json"

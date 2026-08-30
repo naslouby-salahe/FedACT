@@ -32,15 +32,37 @@ class SplitAssignment:
 
 
 @dataclass(frozen=True)
+class PartitionCounts:
+    training: int
+    validation: int
+    test: int
+
+    def for_partition(self, partition: SplitPartition) -> int:
+        if partition is SplitPartition.TRAINING:
+            return self.training
+        if partition is SplitPartition.VALIDATION:
+            return self.validation
+        return self.test
+
+
+@dataclass(frozen=True)
 class CutoffSplit:
     cutoff_identity: SplitCutoffIdentity
     assignments: tuple[SplitAssignment, ...]
 
-    def partition_counts(self) -> dict[SplitPartition, int]:
-        counts: dict[SplitPartition, int] = dict.fromkeys(SplitPartition, 0)
-        for assignment in self.assignments:
-            counts[assignment.partition] += 1
-        return counts
+    def partition_counts(self) -> PartitionCounts:
+        training = sum(
+            1 for assignment in self.assignments if assignment.partition is SplitPartition.TRAINING
+        )
+        validation = sum(
+            1
+            for assignment in self.assignments
+            if assignment.partition is SplitPartition.VALIDATION
+        )
+        test = sum(
+            1 for assignment in self.assignments if assignment.partition is SplitPartition.TEST
+        )
+        return PartitionCounts(training=training, validation=validation, test=test)
 
     def operator_eligible_ids(self) -> tuple[SampleIdentifier, ...]:
         return tuple(
