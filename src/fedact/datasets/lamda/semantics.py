@@ -244,5 +244,5 @@ def replicate_weights(replicates: Sequence[ControlTransitionReplicate]) -> tuple
     supports = [effective_support(replicate) for replicate in replicates]
     total = sum(supports)
     if total <= 0.0:
-        return tuple(0.0 for _ in replicates)
+        return tuple(0.0 for _replicate in replicates)
     return tuple(support / total for support in supports)
