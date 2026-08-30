@@ -29,6 +29,13 @@ from fedact.training.hardening import (
 )
 from fedact.training.representation import TrainingObservation
 
+_LABEL_ALTERNATION_MODULUS = 2
+_TRAINING_POPULATION_ROWS = 20
+_VALIDATION_POPULATION_ROWS = 10
+_FABRICATED_POSITIVE_SCORE = 0.9
+_FABRICATED_NEGATIVE_SCORE = 0.1
+_FABRICATED_CLEAN_LOSS = 0.1
+
 
 @dataclass(frozen=True)
 class ProspectiveEvaluationReport:
@@ -50,7 +57,6 @@ def run_prospective_fedact_evaluation(config: FedActConfig) -> ProspectiveEvalua
             client_controls=torch.randn(20, latent_dim),
             rank_selection=RankSelectionMethod.FIXED_RANK,
             fixed_rank=config.identification.nuisance_rank.maximum,
-            variance_threshold=0.95,
             eigengap_regularization=config.numerical.rank_clip_epsilon_relative,
             scale_standardization_floor=config.numerical.scale_standardization_floor,
         )
@@ -92,18 +98,18 @@ def run_prospective_fedact_evaluation(config: FedActConfig) -> ProspectiveEvalua
             sample_id=SampleIdentifier(f"t_{i}"),
             features=torch.randn(input_dim),
             month_index=1,
-            label=bool(i % 2 == 0),
+            label=bool(i % _LABEL_ALTERNATION_MODULUS == 0),
         )
-        for i in range(20)
+        for i in range(_TRAINING_POPULATION_ROWS)
     )
     val_pop = tuple(
         TrainingObservation(
             sample_id=SampleIdentifier(f"v_{i}"),
             features=torch.randn(input_dim),
             month_index=1,
-            label=bool(i % 2 == 0),
+            label=bool(i % _LABEL_ALTERNATION_MODULUS == 0),
         )
-        for i in range(10)
+        for i in range(_VALIDATION_POPULATION_ROWS)
     )
     challenges = (
         SampleChallengeSet(
@@ -131,10 +137,14 @@ def run_prospective_fedact_evaluation(config: FedActConfig) -> ProspectiveEvalua
             cutoff_id=SplitCutoffIdentity("c1"),
             sample_id=SampleIdentifier(f"p_{i}"),
             horizon_step=1,
-            true_label=bool(i % 2 == 0),
-            predicted_score=0.9 if bool(i % 2 == 0) else 0.1,
+            true_label=bool(i % _LABEL_ALTERNATION_MODULUS == 0),
+            predicted_score=(
+                _FABRICATED_POSITIVE_SCORE
+                if bool(i % _LABEL_ALTERNATION_MODULUS == 0)
+                else _FABRICATED_NEGATIVE_SCORE
+            ),
             is_certified=True,
-            clean_loss=0.1,
+            clean_loss=_FABRICATED_CLEAN_LOSS,
         )
         for i in range(50)
     ]

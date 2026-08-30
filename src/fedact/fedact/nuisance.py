@@ -18,6 +18,8 @@ from fedact.domain.types import (
 )
 from fedact.fedact.controls import ControlReplicate
 
+_PLACEHOLDER_UNCERTAINTY_RADIUS = 0.1
+
 
 @dataclass(frozen=True)
 class NuisanceEstimate:
@@ -138,9 +140,9 @@ def estimate_client_nuisance_subspace(
     client_controls: torch.Tensor,
     rank_selection: RankSelectionMethod,
     fixed_rank: RankDimension,
-    variance_threshold: ThresholdValue,
     eigengap_regularization: ThresholdValue,
     scale_standardization_floor: ThresholdValue,
+    variance_threshold: ThresholdValue | None = None,
 ) -> NuisanceEstimate:
     n, d = client_controls.shape
     if n == 0 or d == 0:
@@ -165,6 +167,8 @@ def estimate_client_nuisance_subspace(
     if rank_selection is RankSelectionMethod.FIXED_RANK:
         k = min(int(fixed_rank), d)
     else:
+        if variance_threshold is None:
+            raise ValueError("variance_threshold is required when rank_selection is not FIXED_RANK")
         k = admissible_rank(
             spectrum=[float(value) for value in eigenvalues], variance_threshold=variance_threshold
         )
@@ -187,7 +191,7 @@ def estimate_client_nuisance_subspace(
     )
     return NuisanceEstimate(
         subspace=subspace,
-        uncertainty_radius=0.1,
+        uncertainty_radius=_PLACEHOLDER_UNCERTAINTY_RADIUS,
         selected_rank=k,
         eigengap_ratio=ratio,
         replicates=replicates,

@@ -19,6 +19,8 @@ from fedact.fedact.feasible_sets import build_nuisance_spaces
 from fedact.fedact.nuisance import estimate_client_nuisance_subspace
 from fedact.fedact.solver import solve_action_interval
 
+_MAJORITY_THRESHOLD_FRACTION = 0.5
+
 _SYNTHETIC_TO_CORRUPTED_CLIENT_ATTACK = {
     SyntheticCorruptionAttack.ROTATION: CorruptedClientAttack.BASIS_ROTATION,
     SyntheticCorruptionAttack.RANK_MISREPORT: CorruptedClientAttack.FALSE_RANK_REPORTING,
@@ -60,7 +62,6 @@ def run_synthetic_geometry_sweeps(config: FedActConfig) -> SyntheticSweepReport:
             client_controls=torch.randn(20, latent_dim) * float(sigma),
             rank_selection=RankSelectionMethod.FIXED_RANK,
             fixed_rank=config.identification.nuisance_rank.maximum,
-            variance_threshold=0.95,
             eigengap_regularization=config.numerical.rank_clip_epsilon_relative,
             scale_standardization_floor=config.numerical.scale_standardization_floor,
         )
@@ -99,7 +100,6 @@ def run_synthetic_geometry_sweeps(config: FedActConfig) -> SyntheticSweepReport:
                 client_controls=torch.randn(20, latent_dim),
                 rank_selection=RankSelectionMethod.FIXED_RANK,
                 fixed_rank=config.identification.nuisance_rank.maximum,
-                variance_threshold=0.95,
                 eigengap_regularization=config.numerical.rank_clip_epsilon_relative,
                 scale_standardization_floor=config.numerical.scale_standardization_floor,
             )
@@ -149,7 +149,7 @@ def run_synthetic_geometry_sweeps(config: FedActConfig) -> SyntheticSweepReport:
     passed = sum(1 for c in cells if not c.is_abstaining)
     outcome = (
         ScientificOutcome.PASS
-        if passed >= len(cells) * 0.5
+        if passed >= len(cells) * _MAJORITY_THRESHOLD_FRACTION
         else ScientificOutcome.INSUFFICIENT_EVIDENCE
     )
 

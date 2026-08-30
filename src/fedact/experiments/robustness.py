@@ -16,6 +16,8 @@ from fedact.fedact.feasible_sets import build_nuisance_spaces
 from fedact.fedact.nuisance import NuisanceEstimate, estimate_client_nuisance_subspace
 from fedact.fedact.solver import solve_action_interval
 
+_STRESS_SWEEP_BASELINE_ROWS = 20
+
 
 @dataclass(frozen=True)
 class BoundaryStressReport:
@@ -74,7 +76,7 @@ def run_robustness_and_failure_boundaries(config: FedActConfig) -> BoundaryStres
     total_sweeps = 0
 
     for stress_fraction in stress_fractions:
-        sample_size = max(5, int(20 * stress_fraction))
+        sample_size = max(5, int(_STRESS_SWEEP_BASELINE_ROWS * stress_fraction))
         for corrupted_count in allowance.counts:
             for attack in allowance.attacks:
                 total_sweeps += 1
@@ -82,7 +84,6 @@ def run_robustness_and_failure_boundaries(config: FedActConfig) -> BoundaryStres
                     client_controls=torch.randn(sample_size, latent_dim),
                     rank_selection=RankSelectionMethod.FIXED_RANK,
                     fixed_rank=config.identification.nuisance_rank.maximum,
-                    variance_threshold=0.95,
                     eigengap_regularization=config.numerical.rank_clip_epsilon_relative,
                     scale_standardization_floor=config.numerical.scale_standardization_floor,
                 )

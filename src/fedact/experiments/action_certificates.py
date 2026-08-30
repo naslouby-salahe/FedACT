@@ -12,6 +12,8 @@ from fedact.fedact.feasible_sets import build_nuisance_spaces
 from fedact.fedact.nuisance import estimate_client_nuisance_subspace
 from fedact.fedact.solver import solve_action_interval
 
+_ACTION_MAGNITUDE = 2.0
+
 
 @dataclass(frozen=True)
 class ActionCertificateReport:
@@ -30,7 +32,6 @@ def run_action_certificate_validation(config: FedActConfig) -> ActionCertificate
             client_controls=torch.randn(20, latent_dim),
             rank_selection=RankSelectionMethod.FIXED_RANK,
             fixed_rank=config.identification.nuisance_rank.maximum,
-            variance_threshold=0.95,
             eigengap_regularization=config.numerical.rank_clip_epsilon_relative,
             scale_standardization_floor=config.numerical.scale_standardization_floor,
         )
@@ -40,7 +41,7 @@ def run_action_certificate_validation(config: FedActConfig) -> ActionCertificate
         nuisance_subspaces=tuple(e.subspace for e in nuisance_estimates),
         uncertainty_radii=tuple(0.01 for _unused in nuisance_estimates),
     )
-    actions = [torch.ones(latent_dim) * 2.0 for _unused in range(50)]
+    actions = [torch.ones(latent_dim) * _ACTION_MAGNITUDE for _unused in range(50)]
 
     certified = 0
     ambiguous = 0
@@ -54,7 +55,9 @@ def run_action_certificate_validation(config: FedActConfig) -> ActionCertificate
             alignment_threshold=0.01,
             ambiguity_width_threshold=5.0,
             set_diameter=feasible_set.diameter,
-            historical_realized_diameter_quantile=2.0,
+            historical_realized_diameter_quantile=(
+                config.certification.forecast_set_diameter_abstention.historical_realized_diameter_quantile
+            ),
         )
         if decision.status is CertificationStatus.CERTIFIED_POSITIVE:
             certified += 1
