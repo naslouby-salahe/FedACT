@@ -74,7 +74,7 @@ class SourceChronology:
 DATASET_SOURCE_CHRONOLOGY: dict[DatasetSelector, SourceChronology] = {
     DatasetSelector.LAMDA: SourceChronology(
         first_observed_month=calendar_month(0),
-        last_observed_month=calendar_month(143),
+        last_observed_month=calendar_month(144),
         prohibited_gaps=(LAMDA_MISSING_2015_GAP,),
     ),
     DatasetSelector.EMBER2024: SourceChronology(
