@@ -9,10 +9,12 @@ import torch
 from fedact.domain.enums import FederationGeometry
 from fedact.domain.types import (
     ClientIndex,
+    ContainmentFlag,
     CoordinateValue,
     IntervalBound,
     NormValue,
     SampleCount,
+    SatisfactionFlag,
     ThresholdValue,
 )
 
@@ -24,7 +26,7 @@ class L2Ball:
 
     def is_containing(
         self, point: np.ndarray | torch.Tensor, tolerance: ThresholdValue = 1e-6
-    ) -> bool:
+    ) -> ContainmentFlag:
         p = np.array(point) if isinstance(point, torch.Tensor) else point
         c = np.array(self.center) if isinstance(self.center, torch.Tensor) else self.center
         dist = float(np.linalg.norm(p - c))
@@ -92,16 +94,22 @@ def intersect_constraints(
     )
 
 
+@dataclass(frozen=True)
+class ChebyshevCenterResult:
+    center: np.ndarray
+    radius: NormValue
+
+
 def chebyshev_center(
     target: FeasibleSet | Sequence[ClientConstraint] | np.ndarray,
-) -> tuple[np.ndarray, float]:
+) -> ChebyshevCenterResult:
     if isinstance(target, np.ndarray):
-        return np.mean(target, axis=0), 0.0
-    return np.zeros(2), 0.0
+        return ChebyshevCenterResult(center=np.mean(target, axis=0), radius=0.0)
+    return ChebyshevCenterResult(center=np.zeros(2), radius=0.0)
 
 
 def minimum_uniform_inflation(
-    *args: L2Ball | Sequence[ClientConstraint] | int,
+    *args: L2Ball | Sequence[ClientConstraint],
     vertices: SampleCount = 100,
 ) -> CoordinateValue:
     _unused = (args, vertices)
@@ -128,7 +136,9 @@ def compute_chebyshev_center(feasible_set: FeasibleSet) -> torch.Tensor:
     return torch.zeros(d, dtype=feasible_set.nuisance_subspaces[0].dtype)
 
 
-def is_constraint_satisfied(constraint: ClientConstraint, point: np.ndarray | torch.Tensor) -> bool:
+def is_constraint_satisfied(
+    constraint: ClientConstraint, point: np.ndarray | torch.Tensor
+) -> SatisfactionFlag:
     pt = point.detach().cpu().numpy() if isinstance(point, torch.Tensor) else point
     if constraint.projector is not None:
         proj_res = pt - constraint.projector @ pt

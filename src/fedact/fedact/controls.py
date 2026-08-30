@@ -6,7 +6,14 @@ from dataclasses import dataclass
 import numpy as np
 import torch
 
-from fedact.domain.types import MetricRate, NormValue, ReplicateIndex, SampleCount, ThresholdValue
+from fedact.domain.types import (
+    GateComplianceFlag,
+    MetricRate,
+    NormValue,
+    ReplicateIndex,
+    SampleCount,
+    ThresholdValue,
+)
 
 
 @dataclass(frozen=True)
@@ -45,7 +52,7 @@ def held_out_reconstruction_residuals(
 def is_control_gate_passing(
     residuals: Sequence[NormValue],
     gate: ControlQualityGate,
-) -> bool:
+) -> GateComplianceFlag:
     if not residuals:
         return False
     threshold = float(np.quantile(residuals, gate.held_out_residual_quantile))

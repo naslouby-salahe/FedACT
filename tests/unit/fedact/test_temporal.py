@@ -12,9 +12,9 @@ from fedact.fedact.temporal import (
 
 def test_fit_scalar_model_estimates_coefficient() -> None:
     centers = tuple(0.8**i * np.ones(3) for i in range(10))
-    a, residuals = fit_scalar_model(centers, maximum_coefficient=0.99)
-    assert a == pytest.approx(0.8, abs=1e-2)
-    assert residuals.shape[0] == 9
+    fit = fit_scalar_model(centers, maximum_coefficient=0.99)
+    assert fit.coefficient == pytest.approx(0.8, abs=1e-2)
+    assert fit.residuals.shape[0] == 9
 
 
 def test_process_error_radius_computes_residual_quantile() -> None:

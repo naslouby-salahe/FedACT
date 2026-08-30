@@ -6,7 +6,7 @@ from typing import NewType
 
 import numpy as np
 
-from fedact.config.models import LamdaDatasetConfig
+from fedact.config.models import LamdaDatasetConfig, PositiveInt, Probability
 from fedact.datasets.chronology import CalendarMonth, calendar_month, transition_windows
 from fedact.datasets.records import (
     ClientSemanticsAudit,
@@ -15,7 +15,14 @@ from fedact.datasets.records import (
 )
 from fedact.domain.enums import DatasetSelector
 from fedact.domain.records import SampleIdentifier
-from fedact.domain.types import BinaryLabel, CalendarMonthString, FamilyName, SampleCount
+from fedact.domain.types import (
+    BinaryLabel,
+    CalendarMonthString,
+    EligibilityFlag,
+    FamilyName,
+    SampleCount,
+    ThresholdValue,
+)
 
 _LAMDA_EPOCH_YEAR = 2013
 
@@ -116,7 +123,7 @@ def lamda_client_semantics() -> ClientSemanticsAudit:
 class OperatorEligibility:
     has_matching_raw_artifact: bool
 
-    def is_eligible(self) -> bool:
+    def is_eligible(self) -> EligibilityFlag:
         return self.has_matching_raw_artifact
 
 
@@ -177,17 +184,23 @@ def malicious_transition_displacement(
     features: np.ndarray,
     rule: LabelDerivationRule,
     endpoint_month: CalendarMonth,
-    transition_interval_months: int,
+    transition_interval_months: PositiveInt,
 ) -> TransitionDisplacement | None:
     windows = transition_windows(endpoint_month, transition_interval_months)
     months, keep = _labeled_months(records, rule, want_malicious=True)
     features = features[keep]
     kept_months = months[keep]
     before_mean, before_support = _windowed_mean(
-        features, kept_months, windows.before_window_start_inclusive, windows.before_window_end_exclusive
+        features,
+        kept_months,
+        windows.before_window_start_inclusive,
+        windows.before_window_end_exclusive,
     )
     after_mean, after_support = _windowed_mean(
-        features, kept_months, windows.after_window_start_inclusive, windows.after_window_end_exclusive
+        features,
+        kept_months,
+        windows.after_window_start_inclusive,
+        windows.after_window_end_exclusive,
     )
     if before_support == 0 or after_support == 0:
         return None
@@ -203,7 +216,7 @@ def control_transition_replicates(
     features: np.ndarray,
     rule: LabelDerivationRule,
     candidate_endpoints: Sequence[CalendarMonth],
-    transition_interval_months: int,
+    transition_interval_months: PositiveInt,
 ) -> tuple[ControlTransitionReplicate, ...]:
     months, keep = _labeled_months(records, rule, want_malicious=False)
     features = features[keep]
@@ -236,11 +249,13 @@ def control_transition_replicates(
     return tuple(replicates)
 
 
-def effective_support(replicate: ControlTransitionReplicate) -> float:
+def effective_support(replicate: ControlTransitionReplicate) -> ThresholdValue:
     return 1.0 / (1.0 / replicate.support_before + 1.0 / replicate.support_after)
 
 
-def replicate_weights(replicates: Sequence[ControlTransitionReplicate]) -> tuple[float, ...]:
+def replicate_weights(
+    replicates: Sequence[ControlTransitionReplicate],
+) -> tuple[Probability, ...]:
     supports = [effective_support(replicate) for replicate in replicates]
     total = sum(supports)
     if total <= 0.0:

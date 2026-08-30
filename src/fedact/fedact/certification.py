@@ -10,9 +10,11 @@ from fedact.domain.types import (
     CertificationFlag,
     DiagnosisMessage,
     EvaluationCount,
+    GateComplianceFlag,
     IntervalBound,
     MetricRate,
     NormValue,
+    StabilityFlag,
     ThresholdValue,
     ValidationFlag,
 )
@@ -77,21 +79,30 @@ def decide(
 def is_forecast_set_within_gate(
     diameter_bound: IntervalBound,
     historical_quantile_value: ThresholdValue,
-) -> bool:
+) -> GateComplianceFlag:
     return diameter_bound <= historical_quantile_value
+
+
+@dataclass(frozen=True)
+class LeaveOneClientOutStabilityOutcome:
+    is_stable: StabilityFlag
+    required_agreement_count: EvaluationCount
 
 
 def leave_one_client_out_stability(
     decisions: Sequence[CertificationFlag],
     minimum_unchanged_fraction: MetricRate = 0.8,
-) -> tuple[bool, EvaluationCount]:
+) -> LeaveOneClientOutStabilityOutcome:
     if not decisions:
-        return True, 0
+        return LeaveOneClientOutStabilityOutcome(is_stable=True, required_agreement_count=0)
     trues = sum(1 for d in decisions if d)
     falses = len(decisions) - trues
     dominant = max(trues, falses)
     req = int(math.ceil(len(decisions) * minimum_unchanged_fraction))
-    return dominant >= req, int(len(decisions) * minimum_unchanged_fraction)
+    return LeaveOneClientOutStabilityOutcome(
+        is_stable=dominant >= req,
+        required_agreement_count=int(len(decisions) * minimum_unchanged_fraction),
+    )
 
 
 def downgrade_dominant_single_client(state: CertificateState) -> CertificateState:

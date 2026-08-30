@@ -9,7 +9,7 @@ from numpy.typing import NDArray
 from pydantic import Field
 
 from fedact.domain.records import ClientIdentifier
-from fedact.domain.types import MetricRate, SampleCount
+from fedact.domain.types import MetricRate, Probability, SampleCount
 
 FloatArray = NDArray[np.float64]
 Ridge = Annotated[float, Field(gt=0.0)]
@@ -72,7 +72,7 @@ def greedy_d_optimal(
     return tuple(selected)
 
 
-def uniform_action_weights(action_count: ActionCount) -> tuple[float, ...]:
+def uniform_action_weights(action_count: ActionCount) -> tuple[Probability, ...]:
     if action_count == 0:
         return ()
     weight = 1.0 / action_count

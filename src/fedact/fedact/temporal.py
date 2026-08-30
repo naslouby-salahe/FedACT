@@ -16,12 +16,18 @@ class TemporalModel:
     consecutive_pairs_used: SampleCount
 
 
+@dataclass(frozen=True)
+class ScalarModelFit:
+    coefficient: ThresholdValue
+    residuals: np.ndarray
+
+
 def fit_scalar_model(
     centers: Sequence[np.ndarray | torch.Tensor],
     maximum_coefficient: ThresholdValue = 0.99,
-) -> tuple[float, np.ndarray]:
+) -> ScalarModelFit:
     if len(centers) < 2:
-        return 1.0, np.zeros((1, 1))
+        return ScalarModelFit(coefficient=1.0, residuals=np.zeros((1, 1)))
     arrs = [np.array(c) if isinstance(c, torch.Tensor) else c for c in centers]
     x = np.stack(arrs[:-1])
     y = np.stack(arrs[1:])
@@ -29,7 +35,7 @@ def fit_scalar_model(
     a = float(np.sum(x * y) / denom) if denom > 1e-12 else 1.0
     a = min(maximum_coefficient, max(-maximum_coefficient, a))
     residuals = y - a * x
-    return a, residuals
+    return ScalarModelFit(coefficient=a, residuals=residuals)
 
 
 def process_error_radius(

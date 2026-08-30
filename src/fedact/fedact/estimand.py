@@ -9,6 +9,8 @@ import torch
 
 from fedact.domain.enums import ActionPolarity
 from fedact.domain.types import (
+    AmbiguityFlag,
+    CertificationFlag,
     CoordinateValue,
     IntervalBound,
     ThresholdValue,
@@ -53,15 +55,17 @@ class ActionInterval:
 
     def is_certified_positive(
         self, threshold: ThresholdValue, ambiguity_width: ThresholdValue
-    ) -> bool:
+    ) -> CertificationFlag:
         return self.lower >= threshold and self.width <= ambiguity_width
 
     def is_certified_negative(
         self, threshold: ThresholdValue, ambiguity_width: ThresholdValue
-    ) -> bool:
+    ) -> CertificationFlag:
         return self.upper < threshold and self.width <= ambiguity_width
 
-    def is_ambiguous(self, threshold: ThresholdValue, ambiguity_width: ThresholdValue) -> bool:
+    def is_ambiguous(
+        self, threshold: ThresholdValue, ambiguity_width: ThresholdValue
+    ) -> AmbiguityFlag:
         return self.lower < threshold <= self.upper or self.width > ambiguity_width
 
 
@@ -124,7 +128,7 @@ def is_certified(
     max_width: IntervalBound | None = None,
     domain_validity: DomainValidity | None = None,
     validity: DomainValidity | None = None,
-) -> bool:
+) -> CertificationFlag:
     val = domain_validity if domain_validity is not None else validity
     if decision_state is not DecisionState.POSITIVELY_IDENTIFIED:
         return False

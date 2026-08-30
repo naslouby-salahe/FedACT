@@ -134,7 +134,7 @@ def run_mathematical_verification() -> MathVerificationReport:
 
     centers = tuple(0.9**step * np.ones(2) for step in range(5))
     try:
-        fitted, _unused = fit_scalar_model(centers, maximum_coefficient=0.99)
+        fitted = fit_scalar_model(centers, maximum_coefficient=0.99).coefficient
     except NumericalFailureError:
         fitted = None
     temporal_ok = fitted is not None and 0.0 <= fitted <= 0.99

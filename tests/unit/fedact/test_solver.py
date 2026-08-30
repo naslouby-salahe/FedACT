@@ -17,11 +17,11 @@ def test_solve_support_bounds_on_box() -> None:
     direction = np.array([1.0, 0.0])
     coeffs = np.array([[1.0, 0.0], [-1.0, 0.0], [0.0, 1.0], [0.0, -1.0]])
     limits = np.array([2.0, 2.0, 2.0, 2.0])
-    lower, upper = solve_support_bounds(
+    interval = solve_support_bounds(
         direction=direction,
         constraint_coefficients=coeffs,
         constraint_limits=limits,
         settings=SETTINGS,
     )
-    assert lower == pytest.approx(-2.0, abs=1e-4)
-    assert upper == pytest.approx(2.0, abs=1e-4)
+    assert interval.lower == pytest.approx(-2.0, abs=1e-4)
+    assert interval.upper == pytest.approx(2.0, abs=1e-4)

@@ -34,9 +34,9 @@ def test_decide_classifies_ambiguous() -> None:
 
 def test_leave_one_client_out_stability() -> None:
     decisions = (True,) * 9 + (False,)
-    stable, req = leave_one_client_out_stability(decisions, minimum_unchanged_fraction=0.8)
-    assert stable
-    assert req == 8
+    outcome = leave_one_client_out_stability(decisions, minimum_unchanged_fraction=0.8)
+    assert outcome.is_stable
+    assert outcome.required_agreement_count == 8
 
 
 def test_is_forecast_set_within_gate() -> None:

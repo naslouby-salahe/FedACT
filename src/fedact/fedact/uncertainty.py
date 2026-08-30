@@ -11,10 +11,11 @@ Resamples = Annotated[int, Field(ge=1)]
 Alpha = Annotated[float, Field(gt=0.0, le=0.5)]
 UncertaintyTerm = Annotated[float, Field(ge=0.0)]
 EigenFloor = Annotated[float, Field(gt=0.0)]
+BootstrapNorm = Annotated[float, Field(ge=0.0)]
 
 
 def sampling_uncertainty_quantile(
-    bootstrap_norms: tuple[float, ...], alpha: Alpha
+    bootstrap_norms: tuple[BootstrapNorm, ...], alpha: Alpha
 ) -> UncertaintyTerm:
     if not bootstrap_norms:
         raise ValueError("sampling uncertainty requires bootstrap draws")

@@ -129,7 +129,7 @@ def resolve_execution_requirements(
     required_boundaries: tuple[ArtifactBoundary, ...],
     indexed: tuple[IndexedArtifact, ...] | None = None,
     index: ArtifactDependencyIndex | None = None,
-    expected_fingerprints: BoundaryFingerprints = BoundaryFingerprints(),
+    expected_fingerprints: BoundaryFingerprints | None = None,
     force_recompute_boundaries: frozenset[ArtifactBoundary] = frozenset(),
     overwrite_boundaries: frozenset[ArtifactBoundary] = frozenset(),
     indexed_artifacts: tuple[IndexedArtifact, ...] | None = None,
@@ -137,17 +137,18 @@ def resolve_execution_requirements(
 ) -> ResolutionPlan:
     actual_indexed = _normalize_indexed(indexed, indexed_artifacts)
     actual_index = _normalize_index(index, dependency_index)
+    actual_expected_fingerprints = expected_fingerprints or BoundaryFingerprints()
 
     decisions: list[BoundaryDecision] = []
     newly_stale: list[ArtifactIdentity] = []
     recompute_cascading = False
     forces = force_recompute_boundaries | overwrite_boundaries
 
-    if expected_fingerprints:
-        _deactivate_mismatches(actual_indexed, actual_index, expected_fingerprints)
+    if actual_expected_fingerprints:
+        _deactivate_mismatches(actual_indexed, actual_index, actual_expected_fingerprints)
 
     for boundary in required_boundaries:
-        expected_fp = expected_fingerprints.for_boundary(boundary)
+        expected_fp = actual_expected_fingerprints.for_boundary(boundary)
         candidate = _active_candidate_for_boundary(
             boundary, actual_indexed, actual_index, expected_fp
         )

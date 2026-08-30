@@ -13,6 +13,7 @@ from fedact.domain.types import (
     MetricRate,
     RankDimension,
     SampleCount,
+    StabilityFlag,
     ThresholdValue,
 )
 from fedact.fedact.controls import ControlReplicate
@@ -126,7 +127,7 @@ def is_rank_stable(
     ranks: Sequence[RankDimension],
     full_sample_rank: RankDimension | None = None,
     minimum_fraction: MetricRate = 0.8,
-) -> bool:
+) -> StabilityFlag:
     if full_sample_rank is not None:
         count = sum(1 for r in ranks if r == full_sample_rank)
         return bool(count / len(ranks) >= minimum_fraction) if ranks else False

@@ -29,7 +29,9 @@ from fedact.fedact.nuisance import (
     weighted_covariance,
 )
 
-LAMDA_BASELINE_DIRECTORY = Path(__file__).resolve().parents[3] / "data" / "raw" / "LAMDA" / "Baseline"
+LAMDA_BASELINE_DIRECTORY = (
+    Path(__file__).resolve().parents[3] / "data" / "raw" / "LAMDA" / "Baseline"
+)
 
 pytestmark = pytest.mark.skipif(
     not LAMDA_BASELINE_DIRECTORY.is_dir(), reason="data/raw/LAMDA/Baseline is not available"
@@ -56,8 +58,7 @@ def test_real_lamda_control_transitions_drive_a_genuine_nuisance_estimate(
     assert not np.allclose(malicious_signal.displacement, 0.0)
 
     historical_endpoints = [
-        calendar_month(month)
-        for month in range(int(cutoff_endpoint) - 6, int(cutoff_endpoint))
+        calendar_month(month) for month in range(int(cutoff_endpoint) - 6, int(cutoff_endpoint))
     ]
     replicates = control_transition_replicates(
         dataset.records, dataset.features, rule, historical_endpoints, transition_interval_months
@@ -89,9 +90,7 @@ def test_real_lamda_control_transitions_drive_a_genuine_nuisance_estimate(
 
     displacements = np.stack([np.array(replicate.displacement) for replicate in replicates])
     weighted_mean = np.average(displacements, axis=0, weights=weights)
-    covariance_raw = weighted_covariance(
-        displacements - weighted_mean, weights=weights
-    )
+    covariance_raw = weighted_covariance(displacements - weighted_mean, weights=weights)
     covariance = regularized_covariance(
         covariance_raw, coefficient=config.numerical.rank_clip_epsilon_relative
     )

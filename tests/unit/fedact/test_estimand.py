@@ -127,16 +127,16 @@ def test_contradictory_constraints_stay_infeasible_with_diagnostic_inflation_onl
 
 def test_chebyshev_center_of_a_symmetric_set_is_its_midpoint() -> None:
     points = np.array([[1.0, 0.0], [-1.0, 0.0], [0.0, 1.0], [0.0, -1.0]])
-    center, _ = chebyshev_center(points)
-    assert np.allclose(center, np.zeros(2))
+    result = chebyshev_center(points)
+    assert np.allclose(result.center, np.zeros(2))
 
 
 def test_temporal_model_recovers_exact_scalar_dynamics() -> None:
     true_coefficient = 0.9
     centers = tuple(np.full(3, true_coefficient**step) for step in range(6))
-    fitted, residuals = fit_scalar_model(centers, maximum_coefficient=0.99)
-    assert fitted == pytest.approx(min(0.99, true_coefficient))
-    assert float(np.max(np.abs(residuals))) == pytest.approx(0.0, abs=1e-12)
+    fit = fit_scalar_model(centers, maximum_coefficient=0.99)
+    assert fit.coefficient == pytest.approx(min(0.99, true_coefficient))
+    assert float(np.max(np.abs(fit.residuals))) == pytest.approx(0.0, abs=1e-12)
 
 
 def test_process_error_radius_uses_linear_quantile() -> None:
