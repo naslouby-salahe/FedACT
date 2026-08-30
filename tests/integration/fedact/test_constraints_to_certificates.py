@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import numpy as np
 
+from fedact.domain.enums import CertificationStatus
 from fedact.fedact.actions import action_support_bounds
-from fedact.fedact.certification import CertificateState, DomainValid, decide
+from fedact.fedact.certification import DomainValid, decide
 
 
 def test_constraints_to_certificates_integration() -> None:
@@ -19,4 +20,4 @@ def test_constraints_to_certificates_integration() -> None:
         diameter_bound=1.0,
         diameter_quantile=2.0,
     )
-    assert decision.state is CertificateState.CERTIFIED
+    assert decision.status is CertificationStatus.CERTIFIED_POSITIVE

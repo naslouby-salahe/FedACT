@@ -3,14 +3,13 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
+from fedact.domain.enums import ActionPolarity, CertificationStatus
+from fedact.fedact.certification import DomainValid, certify_action_interval
 from fedact.fedact.estimand import (
     ActionInterval,
-    DecisionState,
-    DomainValidity,
     NumericalFailureError,
     action_conditioning_index,
-    classify_decision_state,
-    is_certified,
+    classify_action_interval,
     projector_from_basis,
     smallest_positive_eigenvalue,
     support_interval,
@@ -66,45 +65,51 @@ def test_constraint_monotonicity_under_added_constraints() -> None:
     assert restricted_interval.upper <= base_interval.upper
 
 
-def test_decision_states_follow_the_roadmap_thresholds_exactly() -> None:
+def test_action_interval_polarity_follows_the_roadmap_thresholds_exactly() -> None:
     positive = ActionInterval(lower=1.5, upper=2.0)
-    negative = ActionInterval(lower=-2.0, upper=0.5)
+    negative = ActionInterval(lower=-0.5, upper=0.2)
     ambiguous = ActionInterval(lower=0.5, upper=2.0)
     tau_align = 1.0
+    ambiguity_width = 1.0
+    assert classify_action_interval(positive, tau_align, ambiguity_width) is ActionPolarity.POSITIVE
+    assert classify_action_interval(negative, tau_align, ambiguity_width) is ActionPolarity.NEGATIVE
     assert (
-        classify_decision_state(positive, tau_align, set_diameter=0.1)
-        is DecisionState.POSITIVELY_IDENTIFIED
-    )
-    assert (
-        classify_decision_state(negative, tau_align, set_diameter=0.1)
-        is DecisionState.NEGATIVELY_IDENTIFIED
-    )
-    assert (
-        classify_decision_state(ambiguous, tau_align, set_diameter=0.1) is DecisionState.AMBIGUOUS
+        classify_action_interval(ambiguous, tau_align, ambiguity_width) is ActionPolarity.AMBIGUOUS
     )
 
 
 def test_certification_requires_validity_width_and_lower_bound() -> None:
     interval = ActionInterval(lower=1.5, upper=1.8)
-    assert is_certified(
-        classify_decision_state(interval, 1.0, set_diameter=0.1),
-        interval,
-        0.5,
-        DomainValidity(domain_valid=True),
+    certified = certify_action_interval(
+        action_interval=interval,
+        domain_validity=DomainValid(True),
+        alignment_threshold=1.0,
+        ambiguity_width_threshold=0.5,
+        set_diameter=0.1,
+        historical_realized_diameter_quantile=1.0,
     )
-    assert not is_certified(
-        classify_decision_state(interval, 1.0, set_diameter=0.1),
-        interval,
-        0.5,
-        DomainValidity(domain_valid=False),
+    assert certified.status is CertificationStatus.CERTIFIED_POSITIVE
+
+    invalid_domain = certify_action_interval(
+        action_interval=interval,
+        domain_validity=DomainValid(False),
+        alignment_threshold=1.0,
+        ambiguity_width_threshold=0.5,
+        set_diameter=0.1,
+        historical_realized_diameter_quantile=1.0,
     )
+    assert invalid_domain.status is CertificationStatus.ABSTAIN
+
     wide = ActionInterval(lower=1.5, upper=2.5)
-    assert not is_certified(
-        classify_decision_state(wide, 1.0, set_diameter=0.1),
-        wide,
-        0.5,
-        DomainValidity(domain_valid=True),
+    ambiguous = certify_action_interval(
+        action_interval=wide,
+        domain_validity=DomainValid(True),
+        alignment_threshold=1.0,
+        ambiguity_width_threshold=0.5,
+        set_diameter=0.1,
+        historical_realized_diameter_quantile=1.0,
     )
+    assert ambiguous.status is not CertificationStatus.CERTIFIED_POSITIVE
 
 
 def test_inverted_interval_is_rejected() -> None:

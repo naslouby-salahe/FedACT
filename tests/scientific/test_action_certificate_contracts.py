@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from fedact.domain.enums import CertificationStatus
 from fedact.fedact.certification import (
-    CertificateState,
     DomainValid,
     decide,
 )
@@ -17,4 +17,4 @@ def test_action_certificate_requires_worst_case_lower_bound() -> None:
         diameter_bound=1.0,
         diameter_quantile=2.0,
     )
-    assert decision.state is CertificateState.CERTIFIED
+    assert decision.status is CertificationStatus.CERTIFIED_POSITIVE

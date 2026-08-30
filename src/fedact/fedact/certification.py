@@ -3,7 +3,6 @@ from __future__ import annotations
 import math
 from collections.abc import Sequence
 from dataclasses import dataclass
-from enum import StrEnum
 
 from fedact.domain.enums import CertificationStatus
 from fedact.domain.types import (
@@ -19,13 +18,7 @@ from fedact.domain.types import (
     ValidationFlag,
 )
 from fedact.fedact.estimand import ActionInterval
-
-
-class CertificateState(StrEnum):
-    CERTIFIED = "CERTIFIED"
-    AMBIGUOUS = "AMBIGUOUS"
-    NEGATIVE = "NEGATIVE"
-    ABSTAIN = "ABSTAIN"
+from fedact.fedact.transitions import AbstentionReason
 
 
 @dataclass(frozen=True)
@@ -44,16 +37,7 @@ class CertificateDecision:
     diameter_gate_passed: bool
     leave_one_client_out_passed: bool
     leave_one_client_out_note: DiagnosisMessage | None
-
-    @property
-    def state(self) -> CertificateState:
-        if self.status is CertificationStatus.CERTIFIED_POSITIVE:
-            return CertificateState.CERTIFIED
-        if self.status is CertificationStatus.CERTIFIED_NEGATIVE:
-            return CertificateState.NEGATIVE
-        if self.status is CertificationStatus.AMBIGUOUS:
-            return CertificateState.AMBIGUOUS
-        return CertificateState.ABSTAIN
+    abstention_reason: AbstentionReason | None
 
 
 def decide(
@@ -105,12 +89,6 @@ def leave_one_client_out_stability(
     )
 
 
-def downgrade_dominant_single_client(state: CertificateState) -> CertificateState:
-    if state is CertificateState.CERTIFIED:
-        return CertificateState.AMBIGUOUS
-    return state
-
-
 def certify_action_interval(
     action_interval: ActionInterval,
     domain_validity: DomainValid,
@@ -121,7 +99,7 @@ def certify_action_interval(
     leave_one_client_out_passed: ValidationFlag = True,
     leave_one_client_out_note: DiagnosisMessage | None = None,
 ) -> CertificateDecision:
-    if not domain_validity.valid or not leave_one_client_out_passed:
+    if not domain_validity.valid:
         return CertificateDecision(
             status=CertificationStatus.ABSTAIN,
             lower_bound=action_interval.lower,
@@ -132,6 +110,7 @@ def certify_action_interval(
             diameter_gate_passed=False,
             leave_one_client_out_passed=leave_one_client_out_passed,
             leave_one_client_out_note=leave_one_client_out_note,
+            abstention_reason=None,
         )
     diameter_ok = set_diameter <= historical_realized_diameter_quantile
     if not diameter_ok:
@@ -145,6 +124,7 @@ def certify_action_interval(
             diameter_gate_passed=False,
             leave_one_client_out_passed=leave_one_client_out_passed,
             leave_one_client_out_note=leave_one_client_out_note,
+            abstention_reason=AbstentionReason.ABSTAIN_FORECAST_SET_TOO_WIDE,
         )
     if action_interval.is_certified_positive(alignment_threshold, ambiguity_width_threshold):
         status = CertificationStatus.CERTIFIED_POSITIVE
@@ -152,6 +132,10 @@ def certify_action_interval(
         status = CertificationStatus.CERTIFIED_NEGATIVE
     else:
         status = CertificationStatus.AMBIGUOUS
+    abstention_reason = None
+    if not leave_one_client_out_passed and status is not CertificationStatus.AMBIGUOUS:
+        status = CertificationStatus.AMBIGUOUS
+        abstention_reason = AbstentionReason.ABSTAIN_SINGLE_CLIENT_CERTIFICATE_DOMINANCE
     return CertificateDecision(
         status=status,
         lower_bound=action_interval.lower,
@@ -162,4 +146,5 @@ def certify_action_interval(
         diameter_gate_passed=True,
         leave_one_client_out_passed=leave_one_client_out_passed,
         leave_one_client_out_note=leave_one_client_out_note,
+        abstention_reason=abstention_reason,
     )

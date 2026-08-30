@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from enum import StrEnum
 
 import numpy as np
 import torch
@@ -14,24 +13,11 @@ from fedact.domain.types import (
     CoordinateValue,
     IntervalBound,
     ThresholdValue,
-    ValidationFlag,
 )
-
-
-class DecisionState(StrEnum):
-    POSITIVELY_IDENTIFIED = "POSITIVELY_IDENTIFIED"
-    NEGATIVELY_IDENTIFIED = "NEGATIVELY_IDENTIFIED"
-    AMBIGUOUS = "AMBIGUOUS"
-    ABSTAIN = "ABSTAIN"
 
 
 class NumericalFailureError(RuntimeError):
     pass
-
-
-@dataclass(frozen=True)
-class DomainValidity:
-    domain_valid: bool
 
 
 @dataclass(frozen=True)
@@ -121,42 +107,6 @@ def action_conditioning_index(
     return float(u.T @ h @ u)
 
 
-def is_certified(
-    decision_state: DecisionState,
-    interval: ActionInterval | None = None,
-    max_width: IntervalBound | None = None,
-    domain_validity: DomainValidity | None = None,
-    validity: DomainValidity | None = None,
-) -> CertificationFlag:
-    val = domain_validity if domain_validity is not None else validity
-    if decision_state is not DecisionState.POSITIVELY_IDENTIFIED:
-        return False
-    if val is not None and not val.domain_valid:
-        return False
-    return not (interval is not None and max_width is not None and interval.width > max_width)
-
-
-def classify_decision_state(
-    interval: ActionInterval,
-    alignment_threshold: ThresholdValue,
-    set_diameter: IntervalBound,
-    domain_validity: DomainValidity | None = None,
-    historical_realized_diameter_quantile: ThresholdValue = 1.0,
-    leave_one_client_out_passed: ValidationFlag = True,
-) -> DecisionState:
-    if domain_validity is not None and not domain_validity.domain_valid:
-        return DecisionState.ABSTAIN
-    if not leave_one_client_out_passed:
-        return DecisionState.ABSTAIN
-    if set_diameter > historical_realized_diameter_quantile:
-        return DecisionState.ABSTAIN
-    if interval.lower >= alignment_threshold:
-        return DecisionState.POSITIVELY_IDENTIFIED
-    if interval.upper < alignment_threshold:
-        return DecisionState.NEGATIVELY_IDENTIFIED
-    return DecisionState.AMBIGUOUS
-
-
 def classify_action_interval(
     interval: ActionInterval,
     alignment_threshold: ThresholdValue,
@@ -167,10 +117,3 @@ def classify_action_interval(
     if interval.is_certified_negative(alignment_threshold, ambiguity_width):
         return ActionPolarity.NEGATIVE
     return ActionPolarity.AMBIGUOUS
-
-
-@dataclass(frozen=True)
-class ActionDisplacementEvaluation:
-    interval: ActionInterval
-    polarity: ActionPolarity
-    decision_state: DecisionState
