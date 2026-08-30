@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import NewType
@@ -11,10 +12,12 @@ from fedact.datasets.chronology import CalendarMonth, calendar_month, transition
 from fedact.datasets.records import (
     ClientSemanticsAudit,
     LabelDerivationRule,
+    SchemaChronologyManifest,
+    SchemaManifestField,
     corpus_level_client_audit,
 )
 from fedact.domain.enums import DatasetSelector
-from fedact.domain.records import SampleIdentifier
+from fedact.domain.records import DatasetIdentity, SampleIdentifier
 from fedact.domain.types import (
     BinaryLabel,
     CalendarMonthString,
@@ -261,3 +264,41 @@ def replicate_weights(
     if total <= 0.0:
         return tuple(0.0 for _replicate in replicates)
     return tuple(support / total for support in supports)
+
+
+def lamda_schema_manifest(
+    records: Sequence[LamdaRawRecord], features: np.ndarray
+) -> SchemaChronologyManifest:
+    sorted_hashes = sorted(record.sample_hash for record in records)
+    digest = hashlib.sha256(",".join(sorted_hashes).encode("utf-8")).hexdigest()
+    observed_months = sorted({record.year_month for record in records})
+    if observed_months:
+        first_month = year_month_to_calendar_month(observed_months[0])
+        last_month = year_month_to_calendar_month(observed_months[-1])
+    else:
+        first_month = calendar_month(0)
+        last_month = calendar_month(0)
+    return SchemaChronologyManifest(
+        dataset=DatasetIdentity(DatasetSelector.LAMDA.value),
+        acquisition_checksum=f"sha256:{digest}",
+        fields=(
+            SchemaManifestField(name="hash", observed=len(records) > 0),
+            SchemaManifestField(
+                name="label", observed=any(record.label is not None for record in records)
+            ),
+            SchemaManifestField(
+                name="family",
+                observed=any(record.family is not None for record in records),
+            ),
+            SchemaManifestField(
+                name="vt_count",
+                observed=any(record.vt_count is not None for record in records),
+            ),
+            SchemaManifestField(name="year_month", observed=len(observed_months) > 0),
+        ),
+        observed_row_count=len(records),
+        observed_feature_dimension=features.shape[1] if features.ndim == 2 else None,
+        chronology_granularity="year_month",
+        first_observed_month=int(first_month),
+        last_observed_month=int(last_month),
+    )

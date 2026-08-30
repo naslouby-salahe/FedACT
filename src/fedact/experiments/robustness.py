@@ -46,7 +46,8 @@ def apply_corrupted_client_attack(
 ) -> NuisanceEstimate:
     if attack is CorruptedClientAttack.BASIS_ROTATION:
         return replace(
-            estimate, subspace=_rotate_subspace(estimate.subspace, parameters.basis_rotation_degrees)
+            estimate,
+            subspace=_rotate_subspace(estimate.subspace, parameters.basis_rotation_degrees),
         )
     if attack is CorruptedClientAttack.FABRICATED_COMPLEMENTARITY:
         return replace(
@@ -56,7 +57,8 @@ def apply_corrupted_client_attack(
             ),
         )
     if attack is CorruptedClientAttack.FALSE_RANK_REPORTING:
-        return replace(estimate, selected_rank=estimate.selected_rank + parameters.false_rank_increment)
+        new_rank = estimate.selected_rank + parameters.false_rank_increment
+        return replace(estimate, selected_rank=new_rank)
     if attack is CorruptedClientAttack.BETA_UNDER_REPORTING:
         return replace(
             estimate, uncertainty_radius=estimate.uncertainty_radius * parameters.beta_multiplier

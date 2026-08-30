@@ -106,11 +106,12 @@ def run_synthetic_geometry_sweeps(config: FedActConfig) -> SyntheticSweepReport:
             action = torch.randn(latent_dim)
             if corrupted_count > 0:
                 mapped_attack = _SYNTHETIC_TO_CORRUPTED_CLIENT_ATTACK[synthetic_attack]
+                corruption_parameters = config.robustness.corrupted_client_allowance.parameters
                 estimate = apply_corrupted_client_attack(
-                    estimate, mapped_attack, config.robustness.corrupted_client_allowance.parameters
+                    estimate, mapped_attack, corruption_parameters
                 )
                 if mapped_attack is CorruptedClientAttack.TRANSITION_POISONING:
-                    sigma_multiplier = config.robustness.corrupted_client_allowance.parameters.transition_poisoning_sigma
+                    sigma_multiplier = corruption_parameters.transition_poisoning_sigma
                     action = action + sigma_multiplier * torch.randn(latent_dim)
             fset = build_nuisance_spaces(
                 nuisance_subspaces=(estimate.subspace,),

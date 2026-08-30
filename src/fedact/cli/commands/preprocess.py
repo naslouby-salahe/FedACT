@@ -5,12 +5,15 @@ from pathlib import Path
 import typer
 
 from fedact.app import Application, discover_repository_root
-from fedact.datasets.audits import audit_chronology
+from fedact.datasets.audits import audit_chronology, run_feasibility_audit
 from fedact.datasets.chronology import (
     calendar_month,
     dataset_source_chronology,
     enumerate_rolling_cutoffs,
 )
+from fedact.datasets.lamda.loader import load_lamda_records
+from fedact.datasets.lamda.semantics import lamda_client_semantics, lamda_schema_manifest
+from fedact.datasets.records import DatasetEligibilityRole
 from fedact.domain.enums import DatasetSelector
 from fedact.domain.types import OverwriteRequested
 from fedact.experiments.producers import (
@@ -55,6 +58,24 @@ def run(
             f"{selected.value}: chronology_audit={'PASS' if chronology.is_passing else 'FAIL'}"
         )
         typer.echo(f"{selected.value}: first_cutoff={first_identity} last_cutoff={last_identity}")
+
+        if selected is DatasetSelector.LAMDA:
+            baseline_directory = application.raw_data_root() / "LAMDA" / "Baseline" / "2023"
+            if baseline_directory.is_dir():
+                loaded_lamda = load_lamda_records(baseline_directory)
+                manifest = lamda_schema_manifest(loaded_lamda.records, loaded_lamda.features)
+                client_semantics = lamda_client_semantics()
+                eligibility = run_feasibility_audit(chronology, client_semantics, manifest)
+                typer.echo(
+                    f"{selected.value}: eligibility_role={eligibility.role.value} "
+                    f"observed_rows={manifest.observed_row_count}"
+                )
+                if eligibility.role is DatasetEligibilityRole.UNUSABLE:
+                    typer.echo(
+                        f"{selected.value}: WARNING dataset is unusable for the intended evidence"
+                    )
+            else:
+                typer.echo(f"{selected.value}: raw data unavailable at {baseline_directory}")
 
     fit_ownership = ownership_for(SharedProducer.REPRESENTATION_DETECTOR_FIT)
     typer.echo(f"shared_producer: {fit_ownership.producer.value} ({fit_ownership.reuse_scope})")
