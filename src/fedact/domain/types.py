@@ -97,6 +97,10 @@ type EigengapRatio = NonNegativeFloat
 type SimilarityScore = FiniteFloat
 type TimeoutSeconds = NonNegativeFloat
 type ParameterValue = FiniteFloat
+type PValue = Probability
+type RankBiserialEffectSize = Annotated[float, Field(ge=-1.0, le=1.0)]
+type CutoffCount = NonNegativeInteger
+type CutoffDifferenceValue = FiniteFloat
 
 
 type ActionDecision = NonEmptyString
@@ -189,6 +193,7 @@ type ContainmentFlag = StrictBoolean
 type SatisfactionFlag = StrictBoolean
 type DegeneracyFlag = StrictBoolean
 type ConfirmatoryFlag = StrictBoolean
+type ZeroExclusionFlag = StrictBoolean
 
 
 type JsonEncodableValue = JsonValue
