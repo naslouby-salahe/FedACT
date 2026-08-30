@@ -95,7 +95,7 @@ _ARTIFACT_BOUNDARY_CONTRACTS: tuple[ArtifactBoundaryContract, ...] = (
     ),
     ArtifactBoundaryContract(
         boundary=ArtifactBoundary.DATASET_PREPARATION,
-        reusable_artifacts="Parsed canonical records, schema/data-quality manifest, source"
+        reusable_artifacts="Parsed normalized records, schema/data-quality manifest, source"
         "chronology fields",
         consumers=(
             ArtifactBoundary.PREPROCESSING_AND_SPLITS,

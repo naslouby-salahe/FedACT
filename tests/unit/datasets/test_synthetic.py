@@ -35,7 +35,7 @@ def test_nuisance_dimension_maps_configured_fractions_exactly() -> None:
     ]
 
 
-def test_deterministic_basis_has_canonical_column_signs() -> None:
+def test_deterministic_basis_has_standardized_column_signs() -> None:
     generator = np.random.default_rng(7)
     basis = deterministic_orthonormal_basis(generator, SYNTHETIC_DIMENSION, 5)
     verify_orthonormality(basis, tolerance=1e-9)

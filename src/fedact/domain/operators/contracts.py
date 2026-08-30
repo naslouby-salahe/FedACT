@@ -6,9 +6,9 @@ from typing import NewType
 
 from fedact.domain.records import SampleIdentifier, SplitCutoffIdentity
 from fedact.domain.types import (
-    CanonicalFormText,
     DatasetName,
     FamilyName,
+    NormalizedOperatorFormText,
     NormValue,
     OrderIndex,
     ProvenanceText,
@@ -18,7 +18,7 @@ from fedact.domain.types import (
 )
 
 OperatorName = NewType("OperatorName", str)
-CanonicalParameterString = NewType("CanonicalParameterString", str)
+NormalizedParameterString = NewType("NormalizedParameterString", str)
 OutputHash = NewType("OutputHash", str)
 
 
@@ -32,7 +32,7 @@ class OperatorFamily:
     name: FamilyName
     domain: OperatorDomain
     listed_order: OrderIndex
-    parameter_grid: tuple[CanonicalParameterString, ...]
+    parameter_grid: tuple[NormalizedParameterString, ...]
 
 
 @dataclass(frozen=True)
@@ -42,7 +42,7 @@ class OperatorRecord:
     domain: OperatorDomain
     semantic_validity_contract: RuleDescription
     construction_function: RuleDescription
-    parameter_domain: tuple[CanonicalParameterString, ...]
+    parameter_domain: tuple[NormalizedParameterString, ...]
     eligibility_rule: RuleDescription
     rejection_rule: RuleDescription
     representation_displacement_rule: RuleDescription
@@ -54,7 +54,7 @@ class OperatorRecord:
 @dataclass(frozen=True)
 class OperatorComposition:
     families: tuple[OperatorFamily, ...]
-    parameters: tuple[CanonicalParameterString, ...]
+    parameters: tuple[NormalizedParameterString, ...]
 
     def __post_init__(self) -> None:
         family_names = [family.name for family in self.families]
@@ -69,7 +69,7 @@ class OperatorComposition:
 @dataclass(frozen=True)
 class OperatorCandidate:
     composition: OperatorComposition
-    canonical_form: CanonicalFormText
+    normalized_form: NormalizedOperatorFormText
     source_sample_id: SampleIdentifier
     cutoff_identity: SplitCutoffIdentity
 

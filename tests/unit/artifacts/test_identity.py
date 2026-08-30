@@ -4,18 +4,18 @@ import pytest
 
 from fedact.artifacts.identity import (
     MaterialDependency,
-    canonical_json,
     compute_dependency_fingerprint,
     content_checksum,
+    deterministic_json,
     environment_fingerprint,
     material_configuration_hash,
     producer_code_fingerprint,
 )
 
 
-def test_canonical_json_is_stable_and_compact() -> None:
-    assert canonical_json({"b": 1, "a": [2, 3]}) == '{"a":[2,3],"b":1}'
-    assert canonical_json({"a": 1}) == '{"a":1}'
+def test_deterministic_json_is_stable_and_compact() -> None:
+    assert deterministic_json({"b": 1, "a": [2, 3]}) == '{"a":[2,3],"b":1}'
+    assert deterministic_json({"a": 1}) == '{"a":1}'
 
 
 def test_content_checksum_is_deterministic_sha256() -> None:
@@ -30,14 +30,14 @@ def test_content_checksum_is_deterministic_sha256() -> None:
 def test_dependency_fingerprint_ignores_material_dependency_order() -> None:
     left = compute_dependency_fingerprint(
         (
-            MaterialDependency(name="raw_checksum", canonical_value="abc"),
-            MaterialDependency(name="seed", canonical_value="1001"),
+            MaterialDependency(name="raw_checksum", content_hash="abc"),
+            MaterialDependency(name="seed", content_hash="1001"),
         )
     )
     right = compute_dependency_fingerprint(
         (
-            MaterialDependency(name="seed", canonical_value="1001"),
-            MaterialDependency(name="raw_checksum", canonical_value="abc"),
+            MaterialDependency(name="seed", content_hash="1001"),
+            MaterialDependency(name="raw_checksum", content_hash="abc"),
         )
     )
     assert left == right
@@ -45,15 +45,15 @@ def test_dependency_fingerprint_ignores_material_dependency_order() -> None:
 
 def test_dependency_fingerprint_changes_with_any_material_dependency() -> None:
     baseline = compute_dependency_fingerprint(
-        (MaterialDependency(name="seed", canonical_value="1001"),)
+        (MaterialDependency(name="seed", content_hash="1001"),)
     )
     changed = compute_dependency_fingerprint(
-        (MaterialDependency(name="seed", canonical_value="1002"),)
+        (MaterialDependency(name="seed", content_hash="1002"),)
     )
     extended = compute_dependency_fingerprint(
         (
-            MaterialDependency(name="seed", canonical_value="1001"),
-            MaterialDependency(name="cutoff", canonical_value="2024-01"),
+            MaterialDependency(name="seed", content_hash="1001"),
+            MaterialDependency(name="cutoff", content_hash="2024-01"),
         )
     )
     assert changed != baseline
@@ -62,8 +62,8 @@ def test_dependency_fingerprint_changes_with_any_material_dependency() -> None:
 
 def test_duplicate_material_dependency_names_are_rejected() -> None:
     deps = (
-        MaterialDependency(name="seed", canonical_value="1001"),
-        MaterialDependency(name="seed", canonical_value="1002"),
+        MaterialDependency(name="seed", content_hash="1001"),
+        MaterialDependency(name="seed", content_hash="1002"),
     )
     with pytest.raises(ValueError):
         compute_dependency_fingerprint(deps)

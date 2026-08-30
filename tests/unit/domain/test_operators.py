@@ -4,7 +4,7 @@ import pytest
 
 from fedact.domain.enums import ScientificAssumption, ScientificOutcome
 from fedact.domain.operators.contracts import (
-    CanonicalParameterString,
+    NormalizedParameterString,
     OperatorComposition,
     OperatorDomain,
     OperatorFamily,
@@ -32,7 +32,7 @@ def family(name: str, order: int, grid: tuple[str, ...] = ("p1",)) -> OperatorFa
         name=name,
         domain=OperatorDomain.WINDOWS_PE,
         listed_order=order,
-        parameter_grid=tuple(CanonicalParameterString(parameter) for parameter in grid),
+        parameter_grid=tuple(NormalizedParameterString(parameter) for parameter in grid),
     )
 
 
@@ -128,7 +128,7 @@ def test_coverage_below_minimum_is_operationally_empty() -> None:
 
 def test_composition_repeats_of_one_family_are_invalid() -> None:
     f1 = family("append", 0)
-    params = (CanonicalParameterString("64"), CanonicalParameterString("64"))
+    params = (NormalizedParameterString("64"), NormalizedParameterString("64"))
     with pytest.raises(ValueError, match="may not repeat"):
         OperatorComposition(families=(f1, f1), parameters=params)
 
@@ -144,18 +144,18 @@ def test_enumeration_covers_lengths_one_through_maximum() -> None:
     candidates = enumerate_candidates(families, 2, SAMPLE, CUTOFF)
     lengths = sorted({candidate.composition.families.__len__() for candidate in candidates})
     assert lengths == [1, 2]
-    canonical_forms = {candidate.canonical_form for candidate in candidates}
-    assert "append=64" in canonical_forms
-    assert "append=64|checksum=zero" in canonical_forms
+    normalized_forms = {candidate.normalized_form for candidate in candidates}
+    assert "append=64" in normalized_forms
+    assert "append=64|checksum=zero" in normalized_forms
 
 
-def test_enumeration_canonicalizes_permutations_to_one_candidate() -> None:
+def test_enumeration_normalizes_permutations_to_one_candidate() -> None:
     first = family("append", 0, ("64",))
     second = family("rename", 1, ("data1",))
     direct = enumerate_candidates((first, second), 2, SAMPLE, CUTOFF)
     swapped = enumerate_candidates((second, first), 2, SAMPLE, CUTOFF)
-    forms_direct = {candidate.canonical_form for candidate in direct}
-    forms_swapped = {candidate.canonical_form for candidate in swapped}
+    forms_direct = {candidate.normalized_form for candidate in direct}
+    forms_swapped = {candidate.normalized_form for candidate in swapped}
     assert forms_direct == forms_swapped
     composed = [form for form in forms_direct if "|" in form]
     assert len(composed) == 1
@@ -165,8 +165,8 @@ def test_enumeration_is_deterministic_across_calls() -> None:
     families = (family("append", 0, ("64", "1024")), family("section", 1, ("ro-256",)))
     first = enumerate_candidates(families, 3, SAMPLE, CUTOFF)
     second = enumerate_candidates(families, 3, SAMPLE, CUTOFF)
-    assert [candidate.canonical_form for candidate in first] == [
-        candidate.canonical_form for candidate in second
+    assert [candidate.normalized_form for candidate in first] == [
+        candidate.normalized_form for candidate in second
     ]
 
 

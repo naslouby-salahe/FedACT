@@ -1,4 +1,5 @@
-from fedact.operators.common import (
+from fedact.operators.lamda import BENIGN_GADGET_LIBRARY, gadget_library_identity, lamda_families
+from fedact.operators.pe_mutations import (
     APK_PAYLOAD_SIZES,
     PE_PAYLOAD_SIZES,
     DisplacementVector,
@@ -9,7 +10,6 @@ from fedact.operators.common import (
     is_degenerate_displacement,
     pe_mutation_families,
 )
-from fedact.operators.lamda import BENIGN_GADGET_LIBRARY, gadget_library_identity, lamda_families
 from fedact.operators.validation import (
     BehaviorValidity,
     CandidateValidityRecord,

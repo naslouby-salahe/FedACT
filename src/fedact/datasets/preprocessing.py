@@ -45,7 +45,7 @@ class PreparationOutcome:
         return sum(record.excluded_count for record in self.exclusions if record.reason is reason)
 
 
-def canonical_source_order_key(sample_id: SampleIdentifier) -> SampleIdentifier:
+def source_priority_key(sample_id: SampleIdentifier) -> SampleIdentifier:
     return sample_id
 
 
@@ -66,7 +66,7 @@ def prepare_records(
         if len(group) > 1 and any(other != group[0] for other in group[1:]):
             conflicting_ids += 1
             continue
-        winner = min(group, key=lambda item: canonical_source_order_key(item.sample_id))
+        winner = min(group, key=lambda item: source_priority_key(item.sample_id))
         retained.append(winner)
     if conflicting_ids:
         exclusions.append(

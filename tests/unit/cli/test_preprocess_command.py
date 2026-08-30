@@ -76,7 +76,7 @@ def test_preprocess_owned_boundaries_are_exactly_the_two_data_boundaries() -> No
 def test_stage_flow_preserves_the_locked_ordering() -> None:
     names = [stage.name for stage in PREPROCESS_STAGE_FLOW]
     assert names[0] == "raw discovery/checksum"
-    assert names[1] == "canonical parsed preparation"
+    assert names[1] == "normalized parsed preparation"
     assert names[2] == "chronology/cutoff construction"
     assert names[-1] == "real-data audits"
     orders = [stage.stage_order for stage in PREPROCESS_STAGE_FLOW]

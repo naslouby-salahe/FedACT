@@ -17,9 +17,9 @@ def test_evaluate_displacement_rejects_sub_floor_norm() -> None:
 
 def test_action_support_bounds_calls_solver() -> None:
     direction = np.array([0.0, 1.0])
-    v1 = np.array([0.0, -1.5])
-    v2 = np.array([0.0, 1.5])
-    res = action_support_bounds(direction, (v1, v2))
+    lower_vertex = np.array([0.0, -1.5])
+    upper_vertex = np.array([0.0, 1.5])
+    res = action_support_bounds(direction, (lower_vertex, upper_vertex))
     assert res.lower == pytest.approx(-1.5, abs=1e-4)
     assert res.upper == pytest.approx(1.5, abs=1e-4)
 

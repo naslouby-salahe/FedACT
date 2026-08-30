@@ -6,7 +6,7 @@ from typing import Annotated
 from pydantic import Field
 
 from fedact.domain.operators.contracts import (
-    CanonicalParameterString,
+    NormalizedParameterString,
     OperatorCandidate,
     OperatorComposition,
     OperatorFamily,
@@ -18,8 +18,8 @@ class EnumerationContractError(ValueError):
     pass
 
 
-def _canonical_form(
-    families: tuple[OperatorFamily, ...], parameters: tuple[CanonicalParameterString, ...]
+def _normalized_form(
+    families: tuple[OperatorFamily, ...], parameters: tuple[NormalizedParameterString, ...]
 ) -> str:
     pairs = zip(families, parameters, strict=True)
     parts = [f"{family.name}={parameter}" for family, parameter in pairs]
@@ -27,7 +27,7 @@ def _canonical_form(
 
 
 def _ordered_composition(
-    families: tuple[OperatorFamily, ...], parameters: tuple[CanonicalParameterString, ...]
+    families: tuple[OperatorFamily, ...], parameters: tuple[NormalizedParameterString, ...]
 ) -> OperatorComposition:
     paired = sorted(zip(families, parameters, strict=True), key=lambda pair: pair[0].listed_order)
     ordered_families = tuple(family for family, _unused in paired)
@@ -36,7 +36,7 @@ def _ordered_composition(
 
 
 def _compositions_of_length(
-    selections: tuple[tuple[OperatorFamily, CanonicalParameterString], ...],
+    selections: tuple[tuple[OperatorFamily, NormalizedParameterString], ...],
     length: int,
 ) -> list[OperatorComposition]:
     compositions: list[OperatorComposition] = []
@@ -65,7 +65,7 @@ def enumerate_candidates(
     listed_orders = [family.listed_order for family in ordered_families]
     if len(set(listed_orders)) != len(listed_orders):
         raise EnumerationContractError("operator families must have unique listed orders")
-    selections: list[tuple[OperatorFamily, CanonicalParameterString]] = []
+    selections: list[tuple[OperatorFamily, NormalizedParameterString]] = []
     for family in ordered_families:
         for parameter in sorted(family.parameter_grid):
             selections.append((family, parameter))
@@ -74,14 +74,14 @@ def enumerate_candidates(
     seen: set[str] = set()
     for length in range(1, maximum_composed_atomic_actions + 1):
         for composition in _compositions_of_length(tuple(selections), length):
-            canonical = _canonical_form(composition.families, composition.parameters)
+            canonical = _normalized_form(composition.families, composition.parameters)
             if canonical in seen:
                 continue
             seen.add(canonical)
             candidates.append(
                 OperatorCandidate(
                     composition=composition,
-                    canonical_form=canonical,
+                    normalized_form=canonical,
                     source_sample_id=source_sample_id,
                     cutoff_identity=cutoff_identity,
                 )

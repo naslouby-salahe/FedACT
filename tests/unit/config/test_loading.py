@@ -9,8 +9,8 @@ from pydantic import ValidationError
 from fedact.config.loading import (
     DuplicateYamlKeyError,
     LoadedConfiguration,
-    canonical_configuration_payload,
     compute_configuration_hash,
+    deterministic_configuration_payload,
     load_overlay_configuration,
     load_production_configuration,
     parse_configuration_payload,
@@ -46,13 +46,13 @@ def test_every_value_change_changes_the_configuration_hash(production_payload: s
     assert compute_configuration_hash(baseline) != compute_configuration_hash(mutated)
 
 
-def test_canonical_payload_round_trips_through_parsing_without_drift(
+def test_deterministic_payload_round_trips_through_parsing_without_drift(
     production_configuration: LoadedConfiguration,
 ) -> None:
-    payload = canonical_configuration_payload(production_configuration.values)
+    payload = deterministic_configuration_payload(production_configuration.values)
     reparsed = parse_configuration_payload(payload)
     assert reparsed == production_configuration.values
-    assert canonical_configuration_payload(reparsed) == payload
+    assert deterministic_configuration_payload(reparsed) == payload
     assert ": " not in payload
 
 

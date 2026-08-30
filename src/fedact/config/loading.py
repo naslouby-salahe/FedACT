@@ -40,7 +40,7 @@ _DuplicateKeyRejectingLoader.add_constructor(
 )
 
 
-def canonical_configuration_payload(config: FedActConfig) -> str:
+def deterministic_configuration_payload(config: FedActConfig) -> str:
     return json.dumps(
         config.model_dump(mode="json"),
         sort_keys=True,
@@ -51,7 +51,7 @@ def canonical_configuration_payload(config: FedActConfig) -> str:
 
 
 def compute_configuration_hash(config: FedActConfig) -> ConfigurationHash:
-    digest = hashlib.sha256(canonical_configuration_payload(config).encode("utf-8"))
+    digest = hashlib.sha256(deterministic_configuration_payload(config).encode("utf-8"))
     return ConfigurationHash(f"sha256:{digest.hexdigest()}")
 
 

@@ -93,16 +93,16 @@ def build_nuisance_spaces(
             ),
         )
     intersection = min(common_intersection_dimension, nuisance_dimension)
-    common = deterministic_orthonormal_basis(generator, dimension, intersection)
+    common_intersection_basis = deterministic_orthonormal_basis(generator, dimension, intersection)
     complement = deterministic_orthonormal_basis(
         generator, dimension, nuisance_dimension - intersection + dimension
     )
-    projected = complement - common @ (common.T @ complement)
+    projected = complement - common_intersection_basis @ (common_intersection_basis.T @ complement)
     reorthonormalized, _unused = np.linalg.qr(projected)
     clients: list[ClientNuisanceGeometry] = []
     for index in range(client_count):
         block = reorthonormalized[:, : nuisance_dimension - intersection]
-        basis = np.concatenate([common, block], axis=1)[:, :nuisance_dimension]
+        basis = np.concatenate([common_intersection_basis, block], axis=1)[:, :nuisance_dimension]
         clients.append(ClientNuisanceGeometry(client_index=index, basis=basis))
     return NuisanceSpaces(geometry=geometry, clients=tuple(clients))
 

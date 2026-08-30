@@ -108,7 +108,7 @@ type DetailMessage = NonEmptyString
 type OperationalizationText = NonEmptyString
 type RuleDescription = NonEmptyString
 type ProvenanceText = NonEmptyString
-type CanonicalFormText = NonEmptyString
+type NormalizedOperatorFormText = NonEmptyString
 
 
 type ArtifactName = NonEmptyString

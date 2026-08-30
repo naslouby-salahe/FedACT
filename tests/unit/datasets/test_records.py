@@ -148,7 +148,7 @@ def test_missing_derived_label_uses_vt_count_rule(config: FedActConfig) -> None:
     assert audited_label(rule, derived).binary_label is True
 
 
-def test_duplicate_identical_rows_keep_one_canonical_row(config: FedActConfig) -> None:
+def test_duplicate_identical_rows_keep_one_deterministic_row(config: FedActConfig) -> None:
     outcome = prepare_records(
         DatasetSelector.LAMDA,
         SplitCutoffIdentity("month-000048"),

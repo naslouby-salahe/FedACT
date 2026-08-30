@@ -7,7 +7,7 @@ from typing import Annotated, NewType
 from pydantic import Field
 
 from fedact.domain.operators.contracts import (
-    CanonicalParameterString,
+    NormalizedParameterString,
     OperatorDomain,
     OperatorFamily,
 )
@@ -76,7 +76,7 @@ def pe_mutation_families() -> tuple[OperatorFamily, ...]:
             domain=OperatorDomain.WINDOWS_PE,
             listed_order=0,
             parameter_grid=tuple(
-                CanonicalParameterString(f"payload={size}") for size in sorted(PE_PAYLOAD_SIZES)
+                NormalizedParameterString(f"payload={size}") for size in sorted(PE_PAYLOAD_SIZES)
             ),
         ),
         OperatorFamily(
@@ -84,7 +84,7 @@ def pe_mutation_families() -> tuple[OperatorFamily, ...]:
             domain=OperatorDomain.WINDOWS_PE,
             listed_order=1,
             parameter_grid=tuple(
-                CanonicalParameterString(f"payload={size} (truncated to available slack)")
+                NormalizedParameterString(f"payload={size} (truncated to available slack)")
                 for size in sorted(PE_PAYLOAD_SIZES)
             ),
         ),
@@ -93,7 +93,7 @@ def pe_mutation_families() -> tuple[OperatorFamily, ...]:
             domain=OperatorDomain.WINDOWS_PE,
             listed_order=2,
             parameter_grid=tuple(
-                CanonicalParameterString(f"import={name.value}")
+                NormalizedParameterString(f"import={name.value}")
                 for name in sorted(PeImportName, key=lambda item: item.value)
             ),
         ),
@@ -102,7 +102,7 @@ def pe_mutation_families() -> tuple[OperatorFamily, ...]:
             domain=OperatorDomain.WINDOWS_PE,
             listed_order=3,
             parameter_grid=tuple(
-                CanonicalParameterString(f"section={item.value}")
+                NormalizedParameterString(f"section={item.value}")
                 for item in sorted(PeSectionRenameTarget, key=lambda item: item.value)
             ),
         ),
@@ -111,39 +111,39 @@ def pe_mutation_families() -> tuple[OperatorFamily, ...]:
             domain=OperatorDomain.WINDOWS_PE,
             listed_order=4,
             parameter_grid=tuple(
-                CanonicalParameterString(f"payload={size}") for size in (256, 1024)
+                NormalizedParameterString(f"payload={size}") for size in (256, 1024)
             ),
         ),
         OperatorFamily(
             name="entry-point-trampoline",
             domain=OperatorDomain.WINDOWS_PE,
             listed_order=5,
-            parameter_grid=(CanonicalParameterString("no-parameter"),),
+            parameter_grid=(NormalizedParameterString("no-parameter"),),
         ),
         OperatorFamily(
             name="remove-authenticode-directory",
             domain=OperatorDomain.WINDOWS_PE,
             listed_order=6,
-            parameter_grid=(CanonicalParameterString("no-parameter"),),
+            parameter_grid=(NormalizedParameterString("no-parameter"),),
         ),
         OperatorFamily(
             name="zero-pe-checksum",
             domain=OperatorDomain.WINDOWS_PE,
             listed_order=7,
-            parameter_grid=(CanonicalParameterString("no-parameter"),),
+            parameter_grid=(NormalizedParameterString("no-parameter"),),
         ),
         OperatorFamily(
             name="remove-debug-directory",
             domain=OperatorDomain.WINDOWS_PE,
             listed_order=8,
-            parameter_grid=(CanonicalParameterString("no-parameter"),),
+            parameter_grid=(NormalizedParameterString("no-parameter"),),
         ),
         OperatorFamily(
             name="upx-pack-unpack",
             domain=OperatorDomain.WINDOWS_PE,
             listed_order=9,
             parameter_grid=tuple(
-                CanonicalParameterString(f"action={item.value}")
+                NormalizedParameterString(f"action={item.value}")
                 for item in sorted(UpxAction, key=lambda item: item.value)
             ),
         ),

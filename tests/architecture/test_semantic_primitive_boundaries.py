@@ -18,7 +18,7 @@ from tests.architecture.architecture_rules import (
 
 EXACT_PRIMITIVE_EXEMPTIONS: dict[str, frozenset[str]] = {
     "fedact.config.loading.LoadedConfiguration.from_payload": frozenset({"str"}),
-    "fedact.config.loading.canonical_configuration_payload": frozenset({"str"}),
+    "fedact.config.loading.deterministic_configuration_payload": frozenset({"str"}),
     "fedact.config.loading.parse_configuration_payload": frozenset({"str"}),
     "fedact.config.loading.parse_raw_configuration_mapping": frozenset({"str"}),
     "fedact.cli.commands.preprocess.run": frozenset({"bool"}),

@@ -27,7 +27,6 @@ FORBIDDEN_GENERIC_NAMES: frozenset[str] = frozenset(
         "util",
         "helpers",
         "helper",
-        "common",
         "manager",
         "processor",
         "misc",
@@ -38,7 +37,7 @@ FORBIDDEN_GENERIC_NAMES: frozenset[str] = frozenset(
 )
 
 ARTIFICIAL_VERSION_PATTERN = re.compile(
-    r"(^|_)((v|ver|version)[0-9]+|final[0-9]*|legacy|compat|draft)($|_)",
+    r"(^|_)((v|ver|version)[0-9]+|legacy|compat|draft)($|_)|(^|_)final[0-9]*$",
     re.IGNORECASE,
 )
 
@@ -184,12 +183,12 @@ def configuration_vocabulary_violations(repository_root: Path) -> list[str]:
     return violations
 
 
-def test_sources_use_only_canonical_fedact_vocabulary(repository_root: Path) -> None:
+def test_sources_use_only_domain_fedact_vocabulary(repository_root: Path) -> None:
     violations = source_vocabulary_violations(repository_root)
     assert not violations, f"stale non-FedACT vocabulary found in sources: {violations}"
 
 
-def test_configurations_use_only_canonical_fedact_vocabulary(repository_root: Path) -> None:
+def test_configurations_use_only_domain_fedact_vocabulary(repository_root: Path) -> None:
     violations = configuration_vocabulary_violations(repository_root)
     assert not violations, f"stale non-FedACT vocabulary found in configuration: {violations}"
 
@@ -213,13 +212,26 @@ class FedSiraModel_v2:
     assert "machine-style" in joined
 
 
-def test_ast_visitor_accepts_canonical_descriptive_vocabulary() -> None:
+def test_ast_visitor_accepts_domain_descriptive_vocabulary() -> None:
     snippet = """
 class ActionCertificate:
     def evaluate_prospective_action(self, sample_count: int) -> int:
         evaluated_count = sample_count + 1
-        return evaluated_count
+        common_intersection_dimension = sample_count
+        final_learning_rate = 0.0
+        return evaluated_count + common_intersection_dimension + final_learning_rate
 """
     visitor = VocabularyAstVisitor("test_snippet.py")
     visitor.visit(ast.parse(snippet))
     assert visitor.violations == []
+
+
+def test_ast_visitor_rejects_final_as_a_trailing_version_marker() -> None:
+    snippet = """
+def compute() -> int:
+    loss_final = 1
+    return loss_final
+"""
+    visitor = VocabularyAstVisitor("test_snippet.py")
+    visitor.visit(ast.parse(snippet))
+    assert "artificial version" in " ".join(visitor.violations)

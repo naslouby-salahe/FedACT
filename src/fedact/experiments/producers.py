@@ -64,7 +64,7 @@ PREPROCESS_STAGE_FLOW: tuple[PreprocessStage, ...] = (
     ),
     PreprocessStage(
         stage_order=2,
-        name="canonical parsed preparation",
+        name="normalized parsed preparation",
         boundary=ArtifactBoundary.DATASET_PREPARATION,
         scope="parsed-samples",
     ),

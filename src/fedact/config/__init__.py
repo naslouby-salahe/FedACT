@@ -2,8 +2,8 @@ from fedact.config.loading import (
     ConfigurationHash,
     DuplicateYamlKeyError,
     LoadedConfiguration,
-    canonical_configuration_payload,
     compute_configuration_hash,
+    deterministic_configuration_payload,
     load_production_configuration,
     parse_configuration_payload,
 )
@@ -31,7 +31,7 @@ __all__ = [
     "LoadedConfiguration",
     "PrivateTransitionSparsityMode",
     "SyntheticCorruptionAttack",
-    "canonical_configuration_payload",
+    "deterministic_configuration_payload",
     "compute_configuration_hash",
     "load_production_configuration",
     "parse_configuration_payload",
