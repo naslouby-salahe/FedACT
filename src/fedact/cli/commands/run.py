@@ -15,6 +15,7 @@ from fedact.artifacts.results import (
 )
 from fedact.config.models import FedActConfig
 from fedact.domain.enums import ExecutableWorkflowName, ScientificOutcome
+from fedact.domain.types import OverwriteRequested
 from fedact.experiments.registry import registered_workflow
 from fedact.runtime.state import WorkflowExecutionState
 
@@ -230,7 +231,9 @@ def _dispatch_evaluation_workflow(
     return False
 
 
-def run(workflow: ExecutableWorkflowName, overwrite: bool, repository_root: Path) -> None:
+def run(
+    workflow: ExecutableWorkflowName, overwrite: OverwriteRequested, repository_root: Path
+) -> None:
     selected = registered_workflow(workflow)
     application = Application.from_repository_root(discover_repository_root(repository_root))
     entry = application.plan().entry(workflow)

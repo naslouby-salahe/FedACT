@@ -14,9 +14,10 @@ from fedact.datasets.synthetic.generator import (
     seeded_generator,
 )
 from fedact.datasets.synthetic.validation import run_smoke_validation
+from fedact.domain.types import OverwriteRequested
 
 
-def run(overwrite: bool, repository_root: Path) -> None:
+def run(overwrite: OverwriteRequested, repository_root: Path) -> None:
     app_instance = Application.from_repository_root(discover_repository_root(repository_root))
     config = app_instance.configuration.values
     typer.echo("synthetic generator smoke validation")

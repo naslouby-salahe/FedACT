@@ -13,9 +13,12 @@ from fedact.domain.enums import DatasetSelector
 from fedact.domain.records import SampleIdentifier, SplitCutoffIdentity
 from fedact.domain.types import (
     BinaryLabel,
+    ConfirmatoryFlag,
     FamilyName,
     MonthIndex,
+    ProhibitionFlag,
     SampleCount,
+    SufficiencyFlag,
 )
 
 FeatureValue = NewType("FeatureValue", float)
@@ -148,7 +151,7 @@ class SupportAssessment:
     control_support_before: SupportCount
     control_support_after: SupportCount
 
-    def is_meeting_minimum(self, minimum_support_per_class: PositiveInt) -> bool:
+    def is_meeting_minimum(self, minimum_support_per_class: PositiveInt) -> SufficiencyFlag:
         return (
             self.malicious_support_before >= minimum_support_per_class
             and self.malicious_support_after >= minimum_support_per_class
@@ -159,9 +162,9 @@ class SupportAssessment:
 
 def is_adjacent_window_pooling_prohibited(
     support_a: SupportCount, support_b: SupportCount, minimum: PositiveInt
-) -> bool:
+) -> ProhibitionFlag:
     return support_a >= minimum and support_b >= minimum
 
 
-def is_horizon_confirmatory(availability: HorizonAvailability) -> bool:
+def is_horizon_confirmatory(availability: HorizonAvailability) -> ConfirmatoryFlag:
     return availability is HorizonAvailability.OBSERVABLE

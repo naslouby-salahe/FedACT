@@ -9,6 +9,7 @@ from pydantic import Field
 from fedact.config.models import PositiveInt
 from fedact.datasets.records import EligibilityStatus
 from fedact.domain.records import SampleIdentifier, SplitCutoffIdentity
+from fedact.domain.types import SampleCount, SufficiencyFlag
 
 IndexInPopulation = NewType("IndexInPopulation", int)
 
@@ -33,11 +34,11 @@ class SplitAssignment:
 
 @dataclass(frozen=True)
 class PartitionCounts:
-    training: int
-    validation: int
-    test: int
+    training: SampleCount
+    validation: SampleCount
+    test: SampleCount
 
-    def for_partition(self, partition: SplitPartition) -> int:
+    def for_partition(self, partition: SplitPartition) -> SampleCount:
         if partition is SplitPartition.TRAINING:
             return self.training
         if partition is SplitPartition.VALIDATION:
@@ -123,5 +124,5 @@ SupportCountValue = Annotated[int, Field(ge=0)]
 
 def is_meeting_support_floor(
     counts: SupportCountValue, minimum_support_per_class: PositiveInt
-) -> bool:
+) -> SufficiencyFlag:
     return counts >= minimum_support_per_class

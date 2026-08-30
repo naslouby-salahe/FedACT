@@ -16,6 +16,7 @@ from fedact.domain.types import (
     DimensionValue,
     FieldName,
     HashDigest,
+    MaliciousnessFlag,
     MonthIndex,
     SampleCount,
     ValidationFlag,
@@ -91,7 +92,7 @@ VirusTotalDetectionCount = Annotated[int, Field(ge=0)]
 
 def is_derived_label_malicious(
     rule: LabelDerivationRule, vt_detection_count: VirusTotalDetectionCount
-) -> bool:
+) -> MaliciousnessFlag:
     if vt_detection_count == rule.benign_detection_count:
         return False
     if vt_detection_count >= rule.malware_minimum_detection_count:

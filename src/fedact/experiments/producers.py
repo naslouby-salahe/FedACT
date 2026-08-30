@@ -11,7 +11,7 @@ from fedact.domain.enums import (
     WorkflowName,
 )
 from fedact.domain.records import DependencyFingerprint
-from fedact.domain.types import ArtifactName, EpochIndex, WorkflowDescription
+from fedact.domain.types import ArtifactName, EpochIndex, TriggerabilityFlag, WorkflowDescription
 
 
 class SharedProducer(StrEnum):
@@ -177,7 +177,7 @@ PRODUCER_OWNERSHIP_REGISTRY: dict[ArtifactBoundary, ProducerOwnership] = {
 }
 
 
-def is_preprocess_triggerable(key: SharedProducer | ArtifactBoundary) -> bool:
+def is_preprocess_triggerable(key: SharedProducer | ArtifactBoundary) -> TriggerabilityFlag:
     if isinstance(key, SharedProducer):
         return key == SharedProducer.REPRESENTATION_DETECTOR_FIT
     return key in PREPROCESS_OWNED_BOUNDARIES

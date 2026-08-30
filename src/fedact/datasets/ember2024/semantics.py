@@ -6,7 +6,7 @@ from typing import Annotated, NewType
 
 from pydantic import Field
 
-from fedact.config.models import PositiveInt
+from fedact.config.models import ConfirmatoryFormat, PositiveInt
 from fedact.datasets.records import (
     ClientSemanticsAudit,
     ClientSemanticsClass,
@@ -106,11 +106,13 @@ def match_ember_controls(
     return tuple(matches)
 
 
-def ember_client_semantics(observed_format_clients: tuple[str, ...]) -> ClientSemanticsAudit:
+def ember_client_semantics(
+    observed_format_clients: tuple[ConfirmatoryFormat, ...],
+) -> ClientSemanticsAudit:
     return ClientSemanticsAudit(
         dataset=DatasetSelector.EMBER2024,
         source_field="format_client",
         classification=ClientSemanticsClass.DIAGNOSTIC_PARTITION,
-        observed_values=observed_format_clients,
+        observed_values=tuple(client.value for client in observed_format_clients),
         supports_natural_federation_claim=False,
     )

@@ -8,9 +8,11 @@ from fedact.domain.enums import ScientificAssumption, ScientificOutcome
 from fedact.domain.operators.contracts import OperatorDomain
 from fedact.domain.records import SplitCutoffIdentity
 from fedact.domain.types import (
+    DomainValidityFlag,
     MetricRate,
     OperatorIdentifier,
     SampleCount,
+    SufficiencyFlag,
     ValidationFlag,
 )
 
@@ -46,7 +48,7 @@ class ValidityAuditEntry:
     maliciousness_preserved: ValidationFlag
     behavior_preserved: ValidationFlag
 
-    def is_domain_valid(self) -> bool:
+    def is_domain_valid(self) -> DomainValidityFlag:
         return (
             self.structural_valid
             and self.execution_valid
@@ -79,7 +81,7 @@ class OperatorCoverageAudit:
             return None
         return CoverageRatio(self.samples_with_valid_nondegenerate_candidate / denominator)
 
-    def is_coverage_sufficient(self) -> bool:
+    def is_coverage_sufficient(self) -> SufficiencyFlag:
         coverage = self.observed_coverage
         if coverage is None:
             raise OperatorCoverageError(

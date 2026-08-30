@@ -188,6 +188,7 @@ type StabilityFlag = StrictBoolean
 type ContainmentFlag = StrictBoolean
 type SatisfactionFlag = StrictBoolean
 type DegeneracyFlag = StrictBoolean
+type ConfirmatoryFlag = StrictBoolean
 
 
 type JsonEncodableValue = JsonValue

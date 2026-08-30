@@ -8,6 +8,14 @@ from numpy.typing import NDArray
 from pydantic import Field
 
 from fedact.domain.enums import ScientificOutcome
+from fedact.domain.types import (
+    BoundValidityFlag,
+    CorrectnessFlag,
+    IdentifiabilityFlag,
+    MonotonicityFlag,
+    NonIdentifiabilityFlag,
+    PassingFlag,
+)
 from fedact.fedact.actions import box_diameter_bound
 from fedact.fedact.estimand import NumericalFailureError, support_interval
 from fedact.fedact.feasible_sets import L2Ball
@@ -29,7 +37,7 @@ class MathVerificationReport:
     scientific_outcome: ScientificOutcome
 
     @property
-    def is_passing(self) -> bool:
+    def is_passing(self) -> PassingFlag:
         flags = (
             self.exact_set_verified,
             self.functional_identifiability_verified,
@@ -56,7 +64,9 @@ def null_space_basis(matrix: FloatArray) -> FloatArray:
     return result
 
 
-def is_functionally_identifiable(direction: FloatArray, stacked_system: FloatArray) -> bool:
+def is_functionally_identifiable(
+    direction: FloatArray, stacked_system: FloatArray
+) -> IdentifiabilityFlag:
     _unused_u, singular_values, vh = np.linalg.svd(stacked_system)
     tolerance = max(stacked_system.shape) * float(singular_values.max()) * np.finfo(float).eps
     rank = int(np.count_nonzero(singular_values > tolerance))
@@ -86,7 +96,7 @@ def is_constraint_monotone(
     direction: FloatArray,
     outer_vertices: tuple[FloatArray, ...],
     inner_vertices: tuple[FloatArray, ...],
-) -> bool:
+) -> MonotonicityFlag:
     outer = support_interval(direction, outer_vertices)
     inner = support_interval(direction, inner_vertices)
     return inner.lower >= outer.lower and inner.upper <= outer.upper
@@ -97,11 +107,13 @@ DisplacementNorm = Annotated[float, Field(ge=0.0)]
 ZeroFloor = Annotated[float, Field(gt=0.0)]
 
 
-def is_degenerate_rejection_correct(norm: DisplacementNorm, floor: ZeroFloor) -> bool:
+def is_degenerate_rejection_correct(
+    norm: DisplacementNorm, floor: ZeroFloor
+) -> CorrectnessFlag:
     return norm < floor
 
 
-def is_diameter_upper_bound_valid(ball: L2Ball) -> bool:
+def is_diameter_upper_bound_valid(ball: L2Ball) -> BoundValidityFlag:
     dimension = ball.center.shape[0]
     lowers = tuple(float(ball.center[j] - ball.radius) for j in range(dimension))
     uppers = tuple(float(ball.center[j] + ball.radius) for j in range(dimension))
@@ -110,7 +122,9 @@ def is_diameter_upper_bound_valid(ball: L2Ball) -> bool:
     return box >= exact - 1e-12
 
 
-def is_synchronized_nuisance_non_identifiable(shared: FloatArray, nuisance: FloatArray) -> bool:
+def is_synchronized_nuisance_non_identifiable(
+    shared: FloatArray, nuisance: FloatArray
+) -> NonIdentifiabilityFlag:
     total = shared + nuisance
     return not np.allclose(total, shared)
 

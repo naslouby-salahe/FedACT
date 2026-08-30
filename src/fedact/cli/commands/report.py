@@ -7,10 +7,15 @@ import typer
 from fedact.app import Application, discover_repository_root
 from fedact.artifacts.results import read_workflow_result
 from fedact.domain.enums import ExecutableWorkflowName
+from fedact.domain.types import OverwriteRequested
 from fedact.reporting.project_report import generate_project_report
 
 
-def run(workflow: ExecutableWorkflowName | None, overwrite: bool, repository_root: Path) -> None:
+def run(
+    workflow: ExecutableWorkflowName | None,
+    overwrite: OverwriteRequested,
+    repository_root: Path,
+) -> None:
     root = discover_repository_root(repository_root)
     application = Application.from_repository_root(root)
     scope = workflow.value if workflow is not None else "all eligible completed workflows"

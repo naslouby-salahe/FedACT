@@ -12,6 +12,7 @@ from fedact.datasets.chronology import (
     enumerate_rolling_cutoffs,
 )
 from fedact.domain.enums import DatasetSelector
+from fedact.domain.types import OverwriteRequested
 from fedact.experiments.producers import (
     PREPROCESS_OWNED_BOUNDARIES,
     PREPROCESS_STAGE_FLOW,
@@ -22,7 +23,9 @@ from fedact.experiments.producers import (
 )
 
 
-def run(dataset: DatasetSelector | None, overwrite: bool, repository_root: Path) -> None:
+def run(
+    dataset: DatasetSelector | None, overwrite: OverwriteRequested, repository_root: Path
+) -> None:
     application = Application.from_repository_root(discover_repository_root(repository_root))
     config = application.configuration.values
     scope = [dataset] if dataset is not None else list(DatasetSelector)

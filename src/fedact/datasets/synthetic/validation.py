@@ -14,7 +14,7 @@ from fedact.datasets.synthetic.generator import (
     SyntheticGeneratorError,
     deterministic_orthonormal_basis,
 )
-from fedact.domain.types import DetailMessage, IntegrityCheckName, ValidationFlag
+from fedact.domain.types import DetailMessage, IntegrityCheckName, PassingFlag, ValidationFlag
 
 
 class SmokeValidationError(ValueError):
@@ -37,7 +37,7 @@ class SmokeValidationReport:
     results: tuple[SmokeCheckResult, ...]
 
     @property
-    def is_passing(self) -> bool:
+    def is_passing(self) -> PassingFlag:
         return all(result.passed for result in self.results)
 
     def require_pass(self) -> None:

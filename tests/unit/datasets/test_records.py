@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from fedact.config.loading import LoadedConfiguration, load_production_configuration
-from fedact.config.models import FedActConfig
+from fedact.config.models import ConfirmatoryFormat, FedActConfig
 from fedact.datasets.ember2024.semantics import (
     EmberRawRecord,
     WeekIdentifier,
@@ -346,7 +346,7 @@ def test_ember_conservative_timestamp_uses_collection_week_start(config: FedActC
 
 
 def test_win32_win64_substrate_is_diagnostic_only() -> None:
-    audit = ember_client_semantics(("win32_pe", "win64_pe"))
+    audit = ember_client_semantics((ConfirmatoryFormat.WIN32_PE, ConfirmatoryFormat.WIN64_PE))
     assert audit.classification is ClientSemanticsClass.DIAGNOSTIC_PARTITION
     assert audit.supports_natural_federation_claim is False
 

@@ -11,6 +11,7 @@ from fedact.domain.records import SampleIdentifier
 from fedact.domain.types import (
     BinaryLabel,
     LogitValue,
+    PassingFlag,
     ProbabilityValue,
     SampleCount,
     ValidationFlag,
@@ -101,7 +102,7 @@ class ScoringValidationReport:
     identity_preserved: ValidationFlag
 
     @property
-    def is_passing(self) -> bool:
+    def is_passing(self) -> PassingFlag:
         return self.all_probabilities_finite and self.identity_preserved
 
 

@@ -10,7 +10,10 @@ from fedact.config.models import FedActConfig, PositiveInt
 from fedact.domain.enums import DatasetSelector, ScientificOutcome
 from fedact.domain.records import SplitCutoffIdentity
 from fedact.domain.types import (
+    EligibilityFlag,
     MonthIndex,
+    ObservabilityFlag,
+    OverlapFlag,
     ValidationFlag,
 )
 
@@ -58,7 +61,7 @@ class SourceChronology:
 
     def is_interval_observable(
         self, start_inclusive: CalendarMonth, end_exclusive: CalendarMonth
-    ) -> bool:
+    ) -> ObservabilityFlag:
         if start_inclusive >= end_exclusive:
             raise ChronologyError("observability intervals must be non-empty and half-open")
         if start_inclusive < self.first_observed_month:
@@ -90,7 +93,7 @@ def dataset_source_chronology(dataset: DatasetSelector) -> SourceChronology:
 
 def is_interval_overlapping_gap(
     start_inclusive: CalendarMonth, end_exclusive: CalendarMonth, gap: SourceGap
-) -> bool:
+) -> OverlapFlag:
     return (
         start_inclusive <= gap.gap_start_exclusive_month
         and gap.gap_end_inclusive_month < end_exclusive
@@ -135,7 +138,7 @@ def is_endpoint_eligible_for_cutoff(
     endpoint_month: CalendarMonth,
     cutoff_exclusive_month: CalendarMonth,
     historical_training_window_months: PositiveInt,
-) -> bool:
+) -> EligibilityFlag:
     historical_start = cutoff_exclusive_month - historical_training_window_months
     return historical_start <= endpoint_month < cutoff_exclusive_month
 

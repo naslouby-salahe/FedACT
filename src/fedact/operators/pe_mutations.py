@@ -11,6 +11,7 @@ from fedact.domain.operators.contracts import (
     OperatorDomain,
     OperatorFamily,
 )
+from fedact.domain.types import DegeneracyFlag
 
 PayloadBytes = NewType("PayloadBytes", int)
 
@@ -65,7 +66,9 @@ class DisplacementVector:
         return DisplacementVector(components=tuple(c / norm for c in self.components))
 
 
-def is_degenerate_displacement(vector: DisplacementVector, floor: ZeroDisplacementFloor) -> bool:
+def is_degenerate_displacement(
+    vector: DisplacementVector, floor: ZeroDisplacementFloor
+) -> DegeneracyFlag:
     return vector.displacement_norm() < floor
 
 

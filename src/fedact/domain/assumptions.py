@@ -9,6 +9,7 @@ from fedact.domain.types import (
     DetailMessage,
     MonthIndex,
     OperationalizationText,
+    PassingFlag,
     UnitCount,
     ValidationFlag,
 )
@@ -96,7 +97,7 @@ class LeakageAuditResult:
     findings: tuple[LeakageAuditFinding, ...]
 
     @property
-    def is_passing(self) -> bool:
+    def is_passing(self) -> PassingFlag:
         return not any(
             finding.information_available_at_or_after_cutoff for finding in self.findings
         )
@@ -122,7 +123,8 @@ class EncoderHashLock:
 
 
 def lock_encoder_hash(
-    representation_checkpoint_hash: ContentChecksum, locked_for_boundaries: tuple[str, ...]
+    representation_checkpoint_hash: ContentChecksum,
+    locked_for_boundaries: tuple[ArtifactName, ...],
 ) -> EncoderHashLock:
     if not locked_for_boundaries:
         raise AssumptionContractError(
