@@ -28,7 +28,7 @@ from fedact.artifacts.lifecycle import (
     validate_completion,
     validate_transition,
 )
-from fedact.artifacts.paths import WorkspaceLayout
+from fedact.artifacts.paths import WorkspaceLayout, WorkspaceOutputDirectories
 from fedact.artifacts.provenance import (
     ArtifactManifest,
     ProvenanceContractError,
@@ -63,6 +63,7 @@ __all__ = [
     "SelectedConfigurationValue",
     "WorkflowResultRecord",
     "WorkspaceLayout",
+    "WorkspaceOutputDirectories",
     "ScientificKey",
     "assert_reusable",
     "deterministic_json",

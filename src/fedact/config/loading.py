@@ -10,8 +10,10 @@ import yaml
 
 from fedact.config.models import FedActConfig
 from fedact.config.validation import validate_configuration_constraints
+from fedact.domain.types import JsonEncodableValue
 
 ConfigurationHash = NewType("ConfigurationHash", str)
+ConfigurationPayloadText = NewType("ConfigurationPayloadText", str)
 
 
 class DuplicateYamlKeyError(ValueError):
@@ -40,13 +42,15 @@ _DuplicateKeyRejectingLoader.add_constructor(
 )
 
 
-def deterministic_configuration_payload(config: FedActConfig) -> str:
-    return json.dumps(
-        config.model_dump(mode="json"),
-        sort_keys=True,
-        separators=(",", ":"),
-        ensure_ascii=True,
-        allow_nan=False,
+def deterministic_configuration_payload(config: FedActConfig) -> ConfigurationPayloadText:
+    return ConfigurationPayloadText(
+        json.dumps(
+            config.model_dump(mode="json"),
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+            allow_nan=False,
+        )
     )
 
 
@@ -55,7 +59,7 @@ def compute_configuration_hash(config: FedActConfig) -> ConfigurationHash:
     return ConfigurationHash(f"sha256:{digest.hexdigest()}")
 
 
-def parse_configuration_payload(payload: str) -> FedActConfig:
+def parse_configuration_payload(payload: ConfigurationPayloadText) -> FedActConfig:
     raw = yaml.load(payload, Loader=_DuplicateKeyRejectingLoader)
     if not isinstance(raw, dict):
         raise ValueError("configuration payload must deserialize to a mapping")
@@ -69,35 +73,35 @@ class LoadedConfiguration:
     hash: ConfigurationHash
 
     @classmethod
-    def from_payload(cls, path: Path, payload: str) -> Self:
+    def from_payload(cls, path: Path, payload: ConfigurationPayloadText) -> Self:
         values = parse_configuration_payload(payload)
         validate_configuration_constraints(values)
         return cls(path=path, values=values, hash=compute_configuration_hash(values))
 
 
-def parse_raw_configuration_mapping(payload: str) -> dict[str, object]:
+def parse_raw_configuration_mapping(payload: ConfigurationPayloadText) -> JsonEncodableValue:
     raw = yaml.load(payload, Loader=_DuplicateKeyRejectingLoader)
     if not isinstance(raw, dict):
         raise ValueError("configuration payload must deserialize to a mapping")
-    return cast(dict[str, object], raw)
+    return cast(JsonEncodableValue, raw)
 
 
-def _deep_merge(base: dict[str, object], overlay: dict[str, object]) -> dict[str, object]:
-    merged: dict[str, object] = dict(base)
+def _deep_merge(base: JsonEncodableValue, overlay: JsonEncodableValue) -> JsonEncodableValue:
+    if not isinstance(base, dict) or not isinstance(overlay, dict):
+        return overlay
+    merged: dict[str, JsonEncodableValue] = dict(base)
     for key, value in overlay.items():
-        base_value = merged.get(key)
-        if isinstance(value, dict) and isinstance(base_value, dict):
-            merged[key] = _deep_merge(
-                cast(dict[str, object], base_value), cast(dict[str, object], value)
-            )
-        else:
-            merged[key] = value
+        merged[key] = _deep_merge(merged[key], value) if key in merged else value
     return merged
 
 
 def load_overlay_configuration(overlay_file: Path, production_file: Path) -> LoadedConfiguration:
-    overlay_values = parse_raw_configuration_mapping(overlay_file.read_text(encoding="utf-8"))
-    production_values = parse_raw_configuration_mapping(production_file.read_text(encoding="utf-8"))
+    overlay_values = parse_raw_configuration_mapping(
+        ConfigurationPayloadText(overlay_file.read_text(encoding="utf-8"))
+    )
+    production_values = parse_raw_configuration_mapping(
+        ConfigurationPayloadText(production_file.read_text(encoding="utf-8"))
+    )
     merged = _deep_merge(production_values, overlay_values)
     values = FedActConfig.model_validate(merged)
     validate_configuration_constraints(values)
@@ -109,5 +113,5 @@ def load_overlay_configuration(overlay_file: Path, production_file: Path) -> Loa
 
 
 def load_production_configuration(configuration_file: Path) -> LoadedConfiguration:
-    payload = configuration_file.read_text(encoding="utf-8")
+    payload = ConfigurationPayloadText(configuration_file.read_text(encoding="utf-8"))
     return LoadedConfiguration.from_payload(configuration_file.resolve(), payload)

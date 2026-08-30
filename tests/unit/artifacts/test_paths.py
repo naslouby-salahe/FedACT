@@ -19,11 +19,11 @@ def test_output_directories_render_from_the_authoritative_configuration_block(
     repository_root: Path,
 ) -> None:
     directories = layout(repository_root).output_directories()
-    assert directories["preprocessing"] == repository_root / "outputs" / "preprocessing"
-    assert directories["shared_models"] == repository_root / "outputs" / "artifacts" / "models"
-    assert directories["staging"] == repository_root / "outputs" / "cache" / "staging"
+    assert directories.preprocessing == repository_root / "outputs" / "preprocessing"
+    assert directories.shared_models == repository_root / "outputs" / "artifacts" / "models"
+    assert directories.staging == repository_root / "outputs" / "cache" / "staging"
     assert (
-        directories["reproducibility"]
+        directories.reproducibility
         == repository_root / "results" / "project_summary" / "reproducibility"
     )
 

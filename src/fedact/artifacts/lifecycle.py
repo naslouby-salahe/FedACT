@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fedact.domain.enums import ArtifactLifecycleState
 from fedact.domain.records import CompletionEvidence, CompletionRequirements
+from fedact.domain.types import ReusabilityFlag
 
 
 class IllegalArtifactTransitionError(ValueError):
@@ -43,7 +44,7 @@ def validate_transition(current: ArtifactLifecycleState, target: ArtifactLifecyc
         )
 
 
-def is_reusable(state: ArtifactLifecycleState) -> bool:
+def is_reusable(state: ArtifactLifecycleState) -> ReusabilityFlag:
     return state in REUSABLE_STATES
 
 

@@ -174,6 +174,14 @@ def is_record_boundary_class(node: ast.ClassDef) -> bool:
     return "dataclass" in decorator_names or bool(base_names & BOUNDARY_BASES)
 
 
+def is_typer_command_function(node: ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
+    for decorator in node.decorator_list:
+        target = decorator.func if isinstance(decorator, ast.Call) else decorator
+        if isinstance(target, ast.Attribute) and target.attr == "command":
+            return True
+    return False
+
+
 def _iter_function_sites(
     module: str,
     prefix: str,
@@ -182,34 +190,36 @@ def _iter_function_sites(
     if node.name.startswith("_"):
         return
     symbol = f"{prefix}.{node.name}" if prefix else f"{module}.{node.name}"
+    is_cli_command = is_typer_command_function(node)
     positional = [*node.args.posonlyargs, *node.args.args]
     if positional and positional[0].arg in {"self", "cls"}:
         positional = positional[1:]
-    for argument in [*positional, *node.args.kwonlyargs]:
-        if argument.annotation is not None:
+    if not is_cli_command:
+        for argument in [*positional, *node.args.kwonlyargs]:
+            if argument.annotation is not None:
+                yield AnnotationSite(
+                    module=module,
+                    symbol=symbol,
+                    kind=f"parameter:{argument.arg}",
+                    lineno=argument.lineno,
+                    annotation=argument.annotation,
+                )
+        if node.args.vararg and node.args.vararg.annotation is not None:
             yield AnnotationSite(
                 module=module,
                 symbol=symbol,
-                kind=f"parameter:{argument.arg}",
-                lineno=argument.lineno,
-                annotation=argument.annotation,
+                kind=f"vararg:{node.args.vararg.arg}",
+                lineno=node.args.vararg.lineno,
+                annotation=node.args.vararg.annotation,
             )
-    if node.args.vararg and node.args.vararg.annotation is not None:
-        yield AnnotationSite(
-            module=module,
-            symbol=symbol,
-            kind=f"vararg:{node.args.vararg.arg}",
-            lineno=node.args.vararg.lineno,
-            annotation=node.args.vararg.annotation,
-        )
-    if node.args.kwarg and node.args.kwarg.annotation is not None:
-        yield AnnotationSite(
-            module=module,
-            symbol=symbol,
-            kind=f"kwarg:{node.args.kwarg.arg}",
-            lineno=node.args.kwarg.lineno,
-            annotation=node.args.kwarg.annotation,
-        )
+        if node.args.kwarg and node.args.kwarg.annotation is not None:
+            yield AnnotationSite(
+                module=module,
+                symbol=symbol,
+                kind=f"kwarg:{node.args.kwarg.arg}",
+                lineno=node.args.kwarg.lineno,
+                annotation=node.args.kwarg.annotation,
+            )
     if node.returns is not None:
         yield AnnotationSite(
             module=module,
