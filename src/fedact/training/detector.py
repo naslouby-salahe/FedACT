@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader, TensorDataset
 from fedact.domain.types import EpochIndex, RankDimension, SampleCount, SeedValue, ThresholdValue
 from fedact.models.detector import DetectorHead
 from fedact.models.representation import RepresentationEncoder
-from fedact.training.representation import EpochSelection, select_best_epoch
+from fedact.training.representation import EpochSelection, select_checkpoint_epoch
 
 
 @dataclass(frozen=True)
@@ -32,6 +32,7 @@ def train_base_detector(
     weight_decay: ThresholdValue,
     representation_seed: SeedValue,
     detector_seed: SeedValue,
+    tie_tolerance: ThresholdValue,
 ) -> BaseDetectorTrainingRun:
     encoder.eval()
     with torch.no_grad():
@@ -59,7 +60,7 @@ def train_base_detector(
             val_loss = float(criterion(val_logits, validation_labels.float()).item())
         val_losses.append(val_loss)
         detector_states.append({k: v.cpu().clone() for k, v in detector.state_dict().items()})
-    selection = select_best_epoch(tuple(val_losses))
+    selection = select_checkpoint_epoch(tuple(val_losses), tie_tolerance, epochs)
     detector.load_state_dict(detector_states[selection.selected_epoch])
     return BaseDetectorTrainingRun(
         detector=detector,

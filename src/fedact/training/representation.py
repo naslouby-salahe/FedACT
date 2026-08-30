@@ -98,8 +98,8 @@ class EpochSelection:
 
 def select_checkpoint_epoch(
     losses: Sequence[LossValue],
-    tolerance: ThresholdValue = 1e-9,
-    max_epochs: EpochIndex = 100,
+    tolerance: ThresholdValue,
+    max_epochs: EpochIndex,
 ) -> EpochSelection:
     if not losses:
         raise TrainingContractError("Loss history cannot be empty")
@@ -114,10 +114,6 @@ def select_checkpoint_epoch(
         selected_validation_loss=float(best_loss),
         eligible_epochs=len(losses),
     )
-
-
-def select_best_epoch(validation_losses: Sequence[LossValue]) -> EpochSelection:
-    return select_checkpoint_epoch(validation_losses)
 
 
 def stratified_validation_split(
@@ -169,6 +165,7 @@ def train_representation_encoder(
     learning_rate: ThresholdValue,
     weight_decay: ThresholdValue,
     random_seed: SeedValue,
+    tie_tolerance: ThresholdValue,
 ) -> tuple[RepresentationEncoder, EpochSelection]:
     torch.manual_seed(random_seed)
     encoder = RepresentationEncoder(
@@ -198,7 +195,7 @@ def train_representation_encoder(
             val_loss = float(torch.mean(val_latent**2).item())
         val_losses.append(val_loss)
         saved_states.append({k: v.cpu().clone() for k, v in encoder.state_dict().items()})
-    selection = select_best_epoch(tuple(val_losses))
+    selection = select_checkpoint_epoch(tuple(val_losses), tie_tolerance, epochs)
     encoder.load_state_dict(saved_states[selection.selected_epoch])
     encoder.eval()
     return encoder, selection
