@@ -12,9 +12,15 @@ from fedact.datasets.chronology import (
     enumerate_rolling_cutoffs,
 )
 from fedact.datasets.lamda.loader import load_lamda_records
-from fedact.datasets.lamda.semantics import lamda_client_semantics, lamda_schema_manifest
+from fedact.datasets.lamda.semantics import (
+    lamda_client_semantics,
+    lamda_schema_manifest,
+    year_month_to_calendar_month,
+)
 from fedact.datasets.records import DatasetEligibilityRole
+from fedact.datasets.splits import IndexInPopulation, SplitPartition, construct_cutoff_split
 from fedact.domain.enums import DatasetSelector
+from fedact.domain.records import SplitCutoffIdentity
 from fedact.domain.types import OverwriteRequested
 from fedact.experiments.producers import (
     PREPROCESS_OWNED_BOUNDARIES,
@@ -74,6 +80,36 @@ def run(
                     typer.echo(
                         f"{selected.value}: WARNING dataset is unusable for the intended evidence"
                     )
+
+                split_cutoff = year_month_to_calendar_month("2023-11")
+                training_indices: set[IndexInPopulation] = set()
+                validation_indices: set[IndexInPopulation] = set()
+                test_indices: set[IndexInPopulation] = set()
+                for index, record in enumerate(loaded_lamda.records):
+                    record_month = year_month_to_calendar_month(record.year_month)
+                    position = IndexInPopulation(index)
+                    if record_month < split_cutoff:
+                        training_indices.add(position)
+                    elif record_month == split_cutoff:
+                        validation_indices.add(position)
+                    else:
+                        test_indices.add(position)
+                cutoff_split = construct_cutoff_split(
+                    cutoff_identity=SplitCutoffIdentity(f"{selected.value}-2023-11"),
+                    sample_ids=tuple(record.sample_hash for record in loaded_lamda.records),
+                    training_indices=frozenset(training_indices),
+                    validation_indices=frozenset(validation_indices),
+                    test_indices=frozenset(test_indices),
+                    operator_eligible=frozenset(),
+                )
+                partition_counts = cutoff_split.partition_counts()
+                training_count = partition_counts.for_partition(SplitPartition.TRAINING)
+                validation_count = partition_counts.for_partition(SplitPartition.VALIDATION)
+                test_count = partition_counts.for_partition(SplitPartition.TEST)
+                typer.echo(
+                    f"{selected.value}: split training={training_count} "
+                    f"validation={validation_count} test={test_count}"
+                )
             else:
                 typer.echo(f"{selected.value}: raw data unavailable at {baseline_directory}")
 
