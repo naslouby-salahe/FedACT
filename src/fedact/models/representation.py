@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from torch import Tensor, nn
 
 EMBEDDING_DIMENSION = 64
-DETECTOR_THRESHOLD = 1 / 2
+DETECTOR_THRESHOLD = 0.5
 
 
 class RepresentationEncoder(nn.Module):

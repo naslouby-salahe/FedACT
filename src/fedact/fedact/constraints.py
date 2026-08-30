@@ -17,12 +17,12 @@ from fedact.fedact.transitions import ClientIdentifier
 
 @dataclass(frozen=True)
 class ClientConstraintSummary:
+    support_before: SampleCount
+    support_after: SampleCount
+    eigengap_ratio: EigengapRatio
     subspace: torch.Tensor | None = None
     uncertainty_radius: ThresholdValue = 0.1
-    support_before: SampleCount = 10
-    support_after: SampleCount = 10
     beta: ThresholdValue = 1.0
-    eigengap_ratio: EigengapRatio = 1.5
     selected_rank: RankDimension = 1
     control_diagnostics_passed: bool = True
     client_id: ClientIdentifier | None = None

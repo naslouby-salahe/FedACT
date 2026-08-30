@@ -246,7 +246,7 @@ def harden_detector_head(
     eligible_epochs = [
         epoch for epoch, degradation in enumerate(degradations) if degradation <= max_degradation
     ]
-    tolerance = 1e-9
+    tolerance = config.numerical.projection_tie_tolerance
     best_epoch = eligible_epochs[0]
     best_objective = validation_objectives[best_epoch]
     for epoch in eligible_epochs[1:]:

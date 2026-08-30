@@ -254,7 +254,9 @@ def pe_mutation_families() -> tuple[OperatorFamily, ...]:
             domain=OperatorDomain.WINDOWS_PE,
             listed_order=4,
             parameter_grid=tuple(
-                NormalizedParameterString(f"payload={size}") for size in (256, 1024)
+                NormalizedParameterString(f"payload={size}")
+                for size in sorted(PE_PAYLOAD_SIZES)
+                if size != PayloadBytes(64)
             ),
         ),
         OperatorFamily(
