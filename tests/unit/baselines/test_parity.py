@@ -10,7 +10,7 @@ from fedact.baselines.parity import (
 
 def test_parity_verification_accepts_valid_budget() -> None:
     res = verify_chronology_and_budget_parity(
-        "subtraction", allocated_budget=10.0, reference_budget=10.0
+        "subtraction", allocated_budget=10.0, reference_budget=10.0, tie_tolerance=1e-9
     )
     assert res.is_valid
 
@@ -18,5 +18,5 @@ def test_parity_verification_accepts_valid_budget() -> None:
 def test_parity_verification_rejects_exceeded_budget() -> None:
     with pytest.raises(BaselineParityViolationError):
         verify_chronology_and_budget_parity(
-            "subtraction", allocated_budget=15.0, reference_budget=10.0
+            "subtraction", allocated_budget=15.0, reference_budget=10.0, tie_tolerance=1e-9
         )
