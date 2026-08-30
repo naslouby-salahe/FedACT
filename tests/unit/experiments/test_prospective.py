@@ -8,4 +8,9 @@ from fedact.experiments.prospective import run_prospective_fedact_evaluation
 def test_run_prospective_fedact_evaluation(production_configuration: LoadedConfiguration) -> None:
     report = run_prospective_fedact_evaluation(production_configuration.values)
     assert report.total_evaluations > 0
-    assert report.scientific_outcome is ScientificOutcome.PASS
+    assert 0.0 <= report.mean_false_negative_rate <= 1.0
+    assert 0.0 <= report.mean_certification_rate <= 1.0
+    assert report.scientific_outcome in (
+        ScientificOutcome.PASS,
+        ScientificOutcome.INSUFFICIENT_EVIDENCE,
+    )

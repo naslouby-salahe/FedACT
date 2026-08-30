@@ -20,7 +20,7 @@ from fedact.fedact.controls import ControlQualityGate, filter_control_replicates
 from fedact.fedact.feasible_sets import build_nuisance_spaces
 from fedact.fedact.nuisance import estimate_client_nuisance_subspace
 from fedact.fedact.solver import solve_action_interval
-from fedact.models.detector import DetectorHead
+from fedact.models.detector import DetectorHead, detector_probabilities
 from fedact.models.representation import EMBEDDING_DIMENSION, RepresentationEncoder
 from fedact.training.hardening import (
     SampleChallengeSet,
@@ -32,8 +32,7 @@ from fedact.training.representation import TrainingObservation
 _LABEL_ALTERNATION_MODULUS = 2
 _TRAINING_POPULATION_ROWS = 20
 _VALIDATION_POPULATION_ROWS = 10
-_FABRICATED_POSITIVE_SCORE = 0.9
-_FABRICATED_NEGATIVE_SCORE = 0.1
+_EVALUATION_POPULATION_ROWS = 50
 _FABRICATED_CLEAN_LOSS = 0.1
 
 
@@ -131,22 +130,26 @@ def run_prospective_fedact_evaluation(config: FedActConfig) -> ProspectiveEvalua
 
     encoder.eval()
     detector.eval()
+    evaluation_labels = tuple(
+        bool(i % _LABEL_ALTERNATION_MODULUS == 0) for i in range(_EVALUATION_POPULATION_ROWS)
+    )
+    evaluation_features = torch.stack(
+        [torch.randn(input_dim) for _unused in range(_EVALUATION_POPULATION_ROWS)]
+    )
+    with torch.no_grad():
+        evaluation_scores = detector_probabilities(detector(encoder(evaluation_features))).flatten()
     eval_records: list[EvaluationRecord] = [
         EvaluationRecord(
             dataset=DatasetSelector.LAMDA,
             cutoff_id=SplitCutoffIdentity("c1"),
             sample_id=SampleIdentifier(f"p_{i}"),
             horizon_step=1,
-            true_label=bool(i % _LABEL_ALTERNATION_MODULUS == 0),
-            predicted_score=(
-                _FABRICATED_POSITIVE_SCORE
-                if bool(i % _LABEL_ALTERNATION_MODULUS == 0)
-                else _FABRICATED_NEGATIVE_SCORE
-            ),
+            true_label=evaluation_labels[i],
+            predicted_score=float(evaluation_scores[i]),
             is_certified=True,
             clean_loss=_FABRICATED_CLEAN_LOSS,
         )
-        for i in range(50)
+        for i in range(_EVALUATION_POPULATION_ROWS)
     ]
     metrics = compute_evaluation_metrics(records=tuple(eval_records))
 
