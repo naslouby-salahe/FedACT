@@ -18,11 +18,7 @@ from tests.architecture.architecture_rules import (
     relative_source_path,
 )
 
-EXACT_RAW_MAPPING_ADAPTER_SITES = frozenset(
-    {
-        ("fedact.config.loading.parse_raw_configuration_mapping", "return"),
-    }
-)
+EXACT_RAW_MAPPING_ADAPTER_SITES: frozenset[tuple[str, str]] = frozenset()
 
 
 def structured_issue_names(annotation: ast.expr) -> set[str]:
@@ -145,7 +141,6 @@ def test_structured_boundary_rule_accepts_named_payloads(snippet: str) -> None:
 
 
 def test_raw_mapping_exemptions_are_exact_real_and_necessary(repository_root: Path) -> None:
-    assert EXACT_RAW_MAPPING_ADAPTER_SITES
     observed = observed_structured_sites(repository_root)
     for symbol, kind in EXACT_RAW_MAPPING_ADAPTER_SITES:
         assert symbol.count(".") >= 3

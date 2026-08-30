@@ -93,7 +93,9 @@ def test_shared_upstream_requests_resolve_to_one_fingerprint_per_boundary() -> N
         ),
     )
     resolved = resolve_shared_upstream_fingerprint(requests)
-    assert resolved == {ArtifactBoundary.TRAINING_CHECKPOINTS: DependencyFingerprint("fp-1")}
+    assert resolved.for_boundary(ArtifactBoundary.TRAINING_CHECKPOINTS) == DependencyFingerprint(
+        "fp-1"
+    )
 
 
 def test_conflicting_fingerprints_for_same_boundary_are_rejected() -> None:

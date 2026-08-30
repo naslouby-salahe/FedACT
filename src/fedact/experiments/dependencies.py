@@ -3,7 +3,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from fedact.domain.enums import ArtifactBoundary, WorkflowName
-from fedact.domain.records import ArtifactBoundaryContract, DependencyFingerprint
+from fedact.domain.records import (
+    ArtifactBoundaryContract,
+    BoundaryFingerprint,
+    BoundaryFingerprints,
+    DependencyFingerprint,
+)
 
 WORKFLOW_ORDER: tuple[WorkflowName, ...] = (
     WorkflowName.SCIENTIFIC_AND_CONFIGURATION_AUTHORITY,
@@ -205,7 +210,7 @@ class UpstreamReferenceRequest:
 
 def resolve_shared_upstream_fingerprint(
     requests: tuple[UpstreamReferenceRequest, ...],
-) -> dict[ArtifactBoundary, DependencyFingerprint]:
+) -> BoundaryFingerprints:
     resolved: dict[ArtifactBoundary, DependencyFingerprint] = {}
     for request in requests:
         existing = resolved.get(request.boundary)
@@ -216,4 +221,9 @@ def resolve_shared_upstream_fingerprint(
                 f"conflicting dependency fingerprints for boundary {request.boundary}: "
                 f"{existing} versus {request.dependency_fingerprint}"
             )
-    return resolved
+    return BoundaryFingerprints(
+        entries=tuple(
+            BoundaryFingerprint(boundary=boundary, dependency_fingerprint=fingerprint)
+            for boundary, fingerprint in resolved.items()
+        )
+    )

@@ -3,6 +3,7 @@ from __future__ import annotations
 from fedact.artifacts.dependencies import ArtifactDependencyIndex
 from fedact.artifacts.identity import ArtifactIdentity, DependencyFingerprint
 from fedact.domain.enums import ArtifactBoundary
+from fedact.domain.records import BoundaryFingerprint, BoundaryFingerprints
 from fedact.runtime.executor import (
     IndexedArtifact,
     owned_boundaries_for_workflow,
@@ -17,6 +18,17 @@ def identity(label: str) -> ArtifactIdentity:
 
 def fingerprint(label: str) -> DependencyFingerprint:
     return DependencyFingerprint(f"sha256:{label.zfill(64)}")
+
+
+def boundary_fingerprints(
+    *pairs: tuple[ArtifactBoundary, DependencyFingerprint],
+) -> BoundaryFingerprints:
+    return BoundaryFingerprints(
+        entries=tuple(
+            BoundaryFingerprint(boundary=boundary, dependency_fingerprint=fp)
+            for boundary, fp in pairs
+        )
+    )
 
 
 def artifact(
@@ -38,7 +50,9 @@ def test_missing_boundaries_are_recomputed() -> None:
     index = ArtifactDependencyIndex()
     plan = resolve_execution_requirements(
         required_boundaries=(ArtifactBoundary.DATASET_PREPARATION,),
-        expected_fingerprints={ArtifactBoundary.DATASET_PREPARATION: fingerprint("1")},
+        expected_fingerprints=boundary_fingerprints(
+            (ArtifactBoundary.DATASET_PREPARATION, fingerprint("1"))
+        ),
         indexed=(),
         index=index,
     )
@@ -52,7 +66,9 @@ def test_compatible_complete_artifacts_are_reused_irrespective_of_origin_workflo
     )
     plan = resolve_execution_requirements(
         required_boundaries=(ArtifactBoundary.PREPROCESSING_AND_SPLITS,),
-        expected_fingerprints={ArtifactBoundary.PREPROCESSING_AND_SPLITS: fingerprint("7")},
+        expected_fingerprints=boundary_fingerprints(
+            (ArtifactBoundary.PREPROCESSING_AND_SPLITS, fingerprint("7"))
+        ),
         indexed=(existing,),
         index=index,
     )
@@ -77,7 +93,9 @@ def test_changed_material_dependency_invalidates_nearest_boundary_and_descendant
 
     plan = resolve_execution_requirements(
         required_boundaries=(ArtifactBoundary.SCORING_AND_SUMMARIES,),
-        expected_fingerprints={ArtifactBoundary.SCORING_AND_SUMMARIES: fingerprint("new")},
+        expected_fingerprints=boundary_fingerprints(
+            (ArtifactBoundary.SCORING_AND_SUMMARIES, fingerprint("new"))
+        ),
         indexed=(scores, calibration),
         index=index,
     )
@@ -93,7 +111,9 @@ def test_stale_artifacts_are_not_reused() -> None:
     stale = artifact("x", ArtifactBoundary.TRAINING_CHECKPOINTS, ArtifactExecutionState.STALE, "9")
     plan = resolve_execution_requirements(
         required_boundaries=(ArtifactBoundary.TRAINING_CHECKPOINTS,),
-        expected_fingerprints={ArtifactBoundary.TRAINING_CHECKPOINTS: fingerprint("9")},
+        expected_fingerprints=boundary_fingerprints(
+            (ArtifactBoundary.TRAINING_CHECKPOINTS, fingerprint("9"))
+        ),
         indexed=(stale,),
         index=index,
     )
@@ -110,10 +130,10 @@ def test_overwrite_forces_only_the_command_owned_scope() -> None:
             ArtifactBoundary.PREPROCESSING_AND_SPLITS,
             ArtifactBoundary.CALIBRATION_AND_CERTIFICATION,
         ),
-        expected_fingerprints={
-            ArtifactBoundary.PREPROCESSING_AND_SPLITS: fingerprint("5"),
-            ArtifactBoundary.CALIBRATION_AND_CERTIFICATION: fingerprint("6"),
-        },
+        expected_fingerprints=boundary_fingerprints(
+            (ArtifactBoundary.PREPROCESSING_AND_SPLITS, fingerprint("5")),
+            (ArtifactBoundary.CALIBRATION_AND_CERTIFICATION, fingerprint("6")),
+        ),
         indexed=(shared,),
         index=index,
         overwrite_boundaries=frozenset({ArtifactBoundary.CALIBRATION_AND_CERTIFICATION}),
@@ -141,7 +161,9 @@ def test_upstream_must_be_active_and_complete_for_reuse() -> None:
 
     plan = resolve_execution_requirements(
         required_boundaries=(ArtifactBoundary.TRAINING_CHECKPOINTS,),
-        expected_fingerprints={ArtifactBoundary.TRAINING_CHECKPOINTS: fingerprint("8")},
+        expected_fingerprints=boundary_fingerprints(
+            (ArtifactBoundary.TRAINING_CHECKPOINTS, fingerprint("8"))
+        ),
         indexed=(parent, child),
         index=index,
     )

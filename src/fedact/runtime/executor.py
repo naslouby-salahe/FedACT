@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from fedact.artifacts.dependencies import ArtifactDependencyIndex
 from fedact.artifacts.identity import ArtifactIdentity, DependencyFingerprint
 from fedact.domain.enums import ArtifactBoundary, ExecutableWorkflowName, WorkflowName
+from fedact.domain.records import BoundaryFingerprints
 from fedact.domain.types import ActionDecision, ExecutionReason
 from fedact.experiments.producers import registered_boundaries_for
 from fedact.runtime.state import ArtifactExecutionState
@@ -114,10 +115,10 @@ def _normalize_index(
 def _deactivate_mismatches(
     actual_indexed: tuple[IndexedArtifact, ...],
     actual_index: ArtifactDependencyIndex,
-    expected_fingerprints: dict[ArtifactBoundary, DependencyFingerprint],
+    expected_fingerprints: BoundaryFingerprints,
 ) -> None:
     for candidate_artifact in actual_indexed:
-        exp_fp = expected_fingerprints.get(candidate_artifact.boundary)
+        exp_fp = expected_fingerprints.for_boundary(candidate_artifact.boundary)
         if exp_fp is not None and candidate_artifact.dependency_fingerprint != exp_fp:
             actual_index.deactivate(candidate_artifact.identity)
             for desc in actual_index.descendants(candidate_artifact.identity):
@@ -128,7 +129,7 @@ def resolve_execution_requirements(
     required_boundaries: tuple[ArtifactBoundary, ...],
     indexed: tuple[IndexedArtifact, ...] | None = None,
     index: ArtifactDependencyIndex | None = None,
-    expected_fingerprints: dict[ArtifactBoundary, DependencyFingerprint] | None = None,
+    expected_fingerprints: BoundaryFingerprints = BoundaryFingerprints(),
     force_recompute_boundaries: frozenset[ArtifactBoundary] = frozenset(),
     overwrite_boundaries: frozenset[ArtifactBoundary] = frozenset(),
     indexed_artifacts: tuple[IndexedArtifact, ...] | None = None,
@@ -146,7 +147,7 @@ def resolve_execution_requirements(
         _deactivate_mismatches(actual_indexed, actual_index, expected_fingerprints)
 
     for boundary in required_boundaries:
-        expected_fp = expected_fingerprints.get(boundary) if expected_fingerprints else None
+        expected_fp = expected_fingerprints.for_boundary(boundary)
         candidate = _active_candidate_for_boundary(
             boundary, actual_indexed, actual_index, expected_fp
         )
@@ -175,21 +176,3 @@ def resolve_execution_requirements(
                 )
             )
     return ResolutionPlan(decisions=tuple(decisions), newly_stale=tuple(newly_stale))
-
-
-def resolve_workflow_boundaries(
-    workflow_name: ExecutableWorkflowName,
-    required_boundaries: tuple[ArtifactBoundary, ...],
-    indexed: tuple[IndexedArtifact, ...],
-    index: ArtifactDependencyIndex,
-    expected_fingerprints: dict[ArtifactBoundary, DependencyFingerprint],
-    force_recompute: frozenset[ArtifactBoundary] = frozenset(),
-) -> ResolutionPlan:
-    _unused = workflow_name
-    return resolve_execution_requirements(
-        required_boundaries=required_boundaries,
-        indexed=indexed,
-        index=index,
-        expected_fingerprints=expected_fingerprints,
-        force_recompute_boundaries=force_recompute,
-    )

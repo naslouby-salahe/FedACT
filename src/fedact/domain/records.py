@@ -47,6 +47,26 @@ class ArtifactBoundaryContract:
 
 
 @dataclass(frozen=True)
+class BoundaryFingerprint:
+    boundary: ArtifactBoundary
+    dependency_fingerprint: DependencyFingerprint
+
+
+@dataclass(frozen=True)
+class BoundaryFingerprints:
+    entries: tuple[BoundaryFingerprint, ...] = ()
+
+    def __bool__(self) -> bool:
+        return bool(self.entries)
+
+    def for_boundary(self, boundary: ArtifactBoundary) -> DependencyFingerprint | None:
+        for entry in self.entries:
+            if entry.boundary is boundary:
+                return entry.dependency_fingerprint
+        return None
+
+
+@dataclass(frozen=True)
 class CompletionRequirements:
     required_files: frozenset[FilePath]
     required_manifest_fields: frozenset[ManifestFieldName]
