@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from typing import cast
+
 import lief
+import pefile
 
 from fedact.domain.operators.contracts import NormalizedParameterString, OperatorFamily
 from fedact.operators.pe_mutations import (
@@ -20,7 +23,16 @@ from fedact.operators.pe_mutations import (
     rename_section,
     zero_pe_checksum,
 )
-from fedact.operators.validation import ValidityStatus
+from fedact.operators.validation import StructuralValidity, ValidityStatus
+
+_PEFILE_FILE_HEADER_MACHINE_ATTRIBUTE = "Machine"
+_PEFILE_MACHINE_TYPES = cast("dict[str, int]", pefile.MACHINE_TYPE)
+_EXPECTED_PE_MACHINE_TYPES: frozenset[int] = frozenset(
+    {
+        _PEFILE_MACHINE_TYPES["IMAGE_FILE_MACHINE_I386"],
+        _PEFILE_MACHINE_TYPES["IMAGE_FILE_MACHINE_AMD64"],
+    }
+)
 
 
 class UnsupportedOperatorFamilyError(ValueError):
@@ -64,10 +76,28 @@ def apply_pe_operator_family(
     raise UnsupportedOperatorFamilyError(f"unsupported PE operator family: {family.name}")
 
 
+def structural_validity_of(pe_bytes: PeFileBytes) -> StructuralValidity:
+    parser_primary_ok = lief.PE.parse(list(pe_bytes)) is not None
+    try:
+        secondary = pefile.PE(data=bytes(pe_bytes), fast_load=True)
+        parser_secondary_ok = True
+        file_header = cast(object, secondary.FILE_HEADER)
+        machine_type = cast(int, getattr(file_header, _PEFILE_FILE_HEADER_MACHINE_ATTRIBUTE))
+        expected_machine_type = machine_type in _EXPECTED_PE_MACHINE_TYPES
+    except pefile.PEFormatError:
+        parser_secondary_ok = False
+        expected_machine_type = False
+    return StructuralValidity(
+        parser_primary_ok=parser_primary_ok,
+        parser_secondary_ok=parser_secondary_ok,
+        expected_machine_type=expected_machine_type,
+    )
+
+
 def structural_validity_status(pe_bytes: PeFileBytes) -> ValidityStatus:
-    if lief.PE.parse(list(pe_bytes)) is None:
-        return ValidityStatus.INVALID
-    return ValidityStatus.VALID
+    if structural_validity_of(pe_bytes).is_valid:
+        return ValidityStatus.VALID
+    return ValidityStatus.INVALID
 
 
 def apply_and_verify_pe_operator_family(
