@@ -55,7 +55,7 @@ def config_value_index(payload: str) -> dict[str, frozenset[str]]:
 def name_tokens(text: str) -> set[str]:
     tokens: set[str] = set()
     for raw in TOKEN_PATTERN.findall(text):
-        expanded = re.sub(r"(?<!^)(?=[A-Z])", "_", raw).lower().split("_")
+        expanded = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", raw).lower().split("_")
         tokens.update(token for token in expanded if len(token) > 2)
     return tokens
 

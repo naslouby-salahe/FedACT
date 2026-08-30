@@ -55,7 +55,7 @@ def architecture_shape_violations(repository_root: Path) -> list[str]:
     if not package_root.is_dir():
         return ["src/fedact package root is missing"]
 
-    present = {path.name for path in package_root.iterdir()}
+    present = {path.name for path in package_root.iterdir() if path.name != "__pycache__"}
     unknown = sorted(present - ALLOWED_TOP_LEVEL_COMPONENTS)
     violations.extend(f"unknown top-level production component: {name}" for name in unknown)
 

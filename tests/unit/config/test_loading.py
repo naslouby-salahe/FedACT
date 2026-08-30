@@ -7,6 +7,7 @@ import yaml
 from pydantic import ValidationError
 
 from fedact.config.loading import (
+    ConfigurationPayloadText,
     DuplicateYamlKeyError,
     LoadedConfiguration,
     compute_configuration_hash,
@@ -57,14 +58,14 @@ def test_deterministic_payload_round_trips_through_parsing_without_drift(
 
 
 def test_duplicate_yaml_keys_are_rejected() -> None:
-    duplicated = "training:\n  batch_size: 256\n  batch_size: 128\n"
+    duplicated = ConfigurationPayloadText("training:\n  batch_size: 256\n  batch_size: 128\n")
     with pytest.raises(DuplicateYamlKeyError):
         parse_configuration_payload(duplicated)
 
 
 def test_non_mapping_payloads_are_rejected() -> None:
     with pytest.raises((ValueError, ValidationError)):
-        parse_configuration_payload("- 1\n- 2\n")
+        parse_configuration_payload(ConfigurationPayloadText("- 1\n- 2\n"))
 
 
 def test_overlay_resolves_deep_merge_over_production(
