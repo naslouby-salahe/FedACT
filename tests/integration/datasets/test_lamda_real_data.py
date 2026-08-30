@@ -92,7 +92,9 @@ def test_real_lamda_control_transitions_drive_a_genuine_nuisance_estimate(
     weighted_mean = np.average(displacements, axis=0, weights=weights)
     covariance_raw = weighted_covariance(displacements - weighted_mean, weights=weights)
     covariance = regularized_covariance(
-        covariance_raw, coefficient=config.numerical.rank_clip_epsilon_relative
+        covariance_raw,
+        coefficient=config.numerical.rank_clip_epsilon_relative,
+        floor=config.numerical.scale_standardization_floor,
     )
     eigenvalues, _ = np.linalg.eigh(covariance)
     eigenvalues = np.sort(eigenvalues)[::-1]

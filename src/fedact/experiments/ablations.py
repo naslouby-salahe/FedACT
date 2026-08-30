@@ -39,6 +39,7 @@ def run_novelty_critical_ablations(config: FedActConfig) -> AblationExperimentRe
         fixed_rank=config.identification.nuisance_rank.maximum,
         variance_threshold=0.95,
         eigengap_regularization=config.numerical.rank_clip_epsilon_relative,
+        scale_standardization_floor=config.numerical.scale_standardization_floor,
     )
     fset = build_nuisance_spaces(
         nuisance_subspaces=(nuisance.subspace,),

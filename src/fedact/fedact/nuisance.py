@@ -54,9 +54,9 @@ def weighted_covariance(
 
 def regularized_covariance(
     covariance: np.ndarray | torch.Tensor,
+    coefficient: CoordinateValue,
+    floor: CoordinateValue,
     regularization: ThresholdValue | None = None,
-    coefficient: CoordinateValue = 0.01,
-    floor: CoordinateValue = 1e-6,
 ) -> np.ndarray:
     reg = max(regularization if regularization is not None else coefficient, floor)
     c = np.array(covariance) if isinstance(covariance, torch.Tensor) else covariance
@@ -65,14 +65,14 @@ def regularized_covariance(
 
 def admissible_rank(
     spectrum: Sequence[CoordinateValue] | None = None,
-    variance_threshold: ThresholdValue = 0.95,
+    variance_threshold: ThresholdValue | None = None,
     dimension: RankDimension | None = None,
     replicates: SampleCount | None = None,
     configured_maximum: RankDimension | None = None,
 ) -> RankDimension:
     if dimension is not None and replicates is not None and configured_maximum is not None:
         return min(dimension - 1, replicates - 1, configured_maximum)
-    if spectrum is not None:
+    if spectrum is not None and variance_threshold is not None:
         s = sorted(spectrum, reverse=True)
         total = sum(s)
         if total < 1e-12:
@@ -89,8 +89,8 @@ def admissible_rank(
 def eigengap_ratio(
     spectrum: Sequence[CoordinateValue] | np.ndarray,
     rank: RankDimension,
-    clip_relative: ThresholdValue = 1e-6,
-    floor: ThresholdValue = 1e-8,
+    clip_relative: ThresholdValue,
+    floor: ThresholdValue,
 ) -> EigengapRatio:
     s = sorted(spectrum, reverse=True)
     if rank <= 0 or rank >= len(s):
@@ -101,11 +101,11 @@ def eigengap_ratio(
 
 def select_rank_by_eigengap(
     spectrum: Sequence[CoordinateValue] | np.ndarray,
+    calibrated_requirement: ThresholdValue,
+    clip_relative: ThresholdValue,
+    floor: ThresholdValue,
     maximum_rank: RankDimension | None = None,
     maximum_admissible: RankDimension | None = None,
-    calibrated_requirement: ThresholdValue = 1.05,
-    clip_relative: ThresholdValue = 1e-6,
-    floor: ThresholdValue = 1e-8,
 ) -> RankDimension:
     s = sorted(spectrum, reverse=True)
     if maximum_admissible is not None:
@@ -125,8 +125,8 @@ def select_rank_by_eigengap(
 
 def is_rank_stable(
     ranks: Sequence[RankDimension],
+    minimum_fraction: MetricRate,
     full_sample_rank: RankDimension | None = None,
-    minimum_fraction: MetricRate = 0.8,
 ) -> StabilityFlag:
     if full_sample_rank is not None:
         count = sum(1 for r in ranks if r == full_sample_rank)
@@ -140,6 +140,7 @@ def estimate_client_nuisance_subspace(
     fixed_rank: RankDimension,
     variance_threshold: ThresholdValue,
     eigengap_regularization: ThresholdValue,
+    scale_standardization_floor: ThresholdValue,
 ) -> NuisanceEstimate:
     n, d = client_controls.shape
     if n == 0 or d == 0:
@@ -153,7 +154,9 @@ def estimate_client_nuisance_subspace(
     centered = client_controls - client_controls.mean(dim=0, keepdim=True)
     centered_np = centered.detach().cpu().numpy()
     covariance_raw = weighted_covariance(centered_np)
-    covariance = regularized_covariance(covariance_raw, coefficient=eigengap_regularization)
+    covariance = regularized_covariance(
+        covariance_raw, coefficient=eigengap_regularization, floor=scale_standardization_floor
+    )
     eigenvalues, eigenvectors = np.linalg.eigh(covariance)
     order = np.argsort(eigenvalues)[::-1]
     eigenvalues = eigenvalues[order]
@@ -168,7 +171,12 @@ def estimate_client_nuisance_subspace(
         k = min(k, int(fixed_rank), d)
     k = max(1, k)
     subspace = torch.tensor(eigenvectors[:, :k], dtype=torch.float32)
-    ratio = eigengap_ratio(eigenvalues, rank=k, clip_relative=eigengap_regularization)
+    ratio = eigengap_ratio(
+        eigenvalues,
+        rank=k,
+        clip_relative=eigengap_regularization,
+        floor=scale_standardization_floor,
+    )
     replicates = (
         ControlReplicate(
             replicate_index=0,
