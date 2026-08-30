@@ -22,7 +22,11 @@ from fedact.fedact.nuisance import estimate_client_nuisance_subspace
 from fedact.fedact.solver import solve_action_interval
 from fedact.models.detector import DetectorHead
 from fedact.models.representation import EMBEDDING_DIMENSION, RepresentationEncoder
-from fedact.training.hardening import clean_false_negative_rate, harden_detector_head
+from fedact.training.hardening import (
+    SampleChallengeSet,
+    clean_false_negative_rate,
+    harden_detector_head,
+)
 from fedact.training.representation import TrainingObservation
 
 
@@ -100,7 +104,12 @@ def run_prospective_fedact_evaluation(config: FedActConfig) -> ProspectiveEvalua
         )
         for i in range(10)
     )
-    challenges = {"t_0": tuple(tuple(float(x) for x in a) for a in certified_actions)}
+    challenges = (
+        SampleChallengeSet(
+            source_sample_id=SampleIdentifier("t_0"),
+            challenge_embeddings=tuple(tuple(float(x) for x in a) for a in certified_actions),
+        ),
+    )
     base_fnr = clean_false_negative_rate(detector, encoder, val_pop)
     hardening_result = harden_detector_head(
         encoder=encoder,

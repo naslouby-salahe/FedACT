@@ -6,7 +6,11 @@ from fedact.config.loading import LoadedConfiguration
 from fedact.domain.records import SampleIdentifier
 from fedact.models.detector import DetectorHead
 from fedact.models.representation import RepresentationEncoder
-from fedact.training.hardening import clean_false_negative_rate, harden_detector_head
+from fedact.training.hardening import (
+    SampleChallengeSet,
+    clean_false_negative_rate,
+    harden_detector_head,
+)
 from fedact.training.representation import TrainingObservation
 
 
@@ -38,7 +42,11 @@ def test_certificates_to_hardening_integration(
             sample_id=SampleIdentifier("v3"), month_index=0, features=(0.5,) * 512, label=True
         ),
     )
-    challenges = {"s1": ((0.8,) * 64,)}
+    challenges = (
+        SampleChallengeSet(
+            source_sample_id=SampleIdentifier("s1"), challenge_embeddings=((0.8,) * 64,)
+        ),
+    )
     baseline_fnr = clean_false_negative_rate(head, encoder, val_pop)
     result = harden_detector_head(
         encoder=encoder,

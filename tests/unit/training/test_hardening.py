@@ -6,7 +6,11 @@ from fedact.config.loading import LoadedConfiguration
 from fedact.domain.records import SampleIdentifier
 from fedact.models.detector import DetectorHead
 from fedact.models.representation import RepresentationEncoder
-from fedact.training.hardening import clean_false_negative_rate, harden_detector_head
+from fedact.training.hardening import (
+    SampleChallengeSet,
+    clean_false_negative_rate,
+    harden_detector_head,
+)
 from fedact.training.representation import TrainingObservation
 
 
@@ -34,7 +38,12 @@ def test_harden_detector_head_runs_and_respects_clean_fnr_limit(
         )
         for i in range(6)
     )
-    challenges = {"t_0": (tuple(0.5 for _ in range(64)),)}
+    challenges = (
+        SampleChallengeSet(
+            source_sample_id=SampleIdentifier("t_0"),
+            challenge_embeddings=(tuple(0.5 for _ in range(64)),),
+        ),
+    )
     baseline_fnr = clean_false_negative_rate(head, encoder, val_pop)
     result = harden_detector_head(
         encoder=encoder,
