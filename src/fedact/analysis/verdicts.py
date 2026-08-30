@@ -18,13 +18,9 @@ def evaluate_scientific_verdicts(
     prospective_fnr: MetricRate,
     clean_fnr_degradation: DegradationValue,
     coverage: MetricRate,
-    config: StatisticsConfig | None = None,
+    config: StatisticsConfig,
 ) -> ScientificVerdictReport:
-    max_coverage_deficit = (
-        config.minimum_material_effects.maximum_coverage_deficit_absolute
-        if config is not None
-        else 0.10
-    )
+    max_coverage_deficit = config.minimum_material_effects.maximum_coverage_deficit_absolute
     claim = prospective_fnr < 0.15 and coverage >= (1.0 - max_coverage_deficit)
     safety = clean_fnr_degradation <= 2.0
     outcome = ScientificOutcome.PASS if (claim and safety) else ScientificOutcome.FAIL
