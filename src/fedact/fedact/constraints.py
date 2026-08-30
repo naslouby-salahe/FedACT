@@ -33,7 +33,7 @@ class ClientConstraintSummary:
 
 def validate_summary(
     summary: ClientConstraintSummary,
-    minimum_support: SampleCount = 5,
+    minimum_support: SampleCount,
 ) -> WorkflowStatus | None:
     if summary.support_before < minimum_support or summary.support_after < minimum_support:
         return "insufficient_support"

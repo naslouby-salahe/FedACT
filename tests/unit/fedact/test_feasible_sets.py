@@ -23,7 +23,7 @@ def test_intersect_constraints_combines_multiple_balls() -> None:
         beta=1.5,
         client_index=0,
     )
-    feas = intersect_constraints(L2Ball(center=np.zeros(2), radius=1.0), (c1,))
+    feas = intersect_constraints(L2Ball(center=np.zeros(2), radius=1.0), (c1,), vertices=512)
     assert feas is not None
 
 

@@ -32,7 +32,7 @@ def run_robustness_and_failure_boundaries(config: FedActConfig) -> BoundaryStres
             rank_selection=RankSelectionMethod.FIXED_RANK,
             fixed_rank=config.identification.nuisance_rank.maximum,
             variance_threshold=0.95,
-            eigengap_regularization=1e-6,
+            eigengap_regularization=config.numerical.rank_clip_epsilon_relative,
         )
         fset = build_nuisance_spaces(
             nuisance_subspaces=(estimate.subspace,),

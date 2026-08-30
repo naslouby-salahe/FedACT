@@ -23,5 +23,7 @@ def test_select_best_calibration_candidate() -> None:
         observed_certification_rate=0.60,
         clean_degradation=1.0,
     )
-    selected = select_best_calibration_candidate((c1, c2), target_coverage=0.90)
+    selected = select_best_calibration_candidate(
+        (c1, c2), target_coverage=0.90, max_clean_degradation=2.0
+    )
     assert selected.selected_candidate.candidate_id == "c1"

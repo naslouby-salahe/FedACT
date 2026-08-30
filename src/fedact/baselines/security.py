@@ -20,7 +20,7 @@ class SecurityComparatorResult:
     comparator_family: FamilyName
 
 
-def static_security_baseline(dimension: SpaceDimension = 64) -> SecurityComparatorResult:
+def static_security_baseline(dimension: SpaceDimension) -> SecurityComparatorResult:
     return SecurityComparatorResult(
         predicted_shift=np.zeros(dimension),
         comparator_family="static",
@@ -28,7 +28,7 @@ def static_security_baseline(dimension: SpaceDimension = 64) -> SecurityComparat
 
 
 def random_mutation_baseline(
-    dimension: SpaceDimension = 64, seed: SeedIdentifier = 2026
+    dimension: SpaceDimension, seed: SeedIdentifier
 ) -> SecurityComparatorResult:
     rng = np.random.default_rng(seed)
     shift = rng.standard_normal(dimension)

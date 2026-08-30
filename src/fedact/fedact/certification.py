@@ -62,8 +62,8 @@ def decide(
     tau_align: ThresholdValue,
     tau_amb: ThresholdValue,
     domain_valid: DomainValid,
-    diameter_bound: IntervalBound = 1.0,
-    diameter_quantile: ThresholdValue = 2.0,
+    diameter_bound: IntervalBound,
+    diameter_quantile: ThresholdValue,
 ) -> CertificateDecision:
     interval = ActionInterval(lower=lower, upper=upper)
     return certify_action_interval(
@@ -91,7 +91,7 @@ class LeaveOneClientOutStabilityOutcome:
 
 def leave_one_client_out_stability(
     decisions: Sequence[CertificationFlag],
-    minimum_unchanged_fraction: MetricRate = 0.8,
+    minimum_unchanged_fraction: MetricRate,
 ) -> LeaveOneClientOutStabilityOutcome:
     if not decisions:
         return LeaveOneClientOutStabilityOutcome(is_stable=True, required_agreement_count=0)

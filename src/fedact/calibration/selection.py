@@ -24,8 +24,8 @@ class SelectedCalibration:
 
 def select_best_calibration_candidate(
     candidates: tuple[CalibrationCandidate, ...],
-    target_coverage: CoverageThreshold = 0.90,
-    max_clean_degradation: DegradationBound = 2.0,
+    target_coverage: CoverageThreshold,
+    max_clean_degradation: DegradationBound,
 ) -> SelectedCalibration:
     valid = [
         c

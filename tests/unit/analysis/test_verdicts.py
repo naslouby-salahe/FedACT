@@ -10,7 +10,8 @@ def test_evaluate_scientific_verdicts(production_configuration: LoadedConfigurat
         prospective_fnr=0.08,
         clean_fnr_degradation=1.0,
         coverage=0.99,
-        config=production_configuration.values.statistics,
+        statistics_config=production_configuration.values.statistics,
+        hardening_config=production_configuration.values.hardening,
     )
     assert res.primary_claim_confirmed
     assert res.safety_guarantee_preserved

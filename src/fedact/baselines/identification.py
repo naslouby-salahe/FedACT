@@ -43,7 +43,7 @@ def projected_point_reconstruction(
 def covariance_weighted_reconstruction(
     malicious_transition: FloatArray,
     nuisance_covariance: FloatArray,
-    ridge: RidgeLambda = 1e-4,
+    ridge: RidgeLambda,
 ) -> BaselineIdentificationResult:
     inv_cov = np.linalg.inv(nuisance_covariance + ridge * np.eye(nuisance_covariance.shape[0]))
     estimate = inv_cov @ malicious_transition

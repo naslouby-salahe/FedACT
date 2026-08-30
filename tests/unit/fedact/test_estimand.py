@@ -71,22 +71,39 @@ def test_decision_states_follow_the_roadmap_thresholds_exactly() -> None:
     negative = ActionInterval(lower=-2.0, upper=0.5)
     ambiguous = ActionInterval(lower=0.5, upper=2.0)
     tau_align = 1.0
-    assert classify_decision_state(positive, tau_align) is DecisionState.POSITIVELY_IDENTIFIED
-    assert classify_decision_state(negative, tau_align) is DecisionState.NEGATIVELY_IDENTIFIED
-    assert classify_decision_state(ambiguous, tau_align) is DecisionState.AMBIGUOUS
+    assert (
+        classify_decision_state(positive, tau_align, set_diameter=0.1)
+        is DecisionState.POSITIVELY_IDENTIFIED
+    )
+    assert (
+        classify_decision_state(negative, tau_align, set_diameter=0.1)
+        is DecisionState.NEGATIVELY_IDENTIFIED
+    )
+    assert (
+        classify_decision_state(ambiguous, tau_align, set_diameter=0.1) is DecisionState.AMBIGUOUS
+    )
 
 
 def test_certification_requires_validity_width_and_lower_bound() -> None:
     interval = ActionInterval(lower=1.5, upper=1.8)
     assert is_certified(
-        classify_decision_state(interval, 1.0), interval, 0.5, DomainValidity(domain_valid=True)
+        classify_decision_state(interval, 1.0, set_diameter=0.1),
+        interval,
+        0.5,
+        DomainValidity(domain_valid=True),
     )
     assert not is_certified(
-        classify_decision_state(interval, 1.0), interval, 0.5, DomainValidity(domain_valid=False)
+        classify_decision_state(interval, 1.0, set_diameter=0.1),
+        interval,
+        0.5,
+        DomainValidity(domain_valid=False),
     )
     wide = ActionInterval(lower=1.5, upper=2.5)
     assert not is_certified(
-        classify_decision_state(wide, 1.0), wide, 0.5, DomainValidity(domain_valid=True)
+        classify_decision_state(wide, 1.0, set_diameter=0.1),
+        wide,
+        0.5,
+        DomainValidity(domain_valid=True),
     )
 
 
@@ -163,8 +180,10 @@ def test_action_conditioning_and_spectrum_diagnostics() -> None:
     index = action_conditioning_index(direction, information)
     assert index is not None
     assert index == pytest.approx(1.0)
-    smallest = smallest_positive_eigenvalue(information, rank_epsilon_relative=1e-6)
+    smallest = smallest_positive_eigenvalue(
+        information, tolerance=1e-12, rank_epsilon_relative=1e-6
+    )
     assert smallest is not None
     assert smallest == pytest.approx(1.0)
     zero_spectrum = np.zeros((2, 2))
-    assert smallest_positive_eigenvalue(zero_spectrum, 1e-6) is None
+    assert smallest_positive_eigenvalue(zero_spectrum, 1e-9, rank_epsilon_relative=1e-6) is None

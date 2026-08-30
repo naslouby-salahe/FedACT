@@ -87,7 +87,7 @@ def test_geometric_median_converges_and_handles_exact_point() -> None:
 
 def test_observed_nuisance_amplitude_quantile() -> None:
     displacements = (np.array([1.0]), np.array([2.0]), np.array([3.0]))
-    amplitude = observed_nuisance_amplitude(displacements, ((10, 10),) * 3, 0.95)
+    amplitude = observed_nuisance_amplitude(displacements, quantile=0.95, supports=((10, 10),) * 3)
     assert amplitude >= 0.0
 
 

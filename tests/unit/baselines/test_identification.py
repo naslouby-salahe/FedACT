@@ -26,5 +26,5 @@ def test_projected_point_reconstruction() -> None:
 def test_covariance_weighted_reconstruction() -> None:
     mal = np.array([1.0, 2.0])
     cov = np.eye(2)
-    res = covariance_weighted_reconstruction(mal, cov)
+    res = covariance_weighted_reconstruction(mal, cov, ridge=1e-4)
     assert res.estimated_displacement.shape == (2,)

@@ -24,7 +24,7 @@ class ScalarModelFit:
 
 def fit_scalar_model(
     centers: Sequence[np.ndarray | torch.Tensor],
-    maximum_coefficient: ThresholdValue = 0.99,
+    maximum_coefficient: ThresholdValue,
 ) -> ScalarModelFit:
     if len(centers) < 2:
         return ScalarModelFit(coefficient=1.0, residuals=np.zeros((1, 1)))
@@ -40,7 +40,7 @@ def fit_scalar_model(
 
 def process_error_radius(
     residuals: np.ndarray | torch.Tensor,
-    quantile: ThresholdValue = 0.9,
+    quantile: ThresholdValue,
 ) -> NormValue:
     arr = np.array(residuals) if isinstance(residuals, torch.Tensor) else residuals
     norms = np.linalg.norm(arr, axis=-1)

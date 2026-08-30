@@ -25,7 +25,7 @@ class L2Ball:
     radius: NormValue
 
     def is_containing(
-        self, point: np.ndarray | torch.Tensor, tolerance: ThresholdValue = 1e-6
+        self, point: np.ndarray | torch.Tensor, tolerance: ThresholdValue
     ) -> ContainmentFlag:
         p = np.array(point) if isinstance(point, torch.Tensor) else point
         c = np.array(self.center) if isinstance(self.center, torch.Tensor) else self.center
@@ -58,7 +58,7 @@ class FeasibleSet:
 
 def intersect_constraints(
     *args: L2Ball | Sequence[ClientConstraint],
-    vertices: SampleCount = 512,
+    vertices: SampleCount,
 ) -> FeasibleSet:
     _unused = vertices
     plausibility_ball: L2Ball | None = None
@@ -110,7 +110,7 @@ def chebyshev_center(
 
 def minimum_uniform_inflation(
     *args: L2Ball | Sequence[ClientConstraint],
-    vertices: SampleCount = 100,
+    vertices: SampleCount,
 ) -> CoordinateValue:
     _unused = (args, vertices)
     return 1.0

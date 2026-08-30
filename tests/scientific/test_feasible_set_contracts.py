@@ -17,5 +17,5 @@ def test_feasible_set_preserves_ground_truth_inclusion() -> None:
         client_index=0,
     )
     ball = L2Ball(center=np.zeros(2), radius=1.0)
-    feas = intersect_constraints(ball, (c1,))
+    feas = intersect_constraints(ball, (c1,), vertices=512)
     assert feas is not None

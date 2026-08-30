@@ -214,7 +214,7 @@ def _dispatch_evaluation_workflow(
             application
         )
         verd_report = evaluate_scientific_verdicts(
-            prospective_fnr, clean_fnr_degradation, coverage, config.statistics
+            prospective_fnr, clean_fnr_degradation, coverage, config.statistics, config.hardening
         )
         _persist(
             application,

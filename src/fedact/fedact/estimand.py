@@ -91,14 +91,13 @@ def support_interval(
 
 def smallest_positive_eigenvalue(
     matrix: np.ndarray | torch.Tensor,
-    tolerance: ThresholdValue = 1e-12,
-    rank_epsilon_relative: ThresholdValue = 1e-6,
+    tolerance: ThresholdValue,
+    rank_epsilon_relative: ThresholdValue,
 ) -> CoordinateValue | None:
-    _unused = tolerance
     m = np.array(matrix) if isinstance(matrix, torch.Tensor) else matrix
     eigs = np.linalg.eigvalsh(m)
     max_eig = float(np.max(eigs)) if eigs.size > 0 else 0.0
-    if max_eig < 1e-9:
+    if max_eig < tolerance:
         return None
     cutoff = max(1e-12, float(max_eig * rank_epsilon_relative))
     pos = [float(ev) for ev in eigs if ev > cutoff]
@@ -139,9 +138,9 @@ def is_certified(
 
 def classify_decision_state(
     interval: ActionInterval,
-    alignment_threshold: ThresholdValue = 1.0,
+    alignment_threshold: ThresholdValue,
+    set_diameter: IntervalBound,
     domain_validity: DomainValidity | None = None,
-    set_diameter: IntervalBound = 0.1,
     historical_realized_diameter_quantile: ThresholdValue = 1.0,
     leave_one_client_out_passed: ValidationFlag = True,
 ) -> DecisionState:

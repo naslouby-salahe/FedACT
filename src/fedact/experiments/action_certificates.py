@@ -31,7 +31,7 @@ def run_action_certificate_validation(config: FedActConfig) -> ActionCertificate
             rank_selection=RankSelectionMethod.FIXED_RANK,
             fixed_rank=config.identification.nuisance_rank.maximum,
             variance_threshold=0.95,
-            eigengap_regularization=1e-6,
+            eigengap_regularization=config.numerical.rank_clip_epsilon_relative,
         )
         for _unused in range(5)
     ]

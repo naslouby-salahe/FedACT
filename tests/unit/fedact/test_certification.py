@@ -17,6 +17,8 @@ def test_decide_certifies_positive_bounded_interval() -> None:
         tau_align=0.3,
         tau_amb=1.0,
         domain_valid=DomainValid(True),
+        diameter_bound=1.0,
+        diameter_quantile=2.0,
     )
     assert decision.state is CertificateState.CERTIFIED
 
@@ -28,6 +30,8 @@ def test_decide_classifies_ambiguous() -> None:
         tau_align=0.3,
         tau_amb=1.0,
         domain_valid=DomainValid(True),
+        diameter_bound=1.0,
+        diameter_quantile=2.0,
     )
     assert decision.state is CertificateState.AMBIGUOUS
 

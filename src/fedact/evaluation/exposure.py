@@ -18,7 +18,7 @@ def compute_cumulative_exposure(losses: Sequence[LossValue]) -> CumulativeLoss:
 def compute_time_to_catch_up(
     baseline_losses: Sequence[LossValue],
     hardened_losses: Sequence[LossValue],
-    threshold: LossThreshold = 0.05,
+    threshold: LossThreshold,
 ) -> CatchUpStep | None:
     for t, (b, h) in enumerate(zip(baseline_losses, hardened_losses, strict=True)):
         if abs(h - b) <= threshold:

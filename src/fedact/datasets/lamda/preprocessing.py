@@ -9,7 +9,7 @@ VarianceBound = Annotated[float, Field(ge=0.0)]
 
 
 def filter_low_variance_features(
-    features: np.ndarray, variance_threshold: VarianceBound = 1e-4
+    features: np.ndarray, variance_threshold: VarianceBound
 ) -> np.ndarray:
     if features.shape[0] == 0:
         return features

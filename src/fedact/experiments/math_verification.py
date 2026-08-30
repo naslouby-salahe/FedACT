@@ -107,9 +107,7 @@ DisplacementNorm = Annotated[float, Field(ge=0.0)]
 ZeroFloor = Annotated[float, Field(gt=0.0)]
 
 
-def is_degenerate_rejection_correct(
-    norm: DisplacementNorm, floor: ZeroFloor
-) -> CorrectnessFlag:
+def is_degenerate_rejection_correct(norm: DisplacementNorm, floor: ZeroFloor) -> CorrectnessFlag:
     return norm < floor
 
 

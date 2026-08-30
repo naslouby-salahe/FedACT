@@ -16,5 +16,7 @@ def test_constraints_to_certificates_integration() -> None:
         tau_align=0.5,
         tau_amb=1.0,
         domain_valid=DomainValid(True),
+        diameter_bound=1.0,
+        diameter_quantile=2.0,
     )
     assert decision.state is CertificateState.CERTIFIED

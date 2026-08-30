@@ -14,5 +14,7 @@ def test_action_certificate_requires_worst_case_lower_bound() -> None:
         tau_align=0.2,
         tau_amb=0.8,
         domain_valid=DomainValid(True),
+        diameter_bound=1.0,
+        diameter_quantile=2.0,
     )
     assert decision.state is CertificateState.CERTIFIED

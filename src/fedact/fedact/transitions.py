@@ -67,8 +67,8 @@ def effective_support(
 
 def geometric_median(
     points: np.ndarray | Sequence[np.ndarray | torch.Tensor],
-    tolerance: ThresholdValue = 1e-9,
-    maximum_iterations: IterationCount = 500,
+    tolerance: ThresholdValue,
+    maximum_iterations: IterationCount,
 ) -> np.ndarray:
     if isinstance(points, (list, tuple)):
         arr = np.asarray([np.asarray(p, dtype=np.float64) for p in points], dtype=np.float64)
@@ -124,8 +124,8 @@ def weighted_control_center(
 
 def observed_nuisance_amplitude(
     displacements: Sequence[np.ndarray | torch.Tensor],
+    quantile: ThresholdValue,
     supports: Sequence[CoordinateValue | tuple[SampleCount, SampleCount]] | None = None,
-    quantile: ThresholdValue = 0.95,
 ) -> CoordinateValue:
     arrs = [np.array(d) if isinstance(d, torch.Tensor) else d for d in displacements]
     norms = [float(np.linalg.norm(a)) for a in arrs]

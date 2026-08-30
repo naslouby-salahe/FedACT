@@ -20,7 +20,7 @@ class ActionDisplacementResult:
 def evaluate_displacement(
     source: np.ndarray | torch.Tensor,
     target: np.ndarray | torch.Tensor,
-    zero_displacement_floor: ThresholdValue = 1e-10,
+    zero_displacement_floor: ThresholdValue,
 ) -> ActionDisplacementResult:
     s = np.array(source) if isinstance(source, torch.Tensor) else source
     t = np.array(target) if isinstance(target, torch.Tensor) else target
@@ -54,7 +54,7 @@ def box_diameter_bound(
 def displace_sample_representation(
     source_representation: torch.Tensor,
     action_delta: torch.Tensor,
-    norm_floor: NormValue = 1e-6,
+    norm_floor: NormValue,
 ) -> ActionDisplacementResult:
     norm = float(np.linalg.norm(action_delta.detach().cpu().numpy()))
     degen = norm < norm_floor
