@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from fedact.domain.enums import ScientificAssumption, ScientificOutcome
-from fedact.fedact.contracts import FEDACT_ASSUMPTION_CONTRACTS
+from fedact.domain.records import FEDACT_ASSUMPTION_CONTRACTS
 
 
 def test_abstention_vs_fail_semantics_in_contracts() -> None:

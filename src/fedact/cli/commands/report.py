@@ -5,10 +5,10 @@ from pathlib import Path
 import typer
 
 from fedact.app import Application, discover_repository_root
-from fedact.artifacts.results import read_workflow_result
+from fedact.artifacts.manifests import read_workflow_result
 from fedact.domain.enums import ExecutableWorkflowName
-from fedact.domain.types import OverwriteRequested
-from fedact.reporting.project_report import generate_project_report
+from fedact.domain.records import OverwriteRequested
+from fedact.reporting.export import export_verified_project_evidence
 
 
 def run(
@@ -42,5 +42,5 @@ def run(
         synthesis.scientific_outcome if synthesis is not None else prospective.scientific_outcome
     )
 
-    generate_project_report(prospective, overall_outcome, root / "results")
+    export_verified_project_evidence(prospective, overall_outcome, root / "results")
     typer.echo(f"manuscript evidence reporting completed: {overall_outcome.value}")

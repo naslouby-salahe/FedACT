@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 from fedact.domain.enums import ArtifactLifecycleState
-from fedact.domain.records import CompletionEvidence, CompletionRequirements
-from fedact.domain.types import ReusabilityFlag
+from fedact.domain.records import CompletionEvidence, CompletionRequirements, ReusabilityFlag
 
 
 class IllegalArtifactTransitionError(ValueError):

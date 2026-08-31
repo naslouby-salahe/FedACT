@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from fedact.domain.enums import ScientificAssumption, ScientificOutcome
-from fedact.fedact.contracts import (
+from fedact.domain.records import (
     CONTROL_SPAN_VALIDITY_CONSEQUENCE,
     EXTENDED_ASSUMPTION_CONTRACTS,
     FEDACT_ASSUMPTION_CONTRACTS,
@@ -58,7 +58,7 @@ def test_every_section_six_assumption_now_has_an_executable_contract() -> None:
 
 
 def test_honest_federation_failure_is_a_scientific_fail_not_abstention() -> None:
-    from fedact.fedact.contracts import FEDACT_ASSUMPTION_CONTRACTS
+    from fedact.domain.records import FEDACT_ASSUMPTION_CONTRACTS
 
     contract = FEDACT_ASSUMPTION_CONTRACTS[ScientificAssumption.HONEST_PRIMARY_FEDERATION]
     assert contract.failure_outcome is ScientificOutcome.FAIL

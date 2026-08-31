@@ -58,7 +58,7 @@ class MissingCutoffReason(StrEnum):
     MISSING_SOURCE_DATA = "MISSING_SOURCE_DATA"
 
 
-class ClaimState(StrEnum):
+class EvidenceStatus(StrEnum):
     SUPPORTED = "SUPPORTED"
     FALSIFIED = "FALSIFIED"
     INSUFFICIENT_EVIDENCE = "INSUFFICIENT_EVIDENCE"

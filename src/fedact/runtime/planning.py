@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from fedact.domain.enums import ExecutableWorkflowName, ScientificOutcome
-from fedact.domain.types import OptionalFlag
+from fedact.domain.records import OptionalFlag
 from fedact.runtime.state import (
     WorkflowExecutionState,
     WorkflowOutcomeHistory,

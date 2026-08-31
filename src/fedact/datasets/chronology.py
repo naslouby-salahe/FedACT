@@ -8,12 +8,12 @@ from pydantic import Field
 
 from fedact.config.models import FedActConfig, PositiveInt
 from fedact.domain.enums import DatasetSelector, ScientificOutcome
-from fedact.domain.records import SplitCutoffIdentity
-from fedact.domain.types import (
+from fedact.domain.records import (
     EligibilityFlag,
     MonthIndex,
     ObservabilityFlag,
     OverlapFlag,
+    SplitCutoffIdentity,
     ValidationFlag,
 )
 

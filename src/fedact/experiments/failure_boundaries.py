@@ -11,7 +11,7 @@ from fedact.config.models import (
     FedActConfig,
 )
 from fedact.domain.enums import RankSelectionMethod, ScientificOutcome
-from fedact.domain.types import EvaluationCount
+from fedact.domain.records import EvaluationCount
 from fedact.fedact.feasible_sets import build_nuisance_spaces
 from fedact.fedact.nuisance import NuisanceEstimate, estimate_client_nuisance_subspace
 from fedact.fedact.solver import solve_action_interval
@@ -110,6 +110,3 @@ def run_robustness_and_failure_boundaries(config: FedActConfig) -> BoundaryStres
         failure_boundaries_characterized=characterized,
         scientific_outcome=outcome,
     )
-
-
-run_robustness_and_failure_boundary_evaluation = run_robustness_and_failure_boundaries

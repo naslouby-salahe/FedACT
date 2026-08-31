@@ -13,12 +13,9 @@ from fedact.artifacts.identity import (
     ProducerCodeFingerprint,
     ScientificKey,
 )
-from fedact.artifacts.provenance import (
-    ArtifactManifest,
-    ProvenanceContractError,
-    RunProvenance,
-    assert_reusable,
-)
+from fedact.artifacts.manifests import ArtifactManifest, ManifestContractError
+from fedact.artifacts.provenance import RunProvenance
+from fedact.artifacts.validation import ArtifactReuseError, assert_complete_only_reuse
 from fedact.config.loading import ConfigurationHash
 from fedact.domain.enums import (
     ArtifactLifecycleState,
@@ -82,22 +79,22 @@ def test_manifest_schema_contains_every_required_field() -> None:
 
 
 def test_manifest_state_must_be_complete() -> None:
-    with pytest.raises(ProvenanceContractError):
+    with pytest.raises(ManifestContractError):
         manifest(state=ArtifactLifecycleState.STAGING)
-    with pytest.raises(ProvenanceContractError):
+    with pytest.raises(ManifestContractError):
         manifest(state=ArtifactLifecycleState.INCOMPLETE)
 
 
 def test_matching_fingerprint_allows_reuse() -> None:
     complete = manifest()
-    assert_reusable(complete, complete.dependency_fingerprint)
+    assert_complete_only_reuse(complete, complete.dependency_fingerprint)
 
 
 def test_fingerprint_mismatch_blocks_reuse() -> None:
     m = manifest()
     target_fp = DependencyFingerprint("sha256:" + "9" * 64)
-    with pytest.raises(ProvenanceContractError, match="fingerprint"):
-        assert_reusable(m, target_fp)
+    with pytest.raises(ArtifactReuseError, match="fingerprint"):
+        assert_complete_only_reuse(m, target_fp)
 
 
 def test_run_provenance_supports_every_reconstruction_item() -> None:

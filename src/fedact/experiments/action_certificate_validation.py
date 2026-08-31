@@ -6,7 +6,7 @@ import torch
 
 from fedact.config.models import FedActConfig
 from fedact.domain.enums import CertificationStatus, RankSelectionMethod, ScientificOutcome
-from fedact.domain.types import EvaluationCount, MetricRate
+from fedact.domain.records import EvaluationCount, MetricRate
 from fedact.fedact.certification import DomainValid, certify_action_interval
 from fedact.fedact.feasible_sets import build_nuisance_spaces
 from fedact.fedact.nuisance import estimate_client_nuisance_subspace

@@ -7,7 +7,7 @@ import numpy as np
 from numpy.typing import NDArray
 from pydantic import Field
 
-from fedact.domain.types import FamilyName
+from fedact.domain.records import FamilyName
 
 FloatArray = NDArray[np.float64]
 SpaceDimension = Annotated[int, Field(ge=1)]

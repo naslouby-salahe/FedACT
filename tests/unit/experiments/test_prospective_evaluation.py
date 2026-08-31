@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from fedact.config.loading import LoadedConfiguration
 from fedact.domain.enums import ScientificOutcome
-from fedact.experiments.prospective import run_prospective_fedact_evaluation
+from fedact.experiments.prospective_evaluation import run_prospective_fedact_evaluation
 
 
 def test_run_prospective_fedact_evaluation(production_configuration: LoadedConfiguration) -> None:

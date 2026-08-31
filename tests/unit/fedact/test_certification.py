@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from fedact.domain.enums import CertificationStatus
+from fedact.fedact.actions import ActionInterval
 from fedact.fedact.certification import (
     DomainValid,
     certify_action_interval,
@@ -8,7 +9,6 @@ from fedact.fedact.certification import (
     is_forecast_set_within_gate,
     leave_one_client_out_stability,
 )
-from fedact.fedact.estimand import ActionInterval
 from fedact.fedact.transitions import AbstentionReason
 
 

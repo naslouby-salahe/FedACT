@@ -7,13 +7,13 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from fedact.domain.records import SampleIdentifier
-from fedact.domain.types import (
+from fedact.domain.records import (
     BinaryLabel,
     LogitValue,
     PassingFlag,
     ProbabilityValue,
     SampleCount,
+    SampleIdentifier,
     ValidationFlag,
 )
 from fedact.models.detector import DetectorHead

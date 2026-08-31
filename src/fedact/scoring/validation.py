@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from fedact.domain.types import RankDimension
+from fedact.domain.records import RankDimension
 from fedact.scoring.encoding import EncodedSample
 
 

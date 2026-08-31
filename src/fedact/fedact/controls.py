@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import numpy as np
 import torch
 
-from fedact.domain.types import (
+from fedact.domain.records import (
     GateComplianceFlag,
     MetricRate,
     NormValue,

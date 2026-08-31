@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import numpy as np
 from numpy.typing import NDArray
 
-from fedact.domain.types import SampleCount
+from fedact.domain.records import SampleCount
 
 FloatArray = NDArray[np.float64]
 

@@ -10,8 +10,13 @@ from fedact.datasets.records import (
     SchemaChronologyManifest,
 )
 from fedact.domain.enums import DatasetSelector
-from fedact.domain.records import SplitCutoffIdentity
-from fedact.domain.types import OverlapFlag, PassingFlag, SampleCount, ValidationFlag
+from fedact.domain.records import (
+    OverlapFlag,
+    PassingFlag,
+    SampleCount,
+    SplitCutoffIdentity,
+    ValidationFlag,
+)
 
 
 class AuditContractError(ValueError):

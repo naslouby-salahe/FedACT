@@ -3,12 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from fedact.artifacts.manifests import read_workflow_result
 from fedact.artifacts.paths import WorkspaceLayout
-from fedact.artifacts.results import read_workflow_result
 from fedact.config.loading import LoadedConfiguration, load_production_configuration
 from fedact.domain.enums import ExecutableWorkflowName
-from fedact.domain.records import ExperimentName
-from fedact.domain.types import DataAvailabilityFlag
+from fedact.domain.records import DataAvailabilityFlag, ExperimentName
 from fedact.runtime.planning import ExecutionPlan, resolve_execution_plan
 from fedact.runtime.state import WorkflowOutcomeHistory, WorkflowOutcomeRecord
 

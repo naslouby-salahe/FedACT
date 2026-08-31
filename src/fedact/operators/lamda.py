@@ -2,12 +2,18 @@ from __future__ import annotations
 
 from typing import NewType
 
-from fedact.domain.operators.contracts import (
+from fedact.operators.common import (
     NormalizedParameterString,
     OperatorDomain,
     OperatorFamily,
 )
-from fedact.operators.pe_mutations import APK_PAYLOAD_SIZES, PayloadBytes
+from fedact.operators.ember2024 import (
+    APK_PAYLOAD_SIZES,
+    PayloadBytes,
+    PeImportName,
+    PeSectionRenameTarget,
+    UpxAction,
+)
 
 BENIGN_GADGET_LIBRARY = "cutoff-safe-benign-gadget-library"
 
@@ -32,6 +38,12 @@ def lamda_families() -> tuple[OperatorFamily, ...]:
 
 
 GadgetLibraryIdentity = NewType("GadgetLibraryIdentity", str)
+
+
+def pe_operator_enumerations() -> tuple[
+    type[PeImportName], type[PeSectionRenameTarget], type[UpxAction]
+]:
+    return (PeImportName, PeSectionRenameTarget, UpxAction)
 
 
 def gadget_library_identity() -> GadgetLibraryIdentity:

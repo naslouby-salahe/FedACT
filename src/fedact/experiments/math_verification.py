@@ -8,7 +8,7 @@ from numpy.typing import NDArray
 from pydantic import Field
 
 from fedact.domain.enums import ScientificOutcome
-from fedact.domain.types import (
+from fedact.domain.records import (
     BoundValidityFlag,
     CorrectnessFlag,
     IdentifiabilityFlag,
@@ -16,8 +16,7 @@ from fedact.domain.types import (
     NonIdentifiabilityFlag,
     PassingFlag,
 )
-from fedact.fedact.actions import box_diameter_bound
-from fedact.fedact.estimand import NumericalFailureError, support_interval
+from fedact.fedact.actions import NumericalFailureError, box_diameter_bound, support_interval
 from fedact.fedact.feasible_sets import L2Ball
 from fedact.fedact.temporal import fit_scalar_model
 

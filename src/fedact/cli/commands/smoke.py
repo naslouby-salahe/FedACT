@@ -5,6 +5,7 @@ from pathlib import Path
 import typer
 
 from fedact.app import Application, discover_repository_root
+from fedact.artifacts.manifests import WorkflowResultRecord, write_workflow_result
 from fedact.config.models import FederationGeometry
 from fedact.datasets.synthetic.generator import (
     SYNTHETIC_DIMENSION,
@@ -14,7 +15,8 @@ from fedact.datasets.synthetic.generator import (
     seeded_generator,
 )
 from fedact.datasets.synthetic.validation import run_smoke_validation
-from fedact.domain.types import OverwriteRequested
+from fedact.domain.enums import ExecutableWorkflowName, ScientificOutcome
+from fedact.domain.records import OverwriteRequested
 
 
 def run(overwrite: OverwriteRequested, repository_root: Path) -> None:
@@ -49,6 +51,20 @@ def run(overwrite: OverwriteRequested, repository_root: Path) -> None:
         seed_pair=seed_pair,
     )
     if not report.is_passing:
+        write_workflow_result(
+            app_instance.result_experiment_directory(ExecutableWorkflowName.SMOKE),
+            WorkflowResultRecord(
+                workflow=ExecutableWorkflowName.SMOKE,
+                scientific_outcome=ScientificOutcome.FAIL,
+            ),
+        )
         typer.echo("smoke validation failed", err=True)
         raise typer.Exit(code=1)
+    write_workflow_result(
+        app_instance.result_experiment_directory(ExecutableWorkflowName.SMOKE),
+        WorkflowResultRecord(
+            workflow=ExecutableWorkflowName.SMOKE,
+            scientific_outcome=ScientificOutcome.PASS,
+        ),
+    )
     typer.echo("smoke validation passed")

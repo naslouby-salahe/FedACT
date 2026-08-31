@@ -7,7 +7,7 @@ import numpy as np
 import torch
 
 from fedact.domain.enums import RankSelectionMethod
-from fedact.domain.types import (
+from fedact.domain.records import (
     CoordinateValue,
     EigengapRatio,
     MetricRate,

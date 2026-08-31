@@ -6,7 +6,7 @@ from typing import Annotated
 from pydantic import Field
 
 from fedact.calibration.nested import CalibrationCandidate
-from fedact.domain.types import RankDimension
+from fedact.domain.records import RankDimension
 
 CoverageThreshold = Annotated[float, Field(ge=0.0, le=1.0)]
 DegradationBound = Annotated[float, Field(ge=0.0)]

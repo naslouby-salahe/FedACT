@@ -6,7 +6,7 @@ from pathlib import Path
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 
-from fedact.domain.types import EpochIndex, RankDimension, SampleCount, SeedValue, ThresholdValue
+from fedact.domain.records import EpochIndex, RankDimension, SampleCount, SeedValue, ThresholdValue
 from fedact.models.detector import DetectorHead
 from fedact.models.representation import RepresentationEncoder
 from fedact.training.representation import EpochSelection, select_checkpoint_epoch

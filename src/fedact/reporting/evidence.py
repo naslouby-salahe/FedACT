@@ -5,7 +5,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from fedact.domain.enums import EvidenceVerificationStatus
-from fedact.domain.types import ArtifactName
+from fedact.domain.records import ArtifactName
 
 
 @dataclass(frozen=True)

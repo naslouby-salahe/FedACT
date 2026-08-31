@@ -8,8 +8,12 @@ from pydantic import Field
 
 from fedact.config.models import PositiveInt
 from fedact.datasets.records import EligibilityStatus
-from fedact.domain.records import SampleIdentifier, SplitCutoffIdentity
-from fedact.domain.types import SampleCount, SufficiencyFlag
+from fedact.domain.records import (
+    SampleCount,
+    SampleIdentifier,
+    SplitCutoffIdentity,
+    SufficiencyFlag,
+)
 
 IndexInPopulation = NewType("IndexInPopulation", int)
 

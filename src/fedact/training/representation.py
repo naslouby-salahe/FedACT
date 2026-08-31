@@ -9,8 +9,7 @@ import torch
 from torch.utils.data import DataLoader, TensorDataset
 
 from fedact.config.models import FedActConfig
-from fedact.domain.records import SampleIdentifier
-from fedact.domain.types import (
+from fedact.domain.records import (
     BinaryLabel,
     EpochIndex,
     LossValue,
@@ -18,6 +17,7 @@ from fedact.domain.types import (
     MonthIndex,
     RankDimension,
     SampleCount,
+    SampleIdentifier,
     SeedValue,
     ThresholdValue,
 )

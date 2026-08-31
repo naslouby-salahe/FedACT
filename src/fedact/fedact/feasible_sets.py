@@ -7,7 +7,7 @@ import numpy as np
 import torch
 
 from fedact.domain.enums import FederationGeometry
-from fedact.domain.types import (
+from fedact.domain.records import (
     ClientIndex,
     ContainmentFlag,
     CoordinateValue,

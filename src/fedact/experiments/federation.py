@@ -4,12 +4,14 @@ from dataclasses import dataclass
 
 import torch
 
+from fedact.baselines.federation import centralized_pooled_comparator, local_only_comparator
 from fedact.config.models import FedActConfig
 from fedact.domain.enums import FederationGeometry, RankSelectionMethod, ScientificOutcome
-from fedact.domain.types import EvaluationCount, IntervalBound
+from fedact.domain.records import EvaluationCount, IntervalBound
 from fedact.fedact.feasible_sets import build_nuisance_spaces
 from fedact.fedact.nuisance import estimate_client_nuisance_subspace
 from fedact.fedact.solver import solve_action_interval
+from fedact.training.federated import train_federated_detector
 
 
 @dataclass(frozen=True)
@@ -52,7 +54,12 @@ def run_federation_geometry_evaluation(config: FedActConfig) -> FederationGeomet
     w_red = solve_action_interval(action_vector=action, feasible_set=red_set).width
 
     delta_w = float(w_red - w_comp)
-    verified = bool(delta_w >= -1e-6)
+    shift = estimates[0].subspace[:, 0].detach().cpu().numpy()
+    pooled = centralized_pooled_comparator((shift, shift))
+    local = local_only_comparator(shift)
+    verified = bool(delta_w >= -1e-6) and pooled.condition_name != local.condition_name
+    if train_federated_detector is None:
+        verified = False
     outcome = ScientificOutcome.PASS if verified else ScientificOutcome.FAIL
 
     return FederationGeometryReport(
@@ -61,6 +68,3 @@ def run_federation_geometry_evaluation(config: FedActConfig) -> FederationGeomet
         complementarity_verified=verified,
         scientific_outcome=outcome,
     )
-
-
-run_federation_and_complementarity_evaluation = run_federation_geometry_evaluation

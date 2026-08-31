@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from fedact.config.loading import LoadedConfiguration
 from fedact.domain.enums import ScientificOutcome
-from fedact.experiments.selection import run_communication_limited_client_selection
+from fedact.experiments.client_selection import run_communication_limited_client_selection
 
 
 def test_run_communication_limited_client_selection(

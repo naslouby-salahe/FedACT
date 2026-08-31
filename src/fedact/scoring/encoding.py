@@ -6,8 +6,7 @@ from dataclasses import dataclass
 import numpy as np
 import torch
 
-from fedact.domain.records import SampleIdentifier
-from fedact.domain.types import BinaryLabel
+from fedact.domain.records import BinaryLabel, SampleIdentifier
 from fedact.models.representation import RepresentationEncoder
 from fedact.training.representation import TrainingObservation
 

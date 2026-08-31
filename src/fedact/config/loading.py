@@ -10,7 +10,7 @@ import yaml
 
 from fedact.config.models import FedActConfig
 from fedact.config.validation import validate_configuration_constraints
-from fedact.domain.types import JsonEncodableValue
+from fedact.domain.records import JsonEncodableValue
 
 ConfigurationHash = NewType("ConfigurationHash", str)
 ConfigurationPayloadText = NewType("ConfigurationPayloadText", str)

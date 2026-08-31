@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from fedact.domain.types import MetricRate
+from fedact.domain.records import MetricRate
 from fedact.evaluation.records import EvaluationRecord
 
 

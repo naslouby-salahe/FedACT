@@ -14,7 +14,7 @@ from fedact.datasets.synthetic.generator import (
     SyntheticGeneratorError,
     deterministic_orthonormal_basis,
 )
-from fedact.domain.types import DetailMessage, IntegrityCheckName, PassingFlag, ValidationFlag
+from fedact.domain.records import DetailMessage, IntegrityCheckName, PassingFlag, ValidationFlag
 
 
 class SmokeValidationError(ValueError):

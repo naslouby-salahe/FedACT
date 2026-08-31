@@ -3,7 +3,8 @@ from __future__ import annotations
 import pytest
 
 from fedact.artifacts.identity import ContentChecksum
-from fedact.domain.assumptions import (
+from fedact.domain.enums import ScientificAssumption, ScientificOutcome
+from fedact.domain.records import (
     CHRONOLOGY_CONSEQUENCE,
     CUTOFF_FIXED_REPRESENTATION_CONSEQUENCE,
     AssumptionContractError,
@@ -12,14 +13,13 @@ from fedact.domain.assumptions import (
     LaterRealIsolationGate,
     LaterRealReadError,
     LeakageAuditFinding,
+    SplitCutoffIdentity,
     assumption_consequence,
     audit_chronology,
     lock_encoder_hash,
     open_later_real_evaluation,
     verify_encoder_hash_lock,
 )
-from fedact.domain.enums import ScientificAssumption, ScientificOutcome
-from fedact.domain.records import SplitCutoffIdentity
 
 
 def test_every_roadmap_section_six_assumption_is_enumerated() -> None:

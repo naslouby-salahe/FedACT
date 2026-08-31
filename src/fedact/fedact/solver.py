@@ -5,8 +5,8 @@ from dataclasses import dataclass
 import numpy as np
 import torch
 
-from fedact.domain.types import IterationCount, ThresholdValue
-from fedact.fedact.estimand import ActionInterval
+from fedact.domain.records import IterationCount, ThresholdValue
+from fedact.fedact.actions import ActionInterval
 from fedact.fedact.feasible_sets import FeasibleSet
 
 

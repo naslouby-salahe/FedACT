@@ -1,6 +1,10 @@
 from fedact.experiments.definitions import (
+    CLI_SELECTABLE_WORKFLOWS,
     OPTIONAL_WORKFLOW_NAMES,
+    REGISTRY_NAMES,
     WORKFLOW_CONTRACTS,
+    WORKFLOW_REGISTRY,
+    registered_workflow,
     workflow_contract,
 )
 from fedact.experiments.dependencies import (
@@ -10,12 +14,6 @@ from fedact.experiments.dependencies import (
     boundary_contract,
     resolve_shared_upstream_fingerprint,
     validate_workflow_prerequisite_graph,
-)
-from fedact.experiments.registry import (
-    CLI_SELECTABLE_WORKFLOWS,
-    REGISTRY_NAMES,
-    WORKFLOW_REGISTRY,
-    registered_workflow,
 )
 
 __all__ = [

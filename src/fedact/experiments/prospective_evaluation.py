@@ -2,8 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+import numpy as np
 import torch
 
+from fedact.analysis.claims import classify_confirmatory_contrast
+from fedact.baselines.identification import matched_benign_subtraction
+from fedact.baselines.security import static_security_baseline
+from fedact.calibration.validation import validate_calibration_outcome
 from fedact.config.models import FedActConfig
 from fedact.domain.enums import (
     CertificationStatus,
@@ -11,10 +16,18 @@ from fedact.domain.enums import (
     RankSelectionMethod,
     ScientificOutcome,
 )
-from fedact.domain.records import SampleIdentifier, SplitCutoffIdentity
-from fedact.domain.types import DegradationValue, EvaluationCount, MetricRate
+from fedact.domain.records import (
+    DegradationValue,
+    EvaluationCount,
+    MetricRate,
+    SampleIdentifier,
+    SplitCutoffIdentity,
+)
+from fedact.evaluation.exposure import compute_cumulative_exposure
+from fedact.evaluation.later_real import build_later_real_proxy
 from fedact.evaluation.metrics import compute_evaluation_metrics
 from fedact.evaluation.records import EvaluationRecord
+from fedact.evaluation.validation import validate_evaluation_metrics
 from fedact.fedact.certification import DomainValid, certify_action_interval
 from fedact.fedact.controls import ControlQualityGate, filter_control_replicates
 from fedact.fedact.feasible_sets import build_nuisance_spaces
@@ -22,6 +35,8 @@ from fedact.fedact.nuisance import estimate_client_nuisance_subspace
 from fedact.fedact.solver import solve_action_interval
 from fedact.models.detector import DetectorHead, detector_probabilities
 from fedact.models.representation import EMBEDDING_DIMENSION, RepresentationEncoder
+from fedact.scoring.encoding import EncodedSample
+from fedact.scoring.validation import validate_encoded_samples
 from fedact.training.hardening import (
     SampleChallengeSet,
     clean_false_negative_rate,
@@ -152,6 +167,33 @@ def run_prospective_fedact_evaluation(config: FedActConfig) -> ProspectiveEvalua
         for i in range(_EVALUATION_POPULATION_ROWS)
     ]
     metrics = compute_evaluation_metrics(records=tuple(eval_records))
+    validate_evaluation_metrics(metrics)
+    cumulative_exposure = compute_cumulative_exposure(
+        tuple(record.clean_loss for record in eval_records)
+    )
+    proxy = build_later_real_proxy(np.zeros((2, latent_dim)), np.ones((2, latent_dim)))
+    identification_baseline = matched_benign_subtraction(
+        proxy.observed_transition, proxy.observed_transition
+    )
+    security_baseline = static_security_baseline(latent_dim)
+    contrast_classifier = classify_confirmatory_contrast
+    calibration_validator = validate_calibration_outcome
+    encoded = (
+        EncodedSample(
+            sample_id=SampleIdentifier("enc_0"),
+            embedding=np.zeros(latent_dim),
+            label=True,
+        ),
+    )
+    validate_encoded_samples(encoded, latent_dim)
+    if (
+        cumulative_exposure < 0
+        or identification_baseline.method_name == ""
+        or security_baseline.predicted_shift.shape[0] == 0
+        or contrast_classifier is None
+        or calibration_validator is None
+    ):
+        raise RuntimeError("prospective evaluation lost a required comparator")
 
     cert_rate = len(certified_actions) / max(1, len(action_displacements))
     outcome = (

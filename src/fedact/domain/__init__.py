@@ -1,9 +1,3 @@
-from fedact.domain.assumptions import (
-    CHRONOLOGY_CONSEQUENCE,
-    CUTOFF_FIXED_REPRESENTATION_CONSEQUENCE,
-    AssumptionContractError,
-    CutoffManifest,
-)
 from fedact.domain.enums import (
     ArtifactBoundary,
     ArtifactLifecycleState,
@@ -12,10 +6,14 @@ from fedact.domain.enums import (
     WorkflowName,
 )
 from fedact.domain.records import (
+    CHRONOLOGY_CONSEQUENCE,
+    CUTOFF_FIXED_REPRESENTATION_CONSEQUENCE,
     ArtifactBoundaryContract,
+    AssumptionContractError,
     CompletionEvidence,
     CompletionRequirements,
     ContentChecksum,
+    CutoffManifest,
     DependencyFingerprint,
     WorkflowContract,
 )

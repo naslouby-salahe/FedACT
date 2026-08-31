@@ -6,8 +6,13 @@ import torch
 
 from fedact.config.models import FedActConfig
 from fedact.domain.enums import DatasetSelector, ScientificOutcome
-from fedact.domain.records import SampleIdentifier, SplitCutoffIdentity
-from fedact.domain.types import EvaluationCount, MetricRate, ValidationFlag
+from fedact.domain.records import (
+    EvaluationCount,
+    MetricRate,
+    SampleIdentifier,
+    SplitCutoffIdentity,
+    ValidationFlag,
+)
 from fedact.evaluation.metrics import compute_evaluation_metrics
 from fedact.evaluation.records import EvaluationRecord
 from fedact.models.detector import DetectorHead, detector_probabilities

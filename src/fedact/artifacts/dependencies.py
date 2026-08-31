@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from fedact.artifacts.identity import ArtifactIdentity
-from fedact.domain.types import ActivationFlag
+from fedact.domain.records import ActivationFlag
 
 
 class ArtifactDependencyIndex:

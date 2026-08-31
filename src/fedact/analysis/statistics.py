@@ -7,7 +7,7 @@ import numpy as np
 from scipy import stats as scipy_stats
 
 from fedact.config.models import PositiveInt
-from fedact.domain.types import (
+from fedact.domain.records import (
     CutoffCount,
     CutoffDifferenceValue,
     MetricRate,

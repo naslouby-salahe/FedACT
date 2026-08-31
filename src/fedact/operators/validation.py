@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 
-from fedact.domain.types import (
+from fedact.domain.records import (
     DomainValidityFlag,
     HashDigest,
     SimilarityScore,

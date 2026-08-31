@@ -17,13 +17,14 @@ from fedact.datasets.records import (
     corpus_level_client_audit,
 )
 from fedact.domain.enums import DatasetSelector
-from fedact.domain.records import DatasetIdentity, SampleIdentifier
-from fedact.domain.types import (
+from fedact.domain.records import (
     BinaryLabel,
     CalendarMonthString,
+    DatasetIdentity,
     EligibilityFlag,
     FamilyName,
     SampleCount,
+    SampleIdentifier,
     ThresholdValue,
 )
 

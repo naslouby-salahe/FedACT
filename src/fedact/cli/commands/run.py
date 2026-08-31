@@ -8,15 +8,15 @@ from fedact.app import (
     Application,
     discover_repository_root,
 )
-from fedact.artifacts.results import (
+from fedact.artifacts.manifests import (
     WorkflowResultRecord,
     read_workflow_result,
     write_workflow_result,
 )
 from fedact.config.models import FedActConfig
 from fedact.domain.enums import ExecutableWorkflowName, ScientificOutcome
-from fedact.domain.types import OverwriteRequested
-from fedact.experiments.registry import registered_workflow
+from fedact.domain.records import OverwriteRequested
+from fedact.experiments.definitions import registered_workflow
 from fedact.runtime.state import WorkflowExecutionState
 
 
@@ -63,7 +63,7 @@ def _dispatch_foundational_workflow(
         return True
 
     if workflow is ExecutableWorkflowName.NESTED_CALIBRATION:
-        from fedact.experiments.nested_calibration import run_nested_calibration
+        from fedact.calibration.nested import run_nested_calibration
 
         cands = run_nested_calibration(config)
         outcome = ScientificOutcome.PASS if cands else ScientificOutcome.INSUFFICIENT_EVIDENCE
@@ -71,7 +71,18 @@ def _dispatch_foundational_workflow(
         typer.echo(f"nested calibration completed: {len(cands)} candidates")
         return True
 
+    if workflow is ExecutableWorkflowName.SMOKE:
+        from fedact.cli.commands.smoke import run as run_smoke_validation_workflow
+
+        run_smoke_validation_workflow(overwrite=False, repository_root=application.repository_root)
+        return True
+
     if workflow is ExecutableWorkflowName.PREPROCESS:
+        from fedact.cli.commands.preprocess import run as run_dataset_preprocessing
+
+        run_dataset_preprocessing(
+            None, overwrite=False, repository_root=application.repository_root
+        )
         _persist(
             application,
             WorkflowResultRecord(workflow=workflow, scientific_outcome=ScientificOutcome.PASS),
@@ -107,7 +118,9 @@ def _dispatch_evaluation_workflow(
     workflow: ExecutableWorkflowName, config: FedActConfig, application: Application
 ) -> bool:
     if workflow is ExecutableWorkflowName.ACTION_CERTIFICATE_VALIDATION:
-        from fedact.experiments.action_certificates import run_action_certificate_validation
+        from fedact.experiments.action_certificate_validation import (
+            run_action_certificate_validation,
+        )
 
         act_report = run_action_certificate_validation(config)
         _persist(
@@ -122,7 +135,7 @@ def _dispatch_evaluation_workflow(
         return True
 
     if workflow is ExecutableWorkflowName.PROSPECTIVE_EVALUATION:
-        from fedact.experiments.prospective import run_prospective_fedact_evaluation
+        from fedact.experiments.prospective_evaluation import run_prospective_fedact_evaluation
 
         pro_report = run_prospective_fedact_evaluation(config)
         _persist(
@@ -154,11 +167,9 @@ def _dispatch_evaluation_workflow(
         return True
 
     if workflow is ExecutableWorkflowName.FEDERATION:
-        from fedact.experiments.federation_geometry import (
-            run_federation_and_complementarity_evaluation,
-        )
+        from fedact.experiments.federation import run_federation_geometry_evaluation
 
-        fed_report = run_federation_and_complementarity_evaluation(config)
+        fed_report = run_federation_geometry_evaluation(config)
         _persist(
             application,
             WorkflowResultRecord(
@@ -169,9 +180,9 @@ def _dispatch_evaluation_workflow(
         return True
 
     if workflow is ExecutableWorkflowName.FAILURE_BOUNDARIES:
-        from fedact.experiments.robustness import run_robustness_and_failure_boundary_evaluation
+        from fedact.experiments.failure_boundaries import run_robustness_and_failure_boundaries
 
-        rob_report = run_robustness_and_failure_boundary_evaluation(config)
+        rob_report = run_robustness_and_failure_boundaries(config)
         _persist(
             application,
             WorkflowResultRecord(
@@ -197,7 +208,7 @@ def _dispatch_evaluation_workflow(
         return True
 
     if workflow is ExecutableWorkflowName.CLIENT_SELECTION:
-        from fedact.experiments.selection import run_communication_limited_client_selection
+        from fedact.experiments.client_selection import run_communication_limited_client_selection
 
         sel_report = run_communication_limited_client_selection(config)
         _persist(
@@ -210,13 +221,37 @@ def _dispatch_evaluation_workflow(
         return True
 
     if workflow is ExecutableWorkflowName.STATISTICAL_SYNTHESIS:
-        from fedact.analysis.verdicts import evaluate_scientific_verdicts
+        from fedact.experiments.statistical_synthesis import run_statistical_synthesis
 
         prospective_fnr, clean_fnr_degradation, coverage = _statistical_synthesis_inputs(
             application
         )
-        verd_report = evaluate_scientific_verdicts(
-            prospective_fnr, clean_fnr_degradation, coverage, config.statistics, config.hardening
+        verd_report = run_statistical_synthesis(
+            prospective_fnr=prospective_fnr,
+            clean_fnr_degradation=clean_fnr_degradation,
+            coverage=coverage,
+            maximum_coverage_deficit=(
+                config.statistics.minimum_material_effects.maximum_coverage_deficit_absolute
+            ),
+            maximum_clean_fnr_degradation=(
+                config.hardening.weight.maximum_clean_fnr_degradation_percentage_points
+            ),
+            control_span_alphas=tuple(
+                config.identification.control_span_violation.sensitivity_alpha
+            ),
+            private_contamination_alphas=tuple(
+                config.identification.private_contamination.sensitivity_alpha
+            ),
+            radius_multipliers=tuple(
+                config.identification.historical_plausibility_radius.sensitivity_multipliers
+            ),
+            alignment_percentiles=tuple(
+                config.certification.alignment_threshold.percentile_candidates
+            ),
+            ambiguity_percentiles=tuple(config.certification.ambiguity_width.percentile_candidates),
+            forecast_horizons=tuple(config.temporal.forecast_horizons_months),
+            nuisance_ranks=tuple(config.identification.nuisance_rank.candidates),
+            coverage_levels=tuple(config.identification.target_coverage.candidates),
         )
         _persist(
             application,
@@ -256,4 +291,4 @@ def run(
         return
     if _dispatch_evaluation_workflow(workflow, config, application):
         return
-    typer.echo(f"workflow completed: {workflow.value}")
+    raise RuntimeError(f"unhandled workflow {workflow.value}")

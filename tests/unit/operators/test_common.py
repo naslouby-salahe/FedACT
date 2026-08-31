@@ -3,25 +3,21 @@ from __future__ import annotations
 import pytest
 
 from fedact.domain.enums import ScientificAssumption, ScientificOutcome
-from fedact.domain.operators.contracts import (
-    NormalizedParameterString,
-    OperatorComposition,
-    OperatorDomain,
-    OperatorFamily,
-)
-from fedact.domain.operators.enumeration import (
-    EnumerationContractError,
-    enumerate_candidates,
-)
-from fedact.domain.operators.validity import (
+from fedact.domain.records import SampleIdentifier, SplitCutoffIdentity
+from fedact.operators.common import (
     ACTION_VALIDITY_CONSEQUENCE,
     OPERATOR_COVERAGE_CONSEQUENCE,
+    EnumerationContractError,
+    NormalizedParameterString,
+    OperatorComposition,
     OperatorCoverageAudit,
     OperatorCoverageError,
+    OperatorDomain,
+    OperatorFamily,
     ValidityAuditEntry,
+    enumerate_candidates,
     run_validity_audit,
 )
-from fedact.domain.records import SampleIdentifier, SplitCutoffIdentity
 
 CUTOFF = SplitCutoffIdentity("month-000024")
 SAMPLE = SampleIdentifier("sample-1")

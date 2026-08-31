@@ -13,8 +13,14 @@ from fedact.config.models import (
     SyntheticConfig,
 )
 from fedact.datasets.chronology import CalendarMonth
-from fedact.domain.records import SplitCutoffIdentity
-from fedact.domain.types import DrawIndex, GridCellLabel, ReplicateIndex, SampleCount, SeedValue
+from fedact.domain.records import (
+    DrawIndex,
+    GridCellLabel,
+    ReplicateIndex,
+    SampleCount,
+    SeedValue,
+    SplitCutoffIdentity,
+)
 
 FloatArray = NDArray[np.float64]
 GridCellIdentity = NewType("GridCellIdentity", str)

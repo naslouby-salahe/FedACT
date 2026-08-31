@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import numpy as np
 import torch
 
-from fedact.domain.types import CoordinateValue, NormValue, SampleCount, ThresholdValue
+from fedact.domain.records import CoordinateValue, NormValue, SampleCount, ThresholdValue
 
 
 @dataclass(frozen=True)

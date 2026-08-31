@@ -9,12 +9,12 @@ import torch
 from torch.nn import functional as torch_functional
 
 from fedact.config.models import FedActConfig
-from fedact.domain.records import SampleIdentifier
-from fedact.domain.types import (
+from fedact.domain.records import (
     DegradationValue,
     EpochIndex,
     LossValue,
     MetricRate,
+    SampleIdentifier,
     ThresholdValue,
 )
 from fedact.models.detector import DetectorHead

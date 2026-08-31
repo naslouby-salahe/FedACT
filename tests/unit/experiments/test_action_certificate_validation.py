@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from fedact.config.loading import LoadedConfiguration
 from fedact.domain.enums import ScientificOutcome
-from fedact.experiments.action_certificates import run_action_certificate_validation
+from fedact.experiments.action_certificate_validation import run_action_certificate_validation
 
 
 def test_run_action_certificate_validation(production_configuration: LoadedConfiguration) -> None:

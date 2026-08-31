@@ -6,8 +6,7 @@ import numpy as np
 
 from fedact.config.models import FedActConfig
 from fedact.domain.enums import ScientificOutcome
-from fedact.domain.records import ClientIdentifier
-from fedact.domain.types import EvaluationCount
+from fedact.domain.records import ClientIdentifier, EvaluationCount
 from fedact.fedact.client_selection import (
     ClientInformationMatrix,
     SelectionBudget,

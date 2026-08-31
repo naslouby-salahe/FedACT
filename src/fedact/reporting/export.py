@@ -1,19 +1,48 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import NewType
 
-from fedact.artifacts.results import WorkflowResultRecord
+from fedact.artifacts.manifests import WorkflowResultRecord
 from fedact.domain.enums import EvidenceVerificationStatus, ScientificOutcome
+from fedact.domain.records import ArtifactName, MetricRate
 from fedact.reporting.evidence import EvidenceArtifactRecord, package_evidence_index
 from fedact.reporting.figures import generate_prospective_metrics_figure
-from fedact.reporting.latex import (
-    LatexMacro,
-    LatexMacroName,
-    LatexMacroValue,
-    synthesize_latex_macros,
-)
-from fedact.reporting.summary import ProjectSummaryPayload, generate_project_summary
 from fedact.reporting.tables import LatexTableCell, generate_latex_table
+
+LatexMacroName = NewType("LatexMacroName", str)
+LatexMacroValue = NewType("LatexMacroValue", str)
+
+BACKSLASH = chr(92)
+
+
+def synthesize_latex_macros(
+    macros: tuple[tuple[LatexMacroName, LatexMacroValue], ...], output_file: Path
+) -> None:
+    lines = [
+        BACKSLASH + "newcommand{" + BACKSLASH + name + "}{" + value + "}" for name, value in macros
+    ]
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    output_file.write_text(chr(10).join(lines) + chr(10), encoding="utf-8")
+
+
+def generate_project_summary(
+    project: ArtifactName,
+    verdict: ScientificOutcome,
+    prospective_fnr: MetricRate,
+    certification_rate: MetricRate,
+    output_file: Path,
+) -> None:
+    import json
+
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "project": project,
+        "verdict": verdict.value,
+        "prospective_fnr": prospective_fnr,
+        "certification_rate": certification_rate,
+    }
+    output_file.write_text(json.dumps(payload, indent=2) + chr(10), encoding="utf-8")
 
 
 def _verification_status(artifact_file: Path) -> EvidenceVerificationStatus:
@@ -22,7 +51,7 @@ def _verification_status(artifact_file: Path) -> EvidenceVerificationStatus:
     return EvidenceVerificationStatus.MISSING
 
 
-def generate_project_report(
+def export_verified_project_evidence(
     prospective: WorkflowResultRecord,
     overall_outcome: ScientificOutcome,
     results_directory: Path,
@@ -32,8 +61,8 @@ def generate_project_report(
     degradation = prospective.clean_fnr_degradation_percentage_points
     if fnr is None or certification_rate is None or degradation is None:
         raise ValueError(
-            "generate_project_report requires a prospective evaluation result "
-            "with false-negative rate, certification rate, and clean-FNR degradation"
+            "export requires a prospective evaluation result with false-negative rate, "
+            "certification rate, and clean-FNR degradation"
         )
 
     table_file = results_directory / "tables" / "table_1_main.tex"
@@ -68,25 +97,23 @@ def generate_project_report(
         results_directory / "figures" / "fig_1.tex",
     )
     synthesize_latex_macros(
-        tuple(
-            LatexMacro(name=LatexMacroName(name), value=LatexMacroValue(value))
-            for name, value in (
-                ("fedactFNR", f"{fnr:.2f}"),
-                ("fedactCertRate", f"{certification_rate:.2f}"),
-                ("fedactCleanDegradation", f"{degradation:.1f}%"),
-            )
+        (
+            (LatexMacroName("fedactFNR"), LatexMacroValue(f"{fnr:.2f}")),
+            (LatexMacroName("fedactCertRate"), LatexMacroValue(f"{certification_rate:.2f}")),
+            (
+                LatexMacroName("fedactCleanDegradation"),
+                LatexMacroValue(f"{degradation:.1f}%"),
+            ),
         ),
         results_directory / "latex" / "macros.tex",
     )
     summary_file = results_directory / "project_summary.json"
     generate_project_summary(
-        ProjectSummaryPayload(
-            project="FedACT",
-            verdict=overall_outcome,
-            prospective_fnr=fnr,
-            certification_rate=certification_rate,
-        ),
-        summary_file,
+        project="FedACT",
+        verdict=overall_outcome,
+        prospective_fnr=fnr,
+        certification_rate=certification_rate,
+        output_file=summary_file,
     )
     package_evidence_index(
         [

@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import logging
 
-from fedact.domain.records import LogNamespace
-from fedact.domain.types import LogLevel
+from fedact.domain.records import LogLevel, LogNamespace
 
 LOG_FORMAT = "%(asctime)s %(levelname)s %(name)s %(message)s"
 FEDACT_LOG_NAMESPACE = "fedact"

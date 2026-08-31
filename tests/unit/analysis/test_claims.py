@@ -3,7 +3,7 @@ from __future__ import annotations
 from fedact.analysis.claims import classify_confirmatory_contrast, evaluate_paired_contrast_evidence
 from fedact.analysis.comparisons import PairedContrastInputs
 from fedact.config.loading import LoadedConfiguration
-from fedact.domain.enums import ClaimState, EffectDirection
+from fedact.domain.enums import EffectDirection, EvidenceStatus
 
 
 def test_insufficient_contrast_never_computes_evidence(
@@ -26,7 +26,7 @@ def test_insufficient_contrast_never_computes_evidence(
     result = classify_confirmatory_contrast(
         evidence, production_configuration.values.statistics, material_effect_satisfied=True
     )
-    assert result.claim_state is ClaimState.INSUFFICIENT_EVIDENCE
+    assert result.evidence_status is EvidenceStatus.INSUFFICIENT_EVIDENCE
     assert result.effect_direction is EffectDirection.NEUTRAL
 
 
@@ -52,7 +52,7 @@ def test_strongly_favorable_paired_effect_is_supported(
         evidence, production_configuration.values.statistics, material_effect_satisfied=True
     )
     assert result.effect_direction is EffectDirection.FAVORABLE
-    assert result.claim_state is ClaimState.SUPPORTED
+    assert result.evidence_status is EvidenceStatus.SUPPORTED
 
 
 def test_favorable_direction_without_material_effect_is_insufficient(
@@ -76,7 +76,7 @@ def test_favorable_direction_without_material_effect_is_insufficient(
     result = classify_confirmatory_contrast(
         evidence, production_configuration.values.statistics, material_effect_satisfied=False
     )
-    assert result.claim_state is ClaimState.INSUFFICIENT_EVIDENCE
+    assert result.evidence_status is EvidenceStatus.INSUFFICIENT_EVIDENCE
 
 
 def test_strongly_contradictory_paired_effect_is_falsified(
@@ -101,7 +101,7 @@ def test_strongly_contradictory_paired_effect_is_falsified(
         evidence, production_configuration.values.statistics, material_effect_satisfied=True
     )
     assert result.effect_direction is EffectDirection.CONTRADICTORY
-    assert result.claim_state is ClaimState.FALSIFIED
+    assert result.evidence_status is EvidenceStatus.FALSIFIED
 
 
 def test_single_test_family_uses_classical_significance_level(
@@ -125,4 +125,4 @@ def test_single_test_family_uses_classical_significance_level(
     result = classify_confirmatory_contrast(
         evidence, production_configuration.values.statistics, material_effect_satisfied=True
     )
-    assert result.claim_state is ClaimState.SUPPORTED
+    assert result.evidence_status is EvidenceStatus.SUPPORTED

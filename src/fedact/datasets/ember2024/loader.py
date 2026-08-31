@@ -10,8 +10,7 @@ from typing import SupportsFloat, cast
 import numpy as np
 from sklearn.feature_extraction import FeatureHasher
 
-from fedact.domain.records import SampleIdentifier
-from fedact.domain.types import BinaryLabel, CalendarMonthString, FamilyName
+from fedact.domain.records import BinaryLabel, CalendarMonthString, FamilyName, SampleIdentifier
 
 _STRING_PRINTABLE_BIN_COUNT = 96
 _SECTION_HASH_BUCKETS = 50

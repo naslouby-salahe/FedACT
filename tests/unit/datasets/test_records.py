@@ -18,15 +18,6 @@ from fedact.datasets.lamda.semantics import (
     label_derivation_rule,
     lamda_client_semantics,
 )
-from fedact.datasets.preprocessing import (
-    FeatureValue,
-    PreparedSample,
-    PreprocessingRuleError,
-    SupportAssessment,
-    is_adjacent_window_pooling_prohibited,
-    prepare_records,
-    select_low_variance_features,
-)
 from fedact.datasets.records import (
     ClientSemanticsAudit,
     ClientSemanticsClass,
@@ -36,10 +27,17 @@ from fedact.datasets.records import (
     EligibilityStatus,
     ExclusionReason,
     FeasibilityCondition,
+    FeatureValue,
     LabelDerivationRuleError,
+    PreparedSample,
+    PreprocessingRuleError,
     SchemaChronologyManifest,
     SchemaManifestField,
+    SupportAssessment,
+    is_adjacent_window_pooling_prohibited,
     is_derived_label_malicious,
+    prepare_records,
+    select_low_variance_features,
 )
 from fedact.domain.enums import DatasetSelector
 from fedact.domain.records import DatasetIdentity, SampleIdentifier, SplitCutoffIdentity

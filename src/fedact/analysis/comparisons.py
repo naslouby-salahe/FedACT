@@ -4,12 +4,12 @@ from dataclasses import dataclass
 
 from fedact.config.models import PositiveInt
 from fedact.domain.enums import MissingCutoffReason
-from fedact.domain.records import SplitCutoffIdentity
-from fedact.domain.types import (
+from fedact.domain.records import (
     CutoffCount,
     CutoffDifferenceValue,
     MetricRate,
     SeedValue,
+    SplitCutoffIdentity,
     SufficiencyFlag,
     ThresholdValue,
 )

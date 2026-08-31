@@ -12,11 +12,11 @@ from fedact.datasets.records import (
     ClientSemanticsClass,
 )
 from fedact.domain.enums import DatasetSelector
-from fedact.domain.records import SampleIdentifier
-from fedact.domain.types import (
+from fedact.domain.records import (
     CalendarMonthString,
     DetailMessage,
     FamilyName,
+    SampleIdentifier,
     ValidationFlag,
 )
 

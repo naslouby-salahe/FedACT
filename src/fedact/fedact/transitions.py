@@ -8,7 +8,7 @@ from typing import NewType
 import numpy as np
 import torch
 
-from fedact.domain.types import (
+from fedact.domain.records import (
     ClientIndex,
     CoordinateValue,
     DiagnosisMessage,

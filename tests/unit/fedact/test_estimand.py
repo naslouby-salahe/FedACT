@@ -4,8 +4,7 @@ import numpy as np
 import pytest
 
 from fedact.domain.enums import ActionPolarity, CertificationStatus
-from fedact.fedact.certification import DomainValid, certify_action_interval
-from fedact.fedact.estimand import (
+from fedact.fedact.actions import (
     ActionInterval,
     NumericalFailureError,
     action_conditioning_index,
@@ -14,6 +13,7 @@ from fedact.fedact.estimand import (
     smallest_positive_eigenvalue,
     support_interval,
 )
+from fedact.fedact.certification import DomainValid, certify_action_interval
 from fedact.fedact.feasible_sets import (
     ClientConstraint,
     L2Ball,

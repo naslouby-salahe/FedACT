@@ -8,8 +8,7 @@ import torch
 from torch.nn import functional as torch_functional
 
 from fedact.config.models import FedActConfig
-from fedact.domain.records import ClientIdentifier
-from fedact.domain.types import LossValue, RoundCount, ThresholdValue
+from fedact.domain.records import ClientIdentifier, LossValue, RoundCount, ThresholdValue
 from fedact.models.detector import DetectorHead
 from fedact.models.representation import RepresentationEncoder
 from fedact.training.representation import RepresentationDataset, TrainingObservation

@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 from fedact.domain.enums import CertificationStatus
-from fedact.domain.types import (
+from fedact.domain.records import (
     CertificationFlag,
     DiagnosisMessage,
     EvaluationCount,
@@ -17,7 +17,7 @@ from fedact.domain.types import (
     ThresholdValue,
     ValidationFlag,
 )
-from fedact.fedact.estimand import ActionInterval
+from fedact.fedact.actions import ActionInterval
 from fedact.fedact.transitions import AbstentionReason
 
 

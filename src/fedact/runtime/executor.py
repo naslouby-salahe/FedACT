@@ -5,9 +5,8 @@ from dataclasses import dataclass
 from fedact.artifacts.dependencies import ArtifactDependencyIndex
 from fedact.artifacts.identity import ArtifactIdentity, DependencyFingerprint
 from fedact.domain.enums import ArtifactBoundary, ExecutableWorkflowName, WorkflowName
-from fedact.domain.records import BoundaryFingerprints
-from fedact.domain.types import ActionDecision, ExecutionReason
-from fedact.experiments.producers import registered_boundaries_for
+from fedact.domain.records import ActionDecision, BoundaryFingerprints, ExecutionReason
+from fedact.experiments.dependencies import registered_boundaries_for
 from fedact.runtime.state import ArtifactExecutionState
 
 

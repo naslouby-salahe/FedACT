@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from fedact.calibration.nested import run_nested_calibration
 from fedact.config.loading import LoadedConfiguration
-from fedact.experiments.nested_calibration import run_nested_calibration
 
 
 def test_run_nested_calibration_produces_candidates_for_every_grid_cell(

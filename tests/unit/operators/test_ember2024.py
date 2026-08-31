@@ -6,7 +6,7 @@ from pathlib import Path
 import lief
 import pytest
 
-from fedact.operators.pe_mutations import (
+from fedact.operators.ember2024 import (
     PayloadBytes,
     PeFileBytes,
     PeImportName,

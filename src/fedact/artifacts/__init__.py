@@ -28,18 +28,27 @@ from fedact.artifacts.lifecycle import (
     validate_completion,
     validate_transition,
 )
-from fedact.artifacts.paths import WorkspaceLayout, WorkspaceOutputDirectories
-from fedact.artifacts.provenance import (
+from fedact.artifacts.manifests import (
     ArtifactManifest,
-    ProvenanceContractError,
-    RunProvenance,
-    assert_reusable,
-)
-from fedact.artifacts.results import (
+    ManifestContractError,
     WorkflowResultRecord,
     read_workflow_result,
     workflow_result_path,
     write_workflow_result,
+)
+from fedact.artifacts.paths import WorkspaceLayout, WorkspaceOutputDirectories
+from fedact.artifacts.provenance import ProvenanceContractError, RunProvenance
+from fedact.artifacts.storage import (
+    ArtifactStorageError,
+    read_bytes,
+    write_bytes_atomically,
+    write_text_atomically,
+)
+from fedact.artifacts.validation import (
+    ArtifactReuseError,
+    assert_complete_only_reuse,
+    assert_manifest_integrity,
+    read_validated_json_model,
 )
 
 __all__ = [
@@ -48,6 +57,9 @@ __all__ = [
     "ArtifactDependencyIndex",
     "ArtifactIdentity",
     "ArtifactManifest",
+    "ArtifactReuseError",
+    "ArtifactStorageError",
+    "ManifestContractError",
     "DeterministicJsonPayload",
     "ContentChecksum",
     "EnvironmentFingerprint",
@@ -65,7 +77,12 @@ __all__ = [
     "WorkspaceLayout",
     "WorkspaceOutputDirectories",
     "ScientificKey",
-    "assert_reusable",
+    "assert_complete_only_reuse",
+    "assert_manifest_integrity",
+    "read_bytes",
+    "read_validated_json_model",
+    "write_bytes_atomically",
+    "write_text_atomically",
     "deterministic_json",
     "compute_dependency_fingerprint",
     "content_checksum",

@@ -11,16 +11,14 @@ from fedact.analysis.statistics import (
     paired_wilcoxon_signed_rank_test,
 )
 from fedact.config.models import StatisticsConfig
-from fedact.domain.enums import ClaimState, EffectDirection
-from fedact.domain.types import (
+from fedact.domain.enums import EffectDirection, EvidenceStatus
+from fedact.domain.records import (
     ConfirmatoryFlag,
     PValue,
     RankBiserialEffectSize,
     SatisfactionFlag,
     SeedValue,
 )
-
-_CLASSICAL_SIGNIFICANCE_LEVEL_FOR_SINGLE_TEST = 0.05
 
 
 @dataclass(frozen=True)
@@ -65,7 +63,7 @@ def evaluate_paired_contrast_evidence(
 
 @dataclass(frozen=True)
 class ConfirmatoryContrastResult:
-    claim_state: ClaimState
+    evidence_status: EvidenceStatus
     effect_direction: EffectDirection
     evidence: ConfirmatoryContrastEvidence | None
 
@@ -77,7 +75,7 @@ def classify_confirmatory_contrast(
 ) -> ConfirmatoryContrastResult:
     if evidence is None:
         return ConfirmatoryContrastResult(
-            claim_state=ClaimState.INSUFFICIENT_EVIDENCE,
+            evidence_status=EvidenceStatus.INSUFFICIENT_EVIDENCE,
             effect_direction=EffectDirection.NEUTRAL,
             evidence=None,
         )
@@ -90,21 +88,21 @@ def classify_confirmatory_contrast(
 
     if direction is EffectDirection.CONTRADICTORY:
         return ConfirmatoryContrastResult(
-            claim_state=ClaimState.FALSIFIED, effect_direction=direction, evidence=evidence
+            evidence_status=EvidenceStatus.FALSIFIED, effect_direction=direction, evidence=evidence
         )
 
     if direction is EffectDirection.FAVORABLE:
-        p_threshold = (
-            statistics_config.multiplicity.q
-            if evidence.correction_applied
-            else _CLASSICAL_SIGNIFICANCE_LEVEL_FOR_SINGLE_TEST
-        )
+        p_threshold = statistics_config.multiplicity.q
         p_criterion_met = evidence.p_value_for_decision < p_threshold
         if p_criterion_met and material_effect_satisfied:
             return ConfirmatoryContrastResult(
-                claim_state=ClaimState.SUPPORTED, effect_direction=direction, evidence=evidence
+                evidence_status=EvidenceStatus.SUPPORTED,
+                effect_direction=direction,
+                evidence=evidence,
             )
 
     return ConfirmatoryContrastResult(
-        claim_state=ClaimState.INSUFFICIENT_EVIDENCE, effect_direction=direction, evidence=evidence
+        evidence_status=EvidenceStatus.INSUFFICIENT_EVIDENCE,
+        effect_direction=direction,
+        evidence=evidence,
     )

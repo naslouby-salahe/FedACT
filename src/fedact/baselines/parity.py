@@ -5,7 +5,7 @@ from typing import Annotated
 
 from pydantic import Field
 
-from fedact.domain.types import DetailMessage, ThresholdValue
+from fedact.domain.records import DetailMessage, ThresholdValue
 
 BudgetAmount = Annotated[float, Field(ge=0.0)]
 ComparatorIdentifier = Annotated[str, Field(min_length=1)]

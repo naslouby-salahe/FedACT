@@ -3,8 +3,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from fedact.domain.enums import DatasetSelector
-from fedact.domain.records import SampleIdentifier, SplitCutoffIdentity
-from fedact.domain.types import BinaryLabel, HorizonStep, LossValue, ProbabilityValue
+from fedact.domain.records import (
+    BinaryLabel,
+    HorizonStep,
+    LossValue,
+    ProbabilityValue,
+    SampleIdentifier,
+    SplitCutoffIdentity,
+)
 
 
 @dataclass(frozen=True)

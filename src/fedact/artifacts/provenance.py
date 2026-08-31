@@ -9,21 +9,13 @@ from fedact.artifacts.identity import (
     ArtifactIdentity,
     ContentChecksum,
     EnvironmentFingerprint,
-    MaterialConfigurationHash,
     ProducerCodeFingerprint,
-    ScientificKey,
 )
 from fedact.config.loading import ConfigurationHash
-from fedact.domain.enums import (
-    ArtifactLifecycleState,
-    RequiredScientificArtifact,
-    ScientificOutcome,
-    WorkflowName,
-)
+from fedact.domain.enums import ScientificOutcome, WorkflowName
 from fedact.domain.records import (
     CohortDefinition,
     DatasetIdentity,
-    DependencyFingerprint,
     OperatorLibraryIdentity,
     PreprocessingIdentity,
     RepositoryCommit,
@@ -31,7 +23,6 @@ from fedact.domain.records import (
     SolverOutcomeRecord,
     SplitCutoffIdentity,
 )
-from fedact.domain.types import CommitHash, ProducerIdentifier
 
 
 class ProvenanceContractError(ValueError):
@@ -62,39 +53,3 @@ class RunProvenance:
     environment_fingerprint: EnvironmentFingerprint | None = None
     scientific_outcome: ScientificOutcome | None = None
     run_result: RunResultSummary | None = None
-
-
-@dataclass(frozen=True)
-class ArtifactManifest:
-    artifact_type: RequiredScientificArtifact
-    artifact_identity: ArtifactIdentity
-    producer: ProducerIdentifier
-    owner_workflow: WorkflowName
-    dependency_fingerprint: DependencyFingerprint
-    material_configuration_hash: MaterialConfigurationHash
-    producer_code_fingerprint: ProducerCodeFingerprint
-    relevant_environment_fingerprint: EnvironmentFingerprint
-    upstream_artifact_identities: tuple[ArtifactIdentity, ...]
-    scientific_key: ScientificKey
-    content_checksum_or_checkpoint_hash: ContentChecksum
-    state: ArtifactLifecycleState
-    completion_record_checksum: ContentChecksum
-    created_by_repository_commit: CommitHash
-
-    def __post_init__(self) -> None:
-        if self.state is not ArtifactLifecycleState.COMPLETE:
-            raise ProvenanceContractError(
-                f"only COMPLETE artifacts may carry a reusable manifest; got {self.state}"
-            )
-
-
-def assert_reusable(
-    manifest: ArtifactManifest,
-    expected_dependency_fingerprint: DependencyFingerprint,
-) -> None:
-    if manifest.state is not ArtifactLifecycleState.COMPLETE:
-        raise ProvenanceContractError("artifact is not COMPLETE and may never be reused")
-    if manifest.dependency_fingerprint != expected_dependency_fingerprint:
-        raise ProvenanceContractError(
-            "artifact dependency fingerprint does not match the currently expected fingerprint"
-        )

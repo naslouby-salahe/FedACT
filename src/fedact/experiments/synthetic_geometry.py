@@ -6,14 +6,14 @@ import torch
 
 from fedact.config.models import CorruptedClientAttack, FedActConfig, SyntheticCorruptionAttack
 from fedact.domain.enums import CertificationStatus, RankSelectionMethod, ScientificOutcome
-from fedact.domain.types import (
+from fedact.domain.records import (
     IntervalBound,
     MetricRate,
     ParameterName,
     ParameterValue,
     SampleCount,
 )
-from fedact.experiments.robustness import apply_corrupted_client_attack
+from fedact.experiments.failure_boundaries import apply_corrupted_client_attack
 from fedact.fedact.certification import DomainValid, certify_action_interval
 from fedact.fedact.feasible_sets import build_nuisance_spaces
 from fedact.fedact.nuisance import estimate_client_nuisance_subspace
