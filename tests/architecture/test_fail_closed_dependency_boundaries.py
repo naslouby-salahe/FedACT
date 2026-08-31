@@ -32,7 +32,14 @@ PACKAGE_DEPENDENCIES: dict[str, frozenset[str]] = {
         {"fedact.domain", "fedact.config", "fedact.models", "fedact.training", "fedact.scoring"}
     ),
     "fedact.calibration": frozenset(
-        {"fedact.domain", "fedact.config", "fedact.datasets", "fedact.models", "fedact.fedact"}
+        {
+            "fedact.domain",
+            "fedact.config",
+            "fedact.datasets",
+            "fedact.models",
+            "fedact.fedact",
+            "fedact.training",
+        }
     ),
     "fedact.evaluation": frozenset(
         {

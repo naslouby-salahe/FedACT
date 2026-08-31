@@ -507,3 +507,110 @@ def string_literal_sites(tree: ast.Module) -> Iterator[ast.Constant]:
     for node in ast.walk(tree):
         if isinstance(node, ast.Constant) and isinstance(node.value, str):
             yield node
+
+
+def authoritative_roadmap_path(repository_root: Path) -> Path:
+    return repository_root / "docs" / "Roadmap.md"
+
+
+def _roadmap_structure_fence(roadmap_text: str) -> str:
+    heading = "# 36. Repository Structure"
+    heading_index = roadmap_text.find(heading)
+    if heading_index < 0:
+        raise ValueError("Roadmap is missing §36 Repository Structure")
+    fence_token = "```text"
+    fence_index = roadmap_text.find(fence_token, heading_index)
+    if fence_index < 0:
+        raise ValueError("Roadmap §36 is missing the repository-structure fence")
+    body_start = fence_index + len(fence_token)
+    closing_index = roadmap_text.find("```", body_start)
+    if closing_index < 0:
+        raise ValueError("Roadmap §36 structure fence is unclosed")
+    return roadmap_text[body_start:closing_index]
+
+
+_TREE_PREFIX_CHARACTERS = frozenset(" │├└─")
+
+
+def _structure_entry_name_index(line: str) -> int:
+    for index, character in enumerate(line):
+        if character not in _TREE_PREFIX_CHARACTERS:
+            return index
+    return len(line)
+
+
+def expected_production_python_paths(repository_root: Path) -> frozenset[str]:
+    fence = _roadmap_structure_fence(authoritative_roadmap_path(repository_root).read_text())
+    capturing = False
+    stack: list[str] = []
+    expected: set[str] = set()
+    for raw_line in fence.splitlines():
+        name_index = _structure_entry_name_index(raw_line)
+        if name_index >= len(raw_line):
+            continue
+        name = raw_line[name_index:].split("#", 1)[0].strip()
+        if not name:
+            continue
+        if name == "src/":
+            capturing = True
+            stack = ["src"]
+            continue
+        if capturing and name == "tests/":
+            break
+        if not capturing:
+            continue
+        depth = name_index // 4
+        stack = stack[: depth - 1]
+        if name.endswith("/"):
+            stack.append(name.rstrip("/"))
+            continue
+        if name.endswith(".py"):
+            expected.add("/".join((*stack, name)))
+    return frozenset(expected)
+
+
+def live_production_python_paths(repository_root: Path) -> frozenset[str]:
+    source_root = repository_root / "src"
+    return frozenset(
+        path.relative_to(source_root.parent).as_posix()
+        for path in production_source_files(repository_root)
+    )
+
+
+def annotation_name_tokens(annotation: ast.expr | None) -> set[str]:
+    names: set[str] = set()
+    if annotation is None:
+        return names
+    for node in ast.walk(annotation):
+        if isinstance(node, ast.Name):
+            names.add(node.id)
+        elif isinstance(node, ast.Attribute):
+            names.add(node.attr)
+    return names
+
+
+def function_parameter_annotations(tree: ast.Module) -> Iterator[tuple[str, int, str, set[str]]]:
+    for node in ast.walk(tree):
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        for argument in (*node.args.args, *node.args.kwonlyargs):
+            yield (
+                node.name,
+                argument.lineno,
+                argument.arg,
+                annotation_name_tokens(argument.annotation),
+            )
+        if node.args.vararg is not None:
+            yield (
+                node.name,
+                node.args.vararg.lineno,
+                node.args.vararg.arg,
+                annotation_name_tokens(node.args.vararg.annotation),
+            )
+        if node.args.kwarg is not None:
+            yield (
+                node.name,
+                node.args.kwarg.lineno,
+                node.args.kwarg.arg,
+                annotation_name_tokens(node.args.kwarg.annotation),
+            )
