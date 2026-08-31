@@ -5,10 +5,10 @@ from dataclasses import dataclass, replace
 
 import torch
 
+from fedact.app import Application
 from fedact.config.models import (
     CorruptedClientAllowanceParameters,
     CorruptedClientAttack,
-    FedActConfig,
 )
 from fedact.domain.enums import RankSelectionMethod, ScientificOutcome
 from fedact.domain.records import EvaluationCount
@@ -68,7 +68,9 @@ def apply_corrupted_client_attack(
     return estimate
 
 
-def run_robustness_and_failure_boundaries(config: FedActConfig) -> BoundaryStressReport:
+def run_robustness_and_failure_boundaries(application: Application) -> BoundaryStressReport:
+
+    config = application.configuration.values
     latent_dim = 64
     allowance = config.robustness.corrupted_client_allowance
     stress_fractions = tuple(config.robustness.real_stress.control_support_fractions)

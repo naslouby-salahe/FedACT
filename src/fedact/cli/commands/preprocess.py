@@ -29,7 +29,7 @@ from fedact.datasets.records import (
 )
 from fedact.datasets.splits import IndexInPopulation, SplitPartition, construct_cutoff_split
 from fedact.domain.enums import DatasetSelector, ExecutableWorkflowName, ScientificOutcome
-from fedact.domain.records import MonthIndex, OverwriteRequested, SplitCutoffIdentity
+from fedact.domain.records import OverwriteRequested, SplitCutoffIdentity
 from fedact.experiments.dependencies import (
     PREPROCESS_OWNED_BOUNDARIES,
     PREPROCESS_STAGE_FLOW,
@@ -112,7 +112,7 @@ def run(
                     records=tuple(
                         PreparedSample(
                             sample_id=record.sample_hash,
-                            month_index=MonthIndex(year_month_to_calendar_month(record.year_month)),
+                            month_index=year_month_to_calendar_month(record.year_month),
                             label=record.label,
                             family=record.family,
                             features=tuple(),

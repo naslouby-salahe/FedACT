@@ -4,7 +4,8 @@ from dataclasses import dataclass
 
 import torch
 
-from fedact.config.models import CorruptedClientAttack, FedActConfig, SyntheticCorruptionAttack
+from fedact.app import Application
+from fedact.config.models import CorruptedClientAttack, SyntheticCorruptionAttack
 from fedact.domain.enums import CertificationStatus, RankSelectionMethod, ScientificOutcome
 from fedact.domain.records import (
     IntervalBound,
@@ -52,7 +53,9 @@ class SyntheticSweepReport:
     scientific_outcome: ScientificOutcome
 
 
-def run_synthetic_geometry_sweeps(config: FedActConfig) -> SyntheticSweepReport:
+def run_synthetic_geometry_sweeps(application: Application) -> SyntheticSweepReport:
+
+    config = application.configuration.values
     latent_dim = 64
     sigmas = config.synthetic.sweeps.synchronized_nuisance_over_sigma
     cells: list[SweepCellResult] = []

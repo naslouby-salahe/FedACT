@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import torch
 
-from fedact.config.models import FedActConfig
+from fedact.app import Application
 from fedact.domain.enums import DatasetSelector, ScientificOutcome
 from fedact.domain.records import (
     EvaluationCount,
@@ -37,7 +37,9 @@ class CrossCorpusReport:
         return self.transfer_supported
 
 
-def run_cross_corpus_generalization(config: FedActConfig) -> CrossCorpusReport:
+def run_cross_corpus_generalization(application: Application) -> CrossCorpusReport:
+
+    config = application.configuration.values
     _unused = config
     latent_dim = EMBEDDING_DIMENSION
     encoder = RepresentationEncoder(input_dimension=_INPUT_DIMENSION)

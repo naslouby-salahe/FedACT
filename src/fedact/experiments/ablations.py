@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import torch
 
-from fedact.config.models import FedActConfig
+from fedact.app import Application
 from fedact.domain.enums import RankSelectionMethod, ScientificOutcome
 from fedact.domain.records import AblationIdentifier, DegradationValue, EvaluationCount
 from fedact.fedact.feasible_sets import build_nuisance_spaces
@@ -31,7 +31,9 @@ class AblationExperimentReport:
         return len(self.results)
 
 
-def run_novelty_critical_ablations(config: FedActConfig) -> AblationExperimentReport:
+def run_novelty_critical_ablations(application: Application) -> AblationExperimentReport:
+
+    config = application.configuration.values
     latent_dim = 64
     nuisance = estimate_client_nuisance_subspace(
         client_controls=torch.randn(20, latent_dim),

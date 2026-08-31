@@ -72,9 +72,7 @@ def write_workflow_result(experiment_directory: Path, record: WorkflowResultReco
     from fedact.artifacts.storage import write_text_atomically
 
     destination = workflow_result_path(experiment_directory)
-    from fedact.domain.records import SourceText
-
-    write_text_atomically(destination, SourceText(record.model_dump_json(indent=2)))
+    write_text_atomically(destination, record.model_dump_json(indent=2))
     return destination
 
 

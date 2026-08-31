@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import torch
 
-from fedact.config.loading import LoadedConfiguration
+from fedact.app import Application
 from fedact.config.models import CorruptedClientAllowanceParameters, CorruptedClientAttack
 from fedact.domain.enums import ScientificOutcome
 from fedact.experiments.failure_boundaries import (
@@ -13,9 +13,9 @@ from fedact.fedact.nuisance import NuisanceEstimate
 
 
 def test_run_robustness_and_failure_boundary_evaluation(
-    production_configuration: LoadedConfiguration,
+    application: Application,
 ) -> None:
-    report = run_robustness_and_failure_boundaries(production_configuration.values)
+    report = run_robustness_and_failure_boundaries(application)
     assert report.boundary_points_tested > 0
     assert report.scientific_outcome is ScientificOutcome.PASS
 

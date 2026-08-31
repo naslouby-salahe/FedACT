@@ -4,8 +4,8 @@ from dataclasses import dataclass
 
 import torch
 
+from fedact.app import Application
 from fedact.baselines.federation import centralized_pooled_comparator, local_only_comparator
-from fedact.config.models import FedActConfig
 from fedact.domain.enums import FederationGeometry, RankSelectionMethod, ScientificOutcome
 from fedact.domain.records import EvaluationCount, IntervalBound
 from fedact.fedact.feasible_sets import build_nuisance_spaces
@@ -23,7 +23,9 @@ class FederationGeometryReport:
     geometries_tested: EvaluationCount = 2
 
 
-def run_federation_geometry_evaluation(config: FedActConfig) -> FederationGeometryReport:
+def run_federation_geometry_evaluation(application: Application) -> FederationGeometryReport:
+
+    config = application.configuration.values
     latent_dim = 64
     k = 5
 

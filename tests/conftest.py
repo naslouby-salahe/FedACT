@@ -7,6 +7,7 @@ from typing import cast
 import pytest
 import yaml
 
+from fedact.app import Application
 from fedact.config.loading import LoadedConfiguration, load_production_configuration
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
@@ -29,6 +30,13 @@ def production_configuration_path() -> Path:
 @pytest.fixture(scope="session")
 def production_configuration() -> LoadedConfiguration:
     return load_production_configuration(PRODUCTION_CONFIGURATION_PATH)
+
+
+@pytest.fixture(scope="session")
+def application(
+    repository_root: Path, production_configuration: LoadedConfiguration
+) -> Application:
+    return Application(repository_root=repository_root, configuration=production_configuration)
 
 
 @pytest.fixture(scope="session")

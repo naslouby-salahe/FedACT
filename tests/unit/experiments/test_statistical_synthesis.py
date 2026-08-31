@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from fedact.config.loading import LoadedConfiguration
+from fedact.app import Application
 from fedact.domain.enums import ScientificOutcome
 from fedact.experiments.statistical_synthesis import run_statistical_synthesis
 
 
-def test_run_statistical_synthesis(production_configuration: LoadedConfiguration) -> None:
-    config = production_configuration.values
+def test_run_statistical_synthesis(application: Application) -> None:
+    config = application.configuration.values
     report = run_statistical_synthesis(
         prospective_fnr=0.08,
         clean_fnr_degradation=1.0,

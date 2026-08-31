@@ -13,7 +13,6 @@ from fedact.artifacts.manifests import (
     read_workflow_result,
     write_workflow_result,
 )
-from fedact.config.models import FedActConfig
 from fedact.domain.enums import ExecutableWorkflowName, ScientificOutcome
 from fedact.domain.records import OverwriteRequested
 from fedact.experiments.definitions import registered_workflow
@@ -25,8 +24,9 @@ def _persist(application: Application, record: WorkflowResultRecord) -> None:
 
 
 def _dispatch_foundational_workflow(
-    workflow: ExecutableWorkflowName, config: FedActConfig, application: Application
+    workflow: ExecutableWorkflowName, application: Application
 ) -> bool:
+    config = application.configuration.values
     if workflow is ExecutableWorkflowName.MATH_VERIFICATION:
         from fedact.experiments.math_verification import run_mathematical_verification
 
@@ -42,7 +42,7 @@ def _dispatch_foundational_workflow(
     if workflow is ExecutableWorkflowName.SYNTHETIC_GEOMETRY:
         from fedact.experiments.synthetic_geometry import run_synthetic_geometry_sweeps
 
-        synth_report = run_synthetic_geometry_sweeps(config)
+        synth_report = run_synthetic_geometry_sweeps(application)
         outcome = ScientificOutcome.PASS if synth_report.mechanism_valid else ScientificOutcome.FAIL
         _persist(application, WorkflowResultRecord(workflow=workflow, scientific_outcome=outcome))
         if not synth_report.mechanism_valid:
@@ -63,9 +63,9 @@ def _dispatch_foundational_workflow(
         return True
 
     if workflow is ExecutableWorkflowName.NESTED_CALIBRATION:
-        from fedact.calibration.nested import run_nested_calibration
+        from fedact.experiments.action_certificate_validation import run_nested_calibration
 
-        cands = run_nested_calibration(config)
+        cands = run_nested_calibration(application)
         outcome = ScientificOutcome.PASS if cands else ScientificOutcome.INSUFFICIENT_EVIDENCE
         _persist(application, WorkflowResultRecord(workflow=workflow, scientific_outcome=outcome))
         typer.echo(f"nested calibration completed: {len(cands)} candidates")
@@ -115,14 +115,15 @@ def _statistical_synthesis_inputs(application: Application) -> tuple[float, floa
 
 
 def _dispatch_evaluation_workflow(
-    workflow: ExecutableWorkflowName, config: FedActConfig, application: Application
+    workflow: ExecutableWorkflowName, application: Application
 ) -> bool:
+    config = application.configuration.values
     if workflow is ExecutableWorkflowName.ACTION_CERTIFICATE_VALIDATION:
         from fedact.experiments.action_certificate_validation import (
             run_action_certificate_validation,
         )
 
-        act_report = run_action_certificate_validation(config)
+        act_report = run_action_certificate_validation(application)
         _persist(
             application,
             WorkflowResultRecord(
@@ -137,7 +138,7 @@ def _dispatch_evaluation_workflow(
     if workflow is ExecutableWorkflowName.PROSPECTIVE_EVALUATION:
         from fedact.experiments.prospective_evaluation import run_prospective_fedact_evaluation
 
-        pro_report = run_prospective_fedact_evaluation(config)
+        pro_report = run_prospective_fedact_evaluation(application)
         _persist(
             application,
             WorkflowResultRecord(
@@ -156,7 +157,7 @@ def _dispatch_evaluation_workflow(
     if workflow is ExecutableWorkflowName.ABLATIONS:
         from fedact.experiments.ablations import run_novelty_critical_ablations
 
-        abl_report = run_novelty_critical_ablations(config)
+        abl_report = run_novelty_critical_ablations(application)
         _persist(
             application,
             WorkflowResultRecord(
@@ -169,7 +170,7 @@ def _dispatch_evaluation_workflow(
     if workflow is ExecutableWorkflowName.FEDERATION:
         from fedact.experiments.federation import run_federation_geometry_evaluation
 
-        fed_report = run_federation_geometry_evaluation(config)
+        fed_report = run_federation_geometry_evaluation(application)
         _persist(
             application,
             WorkflowResultRecord(
@@ -182,7 +183,7 @@ def _dispatch_evaluation_workflow(
     if workflow is ExecutableWorkflowName.FAILURE_BOUNDARIES:
         from fedact.experiments.failure_boundaries import run_robustness_and_failure_boundaries
 
-        rob_report = run_robustness_and_failure_boundaries(config)
+        rob_report = run_robustness_and_failure_boundaries(application)
         _persist(
             application,
             WorkflowResultRecord(
@@ -195,7 +196,7 @@ def _dispatch_evaluation_workflow(
     if workflow is ExecutableWorkflowName.CROSS_CORPUS:
         from fedact.experiments.cross_corpus import run_cross_corpus_generalization
 
-        cross_report = run_cross_corpus_generalization(config)
+        cross_report = run_cross_corpus_generalization(application)
         _persist(
             application,
             WorkflowResultRecord(
@@ -210,7 +211,7 @@ def _dispatch_evaluation_workflow(
     if workflow is ExecutableWorkflowName.CLIENT_SELECTION:
         from fedact.experiments.client_selection import run_communication_limited_client_selection
 
-        sel_report = run_communication_limited_client_selection(config)
+        sel_report = run_communication_limited_client_selection(application)
         _persist(
             application,
             WorkflowResultRecord(
@@ -286,9 +287,8 @@ def run(
     if overwrite:
         typer.echo("overwrite: scoped to this workflow's artifacts")
 
-    config = application.configuration.values
-    if _dispatch_foundational_workflow(workflow, config, application):
+    if _dispatch_foundational_workflow(workflow, application):
         return
-    if _dispatch_evaluation_workflow(workflow, config, application):
+    if _dispatch_evaluation_workflow(workflow, application):
         return
     raise RuntimeError(f"unhandled workflow {workflow.value}")

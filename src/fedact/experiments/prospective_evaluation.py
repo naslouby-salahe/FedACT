@@ -6,10 +6,10 @@ import numpy as np
 import torch
 
 from fedact.analysis.claims import classify_confirmatory_contrast
+from fedact.app import Application
 from fedact.baselines.identification import matched_benign_subtraction
 from fedact.baselines.security import static_security_baseline
 from fedact.calibration.validation import validate_calibration_outcome
-from fedact.config.models import FedActConfig
 from fedact.domain.enums import (
     CertificationStatus,
     DatasetSelector,
@@ -60,7 +60,9 @@ class ProspectiveEvaluationReport:
     scientific_outcome: ScientificOutcome
 
 
-def run_prospective_fedact_evaluation(config: FedActConfig) -> ProspectiveEvaluationReport:
+def run_prospective_fedact_evaluation(application: Application) -> ProspectiveEvaluationReport:
+
+    config = application.configuration.values
     input_dim = 512
     latent_dim = EMBEDDING_DIMENSION
     encoder = RepresentationEncoder(input_dimension=input_dim)

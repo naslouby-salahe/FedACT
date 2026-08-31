@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from fedact.config.models import FedActConfig
+from fedact.app import Application
 from fedact.domain.enums import ScientificOutcome
 from fedact.domain.records import ClientIdentifier, EvaluationCount
 from fedact.fedact.client_selection import (
@@ -23,7 +23,11 @@ class SelectionExperimentReport:
     scientific_outcome: ScientificOutcome
 
 
-def run_communication_limited_client_selection(config: FedActConfig) -> SelectionExperimentReport:
+def run_communication_limited_client_selection(
+    application: Application,
+) -> SelectionExperimentReport:
+
+    config = application.configuration.values
     latent_dim = 16
     k = 5
     fractions = config.client_selection.budget_fractions
