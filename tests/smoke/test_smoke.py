@@ -32,7 +32,9 @@ def test_synthetic_generator_smoke_validation(
         geometry=FederationGeometry.COMPLEMENTARY,
         common_intersection_dimension=synth.defaults.common_intersection_dimension,
     )
-    transition = draw_shared_transition(rng, synth)
+    transition = draw_shared_transition(
+        rng, synth.base_sigma, synth.shared_transition_norm_over_sigma
+    )
     seed_pair = [
         config.seeds.synthetic_generation[0],
         config.seeds.synthetic_noise[0],

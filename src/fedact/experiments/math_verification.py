@@ -7,6 +7,9 @@ import numpy as np
 from numpy.typing import NDArray
 from pydantic import Field
 
+from fedact.core.actions import NumericalFailureError, box_diameter_bound, support_interval
+from fedact.core.feasible_sets import L2Ball
+from fedact.core.temporal import fit_scalar_model
 from fedact.domain.enums import ScientificOutcome
 from fedact.domain.records import (
     BoundValidityFlag,
@@ -16,9 +19,6 @@ from fedact.domain.records import (
     NonIdentifiabilityFlag,
     PassingFlag,
 )
-from fedact.fedact.actions import NumericalFailureError, box_diameter_bound, support_interval
-from fedact.fedact.feasible_sets import L2Ball
-from fedact.fedact.temporal import fit_scalar_model
 
 FloatArray = NDArray[np.float64]
 VerificationMetric = NewType("VerificationMetric", float)

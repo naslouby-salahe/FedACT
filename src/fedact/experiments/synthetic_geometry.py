@@ -6,6 +6,10 @@ import torch
 
 from fedact.app import Application
 from fedact.config.models import CorruptedClientAttack, SyntheticCorruptionAttack
+from fedact.core.certification import DomainValid, certify_action_interval
+from fedact.core.feasible_sets import build_nuisance_spaces
+from fedact.core.nuisance import estimate_client_nuisance_subspace
+from fedact.core.solver import solve_action_interval
 from fedact.domain.enums import CertificationStatus, RankSelectionMethod, ScientificOutcome
 from fedact.domain.records import (
     IntervalBound,
@@ -15,10 +19,6 @@ from fedact.domain.records import (
     SampleCount,
 )
 from fedact.experiments.failure_boundaries import apply_corrupted_client_attack
-from fedact.fedact.certification import DomainValid, certify_action_interval
-from fedact.fedact.feasible_sets import build_nuisance_spaces
-from fedact.fedact.nuisance import estimate_client_nuisance_subspace
-from fedact.fedact.solver import solve_action_interval
 
 _MAJORITY_THRESHOLD_FRACTION = 0.5
 

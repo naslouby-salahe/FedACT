@@ -10,13 +10,13 @@ from pydantic import Field
 from fedact.config.models import (
     FederationGeometry,
     PrivateTransitionSparsityMode,
-    SyntheticConfig,
 )
 from fedact.datasets.chronology import CalendarMonth
 from fedact.domain.records import (
     DrawIndex,
     GridCellLabel,
     ReplicateIndex,
+    ResampleCount,
     SampleCount,
     SeedValue,
     SplitCutoffIdentity,
@@ -123,11 +123,13 @@ class SharedTransition:
 
 
 def draw_shared_transition(
-    generator: np.random.Generator, config: SyntheticConfig
+    generator: np.random.Generator,
+    base_sigma: SigmaScale,
+    shared_transition_norm_over_sigma: SigmaScale,
 ) -> SharedTransition:
     direction = generator.standard_normal(SYNTHETIC_DIMENSION)
     unit = direction / np.linalg.norm(direction)
-    scale = config.base_sigma * config.shared_transition_norm_over_sigma
+    scale = base_sigma * shared_transition_norm_over_sigma
     return SharedTransition(vector=scale * unit)
 
 
@@ -177,7 +179,7 @@ def draw_private_transition(
 
 
 def paired_seed_streams(
-    config: SyntheticConfig,
+    nested_noise_draws_per_seed: ResampleCount,
     generation_seeds: tuple[Annotated[int, Field(ge=0)], ...],
     noise_seeds: tuple[Annotated[int, Field(ge=0)], ...],
     seed_index: Annotated[int, Field(ge=0)],
@@ -187,7 +189,7 @@ def paired_seed_streams(
             f"paired synthetic seed index {seed_index} exceeds the configured seed arrays"
         )
     sequence = np.random.SeedSequence([generation_seeds[seed_index], noise_seeds[seed_index]])
-    children = sequence.spawn(config.nested_noise_draws_per_seed)
+    children = sequence.spawn(nested_noise_draws_per_seed)
     return [np.random.default_rng(child) for child in children]
 
 

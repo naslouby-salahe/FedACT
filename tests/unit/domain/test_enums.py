@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from fedact.domain.enums import (
     ArtifactBoundary,
-    ArtifactLifecycleState,
     ScientificOutcome,
     WorkflowName,
 )
@@ -38,19 +37,6 @@ def test_scientific_outcomes_are_the_exact_roadmap_vocabulary() -> None:
         "NUMERICAL_FAILURE",
         "ASSUMPTION_VIOLATION",
         "ABSTENTION_EXPECTED",
-    }
-
-
-def test_lifecycle_states_cover_the_locked_state_space() -> None:
-    assert {state.value for state in ArtifactLifecycleState} == {
-        "planned",
-        "staging",
-        "complete",
-        "reused",
-        "stale",
-        "replaced",
-        "incomplete",
-        "cleaned",
     }
 
 

@@ -1,10 +1,3 @@
-from fedact.datasets.audits import (
-    AuditContractError,
-    ChronologyAuditResult,
-    SupportAuditResult,
-    audit_chronology,
-    run_feasibility_audit,
-)
 from fedact.datasets.chronology import (
     LAMDA_MISSING_2015_GAP,
     ChronologyError,
@@ -74,6 +67,13 @@ from fedact.datasets.splits import (
     SplitPartition,
     construct_cutoff_split,
     is_meeting_support_floor,
+)
+from fedact.datasets.validation import (
+    AuditContractError,
+    ChronologyAuditResult,
+    SupportAuditResult,
+    audit_chronology,
+    run_feasibility_audit,
 )
 from fedact.domain.records import SampleIdentifier
 

@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import pytest
 
-from fedact.artifacts.identity import ContentChecksum
 from fedact.domain.enums import ScientificAssumption, ScientificOutcome
 from fedact.domain.records import (
     CHRONOLOGY_CONSEQUENCE,
     CUTOFF_FIXED_REPRESENTATION_CONSEQUENCE,
     AssumptionContractError,
+    ContentChecksum,
     CutoffManifest,
     CutoffManifestEntry,
     LaterRealIsolationGate,

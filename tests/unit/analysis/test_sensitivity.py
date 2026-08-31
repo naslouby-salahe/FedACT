@@ -17,4 +17,4 @@ def test_enumerate_sensitivity_coordinates_covers_locked_axes() -> None:
     axes = {coordinate.axis for coordinate in coordinates}
     assert SensitivityAxis.CONTROL_SPAN_VIOLATION in axes
     assert SensitivityAxis.TARGET_COVERAGE in axes
-    assert len(coordinates) == 11
+    assert len(coordinates) == 12

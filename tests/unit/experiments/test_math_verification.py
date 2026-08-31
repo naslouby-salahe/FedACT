@@ -3,6 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
+from fedact.core.feasible_sets import L2Ball
 from fedact.experiments.math_verification import (
     is_constraint_monotone,
     is_degenerate_rejection_correct,
@@ -12,7 +13,6 @@ from fedact.experiments.math_verification import (
     run_mathematical_verification,
     verify_action_width_bound,
 )
-from fedact.fedact.feasible_sets import L2Ball
 
 
 def test_null_space_basis_spans_the_kernel() -> None:

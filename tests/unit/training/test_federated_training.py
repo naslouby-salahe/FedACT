@@ -30,6 +30,14 @@ def test_train_federated_detector(production_configuration: LoadedConfiguration)
             ),
         ),
     )
-    result = train_federated_detector(encoder, head, client_pops, production_configuration.values)
-    assert result.global_rounds_completed == production_configuration.values.training.maximum_epochs
+    config = production_configuration.values
+    result = train_federated_detector(
+        encoder,
+        head,
+        client_pops,
+        maximum_rounds=config.training.maximum_epochs,
+        initial_learning_rate=config.training.initial_learning_rate,
+        final_learning_rate=config.training.final_learning_rate,
+    )
+    assert result.global_rounds_completed == config.training.maximum_epochs
     assert result.final_loss >= 0.0

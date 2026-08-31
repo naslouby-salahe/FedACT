@@ -6,13 +6,13 @@ from typing import Annotated, NewType
 
 from pydantic import Field
 
-from fedact.config.models import PositiveInt
 from fedact.datasets.records import EligibilityStatus
 from fedact.domain.records import (
     SampleCount,
     SampleIdentifier,
     SplitCutoffIdentity,
     SufficiencyFlag,
+    SupportThreshold,
 )
 
 IndexInPopulation = NewType("IndexInPopulation", int)
@@ -127,6 +127,6 @@ SupportCountValue = Annotated[int, Field(ge=0)]
 
 
 def is_meeting_support_floor(
-    counts: SupportCountValue, minimum_support_per_class: PositiveInt
+    counts: SupportCountValue, minimum_support_per_class: SupportThreshold
 ) -> SufficiencyFlag:
     return counts >= minimum_support_per_class

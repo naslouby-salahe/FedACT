@@ -5,7 +5,6 @@ from pathlib import Path
 import typer
 
 from fedact.app import Application, discover_repository_root
-from fedact.artifacts.manifests import WorkflowResultRecord, write_workflow_result
 from fedact.config.models import FederationGeometry
 from fedact.datasets.synthetic.generator import (
     SYNTHETIC_DIMENSION,
@@ -17,6 +16,7 @@ from fedact.datasets.synthetic.generator import (
 from fedact.datasets.synthetic.validation import run_smoke_validation
 from fedact.domain.enums import ExecutableWorkflowName, ScientificOutcome
 from fedact.domain.records import OverwriteRequested
+from fedact.storage.results import WorkflowResultRecord, write_workflow_result
 
 
 def run(overwrite: OverwriteRequested, repository_root: Path) -> None:
@@ -36,7 +36,9 @@ def run(overwrite: OverwriteRequested, repository_root: Path) -> None:
         geometry=FederationGeometry.COMPLEMENTARY,
         common_intersection_dimension=synth.defaults.common_intersection_dimension,
     )
-    transition = draw_shared_transition(rng, synth)
+    transition = draw_shared_transition(
+        rng, synth.base_sigma, synth.shared_transition_norm_over_sigma
+    )
     seed_pair = [
         config.seeds.synthetic_generation[0],
         config.seeds.synthetic_noise[0],

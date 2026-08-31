@@ -11,6 +11,10 @@ from fedact.calibration.nested import (
     HardeningWeightDegradations,
     generate_calibration_candidates,
 )
+from fedact.core.certification import DomainValid, certify_action_interval
+from fedact.core.feasible_sets import build_nuisance_spaces
+from fedact.core.nuisance import estimate_client_nuisance_subspace
+from fedact.core.solver import solve_action_interval
 from fedact.domain.enums import CertificationStatus, RankSelectionMethod, ScientificOutcome
 from fedact.domain.records import (
     DegradationValue,
@@ -28,10 +32,6 @@ from fedact.training.hardening import (
     harden_detector_head,
 )
 from fedact.training.representation import TrainingObservation
-from fedact.fedact.certification import DomainValid, certify_action_interval
-from fedact.fedact.feasible_sets import build_nuisance_spaces
-from fedact.fedact.nuisance import estimate_client_nuisance_subspace
-from fedact.fedact.solver import solve_action_interval
 
 _ACTION_MAGNITUDE = 2.0
 
@@ -124,7 +124,9 @@ def _training_population(prefix: DetailMessage, size: int) -> tuple[TrainingObse
     )
 
 
-def _clean_degradation(application: Application, hardening_weight: ThresholdValue) -> DegradationValue:
+def _clean_degradation(
+    application: Application, hardening_weight: ThresholdValue
+) -> DegradationValue:
     config = application.configuration.values
     encoder = RepresentationEncoder(input_dimension=_INPUT_DIMENSION)
     detector = DetectorHead(latent_dimension=EMBEDDING_DIMENSION)
@@ -144,7 +146,13 @@ def _clean_degradation(application: Application, hardening_weight: ThresholdValu
         validation_population=validation_population,
         challenge_sets=challenges,
         baseline_clean_fnr=baseline_clean_fnr,
-        config=config,
+        initial_learning_rate=config.training.initial_learning_rate,
+        final_learning_rate=config.training.final_learning_rate,
+        maximum_epochs=config.training.maximum_epochs,
+        maximum_clean_fnr_degradation_percentage_points=(
+            config.hardening.weight.maximum_clean_fnr_degradation_percentage_points
+        ),
+        projection_tie_tolerance=config.numerical.projection_tie_tolerance,
         hardening_weight=hardening_weight,
     )
     return hardening_result.clean_fnr_degradation_percentage_points
@@ -162,4 +170,19 @@ def run_nested_calibration(application: Application) -> tuple[CalibrationCandida
             for weight in weight_grid
         )
     )
-    return generate_calibration_candidates(config, clean_degradations)
+    return generate_calibration_candidates(
+        alignment_percentile_candidates=tuple(
+            config.certification.alignment_threshold.percentile_candidates
+        ),
+        ambiguity_width_percentile_candidates=tuple(
+            config.certification.ambiguity_width.percentile_candidates
+        ),
+        hardening_weight_candidates=weight_grid,
+        maximum_nuisance_rank=config.identification.nuisance_rank.maximum,
+        eigengap_regularization=config.numerical.rank_clip_epsilon_relative,
+        scale_standardization_floor=config.numerical.scale_standardization_floor,
+        historical_realized_diameter_quantile=(
+            config.certification.forecast_set_diameter_abstention.historical_realized_diameter_quantile
+        ),
+        clean_degradations=clean_degradations,
+    )

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from fedact.fedact.feasible_sets import (
+from fedact.core.feasible_sets import (
     ClientConstraint,
     L2Ball,
     intersect_constraints,

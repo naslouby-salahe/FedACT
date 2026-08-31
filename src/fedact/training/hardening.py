@@ -8,7 +8,6 @@ from dataclasses import dataclass
 import torch
 from torch.nn import functional as torch_functional
 
-from fedact.config.models import FedActConfig
 from fedact.domain.records import (
     DegradationValue,
     EpochIndex,
@@ -142,7 +141,11 @@ def harden_detector_head(
     validation_population: Sequence[TrainingObservation],
     challenge_sets: tuple[SampleChallengeSet, ...],
     baseline_clean_fnr: CleanFnr,
-    config: FedActConfig,
+    initial_learning_rate: ThresholdValue,
+    final_learning_rate: ThresholdValue,
+    maximum_epochs: EpochIndex,
+    maximum_clean_fnr_degradation_percentage_points: DegradationValue,
+    projection_tie_tolerance: ThresholdValue,
     hardening_weight: ThresholdValue,
 ) -> HardeningResult:
     encoder.eval()
@@ -187,11 +190,11 @@ def harden_detector_head(
     local_head = copy.deepcopy(head)
     optimizer = torch.optim.Adam(
         local_head.parameters(),
-        lr=config.training.initial_learning_rate,
+        lr=initial_learning_rate,
         weight_decay=0.0,
     )
-    max_degradation = config.hardening.weight.maximum_clean_fnr_degradation_percentage_points
-    total_epochs = config.training.maximum_epochs
+    max_degradation = maximum_clean_fnr_degradation_percentage_points
+    total_epochs = maximum_epochs
 
     saved_states: list[dict[str, torch.Tensor]] = [
         {key: value.clone() for key, value in local_head.state_dict().items()}
@@ -214,8 +217,8 @@ def harden_detector_head(
         learning_rate = _cosine_annealed_learning_rate(
             epoch_index,
             total_epochs,
-            config.training.initial_learning_rate,
-            config.training.final_learning_rate,
+            initial_learning_rate,
+            final_learning_rate,
         )
         for group in optimizer.param_groups:
             group["lr"] = learning_rate
@@ -251,7 +254,7 @@ def harden_detector_head(
     eligible_epochs = [
         epoch for epoch, degradation in enumerate(degradations) if degradation <= max_degradation
     ]
-    tolerance = config.numerical.projection_tie_tolerance
+    tolerance = projection_tie_tolerance
     best_epoch = eligible_epochs[0]
     best_objective = validation_objectives[best_epoch]
     for epoch in eligible_epochs[1:]:

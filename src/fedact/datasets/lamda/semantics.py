@@ -7,7 +7,7 @@ from typing import NewType
 
 import numpy as np
 
-from fedact.config.models import LamdaDatasetConfig, PositiveInt, Probability
+from fedact.config.models import LamdaDatasetConfig, Probability
 from fedact.datasets.chronology import CalendarMonth, calendar_month, transition_windows
 from fedact.datasets.records import (
     ClientSemanticsAudit,
@@ -26,6 +26,7 @@ from fedact.domain.records import (
     SampleCount,
     SampleIdentifier,
     ThresholdValue,
+    WindowSpanMonths,
 )
 
 _LAMDA_EPOCH_YEAR = 2013
@@ -189,7 +190,7 @@ def malicious_transition_displacement(
     features: np.ndarray,
     rule: LabelDerivationRule,
     endpoint_month: CalendarMonth,
-    transition_interval_months: PositiveInt,
+    transition_interval_months: WindowSpanMonths,
 ) -> TransitionDisplacement | None:
     windows = transition_windows(endpoint_month, transition_interval_months)
     months, keep = _labeled_months(records, rule, want_malicious=True)
@@ -221,7 +222,7 @@ def control_transition_replicates(
     features: np.ndarray,
     rule: LabelDerivationRule,
     candidate_endpoints: Sequence[CalendarMonth],
-    transition_interval_months: PositiveInt,
+    transition_interval_months: WindowSpanMonths,
 ) -> tuple[ControlTransitionReplicate, ...]:
     months, keep = _labeled_months(records, rule, want_malicious=False)
     features = features[keep]

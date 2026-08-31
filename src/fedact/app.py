@@ -3,13 +3,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from fedact.artifacts.manifests import read_workflow_result
-from fedact.artifacts.paths import WorkspaceLayout
 from fedact.config.loading import LoadedConfiguration, load_production_configuration
 from fedact.domain.enums import ExecutableWorkflowName
 from fedact.domain.records import DataAvailabilityFlag, ExperimentName
 from fedact.runtime.planning import ExecutionPlan, resolve_execution_plan
-from fedact.runtime.state import WorkflowOutcomeHistory, WorkflowOutcomeRecord
+from fedact.runtime.status import WorkflowOutcomeHistory, WorkflowOutcomeRecord
+from fedact.storage.paths import WorkspaceLayout
+from fedact.storage.results import read_workflow_result
 
 SYSEXITS_EX_UNAVAILABLE = 69
 PRODUCER_NOT_REGISTERED_EXIT_CODE = SYSEXITS_EX_UNAVAILABLE
@@ -28,17 +28,8 @@ class Application:
     def workspace_layout(self) -> WorkspaceLayout:
         return WorkspaceLayout(
             repository_root=self.repository_root,
-            artifacts=self.configuration.values.artifacts,
+            workspace=self.configuration.values.workspace,
         )
-
-    def artifact_index_path(self) -> Path:
-        return self.workspace_layout().active_artifact_index()
-
-    def dependency_index_path(self) -> Path:
-        return self.workspace_layout().dependency_index()
-
-    def evidence_index_path(self) -> Path:
-        return self.workspace_layout().evidence_index()
 
     def result_experiment_directory(self, workflow: ExecutableWorkflowName) -> Path:
         return self.workspace_layout().result_experiment_directory(ExperimentName(workflow.value))

@@ -7,8 +7,13 @@ from dataclasses import dataclass
 import torch
 from torch.nn import functional as torch_functional
 
-from fedact.config.models import FedActConfig
-from fedact.domain.records import ClientIdentifier, LossValue, RoundCount, ThresholdValue
+from fedact.domain.records import (
+    ClientIdentifier,
+    EpochIndex,
+    LossValue,
+    RoundCount,
+    ThresholdValue,
+)
 from fedact.models.detector import DetectorHead
 from fedact.models.representation import RepresentationEncoder
 from fedact.training.representation import RepresentationDataset, TrainingObservation
@@ -94,14 +99,16 @@ def train_federated_detector(
     encoder: RepresentationEncoder,
     head: DetectorHead,
     client_populations: tuple[ClientTrainingPopulation, ...],
-    config: FedActConfig,
+    maximum_rounds: EpochIndex,
+    initial_learning_rate: ThresholdValue,
+    final_learning_rate: ThresholdValue,
 ) -> FederatedTrainingResult:
     eligible_populations = tuple(
         population
         for population in client_populations
         if len(population.observations) >= _MINIMUM_LOCAL_BATCH_SIZE
     )
-    total_rounds = config.training.maximum_epochs
+    total_rounds = maximum_rounds
     encoder_state = {key: value.clone() for key, value in encoder.state_dict().items()}
     head_state = {key: value.clone() for key, value in head.state_dict().items()}
     final_loss: LossValue = 0.0
@@ -110,8 +117,8 @@ def train_federated_detector(
         learning_rate = _cosine_annealed_learning_rate(
             round_index,
             total_rounds,
-            config.training.initial_learning_rate,
-            config.training.final_learning_rate,
+            initial_learning_rate,
+            final_learning_rate,
         )
         weighted_encoder_states: list[tuple[int, dict[str, torch.Tensor]]] = []
         weighted_head_states: list[tuple[int, dict[str, torch.Tensor]]] = []

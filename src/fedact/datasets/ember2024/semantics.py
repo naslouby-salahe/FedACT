@@ -6,7 +6,7 @@ from typing import Annotated, NewType
 
 from pydantic import Field
 
-from fedact.config.models import ConfirmatoryFormat, PositiveInt
+from fedact.config.models import ConfirmatoryFormat
 from fedact.datasets.records import (
     ClientSemanticsAudit,
     ClientSemanticsClass,
@@ -17,6 +17,7 @@ from fedact.domain.records import (
     DetailMessage,
     FamilyName,
     SampleIdentifier,
+    SupportThreshold,
     ValidationFlag,
 )
 
@@ -48,7 +49,7 @@ class ControlMatchingLevel:
 
 def choose_control_matching_level(
     weekly_support_per_side: SupportCount,
-    minimum_support_per_class: PositiveInt,
+    minimum_support_per_class: SupportThreshold,
     monthly_support_per_side: SupportCount,
 ) -> ControlMatchingLevel | None:
     if weekly_support_per_side >= minimum_support_per_class:

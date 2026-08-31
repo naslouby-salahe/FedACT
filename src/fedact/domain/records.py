@@ -88,6 +88,13 @@ type UsageCount = NonNegativeInteger
 type UnitCount = NonNegativeInteger
 type OrderIndex = NonNegativeInteger
 type DrawIndex = NonNegativeInteger
+type ResampleCount = PositiveInteger
+
+type WindowSpanMonths = PositiveInteger
+type HorizonMonths = PositiveInteger
+type SupportThreshold = PositiveInteger
+type PairedCutoffCount = PositiveInteger
+type StandardizationFloor = PositiveFloat
 
 type LogLevel = StrictInteger
 
@@ -105,6 +112,7 @@ type EigengapRatio = NonNegativeFloat
 type SimilarityScore = FiniteFloat
 type TimeoutSeconds = NonNegativeFloat
 type ParameterValue = FiniteFloat
+type PercentileValue = Annotated[int, Field(ge=0, le=100)]
 type PValue = Probability
 type RankBiserialEffectSize = Annotated[float, Field(ge=-1.0, le=1.0)]
 type CutoffCount = NonNegativeInteger
@@ -182,7 +190,6 @@ type OptionalFlag = StrictBoolean
 type OverwriteRequested = StrictBoolean
 type DataAvailabilityFlag = StrictBoolean
 type ActivationFlag = StrictBoolean
-type ReusabilityFlag = StrictBoolean
 type PassingFlag = StrictBoolean
 type OverlapFlag = StrictBoolean
 type ObservabilityFlag = StrictBoolean
@@ -386,14 +393,6 @@ class WorkflowContract:
 
 
 @dataclass(frozen=True)
-class ArtifactBoundaryContract:
-    boundary: ArtifactBoundary
-    reusable_artifacts: WorkflowDescription
-    consumers: tuple[ArtifactBoundary, ...]
-    manuscript_only: bool = False
-
-
-@dataclass(frozen=True)
 class BoundaryFingerprint:
     boundary: ArtifactBoundary
     dependency_fingerprint: DependencyFingerprint
@@ -411,23 +410,6 @@ class BoundaryFingerprints:
             if entry.boundary is boundary:
                 return entry.dependency_fingerprint
         return None
-
-
-@dataclass(frozen=True)
-class CompletionRequirements:
-    required_files: frozenset[FilePath]
-    required_manifest_fields: frozenset[ManifestFieldName]
-    required_integrity_checks: frozenset[IntegrityCheckName]
-    required_scientific_invariants: frozenset[ScientificInvariantName]
-
-
-@dataclass(frozen=True)
-class CompletionEvidence:
-    present_files: frozenset[FilePath]
-    populated_manifest_fields: frozenset[ManifestFieldName]
-    passed_integrity_checks: frozenset[IntegrityCheckName]
-    passed_scientific_invariants: frozenset[ScientificInvariantName]
-    completion_record_committed: bool
 
 
 SHARED_COMPONENT_CONSEQUENCE = AssumptionConsequence(

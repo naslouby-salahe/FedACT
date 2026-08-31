@@ -5,7 +5,7 @@ from typer.testing import CliRunner
 from fedact.cli.main import app
 from fedact.domain.enums import ArtifactBoundary, DatasetSelector
 from fedact.domain.records import DependencyFingerprint
-from fedact.experiments.dependencies import (
+from fedact.experiments import (
     PREPROCESS_OWNED_BOUNDARIES,
     PREPROCESS_STAGE_FLOW,
     OverwriteRequest,
@@ -61,7 +61,7 @@ def test_shared_producer_reuse_scopes_match_the_roadmap_table() -> None:
     fit = ownership_for(SharedProducer.REPRESENTATION_DETECTOR_FIT)
     scoring = ownership_for(SharedProducer.ENCODING_SCORING_AND_SUMMARIES)
     calibration = ownership_for(SharedProducer.NESTED_PRE_CUTOFF_CALIBRATION)
-    assert "§9.5" in fit.reuse_scope
+    assert "representation and base detector fit" in fit.reuse_scope
     assert "same checkpoint" in scoring.reuse_scope
     assert "dataset/cutoff" in calibration.reuse_scope
 

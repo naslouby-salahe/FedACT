@@ -2,19 +2,19 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Annotated, NewType
+from typing import NewType
 
-from pydantic import Field
-
-from fedact.config.models import FedActConfig, PositiveInt
 from fedact.domain.enums import DatasetSelector, ScientificOutcome
 from fedact.domain.records import (
     EligibilityFlag,
+    HorizonMonths,
     MonthIndex,
     ObservabilityFlag,
     OverlapFlag,
+    PairedCutoffCount,
     SplitCutoffIdentity,
     ValidationFlag,
+    WindowSpanMonths,
 )
 
 CalendarMonth = NewType("CalendarMonth", int)
@@ -105,7 +105,7 @@ def is_interval_overlapping_gap(
     )
 
 
-def month_offset(base: CalendarMonth, months: PositiveInt) -> CalendarMonth:
+def month_offset(base: CalendarMonth, months: WindowSpanMonths) -> CalendarMonth:
     return CalendarMonth(base + months)
 
 
@@ -119,7 +119,7 @@ class TransitionWindows:
 
 
 def transition_windows(
-    endpoint_month: CalendarMonth, transition_interval_months: PositiveInt
+    endpoint_month: CalendarMonth, transition_interval_months: WindowSpanMonths
 ) -> TransitionWindows:
     if endpoint_month < _TRANSITION_WINDOW_SPAN_MULTIPLIER * transition_interval_months:
         raise ChronologyError(
@@ -139,7 +139,7 @@ def transition_windows(
 def is_endpoint_eligible_for_cutoff(
     endpoint_month: CalendarMonth,
     cutoff_exclusive_month: CalendarMonth,
-    historical_training_window_months: PositiveInt,
+    historical_training_window_months: WindowSpanMonths,
 ) -> EligibilityFlag:
     historical_start = cutoff_exclusive_month - historical_training_window_months
     return historical_start <= endpoint_month < cutoff_exclusive_month
@@ -148,21 +148,22 @@ def is_endpoint_eligible_for_cutoff(
 def enumerate_historical_endpoints(
     source: SourceChronology,
     cutoff_exclusive_month: CalendarMonth,
-    config: FedActConfig,
+    historical_training_window_months: WindowSpanMonths,
+    transition_interval_months: WindowSpanMonths,
+    cutoff_step_months: WindowSpanMonths,
 ) -> tuple[CalendarMonth, ...]:
-    temporal = config.temporal
-    history_start = cutoff_exclusive_month - temporal.historical_training_window_months
+    history_start = cutoff_exclusive_month - historical_training_window_months
     endpoints: list[CalendarMonth] = []
-    step = temporal.cutoff_step_months
+    step = cutoff_step_months
     earliest_complete = (
-        history_start + _TRANSITION_WINDOW_SPAN_MULTIPLIER * temporal.transition_interval_months
+        history_start + _TRANSITION_WINDOW_SPAN_MULTIPLIER * transition_interval_months
     )
-    floor_from_origin = _TRANSITION_WINDOW_SPAN_MULTIPLIER * temporal.transition_interval_months
+    floor_from_origin = _TRANSITION_WINDOW_SPAN_MULTIPLIER * transition_interval_months
     candidate = max(earliest_complete, floor_from_origin)
     if step > 1:
         candidate = ((candidate + step - 1) // step) * step
     while candidate < cutoff_exclusive_month:
-        windows = transition_windows(CalendarMonth(candidate), temporal.transition_interval_months)
+        windows = transition_windows(CalendarMonth(candidate), transition_interval_months)
         if source.is_interval_observable(
             windows.before_window_start_inclusive, CalendarMonth(candidate)
         ):
@@ -180,19 +181,20 @@ class EligibleCutoff:
 
 def enumerate_rolling_cutoffs(
     source: SourceChronology,
-    config: FedActConfig,
+    historical_training_window_months: WindowSpanMonths,
+    primary_confirmatory_horizon_months: HorizonMonths,
+    cutoff_step_months: WindowSpanMonths,
 ) -> tuple[EligibleCutoff, ...]:
-    temporal = config.temporal
     eligible: list[EligibleCutoff] = []
-    first_candidate = source.first_observed_month + temporal.historical_training_window_months
+    first_candidate = source.first_observed_month + historical_training_window_months
     last_candidate = source.last_observed_month + 1
     candidate = first_candidate
     while candidate <= last_candidate:
-        history_start = candidate - temporal.historical_training_window_months
+        history_start = candidate - historical_training_window_months
         if source.is_interval_observable(CalendarMonth(history_start), CalendarMonth(candidate)):
             identity = SplitCutoffIdentity(f"month-{candidate:06d}")
             horizon_end = month_offset(
-                CalendarMonth(candidate), temporal.primary_confirmatory_horizon_months
+                CalendarMonth(candidate), primary_confirmatory_horizon_months
             )
             eligible.append(
                 EligibleCutoff(
@@ -203,20 +205,20 @@ def enumerate_rolling_cutoffs(
                     ),
                 )
             )
-        candidate += temporal.cutoff_step_months
+        candidate += cutoff_step_months
     return tuple(eligible)
 
 
 @dataclass(frozen=True)
 class HorizonEvaluation:
-    horizon_months: PositiveInt
+    horizon_months: HorizonMonths
     availability: HorizonAvailability
 
 
 def classify_horizon_availability(
     source: SourceChronology,
     cutoff_exclusive_month: CalendarMonth,
-    horizons: tuple[PositiveInt, ...],
+    horizons: tuple[HorizonMonths, ...],
 ) -> tuple[HorizonEvaluation, ...]:
     evaluations: list[HorizonEvaluation] = []
     seen: set[int] = set()
@@ -241,11 +243,8 @@ def classify_horizon_availability(
     return tuple(evaluations)
 
 
-PairedCutoffCount = Annotated[int, Field(ge=0)]
-
-
 def confirmatory_outcome_for_cutoffs(
-    eligible_pair_count: PairedCutoffCount, minimum_paired_cutoffs: PositiveInt
+    eligible_pair_count: PairedCutoffCount, minimum_paired_cutoffs: PairedCutoffCount
 ) -> ScientificOutcome:
     if eligible_pair_count < minimum_paired_cutoffs:
         return ScientificOutcome.INSUFFICIENT_EVIDENCE
@@ -253,7 +252,7 @@ def confirmatory_outcome_for_cutoffs(
 
 
 def reuse_source_checkpoint_month(
-    cutoff_exclusive_month: CalendarMonth, full_retraining_interval_months: PositiveInt
+    cutoff_exclusive_month: CalendarMonth, full_retraining_interval_months: WindowSpanMonths
 ) -> CalendarMonth:
     if cutoff_exclusive_month % full_retraining_interval_months == 0:
         return cutoff_exclusive_month

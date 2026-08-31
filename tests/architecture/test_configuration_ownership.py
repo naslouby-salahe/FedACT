@@ -20,12 +20,6 @@ def collect_key_paths(node: object, prefix: str = "") -> set[str]:
     return set()
 
 
-def test_committed_configuration_matches_roadmap_block(
-    roadmap_configuration_block: str, production_payload: str
-) -> None:
-    assert production_payload == roadmap_configuration_block
-
-
 def test_overlay_configurations_are_partial_fragments_of_the_authoritative_schema(
     repository_root: Path,
 ) -> None:

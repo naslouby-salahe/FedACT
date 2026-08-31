@@ -7,6 +7,18 @@ import pytest
 import torch
 
 from fedact.config.loading import LoadedConfiguration
+from fedact.core.controls import (
+    ControlQualityGate,
+    ControlReplicate,
+    filter_control_replicates,
+)
+from fedact.core.nuisance import (
+    admissible_rank,
+    eigengap_ratio,
+    regularized_covariance,
+    select_rank_by_eigengap,
+    weighted_covariance,
+)
 from fedact.datasets.chronology import calendar_month
 from fedact.datasets.lamda.loader import load_lamda_records
 from fedact.datasets.lamda.semantics import (
@@ -15,18 +27,6 @@ from fedact.datasets.lamda.semantics import (
     malicious_transition_displacement,
     replicate_weights,
     year_month_to_calendar_month,
-)
-from fedact.fedact.controls import (
-    ControlQualityGate,
-    ControlReplicate,
-    filter_control_replicates,
-)
-from fedact.fedact.nuisance import (
-    admissible_rank,
-    eigengap_ratio,
-    regularized_covariance,
-    select_rank_by_eigengap,
-    weighted_covariance,
 )
 
 LAMDA_BASELINE_DIRECTORY = (

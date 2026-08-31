@@ -6,13 +6,13 @@ from typing import cast
 import numpy as np
 from scipy import stats as scipy_stats
 
-from fedact.config.models import PositiveInt
 from fedact.domain.records import (
     CutoffCount,
     CutoffDifferenceValue,
     MetricRate,
     PValue,
     RankBiserialEffectSize,
+    ResampleCount,
     SeedValue,
     ThresholdValue,
     ZeroExclusionFlag,
@@ -46,12 +46,12 @@ class ConfidenceInterval:
 class BootstrapEstimate:
     point_estimate: ThresholdValue
     interval: ConfidenceInterval
-    resamples: PositiveInt
+    resamples: ResampleCount
 
 
 def cutoff_clustered_bca_bootstrap(
     paired_differences: tuple[CutoffDifferenceValue, ...],
-    resamples: PositiveInt,
+    resamples: ResampleCount,
     confidence_level: MetricRate,
     seed: SeedValue,
 ) -> BootstrapEstimate:
@@ -96,7 +96,7 @@ class WilcoxonSignedRankResult:
 
 def paired_wilcoxon_signed_rank_test(
     paired_differences: tuple[CutoffDifferenceValue, ...],
-    maximum_nonzero_pairs_for_exact: PositiveInt,
+    maximum_nonzero_pairs_for_exact: CutoffCount,
 ) -> WilcoxonSignedRankResult:
     differences = np.asarray(paired_differences, dtype=np.float64)
     nonzero = differences[differences != 0.0]

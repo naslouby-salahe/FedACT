@@ -1717,7 +1717,7 @@ Official documentation describes collection from September 24, 2023 through Dece
 
 FedACT confirmatory execution uses Win32 PE and Win64 PE only. The chronology field is the acquired source collection/first-seen time documented by the pinned release. If only a week identity is available, use the beginning of that documented collection week as the conservative timestamp and preserve the original week identity.
 
-Feature extraction uses the pinned EMBER2024/`thrember` feature-version-3 semantics implemented with `pefile`, including its documented PE feature groups. The implementation must not guess which columns are counts. It obtains feature-group metadata from the pinned extractor/schema and applies `log1p` only to fields explicitly declared as nonnegative count features; the exact transformed column identities are stored in the preprocessing manifest. Standardization is then fitted cutoff-safely.
+Feature extraction uses the pinned EMBER2024/`thrember` feature-version-3 semantics, including its documented PE feature groups. The implementation must not guess which columns are counts. It obtains feature-group metadata from the pinned extractor/schema and applies `log1p` only to fields explicitly declared as nonnegative count features; the exact transformed column identities are stored in the preprocessing manifest. Standardization is then fitted cutoff-safely.
 
 Family, behavior, packer, and threat-group metadata may be used only when the acquired release actually contains them and the relevant annotation is available under §9. Missing family metadata does not block binary detector training but does block a family-defined confirmatory cohort.
 
@@ -1869,7 +1869,7 @@ Randomness is separated as follows:
 
 Seed index \(i\) in the two arrays forms one paired training replicate; seed streams are never substituted for one another.
 
-Training uses Adam with zero weight decay and a cosine annealing schedule from `training.initial_learning_rate` to `training.final_learning_rate` across `training.maximum_epochs`. Batch size and early-stopping patience come from configuration.
+Training uses the locked optimizer (Adam with zero weight decay) and a cosine annealing schedule from `training.initial_learning_rate` to `training.final_learning_rate` across `training.maximum_epochs`. Batch size and early-stopping patience come from configuration.
 
 ## 11.4 Validation and checkpoint selection
 
@@ -1915,8 +1915,6 @@ selected_epoch
 validation_loss
 checkpoint_hash
 dependency_fingerprint
-producer_code_fingerprint
-repository_commit
 ```
 
 The detector checkpoint references the exact representation checkpoint hash and selected epoch.
@@ -1977,7 +1975,7 @@ q_o(x)=\frac{d_o(x)}{\|d_o(x)\|_2}.
 
 ## 12.3 EMBER2024 PE operator contract
 
-PE manipulation uses the project-pinned LIEF, `pefile`, and, for the pack/unpack family, UPX executable identities recorded in the environment manifest.
+PE manipulation uses the project-pinned PE toolchain (parser, manipulation, and pack/unpack executables) whose identities are recorded as run metadata.
 
 Allowed atomic families and exact parameter domains are:
 
@@ -2015,7 +2013,7 @@ Every generated candidate passes all four validation layers before statistical e
 
 ### Structural validity
 
-* PE: both `pefile` and LIEF must parse the transformed binary and report the expected machine type.
+* PE: both the independent parser and the manipulation toolchain must parse the transformed binary and report the expected machine type.
 * APK: the project APK parser/build tool must parse the package, manifest, resources, and DEX files; package identity must be preserved except for a deterministic temporary signing identity required solely for emulator installation.
 
 ### Execution smoke validity
@@ -2971,7 +2969,7 @@ reporting:
     effect_sizes_and_p_values: 3
   p_value_display_threshold: 1.0e-4
 
-artifacts:
+workspace:
   configuration_file: configs/fedact.yaml
   outputs_root: outputs
   results_root: results
@@ -3001,10 +2999,6 @@ artifacts:
     - cross-corpus
     - client-selection
     - statistical-synthesis
-  result_payload_directories: [figures, tables, metrics, statistics]
-  active_artifact_index: outputs/artifacts/provenance/indexes/artifact_index.jsonl
-  dependency_index: outputs/artifacts/provenance/indexes/dependency_index.json
-  evidence_index: results/project_summary/reproducibility/execution/evidence_index.json
 ```
 
 ## Configuration-linked scientific definitions
@@ -3191,7 +3185,7 @@ Every artifact belongs to one producer boundary. Downstream workflows consume im
 | Scoring and summaries | encoded samples, detector scores/predictions, malicious/control transition summaries, nuisance bases/constraints, action displacements | calibration, feasible sets, intervals, baselines |
 | Calibration and certification | nested calibration result, temporal model/process-error set, historical/prospective feasible sets, action intervals, decisions, certificates/abstentions | main evaluation, ablations, federation, failure boundaries, cross-corpus |
 | Evaluation | per-cutoff/per-seed metrics, exposure curves, comparator outcomes, diagnostics | statistical synthesis |
-| Analysis | paired contrasts, bootstrap objects, tests, multiplicity results, sensitivity summaries, claim-state inputs | reporting |
+| Analysis | paired contrasts, bootstrap objects, tests, multiplicity results, sensitivity summaries | reporting |
 | Reporting | figures, tables, presentation-formatted values, compact metrics/statistics evidence, reproducibility evidence, evidence index | manuscript only |
 
 ## 19.4 Experiment-to-artifact map
@@ -3218,21 +3212,13 @@ Every artifact belongs to one producer boundary. Downstream workflows consume im
 | Robustness and Failure Boundaries | compatible base artifacts plus declared stress manipulation | boundary curves and diagnostics | limitation synthesis |
 | Cross-Corpus Generalization | EMBER2024 compatible artifacts | cross-corpus evidence | synthesis |
 | Optional Client Selection | compatible federation constraints/actions | budget-matched selection outcomes | optional synthesis/reporting |
-| Statistical Synthesis | verified full-precision outcomes | paired contrasts, intervals, multiplicity, sensitivity and claim-state inputs | reporting |
+| Statistical Synthesis | verified full-precision outcomes | paired contrasts, intervals, multiplicity, sensitivity summaries | reporting |
 
 Where multiple rows consume the same upstream artifact, they reference the same immutable artifact identity when its dependency fingerprint matches. They may not independently retrain, rescore, or recalibrate merely because they belong to different workflows.
 
-## 19.5 Artifact lifecycle and completion rule
+## 19.5 Artifact completion rule
 
-Every reusable artifact has exactly one lifecycle:
-
-```text
-planned → staging → complete/valid → reused
-                    ↘ stale → replaced/cleaned
-staging/failed → incomplete → cleaned
-```
-
-Only `complete/valid` artifacts may be consumed. An artifact becomes complete only after all required files, manifest fields, integrity checks, and scientific invariants for that boundary succeed and a completion record is atomically committed. A directory/checkpoint/metrics file without that completion record is never reusable.
+A reusable artifact becomes complete only after all required files, integrity checks, and scientific invariants for that boundary succeed and a completion record is atomically committed. Only complete artifacts may be consumed. A directory, checkpoint, or metrics file without that completion record is never reusable.
 
 # 20. Mathematical and Numerical Verification
 
@@ -3270,7 +3256,7 @@ U_o^+\le U_o.
 
 ### Support-Solver Verification
 
-The support/feasibility solver is CVXPY with ECOS. Cross-problem warm starts are disabled. The implementation passes the values under `numerical.solver` to ECOS's relative, absolute, feasibility/duality, and iteration-limit options.
+The support/feasibility solver runs under the locked numerical contract. Cross-problem warm starts are disabled. The implementation passes the values under `numerical.solver` as the solver's relative, absolute, feasibility/duality, and iteration-limit options.
 
 Accepted terminal states are:
 
@@ -4682,9 +4668,9 @@ All layers must therefore be reported separately.
 
 ---
 
-# 34. Reproducibility, Provenance, and Artifact Validity
+# 34. Reproducibility and Deterministic Execution
 
-## 34.1 Reproducibility and provenance contract
+## 34.1 Reproducibility contract
 
 Every result-bearing workflow is reconstructible from:
 
@@ -4697,56 +4683,13 @@ client/cohort definition
 horizon
 representation and detector checkpoint hashes
 configuration identity and full configuration_hash
-material configuration subset hash for each artifact
 seed streams
-upstream artifact identities
 operator-library identity
 solver outcome
-producer code fingerprint
-relevant numerical/software-environment fingerprint
-repository commit
 scientific outcome and run result
 ```
 
-`repository_commit` and the complete `configuration_hash` are whole-run audit fields. Artifact reuse is governed by artifact-specific dependency fingerprints.
-
-Each reusable artifact manifest contains at minimum:
-
-```text
-artifact_type
-artifact_identity
-producer
-owner_workflow
-dependency_fingerprint
-material_configuration_hash
-producer_code_fingerprint
-relevant_environment_fingerprint
-upstream_artifact_identities
-scientific_key
-content_checksum_or_checkpoint_hash
-state = COMPLETE
-completion_record_checksum
-created_by_repository_commit
-```
-
-The dependency fingerprint is a deterministic digest of only material dependencies that can change the artifact's scientific/numerical value. Depending on the boundary, these include:
-
-* raw-data checksum/source identity;
-* parser/schema/data-quality rules;
-* cutoff/split/client/cohort/eligibility definitions;
-* fitted preprocessing identity;
-* architecture, loss, optimizer, schedule, and training hyperparameters;
-* relevant seed stream;
-* exact upstream artifact identities;
-* control matching and nuisance-estimation definitions;
-* operator-library/toolchain identity;
-* calibration grid/objectives/tie rules;
-* solver method/material tolerances;
-* metric/statistical definitions;
-* executed producer code fingerprint;
-* numerical/runtime versions on the executed producer path.
-
-The producer code fingerprint is derived from semantics-relevant code for the producer rather than the repository as a whole. Changes to unrelated workflows, tests, documentation, comments, CLI help, logging, or presentation do not invalidate scientific artifacts unless they are material dependencies of that producer.
+`configuration_hash` is a whole-run audit field. Artifact reuse is governed by artifact-specific dependency fingerprints, which are deterministic digests of only the material dependencies that can change an artifact's scientific or numerical value. A change to an unrelated configuration item, workflow, test, document, or presentation detail does not invalidate unaffected artifacts.
 
 Required scientific artifacts include:
 
@@ -4767,22 +4710,18 @@ Required scientific artifacts include:
 * workflow results and statistical summaries;
 * manuscript-facing evidence.
 
-An upstream artifact may be reused only when its state is `COMPLETE`, integrity checks pass, and its dependency fingerprint equals the currently expected fingerprint.
-
-Artifacts are written to staging and atomically committed only after content checks, manifest checks, scientific invariants, and mandatory output checks pass. Interrupted producers leave no reusable artifact; incomplete staging content is cleaned before retry.
-
 ## 34.2 Deterministic execution
 
 The implementation uses deterministic execution wherever supported:
 
-* set Python/NumPy/PyTorch random streams only from the designated roadmap seed;
-* enable PyTorch deterministic algorithms;
-* disable cuDNN benchmark/autotuning choices that can change kernels between runs;
-* record Python, NumPy, PyTorch, CUDA/cuDNN, CVXPY, ECOS, LIEF, `pefile`, Android toolchain, UPX, and external baseline/operator tool versions when they are on the producer path;
+* set Python/NumPy and framework random streams only from the designated roadmap seed;
+* enable deterministic algorithms where the framework supports them;
+* disable benchmark/autotuning choices that can change kernels between runs;
+* record the interpreter, numerical library, and toolchain versions on the executed producer path as run metadata;
 * use deterministic dataset ordering before any seeded sampling;
 * use stable canonical serialization/hashing for identities and tie-breaking.
 
-If a required GPU operation has no deterministic implementation, that producer executes the affected operation on CPU rather than accepting an unspecified numerical tolerance. A deterministic CPU fallback is part of the relevant environment fingerprint.
+If a required operation has no deterministic implementation, that producer executes the affected operation on CPU rather than accepting an unspecified numerical tolerance.
 
 Solver results remain subject to the explicit numerical tolerances in §20. Numerical tolerance does not authorize scientific threshold changes.
 
@@ -4800,18 +4739,15 @@ validate existing artifacts
 → continue execution
 ```
 
-After a code change, recalculate producer code fingerprints:
+After a code or configuration change:
 
-* change outside an artifact's producer/dependency path → artifact remains valid;
-* proven non-semantic change on the path that leaves the producer fingerprint/material dependency digest unchanged → artifact remains valid;
-* material producer/dependency change → artifact and only its descendants become stale;
+* change outside an artifact's material dependency path → artifact remains valid;
+* material dependency change → the artifact and only its descendants become stale;
 * siblings and unrelated branches remain valid.
-
-When a parent artifact is regenerated, stale descendants are identified through the reverse dependency index and excluded from active evidence. If the regenerated parent has the same dependency fingerprint and deterministic content identity, compatible descendants remain valid.
 
 Solver divergence, infeasibility, NaN production, conditioning failure, or convergence failure is a numerical/scientific outcome unless independently demonstrated to be infrastructure corruption. It may not be rerun with a different seed, altered tolerance, or relaxed scientific constraint merely to obtain a favorable result.
 
-Permanently unavailable confirmatory outcomes remain in the evidence record under §17.8.
+Permanently unavailable confirmatory outcomes remain in the missingness record under §17.8.
 
 ## 34.4 End-to-end reproducibility verification
 
@@ -4819,19 +4755,21 @@ There is no separate replication experiment, namespace, scientific workflow, thr
 
 Reproducibility is verified by the ordinary dependency-aware workflow contract:
 
-1. every manuscript result traces through `evidence_index.json` to complete full-precision outputs and their provenance;
-2. every scientific artifact traces recursively to immutable acquired input checksums, configuration, seeds, producer code, environment, and upstream identities;
+1. every manuscript result traces through the project evidence index to complete full-precision outputs and their identities;
+2. every scientific artifact traces recursively to immutable acquired input checksums, configuration, seeds, and upstream identities;
 3. deterministic producers must regenerate the same content identity from the same complete dependency fingerprint;
 4. a clean-room verification, when desired, consists only of removing regenerable `outputs/` and `results/` state and executing the same normal CLI sequence from immutable raw inputs and the authoritative configuration;
 5. such verification introduces no new scientific workflow, parameter, threshold, comparator, dataset, or statistical decision.
 
 Scientific decisions may not be changed because confirmatory or later-real outcomes are unfavorable. Reproducibility is therefore an invariant of normal execution rather than a separate scientific stage.
 
-# 35. Claim-to-Evidence Synthesis and Manuscript Evidence
+# 35. Scientific Evidence Synthesis and Manuscript Evidence
 
-## 35.1 Claim-to-evidence map
+## 35.1 Evidence map
 
-| Claim                                                                                   | Decisive evidence                                                                   | Support criterion                                                                                                       | Falsification / limitation                                                                                   |
+Each falsifiable hypothesis in §3 is evaluated by the decisive evidence and support criterion in the table. A hypothesis is reported as supported, falsified, or insufficiently evidenced strictly according to the §17.10 decision criteria; no claim state is assigned beyond the confirmatory statistical outcome itself.
+
+| Hypothesis                                                                              | Decisive evidence                                                                   | Support criterion                                                                                                       | Falsification / limitation                                                                                   |
 | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | **Control-compatible sets are scientifically valid.**                                   | control- and malicious-sample sweeps; control-span-violation sweep; coverage theory | set/action coverage remain calibrated at declared level when assumptions and budgets hold                               | systematic undercoverage falsifies; controls do not causally isolate attacker evolution                      |
 | **Action identification can occur without full transition identification.**             | common-intersection experiment; action rotation; functional-identifiability theory  | unresolved full-state subspace coexists with narrow/certified valid-action intervals                                    | absence of such a regime falsifies; no full-state reconstruction claim                                       |
@@ -4845,18 +4783,7 @@ Scientific decisions may not be changed because confirmatory or later-real outco
 | **The mechanism generalizes to a second chronological corpus.**                         | EMBER2024 cross-corpus evaluation                                                   | control → uncertainty → certificate → prospective-consequence chain replicates unchanged in scientific semantics        | mechanism failure limits/falsifies; no arbitrary-domain claim                                                |
 | **Action-focused client selection can improve communication efficiency.**               | optional communication-limited client selection                                     | greater weighted width reduction per client than random/sample-count selection and comparison with established selector | no advantage falsifies secondary claim; not a general new experimental-design principle                      |
 
-At evidence completion, every claim receives exactly one state:
-
-```text
-SUPPORTED
-PARTIALLY_SUPPORTED
-FALSIFIED
-INSUFFICIENT_EVIDENCE
-```
-
-State assignment is deterministic. A non-composite claim uses §17.10 directly: `SUPPORTED`, `FALSIFIED`, or `INSUFFICIENT_EVIDENCE`. `PARTIALLY_SUPPORTED` is permitted only for a claim whose table row explicitly requires more than one distinct evidentiary component: at least one required component must be `SUPPORTED`, no required component may be `FALSIFIED`, and at least one remaining required component must be `INSUFFICIENT_EVIDENCE`. If any required component is `FALSIFIED`, the composite claim is `FALSIFIED`. If none is supported and at least one is insufficient, the composite claim is `INSUFFICIENT_EVIDENCE`.
-
-No claim is removed because its outcome is unfavorable.
+No hypothesis is removed because its outcome is unfavorable.
 
 ## 35.2 Required manuscript evidence
 
@@ -4977,10 +4904,10 @@ FedACT research execution is complete when:
 
 * every mandatory scientific workflow has a terminal scientific outcome and the optional client-selection study is either completed or explicitly omitted as optional;
 * required statistical synthesis and sensitivity analyses are complete;
-* end-to-end provenance and deterministic reproducibility checks in §34 are complete;
-* every manuscript claim maps to evidence and one of the four final claim states;
+* end-to-end deterministic reproducibility checks in §34 are complete;
+* every §3 hypothesis is evaluated against its decisive evidence under the §17.10 decision criteria;
 * null, adverse, infeasible, assumption-violating, abstaining, and falsifying outcomes are retained;
-* all required manuscript tables, figures, statistics, and full-precision supporting evidence can be regenerated from authoritative code, configuration, data identities, and provenance.
+* all required manuscript tables, figures, statistics, and full-precision supporting evidence can be regenerated from authoritative code, configuration, data identities, and run metadata.
 
 The final evidence must preserve the complete scientific chain:
 
@@ -5028,7 +4955,7 @@ fedact/
 ├── data/
 │   └── raw -> /external/datasets                  # SYMLINK — immutable external raw datasets; never written by FedACT.
 │
-├── outputs/                                       # Git-ignored generated computational workspace; may contain large reusable artifacts.
+├── outputs/                                       # Git-ignored regenerable computational workspace; may contain large reusable artifacts.
 │   │
 │   ├── preprocessing/                             # Dataset preparation and cutoff-safe preprocessing products.
 │   │   ├── inventories/                           # Raw discovery, file inventories, checksums, and acquisition identities.
@@ -5182,9 +5109,11 @@ fedact/
 │       │
 │       ├── __init__.py                            # FedACT package identity and public package metadata.
 │       │
-│       ├── domain/                                # Shared strongly typed scientific and execution vocabulary.
+│       ├── app.py                                 # Composition root wiring configuration, workspace layout, runtime planning, scientific workflows, and reporting.
+│       │
+│       ├── domain/                                # Shared strongly typed scientific vocabulary.
 │       │   ├── __init__.py                        # Exposes stable domain types without leaking implementation details.
-│       │   ├── enums.py                           # Dataset, workflow, action-state, abstention, outcome, failure, and artifact-state enums.
+│       │   ├── enums.py                           # Dataset, workflow, action-state, abstention, outcome, and failure enums.
 │       │   └── records.py                         # Typed scientific identities and records shared across package boundaries.
 │       │
 │       ├── config/                                # Loading and validation of the locked configuration data.
@@ -5198,7 +5127,7 @@ fedact/
 │       │   ├── records.py                         # Canonical sample, cutoff, split, client, cohort, and eligibility records.
 │       │   ├── chronology.py                      # Rolling cutoffs, historical windows, transition windows, and leakage-safe temporal boundaries.
 │       │   ├── splits.py                          # Cutoff-safe train/validation/test construction and support eligibility logic.
-│       │   ├── audits.py                          # Shared chronology, support, control, client-semantics, operator, and representation audit orchestration.
+│       │   ├── validation.py                      # Shared chronology, support, control, client-semantics, and operator audit orchestration.
 │       │   │
 │       │   ├── synthetic/
 │       │   │   ├── __init__.py                    # Exposes the known-truth synthetic dataset generator.
@@ -5230,7 +5159,7 @@ fedact/
 │       │   ├── representation.py                  # Trains and selects cutoff-safe representation checkpoints using locked validation semantics.
 │       │   ├── detector.py                        # Trains the base detector against the exact cutoff-fixed representation checkpoint.
 │       │   ├── federated.py                       # Implements ordinary federated detector training used only where the roadmap requires it.
-│       │   └── hardening.py                       # Performs FedACT certified-action hardening and completes hardened checkpoints before later-real evaluation.
+│       │   └── hardening.py                       # Performs FedACT certified-action hardening before later-real evaluation.
 │       │
 │       ├── scoring/                               # Cutoff-fixed inference products reusable across compatible scientific workflows.
 │       │   ├── __init__.py                        # Exposes deterministic encoding and detector-scoring operations.
@@ -5242,10 +5171,10 @@ fedact/
 │       │   ├── __init__.py                        # Exposes the dataset-specific operator libraries.
 │       │   ├── common.py                          # Shared operator records, composition limits, displacement construction, and zero-displacement rejection.
 │       │   ├── lamda.py                           # Implements the locked APK benign-gadget and permission-neutral resource operators.
-│       │   ├── ember2024.py                       # Implements the locked PE mutation families using LIEF/pefile-compatible transformations.
+│       │   ├── ember2024.py                       # Implements the locked PE mutation families using the pinned PE toolchain.
 │       │   └── validation.py                      # Enforces format, executability, maliciousness, behavioral-equivalence, coverage, and provenance rules.
 │       │
-│       ├── fedact/                                # Scientific core of Federated Action-Certified Threat Dynamics.
+│       ├── core/                                  # Scientific core of Federated Action-Certified Threat Dynamics.
 │       │   ├── __init__.py                        # Exposes FedACT scientific primitives without exposing experiment orchestration.
 │       │   ├── transitions.py                     # Computes cutoff-safe malicious transition summaries from cutoff-fixed representations.
 │       │   ├── controls.py                        # Builds matched benign control transitions and held-out control-quality diagnostics.
@@ -5253,7 +5182,7 @@ fedact/
 │       │   ├── uncertainty.py                     # Computes sampling, subspace, control-span, private-transition, and plausibility uncertainty components.
 │       │   ├── constraints.py                     # Builds, validates, and transmits client constraint summaries and quality-gate outcomes.
 │       │   ├── feasible_sets.py                   # Constructs historical compatible sets, plausibility intersections, centers, and infeasibility diagnostics.
-│       │   ├── solver.py                          # Solves CVXPY/ECOS support and feasibility problems under the locked numerical contract.
+│       │   ├── solver.py                          # Solves support and feasibility problems under the locked numerical contract.
 │       │   ├── temporal.py                        # Fits stable low-capacity temporal dynamics and propagates prospective feasible sets.
 │       │   ├── actions.py                         # Computes normalized operator displacements, action support intervals, and action-conditioning quantities.
 │       │   ├── certification.py                   # Applies positive/negative/ambiguous states, certificates, stability gates, challenge selection, and abstention.
@@ -5263,7 +5192,7 @@ fedact/
 │       │   ├── __init__.py                        # Exposes nested calibration results and validated selection operations.
 │       │   ├── nested.py                          # Creates inner pseudo-futures and evaluates only cutoff-safe calibration candidates.
 │       │   ├── selection.py                       # Applies the locked calibration objective hierarchy and deterministic tie-breaking rules.
-│       │   └── validation.py                      # Validates calibration provenance, temporal isolation, candidate completeness, and failure semantics.
+│       │   └── validation.py                      # Validates calibration temporal isolation, candidate completeness, and failure semantics.
 │       │
 │       ├── baselines/                             # Required comparator implementations and parity validation.
 │       │   ├── __init__.py                        # Exposes only roadmap-approved baseline families and parity checks.
@@ -5273,9 +5202,7 @@ fedact/
 │       │   └── parity.py                          # Verifies chronology, information budget, capacity, tuning, action-count, and implementation parity before use.
 │       │
 │       ├── experiments/                           # Roadmap-defined scientific workflow ownership and manipulations.
-│       │   ├── __init__.py                        # Exposes descriptive workflow definitions used by the CLI/runtime.
-│       │   ├── definitions.py                     # Defines locked workflow scopes, owned outputs, required datasets, and optionality.
-│       │   ├── dependencies.py                    # Encodes the fixed scientific workflow dependency order and shared producer requirements.
+│       │   ├── __init__.py                        # Exposes the locked workflow registry, dependency order, contracts, and preprocess ownership.
 │       │   ├── math_verification.py               # Implements exact-set, identifiability, support-bound, monotonicity, solver, degeneracy, and infeasibility verification.
 │       │   ├── synthetic_geometry.py              # Implements the full locked known-truth geometry, uncertainty, sample-size, conditioning, and failure sweeps.
 │       │   ├── action_certificate_validation.py   # Implements later-real comparison of certified, ambiguous, negative, and matched-random valid actions.
@@ -5285,7 +5212,7 @@ fedact/
 │       │   ├── failure_boundaries.py              # Implements sparse-control, eigengap, contamination, synchronized-nuisance, geometry, horizon, and corruption boundaries.
 │       │   ├── cross_corpus.py                    # Applies unchanged FedACT scientific semantics to the locked EMBER2024 generalization study.
 │       │   ├── client_selection.py                # Implements the optional communication-limited equal-budget client-selection study.
-│       │   ├── statistical_synthesis.py           # Executes the locked confirmatory contrast and sensitivity workflow over verified experiment evidence.
+│       │   └── statistical_synthesis.py           # Executes the locked confirmatory contrast, multiplicity, and sensitivity synthesis over verified experiment evidence.
 │       │
 │       ├── evaluation/                            # Full-precision scientific outcome construction before statistical synthesis.
 │       │   ├── __init__.py                        # Exposes evaluation records, metrics, and validation functions.
@@ -5295,53 +5222,44 @@ fedact/
 │       │   ├── exposure.py                        # Computes early-horizon FNR, cumulative pre-adaptation exposure, and time-to-catch-up.
 │       │   └── validation.py                      # Rejects invalid denominators, incomplete populations, leakage, mismatched pairing, and malformed metric outputs.
 │       │
-│       ├── analysis/                              # Statistical inference, sensitivity, and claim-state construction over verified evaluations.
-│       │   ├── __init__.py                        # Exposes locked statistical analysis and claim-evaluation operations.
+│       ├── analysis/                              # Statistical inference and sensitivity over verified evaluations.
+│       │   ├── __init__.py                        # Exposes locked statistical analysis operations.
 │       │   ├── statistics.py                      # Implements cutoff-clustered BCa bootstrap, Wilcoxon tests, rank-biserial effects, quantiles, and BH correction.
-│       │   ├── comparisons.py                     # Builds prespecified paired confirmatory contrasts while preserving cutoff-level dependence.
-│       │   ├── sensitivity.py                     # Computes the locked rho, xi, radius, threshold, horizon, rank, coverage, and geometry sensitivity surfaces.
-│       │   └── claims.py                          # Maps verified statistical/material-effect evidence to supported, falsified, partial, or insufficient states.
+│       │   ├── comparisons.py                     # Builds prespecified paired confirmatory contrasts and effect-direction classification.
+│       │   └── sensitivity.py                     # Computes the locked rho, xi, radius, threshold, horizon, rank, coverage, and geometry sensitivity surfaces.
 │       │
-│       ├── artifacts/                             # Computational artifact identity, storage, provenance, reuse, and invalidation infrastructure.
-│       │   ├── __init__.py                        # Exposes artifact lifecycle and path-resolution services to producers and runtime code.
-│       │   ├── paths.py                           # Resolves the generic outputs/results directory contract without project-specific top-level sprawl.
-│       │   ├── identity.py                        # Computes artifact identities, material-configuration hashes, code fingerprints, and dependency fingerprints.
-│       │   ├── manifests.py                       # Reads/writes artifact manifests, completion records, scientific keys, and integrity metadata.
-│       │   ├── dependencies.py                    # Maintains forward/reverse dependency indexes and computes selective descendant invalidation.
-│       │   ├── lifecycle.py                       # Implements staging, atomic completion, stale marking, incomplete cleanup, and scoped overwrite semantics.
-│       │   ├── storage.py                         # Stores and validates large artifacts, checkpoints, arrays, tabular records, and checksum-protected payloads.
-│       │   ├── provenance.py                      # Captures raw/config/seed/code/environment/upstream identities required for scientific reconstruction.
-│       │   └── validation.py                      # Enforces COMPLETE-only reuse, integrity, fingerprint compatibility, and results/input separation.
+│       ├── storage/                               # Simple workspace path resolution, checksums, checkpoints, and workflow result records.
+│       │   ├── __init__.py                        # Exposes storage services to producers and runtime code.
+│       │   ├── paths.py                           # Resolves the configured outputs/results directory layout.
+│       │   ├── metadata.py                        # Deterministic hashing and material dependency fingerprints.
+│       │   ├── checkpoints.py                     # Atomic payload writes and checksum-verified checkpoint bytes.
+│       │   ├── results.py                         # Typed per-workflow result records and their JSON persistence.
+│       │   └── index.py                           # In-memory artifact dependency index for reuse/recompute decisions.
 │       │
-│       ├── runtime/                               # Dependency-aware deterministic execution and recovery services.
-│       │   ├── __init__.py                        # Exposes planning, execution, state, and environment services.
-│       │   ├── determinism.py                     # Applies seed streams and deterministic/repeatability rules without conflating conceptual randomness.
-│       │   ├── environment.py                     # Captures relevant Python, framework, CUDA, solver, and numerical dependency fingerprints.
-│       │   ├── logging.py                         # Emits readable diagnostic logs and structured execution events without becoming evidence.
-│       │   ├── planning.py                        # Resolves workflows into reusable producers, dependencies, expected work, and nearest valid resume boundaries.
-│       │   ├── state.py                           # Tracks workflow/artifact states, scientific outcomes, failures, blocking dependencies, and progress.
-│       │   └── executor.py                        # Executes reuse→invalidate→recompute semantics, scoped overwrite, retries, and atomic workflow completion.
+│       ├── runtime/                               # Deterministic execution planning and recovery services.
+│       │   ├── __init__.py                        # Exposes seeding, planning, status, and runner services.
+│       │   ├── seeding.py                         # Applies seed streams and deterministic/repeatability rules without conflating conceptual randomness.
+│       │   ├── planning.py                        # Resolves workflows into executable plans, dependencies, and blocked work.
+│       │   ├── status.py                          # Tracks workflow/artifact execution states and recorded scientific outcomes.
+│       │   └── runner.py                          # Executes reuse→invalidate→recompute semantics and scoped overwrite decisions.
 │       │
 │       ├── reporting/                             # Pure export layer from verified outputs into compact manuscript-facing results.
 │       │   ├── __init__.py                        # Exposes verified reporting/export operations only.
 │       │   ├── tables.py                          # Renders locked main/supplementary scientific tables from verified full-precision analysis artifacts.
 │       │   ├── figures.py                         # Renders locked main/supplementary figures without altering scientific calculations.
-│       │   ├── export.py                          # Writes compact verified metrics/statistics/reproducibility evidence into results/ without recomputation.
-│       │   └── evidence.py                        # Maintains manuscript claim/evidence traceability and the compact project evidence index.
-│       │
-│       ├── app.py                                 # Composition root wiring configuration, artifact infrastructure, runtime, scientific workflows, and reporting.
+│       │   └── export.py                          # Writes compact verified metrics/statistics/reproducibility evidence into results/ without recomputation.
 │       │
 │       └── cli/
 │           ├── __init__.py                        # Exposes the FedACT command-line application.
 │           ├── main.py                            # Defines the Typer CLI and registers only roadmap-authorized public commands.
 │           └── commands/
 │               ├── __init__.py                    # Collects public command handlers without compatibility aliases.
-│               ├── doctor.py                      # Implements read-only readiness, validity, stale-artifact, blocker, and next-action inspection.
+│               ├── doctor.py                      # Implements read-only readiness, configuration, and next-action inspection.
 │               ├── preprocess.py                  # Runs dataset preparation, cutoff/split construction, preprocessing, and real-data audits.
-│               ├── plan.py                        # Displays the dependency-resolved scientific plan, reuse scope, recomputation, and blocked work.
+│               ├── plan.py                        # Displays the dependency-resolved scientific plan and blocked work.
 │               ├── smoke.py                       # Runs the synthetic generator smoke-validation workflow and scoped overwrite behavior.
 │               ├── run.py                         # Executes one predefined scientific workflow with dependency-aware resume and reuse.
-│               ├── status.py                      # Reports workflow progress, artifact validity, failures, stale causes, and resume location.
+│               ├── status.py                      # Reports workflow progress, recorded outcomes, and resume location.
 │               └── report.py                      # Exports verified manuscript evidence without retraining, rescoring, recalibration, or reanalysis.
 │
 └── tests/
@@ -5355,7 +5273,7 @@ fedact/
     │   │   — Ensures public, domain, and application APIs use explicit meaningful types rather than loosely typed interfaces or inappropriate raw primitives.
     │   │
     │   ├── test_no_any_dict_object.py
-    │   │   — Rejects inappropriate use of Any, object, and anonymous dict-based domain/configuration/artifact payloads, except narrowly justified external-library boundaries.
+    │   │   — Rejects inappropriate use of Any, object, and anonymous dict-based domain/configuration payloads, except narrowly justified external-library boundaries.
     │   │
     │   ├── test_no_primitive_leaks.py
     │   │   — Detects inappropriate str/int/float/bool/list/dict primitives crossing domain or architectural boundaries, including primitive public inputs and outputs where meaningful domain types should be used.
@@ -5385,7 +5303,7 @@ fedact/
     │   │   — Enforces descriptive names for modules, classes, functions, methods, variables, and parameters; rejects vague, generic, strange, misleading, or unjustifiably short names and abbreviations.
     │   │
     │   ├── test_canonical_vocabulary.py
-    │   │   — Enforces canonical project, scientific, algorithm, dataset, policy, experiment, artifact, and architectural terminology and rejects stale aliases, obsolete terminology, opaque names, and artificial version naming.
+    │   │   — Enforces canonical project, scientific, algorithm, dataset, policy, experiment, and architectural terminology and rejects stale aliases, obsolete terminology, opaque names, and artificial version naming.
     │   │
     │   ├── test_no_comments_or_docstrings.py
     │   │   — Rejects Python source comments and module/class/function/method docstrings.
@@ -5415,7 +5333,6 @@ fedact/
     │   ├── datasets/
     │   │   ├── test_chronology.py
     │   │   ├── test_splits.py
-    │   │   ├── test_audits.py
     │   │   ├── test_synthetic.py
     │   │   ├── test_lamda.py
     │   │   └── test_ember2024.py
@@ -5441,7 +5358,7 @@ fedact/
     │   │   ├── test_ember2024.py
     │   │   └── test_validation.py
     │   │
-    │   ├── fedact/
+    │   ├── core/
     │   │   ├── test_transitions.py
     │   │   ├── test_controls.py
     │   │   ├── test_nuisance.py
@@ -5466,6 +5383,7 @@ fedact/
     │   │   └── test_parity.py
     │   │
     │   ├── experiments/
+    │   │   ├── test_registry.py
     │   │   ├── test_definitions.py
     │   │   ├── test_dependencies.py
     │   │   ├── test_math_verification.py
@@ -5477,7 +5395,8 @@ fedact/
     │   │   ├── test_failure_boundaries.py
     │   │   ├── test_cross_corpus.py
     │   │   ├── test_client_selection.py
-    │   │   ├── test_statistical_synthesis.py
+    │   │   ├── test_nested_calibration.py
+    │   │   └── test_statistical_synthesis.py
     │   │
     │   ├── evaluation/
     │   │   ├── test_records.py
@@ -5489,35 +5408,27 @@ fedact/
     │   ├── analysis/
     │   │   ├── test_statistics.py
     │   │   ├── test_comparisons.py
-    │   │   ├── test_sensitivity.py
-    │   │   └── test_claims.py
+    │   │   └── test_sensitivity.py
     │   │
-    │   ├── artifacts/
+    │   ├── storage/
     │   │   ├── test_paths.py
-    │   │   ├── test_identity.py
-    │   │   ├── test_manifests.py
-    │   │   ├── test_dependencies.py
-    │   │   ├── test_lifecycle.py
-    │   │   ├── test_storage.py
-    │   │   ├── test_provenance.py
-    │   │   └── test_validation.py
+    │   │   ├── test_metadata.py
+    │   │   └── test_results.py
     │   │
     │   ├── runtime/
-    │   │   ├── test_determinism.py
-    │   │   ├── test_environment.py
+    │   │   ├── test_seeding.py
     │   │   ├── test_planning.py
-    │   │   ├── test_state.py
-    │   │   └── test_executor.py
+    │   │   ├── test_status.py
+    │   │   └── test_runner.py
     │   │
     │   ├── reporting/
     │   │   ├── test_tables.py
     │   │   ├── test_figures.py
-    │   │   ├── test_export.py
-    │   │   └── test_evidence.py
+    │   │   └── test_export.py
     │   │
     │   └── cli/
     │       ├── test_doctor.py
-    │       ├── test_preprocess.py
+    │       ├── test_preprocess_command.py
     │       ├── test_plan.py
     │       ├── test_smoke.py
     │       ├── test_run.py
@@ -5545,14 +5456,14 @@ fedact/
     │   │   ├── test_representation_detector_pipeline.py
     │   │   └── test_federated_training_pipeline.py
     │   │
-    │   ├── fedact/
+    │   ├── core/
     │   │   ├── test_controls_to_constraints.py
     │   │   ├── test_constraints_to_certificates.py
     │   │   └── test_certificates_to_hardening.py
     │   │
     │   ├── execution/
     │   │   ├── test_dependency_resolution.py
-    │   │   ├── test_resume_and_invalidation.py
+    │   │   └── test_resume_and_invalidation.py
     │   │
     │   ├── artifacts/
     │   │   ├── test_artifact_lifecycle.py
@@ -5566,7 +5477,7 @@ fedact/
     │   ├── test_doctor_preprocess_plan.py
     │   ├── test_smoke_and_math_verification.py
     │   ├── test_run_status_report.py
-    │   ├── test_reuse_and_recovery.py
+    │   └── test_reuse_and_recovery.py
     │
     └── smoke/
         └── test_smoke.py
@@ -5574,7 +5485,7 @@ fedact/
 
 `configs/` is version-controlled. `configs/fedact.yaml` is the single authoritative production scientific configuration whose complete contents are reproduced in the Configuration YAML section of this roadmap. `configs/tests.yml` and `configs/smoke.yml` are execution-only configurations for deterministic tests and smoke validation; they do not redefine production scientific parameters or workflow semantics.
 
-The resolved authoritative production configuration produces the `configuration_hash` used for whole-run provenance and configuration-lock verification. Artifact compatibility uses the material configuration subset captured by the dependency fingerprint in §34 and §40, so a change to an unrelated configuration item does not invalidate unaffected artifacts.
+The resolved authoritative production configuration produces the `configuration_hash` used for whole-run configuration-lock verification. A change to a configuration item invalidates only artifacts whose material dependency fingerprint captures that item; unrelated configuration changes do not invalidate unaffected artifacts.
 
 `data/raw` is the immutable symlink to `/external/datasets`; FedACT never writes to raw source data.
 
@@ -5698,10 +5609,10 @@ Each artifact identity is deterministic over the material inputs that determine 
 * exact upstream artifact identities;
 * representation/checkpoint identity;
 * operator/control/calibration/metric definitions;
-* semantics-relevant producer code fingerprint;
-* relevant numerical environment fingerprint.
+* semantics-relevant producer code digest;
+* relevant numerical environment versions.
 
-The full repository commit and full configuration hash are recorded for provenance but do not force broad invalidation when unrelated material is changed.
+The full configuration hash is recorded for run identity but does not force broad invalidation when unrelated material is changed.
 
 The operator interacts with descriptive workflow names rather than opaque run IDs.
 
@@ -5807,7 +5718,7 @@ AND dependency_fingerprint == expected_dependency_fingerprint
 AND all referenced upstream artifacts are COMPLETE and active
 ```
 
-Cache location, filesystem path, creation time, or repository commit equality is insufficient to establish validity.
+Cache location, filesystem path, creation time, or repository commit equality is insufficient to establish validity. Validity is established only by complete state, integrity, matching dependency fingerprint, and complete upstream dependencies.
 
 Whether an artifact came from reuse/cache or fresh computation must never change the scientific result.
 
@@ -6177,14 +6088,7 @@ outputs/
 
 Project-wide reusable artifacts are stored under `outputs/artifacts/` only when their dependency fingerprints are compatible across consuming workflows. Workflow-specific execution artifacts, evaluations, metrics, statistics, checkpoints, diagnostics, logs, and provenance are stored under `outputs/experiments/<descriptive-experiment-name>/`.
 
-Every reusable payload under `outputs/` is referenced by an artifact manifest and completion record under the applicable provenance boundary, with the project-wide active and dependency indexes stored at:
-
-```text
-outputs/artifacts/provenance/indexes/artifact_index.jsonl
-outputs/artifacts/provenance/indexes/dependency_index.json
-```
-
-Directory existence alone never establishes validity.
+Every reusable payload under `outputs/` is validated by its completion record and dependency fingerprint. Directory existence alone never establishes validity.
 
 `outputs/cache/staging/` is disposable. A crash may leave files there, but no downstream workflow may consume them. The next relevant command cleans abandoned staging content before recomputation.
 

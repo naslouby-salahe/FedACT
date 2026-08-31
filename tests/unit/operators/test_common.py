@@ -7,6 +7,7 @@ from fedact.domain.records import SampleIdentifier, SplitCutoffIdentity
 from fedact.operators.common import (
     ACTION_VALIDITY_CONSEQUENCE,
     OPERATOR_COVERAGE_CONSEQUENCE,
+    CompositionLengthLimit,
     EnumerationContractError,
     NormalizedParameterString,
     OperatorComposition,
@@ -137,7 +138,7 @@ def test_composition_requires_aligned_families_and_parameters() -> None:
 
 def test_enumeration_covers_lengths_one_through_maximum() -> None:
     families = (family("append", 0, ("64", "256")), family("checksum", 1, ("zero",)))
-    candidates = enumerate_candidates(families, 2, SAMPLE, CUTOFF)
+    candidates = enumerate_candidates(families, CompositionLengthLimit(2), SAMPLE, CUTOFF)
     lengths = sorted({candidate.composition.families.__len__() for candidate in candidates})
     assert lengths == [1, 2]
     normalized_forms = {candidate.normalized_form for candidate in candidates}
@@ -148,8 +149,8 @@ def test_enumeration_covers_lengths_one_through_maximum() -> None:
 def test_enumeration_normalizes_permutations_to_one_candidate() -> None:
     first = family("append", 0, ("64",))
     second = family("rename", 1, ("data1",))
-    direct = enumerate_candidates((first, second), 2, SAMPLE, CUTOFF)
-    swapped = enumerate_candidates((second, first), 2, SAMPLE, CUTOFF)
+    direct = enumerate_candidates((first, second), CompositionLengthLimit(2), SAMPLE, CUTOFF)
+    swapped = enumerate_candidates((second, first), CompositionLengthLimit(2), SAMPLE, CUTOFF)
     forms_direct = {candidate.normalized_form for candidate in direct}
     forms_swapped = {candidate.normalized_form for candidate in swapped}
     assert forms_direct == forms_swapped
@@ -159,8 +160,8 @@ def test_enumeration_normalizes_permutations_to_one_candidate() -> None:
 
 def test_enumeration_is_deterministic_across_calls() -> None:
     families = (family("append", 0, ("64", "1024")), family("section", 1, ("ro-256",)))
-    first = enumerate_candidates(families, 3, SAMPLE, CUTOFF)
-    second = enumerate_candidates(families, 3, SAMPLE, CUTOFF)
+    first = enumerate_candidates(families, CompositionLengthLimit(3), SAMPLE, CUTOFF)
+    second = enumerate_candidates(families, CompositionLengthLimit(3), SAMPLE, CUTOFF)
     assert [candidate.normalized_form for candidate in first] == [
         candidate.normalized_form for candidate in second
     ]
@@ -169,10 +170,10 @@ def test_enumeration_is_deterministic_across_calls() -> None:
 def test_enumeration_rejects_invalid_maximum() -> None:
     fams = (family("append", 0),)
     with pytest.raises(EnumerationContractError):
-        enumerate_candidates(fams, 0, SAMPLE, CUTOFF)
+        enumerate_candidates(fams, CompositionLengthLimit(0), SAMPLE, CUTOFF)
 
 
 def test_enumeration_rejects_duplicate_listed_orders() -> None:
     fams = (family("a", 0), family("b", 0))
     with pytest.raises(EnumerationContractError, match="unique listed orders"):
-        enumerate_candidates(fams, 1, SAMPLE, CUTOFF)
+        enumerate_candidates(fams, CompositionLengthLimit(1), SAMPLE, CUTOFF)

@@ -5,8 +5,6 @@ from pathlib import Path
 import typer
 
 from fedact.app import Application, discover_repository_root
-from fedact.artifacts.manifests import WorkflowResultRecord, write_workflow_result
-from fedact.datasets.audits import audit_chronology, run_feasibility_audit
 from fedact.datasets.chronology import (
     calendar_month,
     dataset_source_chronology,
@@ -28,9 +26,10 @@ from fedact.datasets.records import (
     prepare_records,
 )
 from fedact.datasets.splits import IndexInPopulation, SplitPartition, construct_cutoff_split
+from fedact.datasets.validation import audit_chronology, run_feasibility_audit
 from fedact.domain.enums import DatasetSelector, ExecutableWorkflowName, ScientificOutcome
 from fedact.domain.records import OverwriteRequested, SplitCutoffIdentity
-from fedact.experiments.dependencies import (
+from fedact.experiments import (
     PREPROCESS_OWNED_BOUNDARIES,
     PREPROCESS_STAGE_FLOW,
     ReuseDecision,
@@ -38,6 +37,7 @@ from fedact.experiments.dependencies import (
     is_preprocess_triggerable,
     ownership_for,
 )
+from fedact.storage.results import WorkflowResultRecord, write_workflow_result
 
 
 def run(
@@ -56,7 +56,12 @@ def run(
 
     for selected in scope:
         source = dataset_source_chronology(selected)
-        eligible = enumerate_rolling_cutoffs(source, config)
+        eligible = enumerate_rolling_cutoffs(
+            source,
+            config.temporal.historical_training_window_months,
+            config.temporal.primary_confirmatory_horizon_months,
+            config.temporal.cutoff_step_months,
+        )
         primary = [cutoff for cutoff in eligible if cutoff.primary_confirmatory]
         typer.echo(f"{selected.value}: cutoffs={len(eligible)} primary_confirmatory={len(primary)}")
         first_identity = eligible[0].cutoff_identity

@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from fedact.config.models import PositiveInt
-from fedact.domain.enums import MissingCutoffReason
+from fedact.domain.enums import EffectDirection, MissingCutoffReason
 from fedact.domain.records import (
     CutoffCount,
     CutoffDifferenceValue,
     MetricRate,
+    PairedCutoffCount,
     SeedValue,
     SplitCutoffIdentity,
     SufficiencyFlag,
@@ -67,7 +67,7 @@ class PairedContrastInputs:
 def build_paired_contrast(
     method_a: tuple[CutoffAggregate, ...],
     method_b: tuple[CutoffAggregate, ...],
-    minimum_paired_cutoffs: PositiveInt,
+    minimum_paired_cutoffs: PairedCutoffCount,
     maximum_missing_cutoff_fraction: MetricRate,
 ) -> PairedContrastInputs:
     aggregates_by_cutoff_a = {aggregate.cutoff_identity: aggregate for aggregate in method_a}
@@ -94,3 +94,15 @@ def build_paired_contrast(
         missing_cutoff_count=missing_count,
         sufficient=sufficient,
     )
+
+
+def contrast_effect_direction(
+    paired_differences: tuple[CutoffDifferenceValue, ...],
+) -> EffectDirection:
+    positive = sum(1 for difference in paired_differences if difference > 0.0)
+    negative = sum(1 for difference in paired_differences if difference < 0.0)
+    if positive > negative:
+        return EffectDirection.FAVORABLE
+    if negative > positive:
+        return EffectDirection.CONTRADICTORY
+    return EffectDirection.NEUTRAL

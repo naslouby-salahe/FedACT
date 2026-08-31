@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 
+from fedact.app import Application
 from fedact.config.loading import LoadedConfiguration
 from fedact.config.models import FederationGeometry
 from fedact.datasets.synthetic.generator import (
@@ -16,6 +19,7 @@ from fedact.experiments.synthetic_geometry import run_synthetic_geometry_sweeps
 
 def test_synthetic_end_to_end_pipeline(
     production_configuration: LoadedConfiguration,
+    repository_root: Path,
 ) -> None:
     config = production_configuration.values
     rng = np.random.default_rng(config.seeds.synthetic_generation[0])
@@ -29,7 +33,9 @@ def test_synthetic_end_to_end_pipeline(
         geometry=FederationGeometry.COMPLEMENTARY,
         common_intersection_dimension=synth.defaults.common_intersection_dimension,
     )
-    transition = draw_shared_transition(rng, synth)
+    transition = draw_shared_transition(
+        rng, synth.base_sigma, synth.shared_transition_norm_over_sigma
+    )
     seed_pair = [
         config.seeds.synthetic_generation[0],
         config.seeds.synthetic_noise[0],
@@ -45,5 +51,6 @@ def test_synthetic_end_to_end_pipeline(
     )
     assert smoke_rep.is_passing
 
-    sweep_rep = run_synthetic_geometry_sweeps(config)
+    application = Application.from_repository_root(repository_root)
+    sweep_rep = run_synthetic_geometry_sweeps(application)
     assert sweep_rep.mechanism_valid

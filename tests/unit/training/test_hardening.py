@@ -45,6 +45,7 @@ def test_harden_detector_head_runs_and_respects_clean_fnr_limit(
         ),
     )
     baseline_fnr = clean_false_negative_rate(head, encoder, val_pop)
+    config = production_configuration.values
     result = harden_detector_head(
         encoder=encoder,
         head=head,
@@ -52,7 +53,13 @@ def test_harden_detector_head_runs_and_respects_clean_fnr_limit(
         validation_population=val_pop,
         challenge_sets=challenges,
         baseline_clean_fnr=baseline_fnr,
-        config=production_configuration.values,
+        initial_learning_rate=config.training.initial_learning_rate,
+        final_learning_rate=config.training.final_learning_rate,
+        maximum_epochs=config.training.maximum_epochs,
+        maximum_clean_fnr_degradation_percentage_points=(
+            config.hardening.weight.maximum_clean_fnr_degradation_percentage_points
+        ),
+        projection_tie_tolerance=config.numerical.projection_tie_tolerance,
         hardening_weight=0.5,
     )
     assert result.selected_epoch >= 0

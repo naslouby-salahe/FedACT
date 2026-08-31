@@ -7,7 +7,7 @@ from typing import Annotated, NewType
 
 from pydantic import Field
 
-from fedact.config.models import NonNegativeInt, PositiveFloat, PositiveInt
+from fedact.config.models import NonNegativeInt
 from fedact.datasets.chronology import HorizonAvailability
 from fedact.domain.enums import DatasetSelector
 from fedact.domain.records import (
@@ -27,7 +27,9 @@ from fedact.domain.records import (
     SampleCount,
     SampleIdentifier,
     SplitCutoffIdentity,
+    StandardizationFloor,
     SufficiencyFlag,
+    SupportThreshold,
     ValidationFlag,
     WindowMonth,
 )
@@ -92,7 +94,7 @@ class LabelDerivationRuleError(ValueError):
 @dataclass(frozen=True)
 class LabelDerivationRule:
     benign_detection_count: NonNegativeInt
-    malware_minimum_detection_count: PositiveInt
+    malware_minimum_detection_count: SupportThreshold
     discard_detection_counts: tuple[NonNegativeInt, ...]
 
 
@@ -318,7 +320,7 @@ def prepare_records(
 
 def select_low_variance_features(
     training_population: tuple[PreparedSample, ...],
-    scale_standardization_floor: PositiveFloat,
+    scale_standardization_floor: StandardizationFloor,
 ) -> frozenset[FeatureColumnIndex]:
     if not training_population:
         raise PreprocessingRuleError("low-variance selection requires a training population")
@@ -342,7 +344,7 @@ class SupportAssessment:
     control_support_before: SupportCount
     control_support_after: SupportCount
 
-    def is_meeting_minimum(self, minimum_support_per_class: PositiveInt) -> SufficiencyFlag:
+    def is_meeting_minimum(self, minimum_support_per_class: SupportThreshold) -> SufficiencyFlag:
         return (
             self.malicious_support_before >= minimum_support_per_class
             and self.malicious_support_after >= minimum_support_per_class
@@ -352,7 +354,7 @@ class SupportAssessment:
 
 
 def is_adjacent_window_pooling_prohibited(
-    support_a: SupportCount, support_b: SupportCount, minimum: PositiveInt
+    support_a: SupportCount, support_b: SupportCount, minimum: SupportThreshold
 ) -> ProhibitionFlag:
     return support_a >= minimum and support_b >= minimum
 

@@ -107,7 +107,12 @@ def test_rolling_cutoffs_are_derived_deterministically_from_the_release(
     config: FedActConfig,
 ) -> None:
     source = continuous_source()
-    eligible = enumerate_rolling_cutoffs(source, config)
+    eligible = enumerate_rolling_cutoffs(
+        source,
+        config.temporal.historical_training_window_months,
+        config.temporal.primary_confirmatory_horizon_months,
+        config.temporal.cutoff_step_months,
+    )
     assert len(eligible) >= 1
     months = [cutoff.cutoff_exclusive_month for cutoff in eligible]
     assert months == sorted(months)
@@ -124,7 +129,12 @@ def test_primary_confirmatory_requires_complete_later_real_interval(
     source = SourceChronology(
         first_observed_month=calendar_month(0), last_observed_month=calendar_month(30)
     )
-    eligible = enumerate_rolling_cutoffs(source, config)
+    eligible = enumerate_rolling_cutoffs(
+        source,
+        config.temporal.historical_training_window_months,
+        config.temporal.primary_confirmatory_horizon_months,
+        config.temporal.cutoff_step_months,
+    )
     primary_horizon = config.temporal.primary_confirmatory_horizon_months
     for cutoff in eligible:
         complete = source.is_interval_observable(
@@ -208,7 +218,13 @@ def test_enumerated_endpoints_respect_half_open_history_and_gaps(config: FedActC
             ),
         ),
     )
-    endpoints = enumerate_historical_endpoints(source, calendar_month(48), config)
+    endpoints = enumerate_historical_endpoints(
+        source,
+        calendar_month(48),
+        config.temporal.historical_training_window_months,
+        config.temporal.transition_interval_months,
+        config.temporal.cutoff_step_months,
+    )
     assert endpoints == tuple(sorted(endpoints))
     delta = config.temporal.transition_interval_months
     history_start = 48 - config.temporal.historical_training_window_months

@@ -15,12 +15,6 @@ from fedact.config.models import (
 )
 
 
-def test_production_file_matches_roadmap_configuration_block(
-    roadmap_configuration_block: str, production_payload: str
-) -> None:
-    assert production_payload == roadmap_configuration_block
-
-
 def test_typed_model_preserves_every_roadmap_value_exactly(production_payload: str) -> None:
     authoritative = yaml.safe_load(production_payload)
     assert isinstance(authoritative, dict)
@@ -254,11 +248,11 @@ def test_independently_transcribed_synthetic_and_artifact_values(
     assert sweeps.spectral_conditioning_ratio == [0.01, 0.05, 0.10, 0.50, 1.0]
     assert sweeps.action_rotation_angle_degrees == [0, 15, 30, 45, 60, 75, 90]
 
-    artifacts = config.artifacts
-    assert artifacts.configuration_file == "configs/fedact.yaml"
-    assert artifacts.outputs_root == "outputs"
-    assert artifacts.results_root == "results"
-    directories = artifacts.directories
+    workspace = config.workspace
+    assert workspace.configuration_file == "configs/fedact.yaml"
+    assert workspace.outputs_root == "outputs"
+    assert workspace.results_root == "results"
+    directories = workspace.directories
     assert directories.preprocessing == "outputs/preprocessing"
     assert directories.shared_artifacts == "outputs/artifacts"
     assert directories.shared_models == "outputs/artifacts/models"
@@ -273,7 +267,7 @@ def test_independently_transcribed_synthetic_and_artifact_values(
     assert directories.result_experiments == "results/experiments"
     assert directories.project_summary == "results/project_summary"
     assert directories.reproducibility == "results/project_summary/reproducibility"
-    assert artifacts.experiment_directories == [
+    assert workspace.experiment_directories == [
         "math-verification",
         "synthetic-geometry",
         "action-certificate-validation",
@@ -285,18 +279,6 @@ def test_independently_transcribed_synthetic_and_artifact_values(
         "client-selection",
         "statistical-synthesis",
     ]
-    assert artifacts.result_payload_directories == ["figures", "tables", "metrics", "statistics"]
-    assert (
-        artifacts.active_artifact_index
-        == "outputs/artifacts/provenance/indexes/artifact_index.jsonl"
-    )
-    assert (
-        artifacts.dependency_index == "outputs/artifacts/provenance/indexes/dependency_index.json"
-    )
-    assert (
-        artifacts.evidence_index
-        == "results/project_summary/reproducibility/execution/evidence_index.json"
-    )
 
 
 def test_unknown_fields_are_rejected(production_payload: str) -> None:

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from fedact.domain.enums import ExecutableWorkflowName, ScientificOutcome
 from fedact.domain.records import OptionalFlag
-from fedact.runtime.state import (
+from fedact.runtime.status import (
     WorkflowExecutionState,
     WorkflowOutcomeHistory,
     outcome_for_workflow,

@@ -8,15 +8,15 @@ from fedact.app import (
     Application,
     discover_repository_root,
 )
-from fedact.artifacts.manifests import (
+from fedact.domain.enums import ExecutableWorkflowName, ScientificOutcome
+from fedact.domain.records import OverwriteRequested
+from fedact.experiments import registered_workflow
+from fedact.runtime.status import WorkflowExecutionState
+from fedact.storage.results import (
     WorkflowResultRecord,
     read_workflow_result,
     write_workflow_result,
 )
-from fedact.domain.enums import ExecutableWorkflowName, ScientificOutcome
-from fedact.domain.records import OverwriteRequested
-from fedact.experiments.definitions import registered_workflow
-from fedact.runtime.state import WorkflowExecutionState
 
 
 def _persist(application: Application, record: WorkflowResultRecord) -> None:
@@ -253,6 +253,13 @@ def _dispatch_evaluation_workflow(
             forecast_horizons=tuple(config.temporal.forecast_horizons_months),
             nuisance_ranks=tuple(config.identification.nuisance_rank.candidates),
             coverage_levels=tuple(config.identification.target_coverage.candidates),
+            minimum_paired_cutoffs=config.statistics.minimum_paired_cutoffs,
+            maximum_missing_cutoff_fraction=config.statistics.maximum_missing_cutoff_fraction,
+            bootstrap_resamples=config.statistics.bootstrap.resamples,
+            confidence_level=config.statistics.confidence_level,
+            maximum_nonzero_pairs_for_exact=config.statistics.wilcoxon.maximum_nonzero_pairs_for_exact,
+            multiplicity_q=config.statistics.multiplicity.q,
+            statistics_seed=config.seeds.analysis[0],
         )
         _persist(
             application,

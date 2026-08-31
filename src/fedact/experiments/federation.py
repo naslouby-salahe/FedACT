@@ -6,11 +6,11 @@ import torch
 
 from fedact.app import Application
 from fedact.baselines.federation import centralized_pooled_comparator, local_only_comparator
+from fedact.core.feasible_sets import build_nuisance_spaces
+from fedact.core.nuisance import estimate_client_nuisance_subspace
+from fedact.core.solver import solve_action_interval
 from fedact.domain.enums import FederationGeometry, RankSelectionMethod, ScientificOutcome
 from fedact.domain.records import EvaluationCount, IntervalBound
-from fedact.fedact.feasible_sets import build_nuisance_spaces
-from fedact.fedact.nuisance import estimate_client_nuisance_subspace
-from fedact.fedact.solver import solve_action_interval
 from fedact.training.federated import train_federated_detector
 
 

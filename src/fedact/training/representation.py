@@ -8,7 +8,6 @@ from pathlib import Path
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 
-from fedact.config.models import FedActConfig
 from fedact.domain.records import (
     BinaryLabel,
     EpochIndex,
@@ -32,15 +31,6 @@ class TrainingContractError(ValueError):
 class PairedSeedIndex:
     representation_seed: SeedValue
     detector_training_seed: SeedValue
-
-
-def paired_seed_index(config: FedActConfig, index: SeedValue) -> PairedSeedIndex:
-    if index < 0 or index >= len(config.seeds.representation):
-        raise TrainingContractError(f"Seed index {index} out of bounds")
-    return PairedSeedIndex(
-        representation_seed=config.seeds.representation[index],
-        detector_training_seed=config.seeds.detector_training[index],
-    )
 
 
 def paired_seed_indices(

@@ -78,34 +78,34 @@ def _validate_hardening_selection(config: FedActConfig) -> None:
     )
 
 
-def _validate_artifact_layout(config: FedActConfig) -> None:
-    artifacts = config.artifacts
-    directories = artifacts.directories
-    outputs_root = artifacts.outputs_root
-    results_root = artifacts.results_root
+def _validate_workspace_layout(config: FedActConfig) -> None:
+    workspace = config.workspace
+    directories = workspace.directories
+    outputs_root = workspace.outputs_root
+    results_root = workspace.results_root
 
     _require_relative_descendant(
-        outputs_root, directories.preprocessing, "artifacts.directories.preprocessing"
+        outputs_root, directories.preprocessing, "workspace.directories.preprocessing"
     )
     _require_relative_descendant(
-        outputs_root, directories.experiments, "artifacts.directories.experiments"
+        outputs_root, directories.experiments, "workspace.directories.experiments"
     )
-    _require_relative_descendant(outputs_root, directories.cache, "artifacts.directories.cache")
+    _require_relative_descendant(outputs_root, directories.cache, "workspace.directories.cache")
     _require_relative_descendant(
-        directories.cache, directories.staging, "artifacts.directories.staging"
+        directories.cache, directories.staging, "workspace.directories.staging"
     )
     _require_relative_descendant(
-        artifacts.results_root,
+        workspace.results_root,
         directories.result_experiments,
-        "artifacts.directories.result_experiments",
+        "workspace.directories.result_experiments",
     )
     _require_relative_descendant(
-        results_root, directories.project_summary, "artifacts.directories.project_summary"
+        results_root, directories.project_summary, "workspace.directories.project_summary"
     )
     _require_relative_descendant(
         directories.project_summary,
         directories.reproducibility,
-        "artifacts.directories.reproducibility",
+        "workspace.directories.reproducibility",
     )
 
     shared_children = {
@@ -118,37 +118,19 @@ def _validate_artifact_layout(config: FedActConfig) -> None:
     }
     for label, path in shared_children.items():
         _require_relative_descendant(
-            directories.shared_artifacts, path, f"artifacts.directories.{label}"
+            directories.shared_artifacts, path, f"workspace.directories.{label}"
         )
 
-    _require_relative_descendant(
-        directories.shared_provenance,
-        artifacts.active_artifact_index,
-        "artifacts.active_artifact_index",
-    )
-    _require_relative_descendant(
-        directories.shared_provenance,
-        artifacts.dependency_index,
-        "artifacts.dependency_index",
-    )
-    _require_relative_descendant(
-        directories.reproducibility,
-        artifacts.evidence_index,
-        "artifacts.evidence_index",
-    )
-
-    if len(set(artifacts.experiment_directories)) != len(artifacts.experiment_directories):
-        raise ConfigurationConstraintError("artifacts.experiment_directories must be unique")
-    if any(not name for name in artifacts.experiment_directories):
+    if len(set(workspace.experiment_directories)) != len(workspace.experiment_directories):
+        raise ConfigurationConstraintError("workspace.experiment_directories must be unique")
+    if any(not name for name in workspace.experiment_directories):
         raise ConfigurationConstraintError(
-            "artifacts.experiment_directories must contain non-empty names"
+            "workspace.experiment_directories must contain non-empty names"
         )
-    if len(set(artifacts.result_payload_directories)) != len(artifacts.result_payload_directories):
-        raise ConfigurationConstraintError("artifacts.result_payload_directories must be unique")
 
 
 def validate_configuration_constraints(config: FedActConfig) -> None:
     _validate_temporal_consistency(config)
     _validate_identification_selections(config)
     _validate_hardening_selection(config)
-    _validate_artifact_layout(config)
+    _validate_workspace_layout(config)

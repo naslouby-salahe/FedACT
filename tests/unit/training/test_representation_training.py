@@ -8,9 +8,10 @@ from fedact.config.loading import LoadedConfiguration, load_production_configura
 from fedact.config.models import FedActConfig
 from fedact.domain.records import SampleIdentifier
 from fedact.training.representation import (
+    PairedSeedIndex,
     TrainingContractError,
     TrainingObservation,
-    paired_seed_index,
+    paired_seed_indices,
     select_checkpoint_epoch,
     stratified_validation_split,
 )
@@ -35,12 +36,19 @@ def observation(sid: str, month: int, label: bool) -> TrainingObservation:
     )
 
 
-def test_paired_seed_index_never_substitutes_streams(config: FedActConfig) -> None:
-    seeds = paired_seed_index(config, 0)
-    assert seeds.representation_seed == config.seeds.representation[0]
-    assert seeds.detector_training_seed == config.seeds.detector_training[0]
-    with pytest.raises(TrainingContractError):
-        paired_seed_index(config, len(config.seeds.representation) + 5)
+def test_paired_seed_indices_never_substitute_streams(config: FedActConfig) -> None:
+    seeds = paired_seed_indices(
+        tuple(config.seeds.representation[:2]),
+        tuple(config.seeds.detector_training[:2]),
+    )
+    assert seeds[0] == PairedSeedIndex(
+        representation_seed=config.seeds.representation[0],
+        detector_training_seed=config.seeds.detector_training[0],
+    )
+    assert seeds[1] == PairedSeedIndex(
+        representation_seed=config.seeds.representation[1],
+        detector_training_seed=config.seeds.detector_training[1],
+    )
 
 
 def test_validation_split_is_stratified_by_label_and_month(config: FedActConfig) -> None:

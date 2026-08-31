@@ -216,7 +216,7 @@ reporting:
     effect_sizes_and_p_values: 3
   p_value_display_threshold: 1.0e-4
 
-artifacts:
+workspace:
   configuration_file: configs/fedact.yaml
   outputs_root: outputs
   results_root: results
@@ -246,7 +246,3 @@ artifacts:
     - cross-corpus
     - client-selection
     - statistical-synthesis
-  result_payload_directories: [figures, tables, metrics, statistics]
-  active_artifact_index: outputs/artifacts/provenance/indexes/artifact_index.jsonl
-  dependency_index: outputs/artifacts/provenance/indexes/dependency_index.json
-  evidence_index: results/project_summary/reproducibility/execution/evidence_index.json

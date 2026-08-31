@@ -5,13 +5,13 @@ from dataclasses import dataclass
 import numpy as np
 
 from fedact.app import Application
-from fedact.domain.enums import ScientificOutcome
-from fedact.domain.records import ClientIdentifier, EvaluationCount
-from fedact.fedact.client_selection import (
+from fedact.core.client_selection import (
     ClientInformationMatrix,
     SelectionBudget,
     greedy_d_optimal,
 )
+from fedact.domain.enums import ScientificOutcome
+from fedact.domain.records import ClientIdentifier, EvaluationCount
 
 _CLIENT_MATRIX_NOISE_SCALE = 0.05
 

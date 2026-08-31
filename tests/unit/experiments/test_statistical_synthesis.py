@@ -29,6 +29,13 @@ def test_run_statistical_synthesis(application: Application) -> None:
         forecast_horizons=tuple(config.temporal.forecast_horizons_months),
         nuisance_ranks=tuple(config.identification.nuisance_rank.candidates),
         coverage_levels=tuple(config.identification.target_coverage.candidates),
+        minimum_paired_cutoffs=config.statistics.minimum_paired_cutoffs,
+        maximum_missing_cutoff_fraction=config.statistics.maximum_missing_cutoff_fraction,
+        bootstrap_resamples=config.statistics.bootstrap.resamples,
+        confidence_level=config.statistics.confidence_level,
+        maximum_nonzero_pairs_for_exact=config.statistics.wilcoxon.maximum_nonzero_pairs_for_exact,
+        multiplicity_q=config.statistics.multiplicity.q,
+        statistics_seed=config.seeds.analysis[0],
     )
     assert report.coverage_satisfied
     assert report.clean_cost_satisfied

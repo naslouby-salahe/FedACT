@@ -10,11 +10,11 @@ from fedact.config.models import (
     CorruptedClientAllowanceParameters,
     CorruptedClientAttack,
 )
+from fedact.core.feasible_sets import build_nuisance_spaces
+from fedact.core.nuisance import NuisanceEstimate, estimate_client_nuisance_subspace
+from fedact.core.solver import solve_action_interval
 from fedact.domain.enums import RankSelectionMethod, ScientificOutcome
 from fedact.domain.records import EvaluationCount
-from fedact.fedact.feasible_sets import build_nuisance_spaces
-from fedact.fedact.nuisance import NuisanceEstimate, estimate_client_nuisance_subspace
-from fedact.fedact.solver import solve_action_interval
 
 _STRESS_SWEEP_BASELINE_ROWS = 20
 

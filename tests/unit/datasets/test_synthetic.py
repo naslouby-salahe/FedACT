@@ -72,7 +72,9 @@ def test_shared_transition_norm_is_locked_by_configuration() -> None:
         Path(__file__).resolve().parents[3] / "configs" / "fedact.yaml"
     ).values
     generator = np.random.default_rng(3)
-    transition = draw_shared_transition(generator, config.synthetic)
+    transition = draw_shared_transition(
+        generator, config.synthetic.base_sigma, config.synthetic.shared_transition_norm_over_sigma
+    )
     expected = config.synthetic.base_sigma * config.synthetic.shared_transition_norm_over_sigma
     assert float(np.linalg.norm(transition.vector)) == pytest.approx(expected)
 
@@ -105,7 +107,7 @@ def test_paired_seed_streams_spawn_configured_draw_count() -> None:
         Path(__file__).resolve().parents[3] / "configs" / "fedact.yaml"
     ).values
     streams = paired_seed_streams(
-        config.synthetic,
+        config.synthetic.nested_noise_draws_per_seed,
         tuple(config.seeds.synthetic_generation[:2]),
         tuple(config.seeds.synthetic_noise[:2]),
         0,
@@ -154,7 +156,11 @@ def test_smoke_validation_report_requires_all_checks_passing() -> None:
     )
     report = run_smoke_validation(
         spaces=spaces,
-        transition=draw_shared_transition(generator, config.synthetic),
+        transition=draw_shared_transition(
+            generator,
+            config.synthetic.base_sigma,
+            config.synthetic.shared_transition_norm_over_sigma,
+        ),
         requested_nuisance_dimension=requested,
         common_intersection=defaults.common_intersection_dimension,
         rank_tolerance=float(config.numerical.rank_clip_epsilon_relative),

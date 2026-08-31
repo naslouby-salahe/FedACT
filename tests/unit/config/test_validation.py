@@ -143,26 +143,6 @@ def test_shared_subdirectories_must_live_under_shared_artifacts(production_paylo
         validate_configuration_constraints(config)
 
 
-def test_active_artifact_index_must_live_under_shared_provenance(production_payload: str) -> None:
-    config = mutated_configuration(
-        production_payload,
-        "active_artifact_index: outputs/artifacts/provenance/indexes/artifact_index.jsonl",
-        "active_artifact_index: outputs/indexes/artifact_index.jsonl",
-    )
-    with pytest.raises(ConfigurationConstraintError):
-        validate_configuration_constraints(config)
-
-
-def test_evidence_index_must_live_under_reproducibility(production_payload: str) -> None:
-    config = mutated_configuration(
-        production_payload,
-        "evidence_index: results/project_summary/reproducibility/execution/evidence_index.json",
-        "evidence_index: results/project_summary/execution/evidence_index.json",
-    )
-    with pytest.raises(ConfigurationConstraintError):
-        validate_configuration_constraints(config)
-
-
 def test_result_directories_must_live_under_results_root(production_payload: str) -> None:
     config = mutated_configuration(
         production_payload,

@@ -4,12 +4,12 @@ import torch
 
 from fedact.app import Application
 from fedact.config.models import CorruptedClientAllowanceParameters, CorruptedClientAttack
+from fedact.core.nuisance import NuisanceEstimate
 from fedact.domain.enums import ScientificOutcome
 from fedact.experiments.failure_boundaries import (
     apply_corrupted_client_attack,
     run_robustness_and_failure_boundaries,
 )
-from fedact.fedact.nuisance import NuisanceEstimate
 
 
 def test_run_robustness_and_failure_boundary_evaluation(

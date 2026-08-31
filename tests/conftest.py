@@ -12,7 +12,6 @@ from fedact.config.loading import LoadedConfiguration, load_production_configura
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 PRODUCTION_CONFIGURATION_PATH = REPOSITORY_ROOT / "configs" / "fedact.yaml"
-ROADMAP_PATH = REPOSITORY_ROOT / "docs" / "Roadmap.md"
 SOURCE_ROOT = REPOSITORY_ROOT / "src"
 TESTS_ROOT = REPOSITORY_ROOT / "tests"
 
@@ -66,14 +65,3 @@ def governed_scalar_literals(production_payload: str) -> frozenset[str]:
     return frozenset(
         repr(value) for value in collect_leaves(raw) if repr(value) not in {"0", "0.0", "1", "1.0"}
     )
-
-
-@pytest.fixture(scope="session")
-def roadmap_configuration_block(repository_root: Path) -> str:
-    lines = (repository_root / "docs" / "Roadmap.md").read_text(encoding="utf-8").splitlines()
-    heading_index = lines.index("# Configuration YAML")
-    fence_index = next(
-        i for i in range(heading_index + 1, len(lines)) if lines[i].strip() == "```yaml"
-    )
-    closing_index = next(i for i in range(fence_index + 1, len(lines)) if lines[i].strip() == "```")
-    return "\n".join(lines[fence_index + 1 : closing_index]) + "\n"

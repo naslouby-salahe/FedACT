@@ -23,11 +23,11 @@ PACKAGE_DEPENDENCIES: dict[str, frozenset[str]] = {
         {"fedact.domain", "fedact.config", "fedact.datasets", "fedact.models"}
     ),
     "fedact.operators": frozenset({"fedact.domain", "fedact.config"}),
-    "fedact.fedact": frozenset({"fedact.domain", "fedact.config"}),
+    "fedact.core": frozenset({"fedact.domain", "fedact.config"}),
     "fedact.scoring": frozenset(
         {"fedact.domain", "fedact.config", "fedact.datasets", "fedact.models", "fedact.training"}
     ),
-    "fedact.artifacts": frozenset({"fedact.domain", "fedact.config"}),
+    "fedact.storage": frozenset({"fedact.domain", "fedact.config"}),
     "fedact.baselines": frozenset(
         {"fedact.domain", "fedact.config", "fedact.models", "fedact.training", "fedact.scoring"}
     ),
@@ -37,7 +37,7 @@ PACKAGE_DEPENDENCIES: dict[str, frozenset[str]] = {
             "fedact.config",
             "fedact.datasets",
             "fedact.models",
-            "fedact.fedact",
+            "fedact.core",
             "fedact.training",
         }
     ),
@@ -49,7 +49,7 @@ PACKAGE_DEPENDENCIES: dict[str, frozenset[str]] = {
             "fedact.models",
             "fedact.scoring",
             "fedact.operators",
-            "fedact.fedact",
+            "fedact.core",
             "fedact.baselines",
         }
     ),
@@ -60,11 +60,11 @@ PACKAGE_DEPENDENCIES: dict[str, frozenset[str]] = {
             "fedact.config",
             "fedact.evaluation",
             "fedact.analysis",
-            "fedact.artifacts",
+            "fedact.storage",
         }
     ),
     "fedact.runtime": frozenset(
-        {"fedact.domain", "fedact.config", "fedact.artifacts", "fedact.experiments"}
+        {"fedact.domain", "fedact.config", "fedact.storage", "fedact.experiments"}
     ),
     "fedact.experiments": frozenset(
         {
@@ -75,12 +75,13 @@ PACKAGE_DEPENDENCIES: dict[str, frozenset[str]] = {
             "fedact.training",
             "fedact.scoring",
             "fedact.operators",
-            "fedact.fedact",
+            "fedact.core",
             "fedact.baselines",
             "fedact.calibration",
             "fedact.evaluation",
             "fedact.analysis",
-            "fedact.artifacts",
+            "fedact.storage",
+            "fedact.app",
         }
     ),
     "fedact.app": frozenset(
@@ -92,12 +93,12 @@ PACKAGE_DEPENDENCIES: dict[str, frozenset[str]] = {
             "fedact.training",
             "fedact.scoring",
             "fedact.operators",
-            "fedact.fedact",
+            "fedact.core",
             "fedact.baselines",
             "fedact.calibration",
             "fedact.evaluation",
             "fedact.analysis",
-            "fedact.artifacts",
+            "fedact.storage",
             "fedact.reporting",
             "fedact.runtime",
             "fedact.experiments",
@@ -112,12 +113,12 @@ PACKAGE_DEPENDENCIES: dict[str, frozenset[str]] = {
             "fedact.training",
             "fedact.scoring",
             "fedact.operators",
-            "fedact.fedact",
+            "fedact.core",
             "fedact.baselines",
             "fedact.calibration",
             "fedact.evaluation",
             "fedact.analysis",
-            "fedact.artifacts",
+            "fedact.storage",
             "fedact.reporting",
             "fedact.runtime",
             "fedact.experiments",
@@ -220,7 +221,7 @@ def test_internal_dependency_graph_is_fail_closed(repository_root: Path) -> None
         ("fedact.domain.example", "import fedact.random_junk.module\n"),
         ("fedact.random_junk.example", "from fedact.domain import records\n"),
         ("fedact.config.example", "from fedact.models import detector\n"),
-        ("fedact.artifacts.example", "from fedact.reporting import evidence\n"),
+        ("fedact.storage.example", "from fedact.reporting import export\n"),
     ],
 )
 def test_dependency_rule_rejects_known_escape_hatches(importer: str, snippet: str) -> None:

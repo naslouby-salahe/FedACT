@@ -3,7 +3,7 @@ from __future__ import annotations
 from fedact.domain.enums import ExecutableWorkflowName as W
 from fedact.domain.enums import ScientificOutcome
 from fedact.runtime.planning import resolve_execution_plan
-from fedact.runtime.state import WorkflowExecutionState, WorkflowOutcomeRecord
+from fedact.runtime.status import WorkflowExecutionState, WorkflowOutcomeRecord
 
 
 def _passed(*workflows: W) -> tuple[WorkflowOutcomeRecord, ...]:

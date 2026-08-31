@@ -58,32 +58,10 @@ class MissingCutoffReason(StrEnum):
     MISSING_SOURCE_DATA = "MISSING_SOURCE_DATA"
 
 
-class EvidenceStatus(StrEnum):
-    SUPPORTED = "SUPPORTED"
-    FALSIFIED = "FALSIFIED"
-    INSUFFICIENT_EVIDENCE = "INSUFFICIENT_EVIDENCE"
-
-
 class EffectDirection(StrEnum):
     FAVORABLE = "FAVORABLE"
     CONTRADICTORY = "CONTRADICTORY"
     NEUTRAL = "NEUTRAL"
-
-
-class ArtifactLifecycleState(StrEnum):
-    PLANNED = "planned"
-    STAGING = "staging"
-    COMPLETE = "complete"
-    REUSED = "reused"
-    STALE = "stale"
-    REPLACED = "replaced"
-    INCOMPLETE = "incomplete"
-    CLEANED = "cleaned"
-
-
-class EvidenceVerificationStatus(StrEnum):
-    VERIFIED = "verified"
-    MISSING = "missing"
 
 
 class ArtifactBoundary(StrEnum):
@@ -96,35 +74,6 @@ class ArtifactBoundary(StrEnum):
     EVALUATION = "evaluation"
     ANALYSIS = "analysis"
     REPORTING = "reporting"
-
-
-class RequiredScientificArtifact(StrEnum):
-    RAW_DATA_AND_DATASET_PREPARATION_MANIFESTS = "raw-data-and-dataset-preparation-manifests"
-    CHRONOLOGICAL_CUTOFF_AND_SPLIT_MANIFESTS = "chronological-cutoff-and-split-manifests"
-    CLIENT_AND_COHORT_MANIFESTS = "client-and-cohort-manifests"
-    FITTED_PREPROCESSING_TRANSFORMS = "fitted-preprocessing-transforms"
-    CUTOFF_FIXED_REPRESENTATION_AND_DETECTOR_CHECKPOINTS = (
-        "cutoff-fixed-representation-and-detector-checkpoints"
-    )
-    ENCODED_SCORED_OBSERVATIONS_AND_TRANSITION_SUMMARIES = (
-        "encoded-scored-observations-and-transition-summaries"
-    )
-    CLIENT_NUISANCE_BASES_AND_CONSTRAINTS = "client-nuisance-bases-and-constraints"
-    HISTORICAL_REFERENCE_POINTS_RADII_FEASIBLE_SETS_AND_CENTERS = (
-        "historical-reference-points-radii-feasible-sets-and-centers"
-    )
-    TEMPORAL_MODEL_AND_PROCESS_ERROR_SETS = "temporal-model-and-process-error-sets"
-    NESTED_CALIBRATION_RESULTS = "nested-calibration-results"
-    OPERATOR_LIBRARY_IDENTITIES_VALIDITY_RECORDS_AND_ACTION_DISPLACEMENTS = (
-        "operator-library-identities-validity-records-and-action-displacements"
-    )
-    PROSPECTIVE_FEASIBLE_SETS_AND_DIAMETER_BOUNDS = "prospective-feasible-sets-and-diameter-bounds"
-    ACTION_INTERVALS_STATES_CERTIFICATES_AND_ABSTENTIONS = (
-        "action-intervals-states-certificates-and-abstentions"
-    )
-    HARDENED_AND_BASELINE_CHECKPOINTS = "hardened-and-baseline-checkpoints"
-    WORKFLOW_RESULTS_AND_STATISTICAL_SUMMARIES = "workflow-results-and-statistical-summaries"
-    MANUSCRIPT_FACING_EVIDENCE = "manuscript-facing-evidence"
 
 
 class ExecutableWorkflowName(StrEnum):

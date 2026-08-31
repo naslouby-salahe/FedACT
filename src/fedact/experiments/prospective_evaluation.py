@@ -5,11 +5,15 @@ from dataclasses import dataclass
 import numpy as np
 import torch
 
-from fedact.analysis.claims import classify_confirmatory_contrast
 from fedact.app import Application
 from fedact.baselines.identification import matched_benign_subtraction
 from fedact.baselines.security import static_security_baseline
 from fedact.calibration.validation import validate_calibration_outcome
+from fedact.core.certification import DomainValid, certify_action_interval
+from fedact.core.controls import ControlQualityGate, filter_control_replicates
+from fedact.core.feasible_sets import build_nuisance_spaces
+from fedact.core.nuisance import estimate_client_nuisance_subspace
+from fedact.core.solver import solve_action_interval
 from fedact.domain.enums import (
     CertificationStatus,
     DatasetSelector,
@@ -28,11 +32,6 @@ from fedact.evaluation.later_real import build_later_real_proxy
 from fedact.evaluation.metrics import compute_evaluation_metrics
 from fedact.evaluation.records import EvaluationRecord
 from fedact.evaluation.validation import validate_evaluation_metrics
-from fedact.fedact.certification import DomainValid, certify_action_interval
-from fedact.fedact.controls import ControlQualityGate, filter_control_replicates
-from fedact.fedact.feasible_sets import build_nuisance_spaces
-from fedact.fedact.nuisance import estimate_client_nuisance_subspace
-from fedact.fedact.solver import solve_action_interval
 from fedact.models.detector import DetectorHead, detector_probabilities
 from fedact.models.representation import EMBEDDING_DIMENSION, RepresentationEncoder
 from fedact.scoring.encoding import EncodedSample
@@ -141,7 +140,13 @@ def run_prospective_fedact_evaluation(application: Application) -> ProspectiveEv
         validation_population=val_pop,
         challenge_sets=challenges,
         baseline_clean_fnr=base_fnr,
-        config=config,
+        initial_learning_rate=config.training.initial_learning_rate,
+        final_learning_rate=config.training.final_learning_rate,
+        maximum_epochs=config.training.maximum_epochs,
+        maximum_clean_fnr_degradation_percentage_points=(
+            config.hardening.weight.maximum_clean_fnr_degradation_percentage_points
+        ),
+        projection_tie_tolerance=config.numerical.projection_tie_tolerance,
         hardening_weight=config.hardening.weight.candidates[0],
     )
 
@@ -178,7 +183,6 @@ def run_prospective_fedact_evaluation(application: Application) -> ProspectiveEv
         proxy.observed_transition, proxy.observed_transition
     )
     security_baseline = static_security_baseline(latent_dim)
-    contrast_classifier = classify_confirmatory_contrast
     calibration_validator = validate_calibration_outcome
     encoded = (
         EncodedSample(
@@ -192,7 +196,6 @@ def run_prospective_fedact_evaluation(application: Application) -> ProspectiveEv
         cumulative_exposure < 0
         or identification_baseline.method_name == ""
         or security_baseline.predicted_shift.shape[0] == 0
-        or contrast_classifier is None
         or calibration_validator is None
     ):
         raise RuntimeError("prospective evaluation lost a required comparator")

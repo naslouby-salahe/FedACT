@@ -397,7 +397,7 @@ class ReportingConfig(StrictModel):
     p_value_display_threshold: PositiveFloat
 
 
-class ArtifactDirectories(StrictModel):
+class WorkspaceDirectories(StrictModel):
     preprocessing: RelativePosixPath
     shared_artifacts: RelativePosixPath
     shared_models: RelativePosixPath
@@ -414,16 +414,12 @@ class ArtifactDirectories(StrictModel):
     reproducibility: RelativePosixPath
 
 
-class ArtifactsConfig(StrictModel):
+class WorkspaceConfig(StrictModel):
     configuration_file: RelativePosixPath
     outputs_root: RelativePosixPath
     results_root: RelativePosixPath
-    directories: ArtifactDirectories
+    directories: WorkspaceDirectories
     experiment_directories: list[str]
-    result_payload_directories: list[str]
-    active_artifact_index: RelativePosixPath
-    dependency_index: RelativePosixPath
-    evidence_index: RelativePosixPath
 
 
 class FedActConfig(StrictModel):
@@ -443,4 +439,4 @@ class FedActConfig(StrictModel):
     client_selection: ClientSelectionConfig
     numerical: NumericalContract
     reporting: ReportingConfig
-    artifacts: ArtifactsConfig
+    workspace: WorkspaceConfig

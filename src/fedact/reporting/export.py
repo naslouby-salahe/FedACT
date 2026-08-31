@@ -1,19 +1,31 @@
 from __future__ import annotations
 
+import json
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import NewType
 
-from fedact.artifacts.manifests import WorkflowResultRecord
-from fedact.domain.enums import EvidenceVerificationStatus, ScientificOutcome
+from fedact.domain.enums import ScientificOutcome
 from fedact.domain.records import ArtifactName, MetricRate
-from fedact.reporting.evidence import EvidenceArtifactRecord, package_evidence_index
 from fedact.reporting.figures import generate_prospective_metrics_figure
 from fedact.reporting.tables import LatexTableCell, generate_latex_table
+from fedact.storage.results import WorkflowResultRecord
 
 LatexMacroName = NewType("LatexMacroName", str)
 LatexMacroValue = NewType("LatexMacroValue", str)
 
 BACKSLASH = chr(92)
+
+
+class ArtifactVerificationStatus:
+    VERIFIED = "verified"
+    MISSING = "missing"
+
+
+@dataclass(frozen=True)
+class ArtifactStatusRecord:
+    artifact: ArtifactName
+    status: str
 
 
 def synthesize_latex_macros(
@@ -33,8 +45,6 @@ def generate_project_summary(
     certification_rate: MetricRate,
     output_file: Path,
 ) -> None:
-    import json
-
     output_file.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "project": project,
@@ -45,10 +55,18 @@ def generate_project_summary(
     output_file.write_text(json.dumps(payload, indent=2) + chr(10), encoding="utf-8")
 
 
-def _verification_status(artifact_file: Path) -> EvidenceVerificationStatus:
+def package_artifact_status_index(
+    status_records: list[ArtifactStatusRecord], output_file: Path
+) -> None:
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    payload = [asdict(record) for record in status_records]
+    output_file.write_text(json.dumps(payload, indent=2) + chr(10), encoding="utf-8")
+
+
+def _verification_status(artifact_file: Path) -> str:
     if artifact_file.is_file():
-        return EvidenceVerificationStatus.VERIFIED
-    return EvidenceVerificationStatus.MISSING
+        return ArtifactVerificationStatus.VERIFIED
+    return ArtifactVerificationStatus.MISSING
 
 
 def export_verified_project_evidence(
@@ -115,12 +133,12 @@ def export_verified_project_evidence(
         certification_rate=certification_rate,
         output_file=summary_file,
     )
-    package_evidence_index(
+    package_artifact_status_index(
         [
-            EvidenceArtifactRecord(
+            ArtifactStatusRecord(
                 artifact="table_1_main.tex", status=_verification_status(table_file)
             ),
-            EvidenceArtifactRecord(
+            ArtifactStatusRecord(
                 artifact="project_summary.json", status=_verification_status(summary_file)
             ),
         ],

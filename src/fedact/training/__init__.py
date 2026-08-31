@@ -8,7 +8,7 @@ from fedact.training.representation import (
     TrainingContractError,
     TrainingObservation,
     apply_deterministic_torch_seed,
-    paired_seed_index,
+    paired_seed_indices,
     select_checkpoint_epoch,
     stratified_validation_split,
 )
@@ -20,7 +20,7 @@ __all__ = [
     "TrainingContractError",
     "TrainingObservation",
     "apply_deterministic_torch_seed",
-    "paired_seed_index",
+    "paired_seed_indices",
     "select_checkpoint_epoch",
     "stratified_validation_split",
     "train_base_detector_head",
