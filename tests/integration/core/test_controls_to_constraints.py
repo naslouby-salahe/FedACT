@@ -4,7 +4,7 @@ import numpy as np
 
 from fedact.core.constraints import ClientConstraintSummary, validate_summary
 from fedact.core.controls import build_control_displacement
-from fedact.domain.records import ClientIdentifier
+from fedact.domain.types import ClientIdentifier
 
 
 def test_controls_to_constraints_integration() -> None:

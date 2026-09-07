@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import numpy as np
 import torch
 
-from fedact.domain.records import (
+from fedact.domain.types import (
     AmbiguityFlag,
     CertificationFlag,
     CoordinateValue,
@@ -34,7 +34,7 @@ class ActionInterval:
 
     @property
     def width(self) -> IntervalBound:
-        return float(self.upper - self.lower)
+        return self.upper - self.lower
 
     def is_certified_positive(
         self, threshold: ThresholdValue, ambiguity_width: ThresholdValue

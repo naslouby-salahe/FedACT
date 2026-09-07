@@ -145,3 +145,8 @@ class CertificationStatus(StrEnum):
     CERTIFIED_NEGATIVE = "CERTIFIED_NEGATIVE"
     AMBIGUOUS = "AMBIGUOUS"
     ABSTAIN = "ABSTAIN"
+
+
+class ArtifactVerificationStatus(StrEnum):
+    VERIFIED = "verified"
+    MISSING = "missing"

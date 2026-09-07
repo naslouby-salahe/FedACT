@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from fedact.domain.records import SampleIdentifier
+from fedact.domain.types import SampleIdentifier
 from fedact.scoring.encoding import EncodedSample
 from fedact.scoring.validation import ScoreValidationError, validate_encoded_samples
 

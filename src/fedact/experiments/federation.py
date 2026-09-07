@@ -10,7 +10,7 @@ from fedact.core.feasible_sets import build_nuisance_spaces
 from fedact.core.nuisance import estimate_client_nuisance_subspace
 from fedact.core.solver import solve_action_interval
 from fedact.domain.enums import FederationGeometry, RankSelectionMethod, ScientificOutcome
-from fedact.domain.records import EvaluationCount, IntervalBound
+from fedact.domain.types import EvaluationCount, IntervalBound, ValidationFlag
 from fedact.training.federated import train_federated_detector
 
 
@@ -18,7 +18,7 @@ from fedact.training.federated import train_federated_detector
 class FederationGeometryReport:
     clients_evaluated: EvaluationCount
     delta_w_o: IntervalBound
-    complementarity_verified: bool
+    complementarity_verified: ValidationFlag
     scientific_outcome: ScientificOutcome
     geometries_tested: EvaluationCount = 2
 

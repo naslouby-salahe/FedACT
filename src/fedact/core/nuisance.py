@@ -8,7 +8,7 @@ import torch
 
 from fedact.core.controls import ControlReplicate
 from fedact.domain.enums import RankSelectionMethod
-from fedact.domain.records import (
+from fedact.domain.types import (
     CoordinateValue,
     EigengapRatio,
     MetricRate,
@@ -132,7 +132,7 @@ def is_rank_stable(
 ) -> StabilityFlag:
     if full_sample_rank is not None:
         count = sum(1 for r in ranks if r == full_sample_rank)
-        return bool(count / len(ranks) >= minimum_fraction) if ranks else False
+        return count / len(ranks) >= minimum_fraction if ranks else False
     return len(set(ranks)) <= 1
 
 

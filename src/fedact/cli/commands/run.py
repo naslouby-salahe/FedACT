@@ -13,7 +13,7 @@ from fedact.domain.enums import (
     RunnableWorkflowName,
     ScientificOutcome,
 )
-from fedact.domain.records import OverwriteRequested
+from fedact.domain.types import OverwriteRequested
 from fedact.experiments import registered_workflow
 from fedact.runtime.status import WorkflowExecutionState
 from fedact.storage.results import (

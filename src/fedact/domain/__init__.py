@@ -8,11 +8,10 @@ from fedact.domain.records import (
     CHRONOLOGY_CONSEQUENCE,
     CUTOFF_FIXED_REPRESENTATION_CONSEQUENCE,
     AssumptionContractError,
-    ContentChecksum,
     CutoffManifest,
-    DependencyFingerprint,
     WorkflowContract,
 )
+from fedact.domain.types import ContentChecksum, DependencyFingerprint
 
 __all__ = [
     "ArtifactBoundary",

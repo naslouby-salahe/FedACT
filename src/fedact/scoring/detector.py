@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from fedact.domain.records import (
+from fedact.domain.types import (
     BinaryLabel,
     LogitValue,
     PassingFlag,

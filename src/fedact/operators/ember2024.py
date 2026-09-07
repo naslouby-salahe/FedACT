@@ -14,7 +14,7 @@ import lief
 import pefile
 from pydantic import Field
 
-from fedact.domain.records import DegeneracyFlag
+from fedact.domain.types import DegeneracyFlag, DisplacementComponent, ZeroDisplacementFloor
 from fedact.operators.common import (
     NormalizedParameterString,
     OperatorDomain,
@@ -44,7 +44,6 @@ APK_PAYLOAD_SIZES: tuple[PayloadBytes, ...] = (
 )
 
 DisplacementNorm = Annotated[float, Field(ge=0.0)]
-ZeroDisplacementFloor = Annotated[float, Field(gt=0.0)]
 CompositionLength = NewType("CompositionLength", int)
 
 
@@ -68,7 +67,7 @@ class UpxAction(StrEnum):
 
 @dataclass(frozen=True)
 class DisplacementVector:
-    components: tuple[float, ...]
+    components: tuple[DisplacementComponent, ...]
 
     def displacement_norm(self) -> DisplacementNorm:
         squared = sum(component * component for component in self.components)

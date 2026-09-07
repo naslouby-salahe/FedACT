@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fedact.domain.records import SampleIdentifier
+from fedact.domain.types import SampleIdentifier
 from fedact.models.representation import RepresentationEncoder
 from fedact.scoring.encoding import encode_observations
 from fedact.training.representation import TrainingObservation

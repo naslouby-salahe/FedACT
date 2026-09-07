@@ -9,7 +9,7 @@ from fedact.datasets.splits import (
     SplitPartition,
     construct_cutoff_split,
 )
-from fedact.domain.records import SampleIdentifier, SplitCutoffIdentity
+from fedact.domain.types import SampleIdentifier, SplitCutoffIdentity
 
 
 def test_partition_counts_reflect_assignment_membership() -> None:

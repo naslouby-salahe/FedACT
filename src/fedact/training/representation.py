@@ -8,8 +8,9 @@ from pathlib import Path
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 
-from fedact.domain.records import (
+from fedact.domain.types import (
     BinaryLabel,
+    EmbeddingComponent,
     EpochIndex,
     LossValue,
     MetricRate,
@@ -48,7 +49,7 @@ def paired_seed_indices(
 @dataclass(frozen=True)
 class TrainingObservation:
     sample_id: SampleIdentifier
-    features: torch.Tensor | tuple[float, ...]
+    features: torch.Tensor | tuple[EmbeddingComponent, ...]
     month_index: MonthIndex
     label: BinaryLabel
 

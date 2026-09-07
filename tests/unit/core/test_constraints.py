@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 
 from fedact.core.constraints import ClientConstraintSummary, validate_summary
-from fedact.domain.records import ClientIdentifier
+from fedact.domain.types import ClientIdentifier
 
 
 def test_validate_summary_accepts_valid_data() -> None:

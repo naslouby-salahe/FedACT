@@ -11,8 +11,12 @@ from fedact.core.feasible_sets import build_nuisance_spaces
 from fedact.core.nuisance import estimate_client_nuisance_subspace
 from fedact.core.solver import solve_action_interval
 from fedact.domain.enums import CertificationStatus, RankSelectionMethod, ScientificOutcome
-from fedact.domain.records import (
+from fedact.domain.types import (
+    AbstentionStatusFlag,
+    AmbiguityStatusFlag,
+    CertificationStatusFlag,
     IntervalBound,
+    MechanismValidFlag,
     MetricRate,
     ParameterName,
     ParameterValue,
@@ -39,16 +43,16 @@ class SweepCellResult:
     parameter_value: ParameterValue
     coverage: MetricRate
     action_width: IntervalBound
-    is_certified: bool
-    is_ambiguous: bool
-    is_abstaining: bool
+    is_certified: CertificationStatusFlag
+    is_ambiguous: AmbiguityStatusFlag
+    is_abstaining: AbstentionStatusFlag
 
 
 @dataclass(frozen=True)
 class SyntheticSweepReport:
     total_cells: SampleCount
     passed_cells: SampleCount
-    mechanism_valid: bool
+    mechanism_valid: MechanismValidFlag
     cells: tuple[SweepCellResult, ...]
     scientific_outcome: ScientificOutcome
 

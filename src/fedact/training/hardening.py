@@ -8,8 +8,9 @@ from dataclasses import dataclass
 import torch
 from torch.nn import functional as torch_functional
 
-from fedact.domain.records import (
+from fedact.domain.types import (
     DegradationValue,
+    EmbeddingComponent,
     EpochIndex,
     LossValue,
     MetricRate,
@@ -31,7 +32,7 @@ class CleanFnr:
 @dataclass(frozen=True)
 class SampleChallengeSet:
     source_sample_id: SampleIdentifier
-    challenge_embeddings: tuple[tuple[float, ...], ...]
+    challenge_embeddings: tuple[tuple[EmbeddingComponent, ...], ...]
 
 
 @dataclass(frozen=True)
@@ -100,7 +101,7 @@ def _historical_bce_loss(
 def _worst_challenge_loss(
     head: DetectorHead,
     malicious_sample_ids: Sequence[SampleIdentifier],
-    challenges_by_sample: dict[SampleIdentifier, tuple[tuple[float, ...], ...]],
+    challenges_by_sample: dict[SampleIdentifier, tuple[tuple[EmbeddingComponent, ...], ...]],
 ) -> torch.Tensor | None:
     worst_losses: list[torch.Tensor] = []
     for sample_id in malicious_sample_ids:
@@ -124,7 +125,7 @@ def _combined_objective(
     embeddings: torch.Tensor,
     labels: torch.Tensor,
     malicious_sample_ids: Sequence[SampleIdentifier],
-    challenges_by_sample: dict[SampleIdentifier, tuple[tuple[float, ...], ...]],
+    challenges_by_sample: dict[SampleIdentifier, tuple[tuple[EmbeddingComponent, ...], ...]],
     hardening_weight: ThresholdValue,
 ) -> torch.Tensor:
     historical = _historical_bce_loss(head, embeddings, labels)

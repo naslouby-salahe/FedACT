@@ -12,7 +12,7 @@ from fedact.datasets.records import (
     ClientSemanticsClass,
 )
 from fedact.domain.enums import DatasetSelector
-from fedact.domain.records import (
+from fedact.domain.types import (
     CalendarMonthString,
     DetailMessage,
     FamilyName,

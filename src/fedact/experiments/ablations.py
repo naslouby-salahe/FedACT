@@ -9,20 +9,25 @@ from fedact.core.feasible_sets import build_nuisance_spaces
 from fedact.core.nuisance import estimate_client_nuisance_subspace
 from fedact.core.solver import solve_action_interval
 from fedact.domain.enums import RankSelectionMethod, ScientificOutcome
-from fedact.domain.records import AblationIdentifier, DegradationValue, EvaluationCount
+from fedact.domain.types import (
+    AblationIdentifier,
+    DegradationValue,
+    EvaluationCount,
+    ValidationFlag,
+)
 
 
 @dataclass(frozen=True)
 class AblationResult:
     ablation_name: AblationIdentifier
     degradation_percentage_points: DegradationValue
-    hypothesis_confirmed: bool
+    hypothesis_confirmed: ValidationFlag
 
 
 @dataclass(frozen=True)
 class AblationExperimentReport:
     ablations_evaluated: EvaluationCount
-    all_hypotheses_confirmed: bool
+    all_hypotheses_confirmed: ValidationFlag
     results: tuple[AblationResult, ...]
     scientific_outcome: ScientificOutcome
 

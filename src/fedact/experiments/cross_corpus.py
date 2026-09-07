@@ -6,7 +6,7 @@ import torch
 
 from fedact.app import Application
 from fedact.domain.enums import DatasetSelector, ScientificOutcome
-from fedact.domain.records import (
+from fedact.domain.types import (
     EvaluationCount,
     MetricRate,
     SampleIdentifier,
@@ -29,7 +29,7 @@ _INPUT_DIMENSION = 512
 class CrossCorpusReport:
     target_corpora_tested: EvaluationCount
     mean_transfer_fnr: MetricRate
-    transfer_supported: bool
+    transfer_supported: ValidationFlag
     scientific_outcome: ScientificOutcome
 
     @property

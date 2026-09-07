@@ -15,7 +15,7 @@ from fedact.datasets.synthetic.generator import (
 )
 from fedact.datasets.synthetic.validation import run_smoke_validation
 from fedact.domain.enums import ExecutableWorkflowName, ScientificOutcome
-from fedact.domain.records import OverwriteRequested
+from fedact.domain.types import OverwriteRequested
 from fedact.storage.results import WorkflowResultRecord, write_workflow_result
 
 

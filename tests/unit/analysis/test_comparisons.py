@@ -7,7 +7,7 @@ from fedact.analysis.comparisons import (
     build_paired_contrast,
 )
 from fedact.domain.enums import MissingCutoffReason
-from fedact.domain.records import SplitCutoffIdentity
+from fedact.domain.types import SplitCutoffIdentity
 
 
 def test_aggregate_cutoff_from_seeds_means_finite_seed_values() -> None:

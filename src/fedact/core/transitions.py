@@ -6,12 +6,7 @@ from enum import StrEnum
 import numpy as np
 import torch
 
-from fedact.domain.records import (
-    CoordinateValue,
-    IterationCount,
-    SampleCount,
-    ThresholdValue,
-)
+from fedact.domain.types import CoordinateValue, IterationCount, SampleCount, ThresholdValue
 
 
 class AbstentionReason(StrEnum):

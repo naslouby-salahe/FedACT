@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from fedact.domain.enums import ExecutableWorkflowName, ScientificOutcome
-from fedact.domain.records import OptionalFlag
+from fedact.domain.types import DiagnosisMessage, OptionalFlag
 from fedact.runtime.status import (
     WorkflowExecutionState,
     WorkflowOutcomeHistory,
@@ -60,7 +60,7 @@ OPTIONAL_WORKFLOWS: frozenset[ExecutableWorkflowName] = frozenset(
 class WorkflowPlanEntry:
     workflow: ExecutableWorkflowName
     status: WorkflowExecutionState
-    blocking_reasons: tuple[str, ...]
+    blocking_reasons: tuple[DiagnosisMessage, ...]
     optional: OptionalFlag
     blocking_dependencies: tuple[ExecutableWorkflowName, ...] = ()
     recorded_outcome: ScientificOutcome | None = None
@@ -112,9 +112,9 @@ class ExecutionPlan:
 def _evaluate_dependency_blockers(
     dependencies: tuple[ExecutableWorkflowName, ...],
     outcomes: WorkflowOutcomeHistory,
-) -> tuple[tuple[str, ...], tuple[ExecutableWorkflowName, ...]]:
+) -> tuple[tuple[DiagnosisMessage, ...], tuple[ExecutableWorkflowName, ...]]:
     recorded = workflows_with_recorded_outcomes(outcomes)
-    blocking: list[str] = []
+    blocking: list[DiagnosisMessage] = []
     blocking_deps: list[ExecutableWorkflowName] = []
     for dependency in dependencies:
         if dependency not in recorded:

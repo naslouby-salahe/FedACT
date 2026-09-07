@@ -1,20 +1,26 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Annotated
+from enum import StrEnum
 
 import numpy as np
 from numpy.typing import NDArray
-from pydantic import Field
+
+from fedact.domain.types import RidgeLambda
 
 FloatArray = NDArray[np.float64]
-RidgeLambda = Annotated[float, Field(ge=0.0)]
+
+
+class BaselineIdentificationMethod(StrEnum):
+    MATCHED_BENIGN_SUBTRACTION = "matched_benign_subtraction"
+    PROJECTED_POINT_RECONSTRUCTION = "projected_point_reconstruction"
+    COVARIANCE_WEIGHTED_RECONSTRUCTION = "covariance_weighted_reconstruction"
 
 
 @dataclass(frozen=True)
 class BaselineIdentificationResult:
     estimated_displacement: FloatArray
-    method_name: str
+    method_name: BaselineIdentificationMethod
 
 
 def matched_benign_subtraction(
@@ -24,7 +30,7 @@ def matched_benign_subtraction(
     estimate = malicious_transition - matched_benign_control
     return BaselineIdentificationResult(
         estimated_displacement=estimate,
-        method_name="matched_benign_subtraction",
+        method_name=BaselineIdentificationMethod.MATCHED_BENIGN_SUBTRACTION,
     )
 
 
@@ -36,7 +42,7 @@ def projected_point_reconstruction(
     estimate = projector @ malicious_transition
     return BaselineIdentificationResult(
         estimated_displacement=estimate,
-        method_name="projected_point_reconstruction",
+        method_name=BaselineIdentificationMethod.PROJECTED_POINT_RECONSTRUCTION,
     )
 
 
@@ -49,5 +55,5 @@ def covariance_weighted_reconstruction(
     estimate = inv_cov @ malicious_transition
     return BaselineIdentificationResult(
         estimated_displacement=estimate,
-        method_name="covariance_weighted_reconstruction",
+        method_name=BaselineIdentificationMethod.COVARIANCE_WEIGHTED_RECONSTRUCTION,
     )

@@ -3,8 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from fedact.domain.enums import DatasetSelector
-from fedact.domain.records import (
+from fedact.domain.types import (
     BinaryLabel,
+    CertificationFlag,
     HorizonStep,
     LossValue,
     ProbabilityValue,
@@ -21,5 +22,5 @@ class EvaluationRecord:
     horizon_step: HorizonStep
     true_label: BinaryLabel
     predicted_score: ProbabilityValue
-    is_certified: bool
+    is_certified: CertificationFlag
     clean_loss: LossValue

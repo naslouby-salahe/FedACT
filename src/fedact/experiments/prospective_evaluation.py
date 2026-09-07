@@ -20,7 +20,7 @@ from fedact.domain.enums import (
     RankSelectionMethod,
     ScientificOutcome,
 )
-from fedact.domain.records import (
+from fedact.domain.types import (
     DegradationValue,
     EvaluationCount,
     MetricRate,
@@ -194,7 +194,7 @@ def run_prospective_fedact_evaluation(application: Application) -> ProspectiveEv
     validate_encoded_samples(encoded, latent_dim)
     if (
         cumulative_exposure < 0
-        or identification_baseline.method_name == ""
+        or identification_baseline.estimated_displacement.shape[0] == 0
         or security_baseline.predicted_shift.shape[0] == 0
         or calibration_validator is None
     ):

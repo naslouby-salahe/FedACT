@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 
-from fedact.domain.records import MetricRate, ParameterName, ThresholdValue
+from fedact.domain.types import MetricRate, ParameterName, ThresholdValue
 
 
 class SensitivityAxis(StrEnum):

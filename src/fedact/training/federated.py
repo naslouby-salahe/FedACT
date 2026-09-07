@@ -7,13 +7,7 @@ from dataclasses import dataclass
 import torch
 from torch.nn import functional as torch_functional
 
-from fedact.domain.records import (
-    ClientIdentifier,
-    EpochIndex,
-    LossValue,
-    RoundCount,
-    ThresholdValue,
-)
+from fedact.domain.types import ClientIdentifier, EpochIndex, LossValue, RoundCount, ThresholdValue
 from fedact.models.detector import DetectorHead
 from fedact.models.representation import RepresentationEncoder
 from fedact.training.representation import RepresentationDataset, TrainingObservation

@@ -4,7 +4,7 @@ from typer.testing import CliRunner
 
 from fedact.cli.main import app
 from fedact.domain.enums import ArtifactBoundary, DatasetSelector
-from fedact.domain.records import DependencyFingerprint
+from fedact.domain.types import DependencyFingerprint
 from fedact.experiments import (
     PREPROCESS_OWNED_BOUNDARIES,
     PREPROCESS_STAGE_FLOW,

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fedact.domain.records import ActivationFlag
+from fedact.domain.types import ActivationFlag
 from fedact.storage.metadata import ArtifactIdentity
 
 

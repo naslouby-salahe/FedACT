@@ -4,7 +4,7 @@ import random
 
 import numpy as np
 
-from fedact.domain.records import SeedValue
+from fedact.domain.types import SeedValue
 
 
 def apply_python_seed(seed: SeedValue) -> None:

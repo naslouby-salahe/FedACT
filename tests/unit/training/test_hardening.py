@@ -3,7 +3,7 @@ from __future__ import annotations
 import torch
 
 from fedact.config.loading import LoadedConfiguration
-from fedact.domain.records import SampleIdentifier
+from fedact.domain.types import SampleIdentifier
 from fedact.models.detector import DetectorHead
 from fedact.models.representation import RepresentationEncoder
 from fedact.training.hardening import (

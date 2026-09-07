@@ -8,7 +8,7 @@ import numpy as np
 from numpy.typing import NDArray
 from pydantic import Field
 
-from fedact.domain.records import ClientIdentifier, MetricRate, Probability, SampleCount
+from fedact.domain.types import ClientIdentifier, MetricRate, Probability, SampleCount
 
 FloatArray = NDArray[np.float64]
 Ridge = Annotated[float, Field(gt=0.0)]

@@ -5,7 +5,7 @@ from pathlib import Path
 
 from fedact.config.loading import LoadedConfiguration, load_production_configuration
 from fedact.domain.enums import ExecutableWorkflowName
-from fedact.domain.records import DataAvailabilityFlag, ExperimentName
+from fedact.domain.types import DataAvailabilityFlag, ExperimentName
 from fedact.runtime.planning import ExecutionPlan, resolve_execution_plan
 from fedact.runtime.status import WorkflowOutcomeHistory, WorkflowOutcomeRecord
 from fedact.storage.paths import WorkspaceLayout

@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from fedact.config.models import RelativePosixPath, WorkspaceConfig
-from fedact.domain.records import ExperimentName
+from fedact.config.models import WorkspaceConfig
+from fedact.domain.types import ExperimentName, RelativePosixPath
 
 
 @dataclass(frozen=True)

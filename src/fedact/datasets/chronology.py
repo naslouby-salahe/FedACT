@@ -5,7 +5,7 @@ from enum import StrEnum
 from typing import NewType
 
 from fedact.domain.enums import DatasetSelector, ScientificOutcome
-from fedact.domain.records import (
+from fedact.domain.types import (
     EligibilityFlag,
     HorizonMonths,
     MonthIndex,

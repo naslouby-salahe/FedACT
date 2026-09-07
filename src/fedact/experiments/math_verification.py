@@ -11,13 +11,14 @@ from fedact.core.actions import NumericalFailureError, box_diameter_bound, suppo
 from fedact.core.feasible_sets import L2Ball
 from fedact.core.temporal import fit_scalar_model
 from fedact.domain.enums import ScientificOutcome
-from fedact.domain.records import (
+from fedact.domain.types import (
     BoundValidityFlag,
     CorrectnessFlag,
     IdentifiabilityFlag,
     MonotonicityFlag,
     NonIdentifiabilityFlag,
     PassingFlag,
+    VerificationFlag,
 )
 
 FloatArray = NDArray[np.float64]
@@ -34,13 +35,13 @@ _DIAMETER_EXAMPLE_HALF_WIDTH = 1.5
 
 @dataclass(frozen=True)
 class MathVerificationReport:
-    exact_set_verified: bool
-    functional_identifiability_verified: bool
-    width_bound_verified: bool
-    monotonicity_verified: bool
-    degenerate_rejection_verified: bool
-    diameter_bound_verified: bool
-    synchronized_nuisance_verified: bool
+    exact_set_verified: VerificationFlag
+    functional_identifiability_verified: VerificationFlag
+    width_bound_verified: VerificationFlag
+    monotonicity_verified: VerificationFlag
+    degenerate_rejection_verified: VerificationFlag
+    diameter_bound_verified: VerificationFlag
+    synchronized_nuisance_verified: VerificationFlag
     scientific_outcome: ScientificOutcome
 
     @property

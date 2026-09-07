@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from fedact.config.loading import LoadedConfiguration
-from fedact.domain.records import ClientIdentifier, SampleIdentifier
+from fedact.domain.types import ClientIdentifier, SampleIdentifier
 from fedact.models.detector import DetectorHead
 from fedact.models.representation import RepresentationEncoder
 from fedact.training.federated import ClientTrainingPopulation, train_federated_detector

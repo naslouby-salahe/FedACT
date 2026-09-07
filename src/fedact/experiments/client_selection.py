@@ -11,7 +11,7 @@ from fedact.core.client_selection import (
     greedy_d_optimal,
 )
 from fedact.domain.enums import ScientificOutcome
-from fedact.domain.records import ClientIdentifier, EvaluationCount
+from fedact.domain.types import ClientIdentifier, EvaluationCount, ValidationFlag
 
 _CLIENT_MATRIX_NOISE_SCALE = 0.05
 
@@ -19,7 +19,7 @@ _CLIENT_MATRIX_NOISE_SCALE = 0.05
 @dataclass(frozen=True)
 class SelectionExperimentReport:
     budget_fractions_tested: EvaluationCount
-    d_optimal_superiority_verified: bool
+    d_optimal_superiority_verified: ValidationFlag
     scientific_outcome: ScientificOutcome
 
 

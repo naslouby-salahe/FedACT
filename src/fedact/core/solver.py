@@ -7,7 +7,7 @@ import torch
 
 from fedact.core.actions import ActionInterval
 from fedact.core.feasible_sets import FeasibleSet
-from fedact.domain.records import IterationCount, ThresholdValue
+from fedact.domain.types import IterationCount, ThresholdValue
 
 
 @dataclass(frozen=True)

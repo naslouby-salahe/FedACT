@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from fedact.config.models import StrictModel
 from fedact.domain.enums import ExecutableWorkflowName, ScientificOutcome
-from fedact.domain.records import DegradationValue, MetricRate
+from fedact.domain.types import DegradationValue, MetricRate
 from fedact.storage.checkpoints import write_text_atomically
 
 

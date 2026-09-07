@@ -28,7 +28,7 @@ from fedact.datasets.records import (
 from fedact.datasets.splits import IndexInPopulation, SplitPartition, construct_cutoff_split
 from fedact.datasets.validation import audit_chronology, run_feasibility_audit
 from fedact.domain.enums import DatasetSelector, ExecutableWorkflowName, ScientificOutcome
-from fedact.domain.records import OverwriteRequested, SplitCutoffIdentity
+from fedact.domain.types import OverwriteRequested, SplitCutoffIdentity
 from fedact.experiments import (
     PREPROCESS_OWNED_BOUNDARIES,
     PREPROCESS_STAGE_FLOW,

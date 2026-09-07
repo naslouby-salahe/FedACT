@@ -12,7 +12,7 @@ ANY_NAMES = frozenset({"Any"})
 OBJECT_NAMES = frozenset({"object"})
 MAPPING_NAMES = frozenset({"dict", "Dict", "Mapping", "MutableMapping"})
 SEMANTIC_WRAPPERS = frozenset({"Annotated"})
-BOUNDARY_BASES = frozenset({"BaseModel", "TypedDict", "NamedTuple", "Protocol"})
+BOUNDARY_BASES = frozenset({"BaseModel", "StrictModel", "TypedDict", "NamedTuple", "Protocol"})
 FORBIDDEN_DYNAMIC_CALLS = frozenset({"eval", "exec", "compile"})
 SAFE_NUMERIC_LITERALS = frozenset({0, 1, -1})
 
@@ -168,8 +168,13 @@ def annotation_mapping_names(annotation: ast.expr) -> set[str]:
     return found
 
 
+def _decorator_name(decorator: ast.expr) -> str | None:
+    target = decorator.func if isinstance(decorator, ast.Call) else decorator
+    return terminal_name(target)
+
+
 def is_record_boundary_class(node: ast.ClassDef) -> bool:
-    decorator_names = {terminal_name(decorator) for decorator in node.decorator_list}
+    decorator_names = {_decorator_name(decorator) for decorator in node.decorator_list}
     base_names = {terminal_name(base) for base in node.bases}
     return "dataclass" in decorator_names or bool(base_names & BOUNDARY_BASES)
 

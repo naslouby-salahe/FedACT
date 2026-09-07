@@ -1,19 +1,55 @@
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import BaseModel, ConfigDict
 
-PositiveInt = Annotated[int, Field(gt=0)]
-NonNegativeInt = Annotated[int, Field(ge=0)]
-NonNegativeFloat = Annotated[float, Field(ge=0.0)]
-PositiveFloat = Annotated[float, Field(gt=0.0)]
-Probability = Annotated[float, Field(ge=0.0, le=1.0)]
-ScalarCoefficient = Annotated[float, Field(gt=0.0, le=1.0)]
-PercentagePoints = Annotated[float, Field(ge=0.0)]
-PercentileCandidate = Annotated[int, Field(ge=0, le=100)]
-RelativePosixPath = Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9][A-Za-z0-9_\-./]*$")]
+from fedact.domain.types import (
+    AngleDegrees,
+    BatchSize,
+    BudgetAmount,
+    ClientCount,
+    ConditionNumberLimit,
+    ConfidenceLevel,
+    CutoffCount,
+    DetectionCount,
+    DrawCount,
+    EigengapRatio,
+    EpochCount,
+    Epsilon,
+    EventCount,
+    ExperimentDirectoryName,
+    FederationClientCount,
+    Fraction,
+    IntersectionDimension,
+    KurtosisExcess,
+    LearningRate,
+    MatchedTotalSamplesFlag,
+    MaximumIterations,
+    MinimumDetectionCount,
+    PercentagePoints,
+    PercentileValue,
+    Probability,
+    RankDimension,
+    RankIncrement,
+    ReferenceCenterCount,
+    RelativePosixPath,
+    ReplicateCount,
+    ResampleCount,
+    SampleSize,
+    ScalarCoefficient,
+    SeedValue,
+    SensitivityMultiplier,
+    Sigma,
+    SimilarityScore,
+    StandardizationFloor,
+    SupportThreshold,
+    TimeoutSeconds,
+    Tolerance,
+    VarianceThreshold,
+    WindowSpanMonths,
+    ZeroDisplacementFloor,
+)
 
 
 class StrictModel(BaseModel):
@@ -52,13 +88,13 @@ class SyntheticCorruptionAttack(StrEnum):
 
 
 class LamdaLabelRules(StrictModel):
-    benign_detection_count: NonNegativeInt
-    malware_minimum_detection_count: PositiveInt
-    discard_detection_counts: list[NonNegativeInt]
+    benign_detection_count: DetectionCount
+    malware_minimum_detection_count: MinimumDetectionCount
+    discard_detection_counts: list[DetectionCount]
 
 
 class LamdaPreprocessingRules(StrictModel):
-    raw_variance_threshold_when_required: NonNegativeFloat
+    raw_variance_threshold_when_required: VarianceThreshold
 
 
 class LamdaDatasetConfig(StrictModel):
@@ -76,7 +112,7 @@ class DatasetsConfig(StrictModel):
 
 
 class TemporalModelParameters(StrictModel):
-    minimum_consecutive_pairs: PositiveInt
+    minimum_consecutive_pairs: ReplicateCount
     maximum_scalar_coefficient: ScalarCoefficient
 
 
@@ -85,40 +121,40 @@ class ProcessNoiseParameters(StrictModel):
 
 
 class TemporalConfig(StrictModel):
-    historical_training_window_months: PositiveInt
-    transition_interval_months: PositiveInt
-    cutoff_step_months: PositiveInt
-    full_retraining_interval_months: PositiveInt
-    forecast_horizons_months: list[PositiveInt]
-    primary_confirmatory_horizon_months: PositiveInt
-    early_horizon_months: PositiveInt
+    historical_training_window_months: WindowSpanMonths
+    transition_interval_months: WindowSpanMonths
+    cutoff_step_months: WindowSpanMonths
+    full_retraining_interval_months: WindowSpanMonths
+    forecast_horizons_months: list[WindowSpanMonths]
+    primary_confirmatory_horizon_months: WindowSpanMonths
+    early_horizon_months: WindowSpanMonths
     temporal_model: TemporalModelParameters
     process_noise: ProcessNoiseParameters
 
 
 class TrainingConfig(StrictModel):
-    initial_learning_rate: PositiveFloat
-    final_learning_rate: PositiveFloat
-    batch_size: PositiveInt
-    maximum_epochs: PositiveInt
-    early_stopping_patience_epochs: PositiveInt
-    validation_fraction: Probability
+    initial_learning_rate: LearningRate
+    final_learning_rate: LearningRate
+    batch_size: BatchSize
+    maximum_epochs: EpochCount
+    early_stopping_patience_epochs: EpochCount
+    validation_fraction: Fraction
 
 
 class UncertaintyParameters(StrictModel):
-    bootstrap_resamples: PositiveInt
+    bootstrap_resamples: ResampleCount
 
 
 class NuisanceRankSelection(StrictModel):
-    candidates: list[PositiveInt]
-    maximum: PositiveInt
-    bootstrap_resamples: PositiveInt
-    minimum_bootstrap_stability_fraction: Probability
+    candidates: list[RankDimension]
+    maximum: RankDimension
+    bootstrap_resamples: ResampleCount
+    minimum_bootstrap_stability_fraction: Fraction
 
 
 class EigengapRatioSelection(StrictModel):
-    candidates: list[PositiveFloat]
-    default_without_nested_calibration: PositiveFloat
+    candidates: list[EigengapRatio]
+    default_without_nested_calibration: EigengapRatio
 
 
 class TargetCoverageSelection(StrictModel):
@@ -134,33 +170,33 @@ class ControlSpanViolationAllowance(StrictModel):
 class PrivateContaminationAllowance(StrictModel):
     primary_alpha: Probability
     sensitivity_alpha: list[Probability]
-    minimum_history_residuals: PositiveInt
+    minimum_history_residuals: ReplicateCount
 
 
 class HistoricalPlausibilityRadiusSelection(StrictModel):
     center_norm_quantile: Probability
-    minimum_reference_centers: PositiveInt
-    sensitivity_multipliers: list[PositiveFloat]
+    minimum_reference_centers: ReferenceCenterCount
+    sensitivity_multipliers: list[SensitivityMultiplier]
 
 
 class CovarianceRegularizationSelection(StrictModel):
-    primary_c: NonNegativeFloat
-    sensitivity_c: list[NonNegativeFloat]
+    primary_c: BudgetAmount
+    sensitivity_c: list[BudgetAmount]
 
 
 class ControlReconstructionGateRules(StrictModel):
     held_out_residual_quantile: Probability
-    minimum_pass_fraction: Probability
+    minimum_pass_fraction: Fraction
 
 
 class TailDiagnosticRules(StrictModel):
-    maximum_absolute_excess_kurtosis: PositiveFloat
-    maximum_flagged_coordinate_fraction: Probability
+    maximum_absolute_excess_kurtosis: KurtosisExcess
+    maximum_flagged_coordinate_fraction: Fraction
 
 
 class IdentificationConfig(StrictModel):
-    minimum_support_per_class: PositiveInt
-    minimum_control_transition_replicates: PositiveInt
+    minimum_support_per_class: SupportThreshold
+    minimum_control_transition_replicates: ReplicateCount
     uncertainty: UncertaintyParameters
     nuisance_rank: NuisanceRankSelection
     eigengap_ratio: EigengapRatioSelection
@@ -174,11 +210,11 @@ class IdentificationConfig(StrictModel):
 
 
 class AlignmentThresholdSelection(StrictModel):
-    percentile_candidates: list[PercentileCandidate]
+    percentile_candidates: list[PercentileValue]
 
 
 class AmbiguityWidthSelection(StrictModel):
-    percentile_candidates: list[PercentileCandidate]
+    percentile_candidates: list[PercentileValue]
 
 
 class ForecastSetDiameterAbstentionRule(StrictModel):
@@ -186,11 +222,11 @@ class ForecastSetDiameterAbstentionRule(StrictModel):
 
 
 class LeaveOneClientOutStabilityRule(StrictModel):
-    minimum_unchanged_fraction: Probability
+    minimum_unchanged_fraction: Fraction
 
 
 class RandomMatchingPolicy(StrictModel):
-    minimum_exact_or_source_fraction: Probability
+    minimum_exact_or_source_fraction: Fraction
 
 
 class CertificationConfig(StrictModel):
@@ -202,20 +238,20 @@ class CertificationConfig(StrictModel):
 
 
 class OperatorValidationBudgets(StrictModel):
-    execution_timeout_seconds: PositiveFloat
-    android_monkey_events: PositiveInt
-    minimum_behavior_jaccard: Probability
+    execution_timeout_seconds: TimeoutSeconds
+    android_monkey_events: EventCount
+    minimum_behavior_jaccard: SimilarityScore
 
 
 class OperatorsConfig(StrictModel):
-    minimum_valid_coverage: Probability
-    maximum_composed_atomic_actions: PositiveInt
+    minimum_valid_coverage: Fraction
+    maximum_composed_atomic_actions: ReplicateCount
     validation: OperatorValidationBudgets
 
 
 class AblationsConfig(StrictModel):
-    zero_control_span_violation_budget: NonNegativeInt
-    zero_private_contamination_budget: NonNegativeInt
+    zero_control_span_violation_budget: BudgetAmount
+    zero_private_contamination_budget: BudgetAmount
 
 
 class HardeningWeightSelection(StrictModel):
@@ -224,8 +260,8 @@ class HardeningWeightSelection(StrictModel):
 
 
 class MaximumActionsPerSampleSelection(StrictModel):
-    candidates: list[PositiveInt]
-    primary: PositiveInt
+    candidates: list[ReplicateCount]
+    primary: ReplicateCount
 
 
 class HardeningConfig(StrictModel):
@@ -234,26 +270,26 @@ class HardeningConfig(StrictModel):
 
 
 class BaselinesConfig(StrictModel):
-    point_ridge_relative: PositiveFloat
+    point_ridge_relative: Epsilon
 
 
 class CorruptedClientAllowanceParameters(StrictModel):
-    basis_rotation_degrees: NonNegativeFloat
-    false_rank_increment: PositiveInt
+    basis_rotation_degrees: AngleDegrees
+    false_rank_increment: RankIncrement
     beta_multiplier: ScalarCoefficient
-    transition_poisoning_sigma: PositiveFloat
-    fabricated_complementarity_rotation_degrees: NonNegativeFloat
+    transition_poisoning_sigma: Sigma
+    fabricated_complementarity_rotation_degrees: AngleDegrees
 
 
 class CorruptedClientAllowanceConfig(StrictModel):
-    counts: list[NonNegativeInt]
+    counts: list[ClientCount]
     attacks: list[CorruptedClientAttack]
     parameters: CorruptedClientAllowanceParameters
 
 
 class RealStressConfig(StrictModel):
-    control_support_fractions: list[Probability]
-    control_transition_noise_sigma_multipliers: list[PositiveFloat]
+    control_support_fractions: list[Fraction]
+    control_transition_noise_sigma_multipliers: list[SensitivityMultiplier]
 
 
 class RobustnessConfig(StrictModel):
@@ -262,11 +298,11 @@ class RobustnessConfig(StrictModel):
 
 
 class BootstrapStatisticsConfig(StrictModel):
-    resamples: PositiveInt
+    resamples: ResampleCount
 
 
 class WilcoxonSettings(StrictModel):
-    maximum_nonzero_pairs_for_exact: PositiveInt
+    maximum_nonzero_pairs_for_exact: CutoffCount
 
 
 class MultiplicityControl(StrictModel):
@@ -280,9 +316,9 @@ class MaterialEffectThresholds(StrictModel):
 
 
 class StatisticsConfig(StrictModel):
-    confidence_level: Probability
-    minimum_paired_cutoffs: PositiveInt
-    maximum_missing_cutoff_fraction: Probability
+    confidence_level: ConfidenceLevel
+    minimum_paired_cutoffs: CutoffCount
+    maximum_missing_cutoff_fraction: Fraction
     bootstrap: BootstrapStatisticsConfig
     wilcoxon: WilcoxonSettings
     multiplicity: MultiplicityControl
@@ -290,111 +326,111 @@ class StatisticsConfig(StrictModel):
 
 
 class SeedsConfig(StrictModel):
-    representation: list[NonNegativeInt]
-    detector_training: list[NonNegativeInt]
-    synthetic_generation: list[NonNegativeInt]
-    synthetic_noise: list[NonNegativeInt]
-    operator: list[NonNegativeInt]
-    calibration: list[NonNegativeInt]
-    baseline: list[NonNegativeInt]
-    analysis: list[NonNegativeInt]
-    client_selection: list[NonNegativeInt]
+    representation: list[SeedValue]
+    detector_training: list[SeedValue]
+    synthetic_generation: list[SeedValue]
+    synthetic_noise: list[SeedValue]
+    operator: list[SeedValue]
+    calibration: list[SeedValue]
+    baseline: list[SeedValue]
+    analysis: list[SeedValue]
+    client_selection: list[SeedValue]
 
 
 class SyntheticDefaults(StrictModel):
-    nuisance_dimension_fraction: Probability
-    control_malicious_amplitude_ratio: PositiveFloat
-    pairwise_principal_angle_degrees: NonNegativeFloat
-    common_intersection_dimension: NonNegativeInt
-    federation_client_count: PositiveInt
+    nuisance_dimension_fraction: Fraction
+    control_malicious_amplitude_ratio: SensitivityMultiplier
+    pairwise_principal_angle_degrees: AngleDegrees
+    common_intersection_dimension: IntersectionDimension
+    federation_client_count: FederationClientCount
     federation_geometry: FederationGeometry
-    control_sample_size: PositiveInt
-    malicious_sample_size: PositiveInt
-    control_span_violation_over_sigma: NonNegativeFloat
-    synchronized_nuisance_over_sigma: NonNegativeFloat
-    private_transition_norm_over_sigma: NonNegativeFloat
+    control_sample_size: SampleSize
+    malicious_sample_size: SampleSize
+    control_span_violation_over_sigma: BudgetAmount
+    synchronized_nuisance_over_sigma: BudgetAmount
+    private_transition_norm_over_sigma: BudgetAmount
     private_transition_sparsity_mode: PrivateTransitionSparsityMode
-    outlier_client_count: NonNegativeInt
+    outlier_client_count: ClientCount
     spectral_conditioning_ratio: Probability
-    action_rotation_angle_degrees: NonNegativeFloat
+    action_rotation_angle_degrees: AngleDegrees
 
 
 class NuisanceDimensionSweep(StrictModel):
-    fractions: list[Probability]
+    fractions: list[Fraction]
 
 
 class FederationSweep(StrictModel):
-    client_counts: list[PositiveInt]
+    client_counts: list[FederationClientCount]
     geometries: list[FederationGeometry]
-    matched_total_samples: bool
+    matched_total_samples: MatchedTotalSamplesFlag
 
 
 class PrivateTransitionSweep(StrictModel):
-    norm_over_sigma: list[NonNegativeFloat]
+    norm_over_sigma: list[BudgetAmount]
     sparsity_modes: list[PrivateTransitionSparsityMode]
-    sparse_fraction: Probability
+    sparse_fraction: Fraction
 
 
 class OutlierClientStressSweep(StrictModel):
-    corrupted_client_counts: list[NonNegativeInt]
+    corrupted_client_counts: list[ClientCount]
     attacks: list[SyntheticCorruptionAttack]
 
 
 class SyntheticSweeps(StrictModel):
     nuisance_dimension: NuisanceDimensionSweep
-    control_malicious_amplitude_ratio: list[PositiveFloat]
-    pairwise_principal_angle_degrees: list[NonNegativeFloat]
-    common_intersection_dimension: list[NonNegativeInt]
+    control_malicious_amplitude_ratio: list[SensitivityMultiplier]
+    pairwise_principal_angle_degrees: list[AngleDegrees]
+    common_intersection_dimension: list[IntersectionDimension]
     federation: FederationSweep
-    control_sample_size: list[PositiveInt]
-    malicious_sample_size: list[PositiveInt]
-    control_span_violation_over_sigma: list[NonNegativeFloat]
-    synchronized_nuisance_over_sigma: list[NonNegativeFloat]
+    control_sample_size: list[SampleSize]
+    malicious_sample_size: list[SampleSize]
+    control_span_violation_over_sigma: list[BudgetAmount]
+    synchronized_nuisance_over_sigma: list[BudgetAmount]
     private_transition: PrivateTransitionSweep
     outlier_client_stress: OutlierClientStressSweep
     spectral_conditioning_ratio: list[Probability]
-    action_rotation_angle_degrees: list[NonNegativeFloat]
+    action_rotation_angle_degrees: list[AngleDegrees]
 
 
 class SyntheticConfig(StrictModel):
-    base_sigma: PositiveFloat
-    shared_transition_norm_over_sigma: PositiveFloat
-    independent_draws_per_grid_cell: PositiveInt
-    nested_noise_draws_per_seed: PositiveInt
+    base_sigma: Sigma
+    shared_transition_norm_over_sigma: Sigma
+    independent_draws_per_grid_cell: DrawCount
+    nested_noise_draws_per_seed: DrawCount
     defaults: SyntheticDefaults
     sweeps: SyntheticSweeps
 
 
 class ClientSelectionConfig(StrictModel):
-    budget_fractions: list[Probability]
-    d_optimal_ridge: PositiveFloat
+    budget_fractions: list[Fraction]
+    d_optimal_ridge: Epsilon
 
 
 class SolverTolerances(StrictModel):
-    relative_tolerance: PositiveFloat
-    absolute_tolerance: PositiveFloat
-    duality_gap_tolerance: PositiveFloat
-    maximum_iterations: PositiveInt
+    relative_tolerance: Tolerance
+    absolute_tolerance: Tolerance
+    duality_gap_tolerance: Tolerance
+    maximum_iterations: MaximumIterations
 
 
 class NumericalContract(StrictModel):
-    scale_standardization_floor: PositiveFloat
-    rank_clip_epsilon_relative: PositiveFloat
-    zero_displacement_floor: PositiveFloat
-    projection_tie_tolerance: PositiveFloat
-    condition_number_limit: PositiveFloat
+    scale_standardization_floor: StandardizationFloor
+    rank_clip_epsilon_relative: Epsilon
+    zero_displacement_floor: ZeroDisplacementFloor
+    projection_tie_tolerance: Tolerance
+    condition_number_limit: ConditionNumberLimit
     solver: SolverTolerances
 
 
 class SignificantFiguresPolicy(StrictModel):
-    percentages_and_rates: PositiveInt
-    raw_action_width_and_alignment: PositiveInt
-    effect_sizes_and_p_values: PositiveInt
+    percentages_and_rates: EpochCount
+    raw_action_width_and_alignment: EpochCount
+    effect_sizes_and_p_values: EpochCount
 
 
 class ReportingConfig(StrictModel):
     significant_figures: SignificantFiguresPolicy
-    p_value_display_threshold: PositiveFloat
+    p_value_display_threshold: Epsilon
 
 
 class WorkspaceDirectories(StrictModel):
@@ -419,7 +455,7 @@ class WorkspaceConfig(StrictModel):
     outputs_root: RelativePosixPath
     results_root: RelativePosixPath
     directories: WorkspaceDirectories
-    experiment_directories: list[str]
+    experiment_directories: list[ExperimentDirectoryName]
 
 
 class FedActConfig(StrictModel):

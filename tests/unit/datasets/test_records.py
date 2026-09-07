@@ -40,7 +40,7 @@ from fedact.datasets.records import (
     select_low_variance_features,
 )
 from fedact.domain.enums import DatasetSelector
-from fedact.domain.records import DatasetIdentity, SampleIdentifier, SplitCutoffIdentity
+from fedact.domain.types import DatasetIdentity, SampleIdentifier, SplitCutoffIdentity
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 

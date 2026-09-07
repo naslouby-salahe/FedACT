@@ -75,7 +75,7 @@ from fedact.datasets.validation import (
     audit_chronology,
     run_feasibility_audit,
 )
-from fedact.domain.records import SampleIdentifier
+from fedact.domain.types import SampleIdentifier
 
 __all__ = [
     "AuditContractError",

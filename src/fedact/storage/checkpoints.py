@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from fedact.domain.records import ContentChecksum, RawPayloadBytes, SourceText
+from fedact.domain.types import ContentChecksum, RawPayloadBytes, SourceText
 from fedact.storage.metadata import content_checksum
 
 

@@ -3,7 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from fedact.domain.enums import ArtifactBoundary, ExecutableWorkflowName
-from fedact.domain.records import ActionDecision, BoundaryFingerprints, ExecutionReason
+from fedact.domain.records import BoundaryFingerprints
+from fedact.domain.types import ActionDecision, ExecutionReason
 from fedact.runtime.status import ArtifactExecutionState
 from fedact.storage.index import ArtifactDependencyIndex
 from fedact.storage.metadata import ArtifactIdentity, DependencyFingerprint

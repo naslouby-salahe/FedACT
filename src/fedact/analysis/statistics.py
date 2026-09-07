@@ -6,14 +6,18 @@ from typing import cast
 import numpy as np
 from scipy import stats as scipy_stats
 
-from fedact.domain.records import (
+from fedact.domain.types import (
+    CorrectionAppliedFlag,
     CutoffCount,
     CutoffDifferenceValue,
+    ExactDistributionFlag,
     MetricRate,
     PValue,
     RankBiserialEffectSize,
+    RejectionFlag,
     ResampleCount,
     SeedValue,
+    TestStatisticValue,
     ThresholdValue,
     ZeroExclusionFlag,
 )
@@ -88,9 +92,9 @@ def cutoff_clustered_bca_bootstrap(
 
 @dataclass(frozen=True)
 class WilcoxonSignedRankResult:
-    statistic: float
+    statistic: TestStatisticValue
     p_value: PValue
-    used_exact_distribution: bool
+    used_exact_distribution: ExactDistributionFlag
     nonzero_pair_count: CutoffCount
 
 
@@ -146,8 +150,8 @@ def matched_pairs_rank_biserial_effect_size(
 class BenjaminiHochbergOutcome:
     p_values: tuple[PValue, ...]
     adjusted_p_values: tuple[PValue, ...]
-    rejected: tuple[bool, ...]
-    correction_applied: bool
+    rejected: tuple[RejectionFlag, ...]
+    correction_applied: CorrectionAppliedFlag
 
 
 def benjamini_hochberg_correction(

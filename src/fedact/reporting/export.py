@@ -5,8 +5,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import NewType
 
-from fedact.domain.enums import ScientificOutcome
-from fedact.domain.records import ArtifactName, MetricRate
+from fedact.domain.enums import ArtifactVerificationStatus, ScientificOutcome
+from fedact.domain.types import ArtifactName, MetricRate
 from fedact.reporting.figures import generate_prospective_metrics_figure
 from fedact.reporting.tables import LatexTableCell, generate_latex_table
 from fedact.storage.results import WorkflowResultRecord
@@ -17,15 +17,10 @@ LatexMacroValue = NewType("LatexMacroValue", str)
 BACKSLASH = chr(92)
 
 
-class ArtifactVerificationStatus:
-    VERIFIED = "verified"
-    MISSING = "missing"
-
-
 @dataclass(frozen=True)
 class ArtifactStatusRecord:
     artifact: ArtifactName
-    status: str
+    status: ArtifactVerificationStatus
 
 
 def synthesize_latex_macros(
@@ -63,7 +58,7 @@ def package_artifact_status_index(
     output_file.write_text(json.dumps(payload, indent=2) + chr(10), encoding="utf-8")
 
 
-def _verification_status(artifact_file: Path) -> str:
+def _verification_status(artifact_file: Path) -> ArtifactVerificationStatus:
     if artifact_file.is_file():
         return ArtifactVerificationStatus.VERIFIED
     return ArtifactVerificationStatus.MISSING

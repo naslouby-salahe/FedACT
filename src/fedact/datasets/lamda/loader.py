@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 from fedact.datasets.lamda.semantics import LamdaRawRecord
-from fedact.domain.records import SampleIdentifier
+from fedact.domain.types import SampleIdentifier
 
 _FEATURE_COLUMN_PREFIX = "feat_"
 

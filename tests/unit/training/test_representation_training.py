@@ -6,7 +6,7 @@ import pytest
 
 from fedact.config.loading import LoadedConfiguration, load_production_configuration
 from fedact.config.models import FedActConfig
-from fedact.domain.records import SampleIdentifier
+from fedact.domain.types import SampleIdentifier
 from fedact.training.representation import (
     PairedSeedIndex,
     TrainingContractError,

@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from fedact.core.actions import ActionInterval
 from fedact.core.transitions import AbstentionReason
 from fedact.domain.enums import CertificationStatus
-from fedact.domain.records import (
+from fedact.domain.types import (
     CertificationFlag,
     DiagnosisMessage,
     EvaluationCount,
@@ -34,8 +34,8 @@ class CertificateDecision:
     width: IntervalBound
     alignment_threshold: ThresholdValue
     ambiguity_width_threshold: ThresholdValue
-    diameter_gate_passed: bool
-    leave_one_client_out_passed: bool
+    diameter_gate_passed: GateComplianceFlag
+    leave_one_client_out_passed: ValidationFlag
     leave_one_client_out_note: DiagnosisMessage | None
     abstention_reason: AbstentionReason | None
 

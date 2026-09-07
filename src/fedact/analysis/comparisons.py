@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from fedact.domain.enums import EffectDirection, MissingCutoffReason
-from fedact.domain.records import (
+from fedact.domain.types import (
     CutoffCount,
     CutoffDifferenceValue,
     MetricRate,

@@ -17,7 +17,7 @@ from fedact.core.feasible_sets import build_nuisance_spaces
 from fedact.core.nuisance import estimate_client_nuisance_subspace
 from fedact.core.solver import solve_action_interval
 from fedact.domain.enums import CertificationStatus, RankSelectionMethod, ScientificOutcome
-from fedact.domain.records import (
+from fedact.domain.types import (
     DegradationValue,
     DetailMessage,
     EvaluationCount,

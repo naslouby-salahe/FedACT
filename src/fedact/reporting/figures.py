@@ -5,7 +5,7 @@ from typing import Annotated
 
 from pydantic import Field
 
-from fedact.domain.records import MetricRate
+from fedact.domain.types import MetricRate
 
 FigureIdentifier = Annotated[str, Field(min_length=1)]
 BACKSLASH = chr(92)

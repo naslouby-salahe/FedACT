@@ -10,7 +10,7 @@ from fedact.datasets.records import (
     SchemaChronologyManifest,
 )
 from fedact.domain.enums import DatasetSelector
-from fedact.domain.records import (
+from fedact.domain.types import (
     OverlapFlag,
     PassingFlag,
     SampleCount,

@@ -11,14 +11,14 @@ from fedact.domain.enums import (
     PartitionScheme,
     WorkflowName,
 )
-from fedact.domain.records import (
+from fedact.domain.records import WorkflowContract
+from fedact.domain.types import (
     ArtifactName,
     DependencyFingerprint,
     EpochIndex,
     OptionalFlag,
     RoadmapSectionId,
     TriggerabilityFlag,
-    WorkflowContract,
     WorkflowDescription,
 )
 

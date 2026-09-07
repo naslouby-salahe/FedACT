@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Annotated
 
-from pydantic import Field
-
-from fedact.domain.records import DetailMessage, ThresholdValue
-
-BudgetAmount = Annotated[float, Field(ge=0.0)]
-ComparatorIdentifier = Annotated[str, Field(min_length=1)]
+from fedact.domain.types import (
+    BudgetAmount,
+    ComparatorIdentifier,
+    DetailMessage,
+    ThresholdValue,
+    ValidationFlag,
+)
 
 SUBTRACTION_COMPARATOR_NAME: ComparatorIdentifier = "subtraction"
 SUBTRACTION_COMPARATOR_BUDGET: BudgetAmount = 10.0
@@ -20,7 +20,7 @@ class BaselineParityViolationError(ValueError):
 
 @dataclass(frozen=True)
 class ParityVerificationResult:
-    is_valid: bool
+    is_valid: ValidationFlag
     details: DetailMessage
 
 

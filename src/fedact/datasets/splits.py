@@ -7,7 +7,7 @@ from typing import Annotated, NewType
 from pydantic import Field
 
 from fedact.datasets.records import EligibilityStatus
-from fedact.domain.records import (
+from fedact.domain.types import (
     SampleCount,
     SampleIdentifier,
     SplitCutoffIdentity,

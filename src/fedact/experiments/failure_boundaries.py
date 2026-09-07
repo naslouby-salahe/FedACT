@@ -14,7 +14,7 @@ from fedact.core.feasible_sets import build_nuisance_spaces
 from fedact.core.nuisance import NuisanceEstimate, estimate_client_nuisance_subspace
 from fedact.core.solver import solve_action_interval
 from fedact.domain.enums import RankSelectionMethod, ScientificOutcome
-from fedact.domain.records import EvaluationCount
+from fedact.domain.types import EvaluationCount, ValidationFlag
 
 _STRESS_SWEEP_BASELINE_ROWS = 20
 
@@ -22,7 +22,7 @@ _STRESS_SWEEP_BASELINE_ROWS = 20
 @dataclass(frozen=True)
 class BoundaryStressReport:
     stress_sweeps_completed: EvaluationCount
-    failure_boundaries_characterized: bool
+    failure_boundaries_characterized: ValidationFlag
     scientific_outcome: ScientificOutcome
     boundary_points_tested: EvaluationCount = 5
 

@@ -7,19 +7,18 @@ from fedact.domain.records import (
     CHRONOLOGY_CONSEQUENCE,
     CUTOFF_FIXED_REPRESENTATION_CONSEQUENCE,
     AssumptionContractError,
-    ContentChecksum,
     CutoffManifest,
     CutoffManifestEntry,
     LaterRealIsolationGate,
     LaterRealReadError,
     LeakageAuditFinding,
-    SplitCutoffIdentity,
     assumption_consequence,
     audit_chronology,
     lock_encoder_hash,
     open_later_real_evaluation,
     verify_encoder_hash_lock,
 )
+from fedact.domain.types import ContentChecksum, SplitCutoffIdentity
 
 
 def test_every_roadmap_section_six_assumption_is_enumerated() -> None:

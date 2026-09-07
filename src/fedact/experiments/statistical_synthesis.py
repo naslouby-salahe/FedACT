@@ -23,7 +23,7 @@ from fedact.analysis.statistics import (
     paired_wilcoxon_signed_rank_test,
 )
 from fedact.domain.enums import ScientificOutcome
-from fedact.domain.records import (
+from fedact.domain.types import (
     CutoffCount,
     DegradationValue,
     MetricRate,

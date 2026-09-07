@@ -269,6 +269,10 @@ def external_enum_reference_violations(
                 references[node.id].add(module)
             elif isinstance(node, ast.Attribute):
                 references[node.attr].add(module)
+            elif isinstance(node, ast.alias):
+                references[node.name].add(module)
+                if node.asname:
+                    references[node.asname].add(module)
     violations: list[str] = []
     for defining_module, enum_name in definitions:
         consumers = references.get(enum_name, set()) - {defining_module}

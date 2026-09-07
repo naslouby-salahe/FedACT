@@ -6,7 +6,7 @@ import typer
 
 from fedact.app import Application, discover_repository_root
 from fedact.domain.enums import ExecutableWorkflowName
-from fedact.domain.records import OverwriteRequested
+from fedact.domain.types import OverwriteRequested
 from fedact.reporting.export import export_verified_project_evidence
 from fedact.storage.results import read_workflow_result
 

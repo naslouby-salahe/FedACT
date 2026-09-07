@@ -5,7 +5,7 @@ import json
 from dataclasses import dataclass
 from typing import NewType
 
-from fedact.domain.records import (
+from fedact.domain.types import (
     ContentChecksum,
     DependencyFingerprint,
     HashDigest,

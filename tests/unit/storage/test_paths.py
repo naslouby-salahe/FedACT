@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from fedact.config.loading import load_production_configuration
-from fedact.domain.records import ExperimentName
+from fedact.domain.types import ExperimentName
 from fedact.storage.paths import WorkspaceLayout
 
 

@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 
-from fedact.domain.records import (
+from fedact.domain.types import (
     DomainValidityFlag,
     HashDigest,
     SimilarityScore,
@@ -25,8 +25,8 @@ class ValidityLayerError(ValueError):
 
 @dataclass(frozen=True)
 class StructuralValidity:
-    parser_primary_ok: bool
-    parser_secondary_ok: bool
+    parser_primary_ok: ValidationFlag
+    parser_secondary_ok: ValidationFlag
     expected_machine_type: ValidationFlag
 
     @property
@@ -39,7 +39,7 @@ class ExecutionSmokeValidity:
     source_launched: ValidationFlag
     transformed_launched: ValidationFlag
     no_new_crash_or_anr: ValidationFlag
-    sandbox_identity_recorded: bool
+    sandbox_identity_recorded: ValidationFlag
     within_timeout_seconds: TimeoutSeconds
 
     @property

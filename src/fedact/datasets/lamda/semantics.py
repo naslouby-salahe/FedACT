@@ -7,7 +7,7 @@ from typing import NewType
 
 import numpy as np
 
-from fedact.config.models import LamdaDatasetConfig, Probability
+from fedact.config.models import LamdaDatasetConfig
 from fedact.datasets.chronology import CalendarMonth, calendar_month, transition_windows
 from fedact.datasets.records import (
     ClientSemanticsAudit,
@@ -17,12 +17,14 @@ from fedact.datasets.records import (
     corpus_level_client_audit,
 )
 from fedact.domain.enums import DatasetSelector
-from fedact.domain.records import (
+from fedact.domain.types import (
     BinaryLabel,
     CalendarMonthString,
+    DataAvailabilityFlag,
     DatasetIdentity,
     EligibilityFlag,
     FamilyName,
+    Probability,
     SampleCount,
     SampleIdentifier,
     ThresholdValue,
@@ -127,7 +129,7 @@ def lamda_client_semantics() -> ClientSemanticsAudit:
 
 @dataclass(frozen=True)
 class OperatorEligibility:
-    has_matching_raw_artifact: bool
+    has_matching_raw_artifact: DataAvailabilityFlag
 
     def is_eligible(self) -> EligibilityFlag:
         return self.has_matching_raw_artifact

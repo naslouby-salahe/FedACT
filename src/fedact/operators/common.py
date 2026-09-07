@@ -6,8 +6,8 @@ from itertools import combinations
 from typing import NewType
 
 from fedact.domain.enums import ScientificAssumption, ScientificOutcome
-from fedact.domain.records import (
-    AssumptionConsequence,
+from fedact.domain.records import AssumptionConsequence
+from fedact.domain.types import (
     DatasetName,
     DomainValidityFlag,
     FamilyName,
@@ -201,8 +201,8 @@ class ValidityAuditEntry:
     operator_name: OperatorIdentifier
     domain: OperatorDomain
     cutoff_identity: SplitCutoffIdentity
-    structural_valid: bool
-    execution_valid: bool
+    structural_valid: ValidationFlag
+    execution_valid: ValidationFlag
     maliciousness_preserved: ValidationFlag
     behavior_preserved: ValidationFlag
 

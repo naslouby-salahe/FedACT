@@ -10,7 +10,7 @@ from fedact.core.client_selection import (
     greedy_d_optimal,
     uniform_action_weights,
 )
-from fedact.domain.records import ClientIdentifier
+from fedact.domain.types import ClientIdentifier
 
 
 def test_uniform_action_weights() -> None:

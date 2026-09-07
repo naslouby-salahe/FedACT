@@ -12,7 +12,7 @@ from fedact.config.models import (
     PrivateTransitionSparsityMode,
 )
 from fedact.datasets.chronology import CalendarMonth
-from fedact.domain.records import (
+from fedact.domain.types import (
     DrawIndex,
     GridCellLabel,
     ReplicateIndex,

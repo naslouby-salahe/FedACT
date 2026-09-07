@@ -22,7 +22,11 @@ from fedact.core.client_selection import (
     greedy_d_optimal,
     uniform_action_weights,
 )
-from fedact.core.constraints import ClientConstraintSummary, validate_summary
+from fedact.core.constraints import (
+    ClientConstraintSummary,
+    ConstraintSummaryFailure,
+    validate_summary,
+)
 from fedact.core.controls import (
     ControlQualityGate,
     ControlReplicate,
@@ -79,6 +83,7 @@ __all__ = [
     "box_diameter_bound",
     "CertificateDecision",
     "ClientConstraintSummary",
+    "ConstraintSummaryFailure",
     "ControlQualityGate",
     "ControlReplicate",
     "NuisanceEstimate",

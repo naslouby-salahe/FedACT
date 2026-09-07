@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import numpy as np
 import torch
 
-from fedact.domain.records import CoordinateValue, NormValue, SampleCount, ThresholdValue
+from fedact.domain.types import CoordinateValue, NormValue, SampleCount, ThresholdValue
 
 
 @dataclass(frozen=True)
@@ -73,4 +73,4 @@ def propagate_radius(
     r = r0
     for _unused in range(horizon_steps):
         r = abs(a) * r + rw
-    return float(r)
+    return r

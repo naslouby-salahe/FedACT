@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from fedact.domain.enums import DatasetSelector
-from fedact.domain.records import SampleIdentifier, SplitCutoffIdentity
+from fedact.domain.types import SampleIdentifier, SplitCutoffIdentity
 from fedact.evaluation.records import EvaluationRecord
 
 

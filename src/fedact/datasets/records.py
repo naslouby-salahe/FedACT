@@ -7,22 +7,23 @@ from typing import Annotated, NewType
 
 from pydantic import Field
 
-from fedact.config.models import NonNegativeInt
 from fedact.datasets.chronology import HorizonAvailability
 from fedact.domain.enums import DatasetSelector
-from fedact.domain.records import (
+from fedact.domain.types import (
     BinaryLabel,
     CalendarMonthString,
     CohortIdentifier,
     ConfirmatoryFlag,
     DatasetIdentity,
     DetailMessage,
+    DetectionCount,
     DimensionValue,
     FamilyName,
     FieldName,
     HashDigest,
     MaliciousnessFlag,
     MonthIndex,
+    ObservedValue,
     ProhibitionFlag,
     SampleCount,
     SampleIdentifier,
@@ -93,9 +94,9 @@ class LabelDerivationRuleError(ValueError):
 
 @dataclass(frozen=True)
 class LabelDerivationRule:
-    benign_detection_count: NonNegativeInt
+    benign_detection_count: DetectionCount
     malware_minimum_detection_count: SupportThreshold
-    discard_detection_counts: tuple[NonNegativeInt, ...]
+    discard_detection_counts: tuple[DetectionCount, ...]
 
 
 VirusTotalDetectionCount = Annotated[int, Field(ge=0)]
@@ -169,7 +170,7 @@ class ClientSemanticsAudit:
     dataset: DatasetSelector
     source_field: FieldName
     classification: ClientSemanticsClass
-    observed_values: tuple[str, ...]
+    observed_values: tuple[ObservedValue, ...]
     supports_natural_federation_claim: ValidationFlag
 
     def __post_init__(self) -> None:
