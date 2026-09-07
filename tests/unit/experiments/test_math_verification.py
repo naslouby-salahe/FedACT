@@ -9,6 +9,7 @@ from fedact.experiments.math_verification import (
     is_degenerate_rejection_correct,
     is_diameter_upper_bound_valid,
     is_functionally_identifiable,
+    is_synchronized_nuisance_non_identifiable,
     null_space_basis,
     run_mathematical_verification,
     verify_action_width_bound,
@@ -46,6 +47,19 @@ def test_degenerate_and_monotonicity_checks() -> None:
 def test_diameter_bound_validity() -> None:
     ball = L2Ball(center=np.zeros(3), radius=2.0)
     assert is_diameter_upper_bound_valid(ball)
+
+
+def test_synchronized_nuisance_is_observationally_non_identifiable() -> None:
+    shared_first = np.array([1.0, 0.0])
+    shared_second = np.array([0.0, 0.5])
+    nuisance_first = np.array([0.0, 0.5])
+    nuisance_second = np.array([1.0, 0.0])
+    assert is_synchronized_nuisance_non_identifiable(
+        shared_first, nuisance_first, shared_second, nuisance_second
+    )
+    assert not is_synchronized_nuisance_non_identifiable(
+        shared_first, nuisance_first, shared_first, nuisance_first
+    )
 
 
 def test_run_mathematical_verification_passes_all_obligations() -> None:

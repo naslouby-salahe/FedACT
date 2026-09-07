@@ -6,7 +6,6 @@ from dataclasses import dataclass
 import numpy as np
 import torch
 
-from fedact.domain.enums import ActionPolarity
 from fedact.domain.records import (
     AmbiguityFlag,
     CertificationFlag,
@@ -35,10 +34,6 @@ class ActionInterval:
 
     @property
     def width(self) -> IntervalBound:
-        return float(self.upper - self.lower)
-
-    @property
-    def interval_width(self) -> IntervalBound:
         return float(self.upper - self.lower)
 
     def is_certified_positive(
@@ -109,18 +104,6 @@ def action_conditioning_index(
     return float(u.T @ h @ u)
 
 
-def classify_action_interval(
-    interval: ActionInterval,
-    alignment_threshold: ThresholdValue,
-    ambiguity_width: ThresholdValue,
-) -> ActionPolarity:
-    if interval.is_certified_positive(alignment_threshold, ambiguity_width):
-        return ActionPolarity.POSITIVE
-    if interval.is_certified_negative(alignment_threshold, ambiguity_width):
-        return ActionPolarity.NEGATIVE
-    return ActionPolarity.AMBIGUOUS
-
-
 @dataclass(frozen=True)
 class ActionDisplacementResult:
     displacement_vector: torch.Tensor | np.ndarray
@@ -149,9 +132,7 @@ def action_support_bounds(
     direction: np.ndarray | torch.Tensor,
     vertices: Sequence[np.ndarray | torch.Tensor],
 ) -> ActionInterval:
-    d = np.array(direction) if isinstance(direction, torch.Tensor) else direction
-    values = [float(np.dot(d, np.array(v) if isinstance(v, torch.Tensor) else v)) for v in vertices]
-    return ActionInterval(lower=min(values), upper=max(values))
+    return support_interval(direction, vertices)
 
 
 def box_diameter_bound(
@@ -160,18 +141,3 @@ def box_diameter_bound(
 ) -> IntervalBound:
     diffs = [u_val - l_val for l_val, u_val in zip(lowers, uppers, strict=True)]
     return float(np.sqrt(sum(d * d for d in diffs)))
-
-
-def displace_sample_representation(
-    source_representation: torch.Tensor,
-    action_delta: torch.Tensor,
-    norm_floor: NormValue,
-) -> ActionDisplacementResult:
-    norm = float(np.linalg.norm(action_delta.detach().cpu().numpy()))
-    degen = norm < norm_floor
-    res = source_representation + action_delta if not degen else source_representation
-    return ActionDisplacementResult(
-        displacement_vector=res,
-        displacement_norm=norm,
-        rejected_as_degenerate=degen,
-    )

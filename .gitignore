@@ -223,3 +223,4 @@ results/
 
 # Agent scratch space
 docs/temp/
+docs/.graphify-audit/

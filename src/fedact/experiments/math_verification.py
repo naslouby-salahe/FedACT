@@ -29,7 +29,6 @@ _AUTOREGRESSIVE_EXAMPLE_COEFFICIENT = 0.9
 _AUTOREGRESSIVE_EXAMPLE_UPPER_BOUND = 0.99
 _DIAMETER_EXAMPLE_DIMENSION = 3
 _SHARED_COMPONENT_DIMENSION = 3
-_SHARED_COMPONENT_FILL_VALUE = 0.5
 _DIAMETER_EXAMPLE_HALF_WIDTH = 1.5
 
 
@@ -53,6 +52,7 @@ class MathVerificationReport:
             self.monotonicity_verified,
             self.degenerate_rejection_verified,
             self.diameter_bound_verified,
+            self.synchronized_nuisance_verified,
         )
         return all(flags)
 
@@ -95,7 +95,7 @@ def verify_action_width_bound(
         center + epsilon * np.eye(direction.shape[0])[i] for i in range(direction.shape[0])
     )
     interval = support_interval(direction, ball_vertices)
-    observed: WidthValue = interval.interval_width
+    observed: WidthValue = interval.width
     limit: WidthValue = bound
     return observed, limit
 
@@ -129,10 +129,16 @@ def is_diameter_upper_bound_valid(ball: L2Ball) -> BoundValidityFlag:
 
 
 def is_synchronized_nuisance_non_identifiable(
-    shared: FloatArray, nuisance: FloatArray
+    shared_first: FloatArray,
+    nuisance_first: FloatArray,
+    shared_second: FloatArray,
+    nuisance_second: FloatArray,
 ) -> NonIdentifiabilityFlag:
-    total = shared + nuisance
-    return not np.allclose(total, shared)
+    observation_first = shared_first + nuisance_first
+    observation_second = shared_second + nuisance_second
+    same_observation = np.allclose(observation_first, observation_second)
+    different_latent = not np.allclose(shared_first, shared_second)
+    return same_observation and different_latent
 
 
 def run_mathematical_verification() -> MathVerificationReport:
@@ -161,11 +167,36 @@ def run_mathematical_verification() -> MathVerificationReport:
         fitted = None
     temporal_ok = fitted is not None and 0.0 <= fitted <= _AUTOREGRESSIVE_EXAMPLE_UPPER_BOUND
 
+    monotonicity_direction = np.array([1.0, 0.0, 0.0])
+    monotonicity_outer = tuple(
+        np.array(point)
+        for point in [(1.0, 0.0, -1.0), (-1.0, 0.0, 1.0), (0.5, 0.5, 0.0), (-0.5, -0.5, 0.0)]
+    )
+    monotonicity_inner = tuple(point for point in monotonicity_outer if point[1] >= 0.0)
+    monotonicity_ok = is_constraint_monotone(
+        monotonicity_direction, monotonicity_outer, monotonicity_inner
+    )
+
+    shared_first = np.zeros(_SHARED_COMPONENT_DIMENSION)
+    shared_first[0] = 1.0
+    shared_second = np.zeros(_SHARED_COMPONENT_DIMENSION)
+    shared_second[0] = 0.375
+    nuisance_first = np.zeros(_SHARED_COMPONENT_DIMENSION)
+    nuisance_first[0] = 0.375
+    nuisance_second = np.zeros(_SHARED_COMPONENT_DIMENSION)
+    nuisance_second[0] = 1.0
+    synchronized_ok = is_synchronized_nuisance_non_identifiable(
+        shared_first,
+        nuisance_first,
+        shared_second,
+        nuisance_second,
+    )
+
     report = MathVerificationReport(
         exact_set_verified=bool(exact_set_ok),
         functional_identifiability_verified=bool(identifiability_ok),
         width_bound_verified=bool(width_ok),
-        monotonicity_verified=True,
+        monotonicity_verified=bool(monotonicity_ok),
         degenerate_rejection_verified=is_degenerate_rejection_correct(1e-14, 1e-10),
         diameter_bound_verified=is_diameter_upper_bound_valid(
             L2Ball(
@@ -173,10 +204,7 @@ def run_mathematical_verification() -> MathVerificationReport:
                 radius=_DIAMETER_EXAMPLE_HALF_WIDTH,
             )
         ),
-        synchronized_nuisance_verified=is_synchronized_nuisance_non_identifiable(
-            np.ones(_SHARED_COMPONENT_DIMENSION),
-            np.full(_SHARED_COMPONENT_DIMENSION, _SHARED_COMPONENT_FILL_VALUE),
-        ),
+        synchronized_nuisance_verified=bool(synchronized_ok),
         scientific_outcome=ScientificOutcome.PASS,
     )
     if temporal_ok and not report.is_passing:

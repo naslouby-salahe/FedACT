@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import torch
 
 from fedact.app import Application
+from fedact.baselines.parity import verify_subtraction_comparator_parity
 from fedact.calibration.nested import (
     CalibrationCandidate,
     HardeningWeightDegradation,
@@ -49,6 +50,26 @@ class ActionCertificateReport:
 def run_action_certificate_validation(application: Application) -> ActionCertificateReport:
 
     config = application.configuration.values
+    parity = verify_subtraction_comparator_parity(config.numerical.projection_tie_tolerance)
+    if not parity.is_valid:
+        return ActionCertificateReport(
+            total_actions=0,
+            certified_positive_count=0,
+            ambiguous_count=0,
+            abstention_count=0,
+            coverage_rate=0.0,
+            scientific_outcome=ScientificOutcome.FAIL,
+        )
+    candidates = run_nested_calibration(application)
+    if not candidates:
+        return ActionCertificateReport(
+            total_actions=0,
+            certified_positive_count=0,
+            ambiguous_count=0,
+            abstention_count=0,
+            coverage_rate=0.0,
+            scientific_outcome=ScientificOutcome.INSUFFICIENT_EVIDENCE,
+        )
     latent_dim = 64
     nuisance_estimates = [
         estimate_client_nuisance_subspace(

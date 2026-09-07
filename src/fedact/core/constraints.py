@@ -5,8 +5,8 @@ from dataclasses import dataclass
 import numpy as np
 import torch
 
-from fedact.core.transitions import ClientIdentifier
 from fedact.domain.records import (
+    ClientIdentifier,
     EigengapRatio,
     RankDimension,
     SampleCount,

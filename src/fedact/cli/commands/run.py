@@ -8,7 +8,11 @@ from fedact.app import (
     Application,
     discover_repository_root,
 )
-from fedact.domain.enums import ExecutableWorkflowName, ScientificOutcome
+from fedact.domain.enums import (
+    ExecutableWorkflowName,
+    RunnableWorkflowName,
+    ScientificOutcome,
+)
 from fedact.domain.records import OverwriteRequested
 from fedact.experiments import registered_workflow
 from fedact.runtime.status import WorkflowExecutionState
@@ -18,6 +22,21 @@ from fedact.storage.results import (
     write_workflow_result,
 )
 
+_RUNNABLE_TO_EXECUTABLE: dict[RunnableWorkflowName, ExecutableWorkflowName] = {
+    RunnableWorkflowName.MATH_VERIFICATION: ExecutableWorkflowName.MATH_VERIFICATION,
+    RunnableWorkflowName.SYNTHETIC_GEOMETRY: ExecutableWorkflowName.SYNTHETIC_GEOMETRY,
+    RunnableWorkflowName.ACTION_CERTIFICATE_VALIDATION: (
+        ExecutableWorkflowName.ACTION_CERTIFICATE_VALIDATION
+    ),
+    RunnableWorkflowName.PROSPECTIVE_EVALUATION: ExecutableWorkflowName.PROSPECTIVE_EVALUATION,
+    RunnableWorkflowName.ABLATIONS: ExecutableWorkflowName.ABLATIONS,
+    RunnableWorkflowName.FEDERATION: ExecutableWorkflowName.FEDERATION,
+    RunnableWorkflowName.FAILURE_BOUNDARIES: ExecutableWorkflowName.FAILURE_BOUNDARIES,
+    RunnableWorkflowName.CROSS_CORPUS: ExecutableWorkflowName.CROSS_CORPUS,
+    RunnableWorkflowName.CLIENT_SELECTION: ExecutableWorkflowName.CLIENT_SELECTION,
+    RunnableWorkflowName.STATISTICAL_SYNTHESIS: ExecutableWorkflowName.STATISTICAL_SYNTHESIS,
+}
+
 
 def _persist(application: Application, record: WorkflowResultRecord) -> None:
     write_workflow_result(application.result_experiment_directory(record.workflow), record)
@@ -26,7 +45,6 @@ def _persist(application: Application, record: WorkflowResultRecord) -> None:
 def _dispatch_foundational_workflow(
     workflow: ExecutableWorkflowName, application: Application
 ) -> bool:
-    config = application.configuration.values
     if workflow is ExecutableWorkflowName.MATH_VERIFICATION:
         from fedact.experiments.math_verification import run_mathematical_verification
 
@@ -49,45 +67,6 @@ def _dispatch_foundational_workflow(
             typer.echo("synthetic geometry sweeps failed", err=True)
             raise typer.Exit(code=1)
         typer.echo("synthetic geometry validation completed: PASS")
-        return True
-
-    if workflow is ExecutableWorkflowName.BASELINE_PARITY:
-        from fedact.baselines.parity import verify_subtraction_comparator_parity
-
-        parity_result = verify_subtraction_comparator_parity(
-            config.numerical.projection_tie_tolerance
-        )
-        outcome = ScientificOutcome.PASS if parity_result.is_valid else ScientificOutcome.FAIL
-        _persist(application, WorkflowResultRecord(workflow=workflow, scientific_outcome=outcome))
-        typer.echo(f"baseline parity completed: {outcome.value}")
-        return True
-
-    if workflow is ExecutableWorkflowName.NESTED_CALIBRATION:
-        from fedact.experiments.action_certificate_validation import run_nested_calibration
-
-        cands = run_nested_calibration(application)
-        outcome = ScientificOutcome.PASS if cands else ScientificOutcome.INSUFFICIENT_EVIDENCE
-        _persist(application, WorkflowResultRecord(workflow=workflow, scientific_outcome=outcome))
-        typer.echo(f"nested calibration completed: {len(cands)} candidates")
-        return True
-
-    if workflow is ExecutableWorkflowName.SMOKE:
-        from fedact.cli.commands.smoke import run as run_smoke_validation_workflow
-
-        run_smoke_validation_workflow(overwrite=False, repository_root=application.repository_root)
-        return True
-
-    if workflow is ExecutableWorkflowName.PREPROCESS:
-        from fedact.cli.commands.preprocess import run as run_dataset_preprocessing
-
-        run_dataset_preprocessing(
-            None, overwrite=False, repository_root=application.repository_root
-        )
-        _persist(
-            application,
-            WorkflowResultRecord(workflow=workflow, scientific_outcome=ScientificOutcome.PASS),
-        )
-        typer.echo("preprocessing completed: PASS")
         return True
 
     return False
@@ -277,11 +256,12 @@ def _dispatch_evaluation_workflow(
 
 
 def run(
-    workflow: ExecutableWorkflowName, overwrite: OverwriteRequested, repository_root: Path
+    workflow: RunnableWorkflowName, overwrite: OverwriteRequested, repository_root: Path
 ) -> None:
-    selected = registered_workflow(workflow)
+    executable_workflow = _RUNNABLE_TO_EXECUTABLE[workflow]
+    selected = registered_workflow(executable_workflow)
     application = Application.from_repository_root(discover_repository_root(repository_root))
-    entry = application.plan().entry(workflow)
+    entry = application.plan().entry(executable_workflow)
     if entry.status is WorkflowExecutionState.BLOCKED:
         typer.echo(
             f"workflow '{workflow.value}' is blocked by: "
@@ -294,8 +274,8 @@ def run(
     if overwrite:
         typer.echo("overwrite: scoped to this workflow's artifacts")
 
-    if _dispatch_foundational_workflow(workflow, application):
+    if _dispatch_foundational_workflow(executable_workflow, application):
         return
-    if _dispatch_evaluation_workflow(workflow, application):
+    if _dispatch_evaluation_workflow(executable_workflow, application):
         return
     raise RuntimeError(f"unhandled workflow {workflow.value}")

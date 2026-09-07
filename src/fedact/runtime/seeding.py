@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import random
-from typing import NewType
 
 import numpy as np
 
-SeedValue = NewType("SeedValue", int)
+from fedact.domain.records import SeedValue
 
 
 def apply_python_seed(seed: SeedValue) -> None:
@@ -13,4 +12,5 @@ def apply_python_seed(seed: SeedValue) -> None:
 
 
 def create_numpy_generator(seed: SeedValue) -> np.random.Generator:
-    return np.random.default_rng(seed)
+    seed_sequence = np.random.SeedSequence(seed)
+    return np.random.default_rng(seed_sequence)

@@ -12,7 +12,7 @@ from fedact.cli.commands import report as report_command
 from fedact.cli.commands import run as run_command
 from fedact.cli.commands import smoke as smoke_command
 from fedact.cli.commands import status as status_command
-from fedact.domain.enums import DatasetSelector, ExecutableWorkflowName
+from fedact.domain.enums import DatasetSelector, ExecutableWorkflowName, RunnableWorkflowName
 
 app = typer.Typer(
     name="fedact",
@@ -61,7 +61,7 @@ def smoke_entry(
 
 @app.command("run")
 def run_entry(
-    workflow: ExecutableWorkflowName,
+    workflow: RunnableWorkflowName,
     overwrite: bool = OverwriteOption,
     repository_root: Path = _REPOSITORY_ROOT_OPTION,
 ) -> None:

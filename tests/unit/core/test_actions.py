@@ -6,7 +6,6 @@ import pytest
 from fedact.core.actions import (
     action_support_bounds,
     box_diameter_bound,
-    displace_sample_representation,
     evaluate_displacement,
 )
 
@@ -30,23 +29,3 @@ def test_box_diameter_bound() -> None:
     uppers = (1.0, 2.0)
     diameter = box_diameter_bound(lowers, uppers)
     assert diameter == pytest.approx(np.sqrt(2.0**2 + 4.0**2))
-
-
-def test_displace_sample_representation_rejects_sub_floor_norm() -> None:
-    import torch
-
-    source = torch.zeros(4)
-    delta = torch.zeros(4)
-    res = displace_sample_representation(source, delta, norm_floor=1e-6)
-    assert res.rejected_as_degenerate
-
-
-def test_displace_sample_representation_applies_nondegenerate_delta() -> None:
-    import torch
-
-    source = torch.zeros(4)
-    delta = torch.ones(4)
-    res = displace_sample_representation(source, delta, norm_floor=1e-6)
-    assert not res.rejected_as_degenerate
-    assert isinstance(res.displacement_vector, torch.Tensor)
-    assert torch.allclose(res.displacement_vector, delta)

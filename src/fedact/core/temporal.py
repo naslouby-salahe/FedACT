@@ -10,13 +10,6 @@ from fedact.domain.records import CoordinateValue, NormValue, SampleCount, Thres
 
 
 @dataclass(frozen=True)
-class TemporalModel:
-    scalar_coefficient: ThresholdValue
-    process_error_radius: NormValue
-    consecutive_pairs_used: SampleCount
-
-
-@dataclass(frozen=True)
 class ScalarModelFit:
     coefficient: ThresholdValue
     residuals: np.ndarray
@@ -33,7 +26,7 @@ def fit_scalar_model(
     y = np.stack(arrs[1:])
     denom = np.sum(x * x)
     a = float(np.sum(x * y) / denom) if denom > 1e-12 else 1.0
-    a = min(maximum_coefficient, max(-maximum_coefficient, a))
+    a = min(maximum_coefficient, max(0.0, a))
     residuals = y - a * x
     return ScalarModelFit(coefficient=a, residuals=residuals)
 
@@ -81,20 +74,3 @@ def propagate_radius(
     for _unused in range(horizon_steps):
         r = abs(a) * r + rw
     return float(r)
-
-
-def fit_scalar_ar1(historical_centers: Sequence[torch.Tensor]) -> TemporalModel:
-    if len(historical_centers) < 2:
-        return TemporalModel(
-            scalar_coefficient=1.0, process_error_radius=0.1, consecutive_pairs_used=0
-        )
-    x = torch.stack(list(historical_centers[:-1]))
-    y = torch.stack(list(historical_centers[1:]))
-    a = float(((x * y).sum() / (x * x).sum().clamp_min(1e-12)).detach().cpu().item())
-    diff_np = (y - a * x).detach().cpu().numpy()
-    err = float(np.max(np.linalg.norm(diff_np, axis=-1)))
-    return TemporalModel(
-        scalar_coefficient=a,
-        process_error_radius=err,
-        consecutive_pairs_used=len(historical_centers) - 1,
-    )

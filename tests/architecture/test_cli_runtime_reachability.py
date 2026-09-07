@@ -3,7 +3,7 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-from fedact.domain.enums import ExecutableWorkflowName
+from fedact.domain.enums import RunnableWorkflowName
 from tests.architecture.architecture_rules import parse_source
 
 
@@ -53,23 +53,13 @@ def cli_reachability_violations(repository_root: Path) -> list[str]:
     run_source = run_path.read_text(encoding="utf-8")
     if "workflow completed:" in run_source:
         violations.append("cli/commands/run.py contains a generic completed fallthrough")
-    if (
-        "ScientificOutcome.PASS" in run_source
-        and "PREPROCESS" in run_source
-        and "run_dataset_preprocessing" not in run_source
-    ):
-        violations.append("cli/commands/run.py preprocess path does not call a real producer")
 
     referenced = _string_constants(parse_source(run_path))
-    for workflow in ExecutableWorkflowName:
-        token = workflow.value.replace("-", "_")
-        enum_member = workflow.name
-        if enum_member not in run_source and workflow.value not in referenced:
+    for workflow in RunnableWorkflowName:
+        if workflow.name not in run_source and workflow.value not in referenced:
             violations.append(
-                f"cli/commands/run.py does not dispatch ExecutableWorkflowName.{enum_member}"
+                f"cli/commands/run.py does not dispatch RunnableWorkflowName.{workflow.name}"
             )
-        if token == "preprocess" or workflow is ExecutableWorkflowName.PREPROCESS:
-            continue
     return violations
 
 
@@ -112,13 +102,10 @@ def test_cli_reachability_rule_accepts_complete_command_surface(tmp_path: Path) 
     )
     for name in command_names:
         (commands / f"{name}.py").write_text("def run() -> None:\n    return\n", encoding="utf-8")
-    dispatch = "\n".join(
-        f"    ExecutableWorkflowName.{item.name}\n" for item in ExecutableWorkflowName
-    )
+    dispatch = "\n".join(f"    RunnableWorkflowName.{item.name}\n" for item in RunnableWorkflowName)
     (commands / "run.py").write_text(
-        "from fedact.domain.enums import ExecutableWorkflowName\n"
-        "def run_dataset_preprocessing() -> None:\n    return\n"
-        "def run(workflow: ExecutableWorkflowName) -> None:\n"
+        "from fedact.domain.enums import RunnableWorkflowName\n"
+        "def run(workflow: RunnableWorkflowName) -> None:\n"
         f"{dispatch}",
         encoding="utf-8",
     )

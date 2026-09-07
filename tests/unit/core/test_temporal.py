@@ -17,6 +17,12 @@ def test_fit_scalar_model_estimates_coefficient() -> None:
     assert fit.residuals.shape[0] == 9
 
 
+def test_fit_scalar_model_clamps_negative_raw_coefficient_to_zero() -> None:
+    centers = (np.array([1.0, 0.0]), np.array([-1.0, 0.0]), np.array([1.0, 0.0]))
+    fit = fit_scalar_model(centers, maximum_coefficient=0.99)
+    assert fit.coefficient == pytest.approx(0.0)
+
+
 def test_process_error_radius_computes_residual_quantile() -> None:
     residuals = np.array([[float(i), 0.0] for i in range(10)])
     radius = process_error_radius(residuals, quantile=0.9)

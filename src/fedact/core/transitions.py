@@ -1,24 +1,17 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import dataclass
 from enum import StrEnum
-from typing import NewType
 
 import numpy as np
 import torch
 
 from fedact.domain.records import (
-    ClientIndex,
     CoordinateValue,
-    DiagnosisMessage,
     IterationCount,
-    NormValue,
     SampleCount,
     ThresholdValue,
 )
-
-ClientIdentifier = NewType("ClientIdentifier", str)
 
 
 class AbstentionReason(StrEnum):
@@ -38,17 +31,6 @@ class AbstentionReason(StrEnum):
     ABSTAIN_OPERATOR_COVERAGE_INSUFFICIENT = "ABSTAIN_OPERATOR_COVERAGE_INSUFFICIENT"
     ABSTAIN_SYNCHRONIZED_NUISANCE_RISK = "ABSTAIN_SYNCHRONIZED_NUISANCE_RISK"
     ABSTAIN_SINGLE_CLIENT_CERTIFICATE_DOMINANCE = "ABSTAIN_SINGLE_CLIENT_CERTIFICATE_DOMINANCE"
-
-
-@dataclass(frozen=True)
-class ClientTransmission:
-    subspace: torch.Tensor
-    uncertainty_radius: ThresholdValue
-    support_before: SampleCount
-    support_after: SampleCount
-    control_displacement_norm: NormValue
-    beta: ThresholdValue
-    control_quality_diagnostics: DiagnosisMessage
 
 
 def effective_support(
@@ -159,18 +141,3 @@ def later_real_proxy(
         [d * (s / total_supp) for d, s in zip(diffs, eff_supports, strict=True)],
         axis=0,
     )
-
-
-@dataclass(frozen=True)
-class ClientAbstention:
-    reason: AbstentionReason = AbstentionReason.ABSTAIN_NO_USABLE_CONTROL
-
-
-def leave_one_client_reference(
-    transmissions: Sequence[ClientTransmission],
-    excluded_index: ClientIndex,
-) -> ClientTransmission:
-    remaining = [t for i, t in enumerate(transmissions) if i != excluded_index]
-    if not remaining:
-        return transmissions[0]
-    return remaining[0]

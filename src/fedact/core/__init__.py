@@ -49,19 +49,15 @@ from fedact.core.nuisance import (
 )
 from fedact.core.solver import SolverToleranceSettings, solve_support_bounds
 from fedact.core.temporal import (
-    TemporalModel,
     fit_scalar_model,
     process_error_radius,
     propagate_radius,
 )
 from fedact.core.transitions import (
     AbstentionReason,
-    ClientAbstention,
-    ClientTransmission,
     effective_support,
     geometric_median,
     later_real_proxy,
-    leave_one_client_reference,
     observed_nuisance_amplitude,
     weighted_control_center,
 )
@@ -93,12 +89,9 @@ __all__ = [
     "EXTENDED_ASSUMPTION_CONTRACTS",
     "ActionInterval",
     "action_support_bounds",
-    "ClientAbstention",
     "ClientConstraint",
-    "ClientTransmission",
     "L2Ball",
     "NumericalFailureError",
-    "TemporalModel",
     "action_conditioning_index",
     "is_control_gate_passing",
     "chebyshev_center",
@@ -107,7 +100,6 @@ __all__ = [
     "geometric_median",
     "is_constraint_satisfied",
     "later_real_proxy",
-    "leave_one_client_reference",
     "d_optimal_gain",
     "eigengap_ratio",
     "evaluate_displacement",

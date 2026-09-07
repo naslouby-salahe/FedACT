@@ -7,7 +7,6 @@ from fedact.core.actions import (
     ActionInterval,
     NumericalFailureError,
     action_conditioning_index,
-    classify_action_interval,
     projector_from_basis,
     smallest_positive_eigenvalue,
     support_interval,
@@ -21,7 +20,7 @@ from fedact.core.feasible_sets import (
     minimum_uniform_inflation,
 )
 from fedact.core.temporal import fit_scalar_model, process_error_radius, propagate_radius
-from fedact.domain.enums import ActionPolarity, CertificationStatus
+from fedact.domain.enums import CertificationStatus
 
 
 def test_projector_is_idempotent_and_matches_orthogonal_complement() -> None:
@@ -71,11 +70,9 @@ def test_action_interval_polarity_follows_the_roadmap_thresholds_exactly() -> No
     ambiguous = ActionInterval(lower=0.5, upper=2.0)
     tau_align = 1.0
     ambiguity_width = 1.0
-    assert classify_action_interval(positive, tau_align, ambiguity_width) is ActionPolarity.POSITIVE
-    assert classify_action_interval(negative, tau_align, ambiguity_width) is ActionPolarity.NEGATIVE
-    assert (
-        classify_action_interval(ambiguous, tau_align, ambiguity_width) is ActionPolarity.AMBIGUOUS
-    )
+    assert positive.is_certified_positive(tau_align, ambiguity_width)
+    assert negative.is_certified_negative(tau_align, ambiguity_width)
+    assert ambiguous.is_ambiguous(tau_align, ambiguity_width)
 
 
 def test_certification_requires_validity_width_and_lower_bound() -> None:
