@@ -5,12 +5,11 @@ from fedact.experiments.generalization import run_prospective_fedact_evaluation
 from fedact.workflow import Application
 
 
-def test_run_prospective_fedact_evaluation(application: Application) -> None:
+def test_prospective_evaluation_never_fabricates_missing_lamda_evidence(
+    application: Application,
+) -> None:
     report = run_prospective_fedact_evaluation(application)
-    assert report.total_evaluations > 0
+    assert report.total_evaluations == 0
     assert 0.0 <= report.mean_false_negative_rate <= 1.0
     assert 0.0 <= report.mean_certification_rate <= 1.0
-    assert report.scientific_outcome in (
-        ScientificOutcome.PASS,
-        ScientificOutcome.INSUFFICIENT_EVIDENCE,
-    )
+    assert report.scientific_outcome is ScientificOutcome.INSUFFICIENT_EVIDENCE

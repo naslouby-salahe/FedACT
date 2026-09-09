@@ -1,102 +1,169 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
+from pathlib import Path
 
 import numpy as np
-import torch
 
-from fedact.certification.certificate import build_nuisance_spaces
 from fedact.certification.selection import (
     ClientInformationMatrix,
     SelectionBudget,
     greedy_d_optimal,
 )
-from fedact.certification.uncertainty import (
-    estimate_client_nuisance_subspace,
-    solve_action_interval,
-)
+from fedact.config.models import StrictModel
 from fedact.domain.types import (
     AblationIdentifier,
+    BinaryLabel,
     ClientIdentifier,
     DegradationValue,
+    EmbeddingComponent,
     EvaluationCount,
-    FederationGeometry,
     IntervalBound,
-    RankSelectionMethod,
+    MetricRate,
+    MonthIndex,
+    RidgeLambda,
+    SampleIdentifier,
     ScientificOutcome,
     ValidationFlag,
 )
-from fedact.experiments.baselines import centralized_pooled_comparator, local_only_comparator
 from fedact.experiments.registry import ExperimentRuntime
-from fedact.learning.federation import train_federated_detector
+from fedact.learning.detector import DetectorHead
+from fedact.learning.federation import ClientTrainingPopulation, train_federated_detector
+from fedact.learning.representation import (
+    DEFAULT_ENCODER_HIDDEN_DIMENSIONS,
+    EMBEDDING_DIMENSION,
+    RepresentationEncoder,
+    TrainingObservation,
+)
+
+LOGGER = logging.getLogger(__name__)
+
+
+def _result_directory(application: ExperimentRuntime, workflow: str) -> Path:
+    return (
+        application.repository_root
+        / application.configuration.values.workspace.directories.result_experiments
+        / workflow
+    )
+
+
+class _AblationMeasurement(StrictModel):
+    ablation_name: AblationIdentifier
+    baseline_false_negative_rate: MetricRate
+    ablated_false_negative_rate: MetricRate
+
+
+class _AblationArtifact(StrictModel):
+    measurements: list[_AblationMeasurement]
 
 
 @dataclass(frozen=True)
 class AblationResult:
     ablation_name: AblationIdentifier
     degradation_percentage_points: DegradationValue
-    hypothesis_confirmed: ValidationFlag
+    measured: ValidationFlag
 
 
 @dataclass(frozen=True)
 class AblationExperimentReport:
     ablations_evaluated: EvaluationCount
-    all_hypotheses_confirmed: ValidationFlag
     results: tuple[AblationResult, ...]
     scientific_outcome: ScientificOutcome
 
     @property
     def evaluated_configurations(self) -> EvaluationCount:
-        return len(self.results)
+        return self.ablations_evaluated
 
 
 def run_novelty_critical_ablations(application: ExperimentRuntime) -> AblationExperimentReport:
-    config = application.configuration.values
-    latent_dim = 64
-    nuisance = estimate_client_nuisance_subspace(
-        client_controls=torch.randn(20, latent_dim),
-        rank_selection=RankSelectionMethod.FIXED_RANK,
-        fixed_rank=config.identification.nuisance_rank.maximum,
-        eigengap_regularization=config.numerical.rank_clip_epsilon_relative,
-        scale_standardization_floor=config.numerical.scale_standardization_floor,
-    )
-    fset = build_nuisance_spaces(
-        nuisance_subspaces=(nuisance.subspace,),
-        uncertainty_radii=(nuisance.uncertainty_radius,),
-    )
-    action = torch.randn(latent_dim)
-    interval = solve_action_interval(action_vector=action, feasible_set=fset)
-
-    ablation_names = (
-        "no_controls",
-        "point_center",
-        "global_gate",
-        "shuffled_time",
-        "no_change_dynamics",
-        "hardening_off",
-    )
-
+    source = _result_directory(application, "ablations") / "measurements.json"
+    if not source.is_file():
+        LOGGER.warning(
+            "ablation measurements are missing: %s; prospective evaluation must provide "
+            "measured FNR pairs",
+            source,
+        )
+        return AblationExperimentReport(0, (), ScientificOutcome.INSUFFICIENT_EVIDENCE)
+    artifact = _AblationArtifact.model_validate_json(source.read_text(encoding="utf-8"))
     results = tuple(
         AblationResult(
-            ablation_name=name,
-            degradation_percentage_points=12.5 if interval.width > 0 else 5.0,
-            hypothesis_confirmed=True,
+            ablation_name=measurement.ablation_name,
+            degradation_percentage_points=100.0
+            * (measurement.ablated_false_negative_rate - measurement.baseline_false_negative_rate),
+            measured=True,
         )
-        for name in ablation_names
+        for measurement in artifact.measurements
     )
-
-    all_confirmed = all(r.hypothesis_confirmed for r in results)
-    outcome = ScientificOutcome.PASS if all_confirmed else ScientificOutcome.FAIL
-
     return AblationExperimentReport(
-        ablations_evaluated=len(results),
-        all_hypotheses_confirmed=all_confirmed,
-        results=results,
-        scientific_outcome=outcome,
+        len(results),
+        results,
+        ScientificOutcome.PASS if results else ScientificOutcome.INSUFFICIENT_EVIDENCE,
     )
 
 
-_CLIENT_MATRIX_NOISE_SCALE = 0.05
+class _ClientObservations(StrictModel):
+    client_id: ClientIdentifier
+    sample_ids: list[SampleIdentifier]
+    features: list[list[EmbeddingComponent]]
+    month_indices: list[MonthIndex]
+    labels: list[BinaryLabel]
+
+
+class _FederationArtifact(StrictModel):
+    clients: list[_ClientObservations]
+    redundant_widths: list[IntervalBound] = []
+    complementary_widths: list[IntervalBound] = []
+
+
+def _client_populations(artifact: _FederationArtifact) -> tuple[ClientTrainingPopulation, ...]:
+    populations: list[ClientTrainingPopulation] = []
+    for client in artifact.clients:
+        lengths = {
+            len(client.sample_ids),
+            len(client.features),
+            len(client.month_indices),
+            len(client.labels),
+        }
+        if len(lengths) != 1 or not client.features:
+            raise ValueError(f"federation client {client.client_id} has inconsistent observations")
+        populations.append(
+            ClientTrainingPopulation(
+                client=client.client_id,
+                observations=tuple(
+                    TrainingObservation(sample_id, tuple(features), month, label)
+                    for sample_id, features, month, label in zip(
+                        client.sample_ids,
+                        client.features,
+                        client.month_indices,
+                        client.labels,
+                        strict=True,
+                    )
+                ),
+            )
+        )
+    return tuple(populations)
+
+
+def _information_matrices(
+    populations: tuple[ClientTrainingPopulation, ...],
+) -> tuple[ClientInformationMatrix, ...]:
+    return tuple(
+        ClientInformationMatrix(
+            client=population.client,
+            matrix=np.asarray(
+                [tuple(obs.features) for obs in population.observations], dtype=float
+            ).T
+            @ np.asarray([tuple(obs.features) for obs in population.observations], dtype=float),
+        )
+        for population in populations
+    )
+
+
+def _log_determinant(matrices: tuple[ClientInformationMatrix, ...], ridge: RidgeLambda) -> float:
+    total = sum((matrix.matrix for matrix in matrices), start=np.zeros_like(matrices[0].matrix))
+    sign, determinant = np.linalg.slogdet(total + ridge * np.eye(total.shape[0]))
+    return float(determinant) if sign > 0 else float("-inf")
 
 
 @dataclass(frozen=True)
@@ -109,41 +176,32 @@ class SelectionExperimentReport:
 def run_communication_limited_client_selection(
     application: ExperimentRuntime,
 ) -> SelectionExperimentReport:
-    config = application.configuration.values
-    latent_dim = 16
-    k = 5
-    fractions = config.client_selection.budget_fractions
-
-    matrices = {
-        ClientIdentifier(f"c_{i}"): np.eye(latent_dim, dtype=np.float64)
-        + _CLIENT_MATRIX_NOISE_SCALE
-        * np.random.default_rng(i).standard_normal((latent_dim, latent_dim))
-        for i in range(k)
-    }
-    spd_matrices = tuple(
-        ClientInformationMatrix(
-            client=client, matrix=np.ascontiguousarray((matrix.T @ matrix), dtype=np.float64)
+    source = _result_directory(application, "federation") / "clients.json"
+    if not source.is_file():
+        LOGGER.warning(
+            "client-selection input is missing: %s; natural client observations are required",
+            source,
         )
-        for client, matrix in matrices.items()
+        return SelectionExperimentReport(0, False, ScientificOutcome.INSUFFICIENT_EVIDENCE)
+    populations = _client_populations(
+        _FederationArtifact.model_validate_json(source.read_text(encoding="utf-8"))
     )
-
-    results = [
-        greedy_d_optimal(
-            information_matrices=spd_matrices,
-            ridge_lambda=config.client_selection.d_optimal_ridge,
-            budget=SelectionBudget(budget_fraction=frac, eligible_clients=k),
+    matrices = _information_matrices(populations)
+    if len(matrices) < 2:
+        return SelectionExperimentReport(0, False, ScientificOutcome.INSUFFICIENT_EVIDENCE)
+    config = application.configuration.values.client_selection
+    verified: list[bool] = []
+    by_client = {matrix.client: matrix for matrix in matrices}
+    for fraction in config.budget_fractions:
+        budget = SelectionBudget(fraction, len(matrices))
+        selected = greedy_d_optimal(matrices, config.d_optimal_ridge, budget)
+        selected_matrices = tuple(by_client[client] for client in selected)
+        prefix = tuple(sorted(matrices, key=lambda item: item.client)[: budget.selected_count])
+        verified.append(
+            _log_determinant(selected_matrices, config.d_optimal_ridge)
+            >= _log_determinant(prefix, config.d_optimal_ridge)
         )
-        for frac in fractions
-    ]
-
-    superior = all(len(r) > 0 for r in results)
-    outcome = ScientificOutcome.PASS if superior else ScientificOutcome.FAIL
-
-    return SelectionExperimentReport(
-        budget_fractions_tested=len(fractions),
-        d_optimal_superiority_verified=superior,
-        scientific_outcome=outcome,
-    )
+    return SelectionExperimentReport(len(verified), all(verified), ScientificOutcome.PASS)
 
 
 @dataclass(frozen=True)
@@ -152,52 +210,69 @@ class FederationGeometryReport:
     delta_w_o: IntervalBound
     complementarity_verified: ValidationFlag
     scientific_outcome: ScientificOutcome
-    geometries_tested: EvaluationCount = 2
+    geometries_tested: EvaluationCount = 0
 
 
 def run_federation_geometry_evaluation(application: ExperimentRuntime) -> FederationGeometryReport:
-    config = application.configuration.values
-    latent_dim = 64
-    k = 5
-
-    estimates = [
-        estimate_client_nuisance_subspace(
-            client_controls=torch.randn(20, latent_dim),
-            rank_selection=RankSelectionMethod.FIXED_RANK,
-            fixed_rank=config.identification.nuisance_rank.maximum,
-            eigengap_regularization=config.numerical.rank_clip_epsilon_relative,
-            scale_standardization_floor=config.numerical.scale_standardization_floor,
+    source = _result_directory(application, "federation") / "clients.json"
+    if not source.is_file():
+        LOGGER.warning(
+            "federation input is missing: %s; an approved natural multi-client partition "
+            "is required",
+            source,
         )
-        for _unused in range(k)
-    ]
-
-    comp_set = build_nuisance_spaces(
-        nuisance_subspaces=tuple(e.subspace for e in estimates),
-        uncertainty_radii=tuple(e.uncertainty_radius for e in estimates),
-        geometry=FederationGeometry.COMPLEMENTARY,
+        return FederationGeometryReport(0, 0.0, False, ScientificOutcome.INSUFFICIENT_EVIDENCE)
+    artifact = _FederationArtifact.model_validate_json(source.read_text(encoding="utf-8"))
+    populations = _client_populations(artifact)
+    if len(populations) < 2:
+        return FederationGeometryReport(0, 0.0, False, ScientificOutcome.INSUFFICIENT_EVIDENCE)
+    feature_dimension = len(populations[0].observations[0].features)
+    if any(
+        len(observation.features) != feature_dimension
+        for population in populations
+        for observation in population.observations
+    ):
+        raise ValueError("federation clients must share a feature schema")
+    config = application.configuration.values
+    federated = train_federated_detector(
+        RepresentationEncoder(
+            feature_dimension, DEFAULT_ENCODER_HIDDEN_DIMENSIONS, EMBEDDING_DIMENSION
+        ),
+        DetectorHead(EMBEDDING_DIMENSION),
+        populations,
+        config.training.maximum_epochs,
+        config.training.initial_learning_rate,
+        config.training.final_learning_rate,
     )
-    red_set = build_nuisance_spaces(
-        nuisance_subspaces=tuple(e.subspace for e in estimates),
-        uncertainty_radii=tuple(e.uncertainty_radius for e in estimates),
-        geometry=FederationGeometry.REDUNDANT,
-    )
-
-    action = torch.randn(latent_dim)
-    w_comp = solve_action_interval(action_vector=action, feasible_set=comp_set).width
-    w_red = solve_action_interval(action_vector=action, feasible_set=red_set).width
-
-    delta_w = w_red - w_comp
-    shift = estimates[0].subspace[:, 0].detach().cpu().numpy()
-    pooled = centralized_pooled_comparator((shift, shift))
-    local = local_only_comparator(shift)
-    verified = delta_w >= -1e-6 and pooled.condition_name != local.condition_name
-    if train_federated_detector is None:
-        verified = False
-    outcome = ScientificOutcome.PASS if verified else ScientificOutcome.FAIL
-
+    if federated.global_rounds_completed == 0:
+        return FederationGeometryReport(
+            len(populations), 0.0, False, ScientificOutcome.INSUFFICIENT_EVIDENCE
+        )
+    redundant = np.asarray(artifact.redundant_widths, dtype=float)
+    complementary = np.asarray(artifact.complementary_widths, dtype=float)
+    if redundant.size == 0 or complementary.size == 0:
+        raise ValueError("federation artifact must contain matched measured geometry widths")
+    delta = interval_width_difference(redundant, complementary)
     return FederationGeometryReport(
-        clients_evaluated=k,
-        delta_w_o=delta_w,
-        complementarity_verified=verified,
-        scientific_outcome=outcome,
+        len(populations),
+        delta,
+        delta > 0.0,
+        ScientificOutcome.PASS,
+        len(config.synthetic.sweeps.federation.geometries),
     )
+
+
+def select_clients_from_information(
+    information_matrices: tuple[ClientInformationMatrix, ...],
+    budget: SelectionBudget,
+    ridge: RidgeLambda,
+) -> tuple[ClientIdentifier, ...]:
+    return greedy_d_optimal(information_matrices, ridge, budget)
+
+
+def interval_width_difference(
+    redundant_widths: np.ndarray, complementary_widths: np.ndarray
+) -> IntervalBound:
+    if redundant_widths.shape != complementary_widths.shape:
+        raise ValueError("geometry comparisons require matched action units")
+    return float(np.median(redundant_widths - complementary_widths))

@@ -12,12 +12,12 @@ from fedact.experiments.validation import (
 from fedact.workflow import Application
 
 
-def test_run_robustness_and_failure_boundary_evaluation(
+def test_failure_boundary_evaluation_requires_real_base_evidence(
     application: Application,
 ) -> None:
     report = run_robustness_and_failure_boundaries(application)
-    assert report.boundary_points_tested > 0
-    assert report.scientific_outcome is ScientificOutcome.PASS
+    assert report.boundary_points_tested == 0
+    assert report.scientific_outcome is ScientificOutcome.INSUFFICIENT_EVIDENCE
 
 
 def _base_estimate() -> NuisanceEstimate:

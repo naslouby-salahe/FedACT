@@ -1,60 +1,46 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 
 import numpy as np
 import torch
 
-from fedact.analysis.metrics import (
-    EvaluationRecord,
-    build_later_real_proxy,
-    compute_cumulative_exposure,
-    compute_evaluation_metrics,
-    validate_evaluation_metrics,
-)
-from fedact.certification.calibration import validate_calibration_outcome
-from fedact.certification.certificate import (
-    DomainValid,
-    build_nuisance_spaces,
-    certify_action_interval,
-)
-from fedact.certification.dynamics import ControlQualityGate, filter_control_replicates
-from fedact.certification.uncertainty import (
-    estimate_client_nuisance_subspace,
-    solve_action_interval,
+from fedact.analysis.metrics import EvaluationRecord, compute_evaluation_metrics
+from fedact.data.lamda import (
+    audited_label,
+    label_derivation_rule,
+    load_lamda_records,
+    validate_lamda_dataset,
+    year_month_to_calendar_month,
 )
 from fedact.domain.types import (
-    CertificationStatus,
     DatasetSelector,
     DegradationValue,
     EvaluationCount,
     MetricRate,
-    RankSelectionMethod,
     SampleIdentifier,
     ScientificOutcome,
     SplitCutoffIdentity,
     ValidationFlag,
 )
-from fedact.experiments.baselines import matched_benign_subtraction, static_security_baseline
 from fedact.experiments.registry import ExperimentRuntime
-from fedact.learning.detector import DetectorHead, detector_probabilities
+from fedact.learning.detector import train_base_detector
 from fedact.learning.hardening import (
-    SampleChallengeSet,
     clean_false_negative_rate,
     harden_detector_head,
+    read_challenge_sets,
 )
 from fedact.learning.representation import (
+    DEFAULT_ENCODER_HIDDEN_DIMENSIONS,
     EMBEDDING_DIMENSION,
-    RepresentationEncoder,
+    RepresentationDataset,
     TrainingObservation,
+    train_representation_encoder,
 )
-from fedact.learning.scoring import EncodedSample, validate_encoded_samples
+from fedact.learning.scoring import score_samples
 
-_CROSS_CORPUS_LABEL_ALTERNATION_MODULUS = 2
-_TARGET_CORPORA_TESTED = 2
-_CROSS_CORPUS_FABRICATED_CLEAN_LOSS = 0.1
-_CROSS_CORPUS_EVALUATION_POPULATION_ROWS = 40
-_INPUT_DIMENSION = 512
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -69,60 +55,6 @@ class CrossCorpusReport:
         return self.transfer_supported
 
 
-def run_cross_corpus_generalization(application: ExperimentRuntime) -> CrossCorpusReport:
-    config = application.configuration.values
-    _unused = config
-    latent_dim = EMBEDDING_DIMENSION
-    encoder = RepresentationEncoder(input_dimension=_INPUT_DIMENSION)
-    encoder.eval()
-    detector = DetectorHead(latent_dimension=latent_dim)
-    detector.eval()
-
-    evaluation_labels = tuple(
-        bool(i % _CROSS_CORPUS_LABEL_ALTERNATION_MODULUS == 0)
-        for i in range(_CROSS_CORPUS_EVALUATION_POPULATION_ROWS)
-    )
-    evaluation_features = torch.stack(
-        [
-            torch.randn(_INPUT_DIMENSION)
-            for _unused_index in range(_CROSS_CORPUS_EVALUATION_POPULATION_ROWS)
-        ]
-    )
-    with torch.no_grad():
-        evaluation_scores = detector_probabilities(detector(encoder(evaluation_features))).flatten()
-    eval_records: list[EvaluationRecord] = [
-        EvaluationRecord(
-            dataset=DatasetSelector.EMBER2024,
-            cutoff_id=SplitCutoffIdentity("c1"),
-            sample_id=SampleIdentifier(f"s_{i}"),
-            horizon_step=1,
-            true_label=evaluation_labels[i],
-            predicted_score=float(evaluation_scores[i]),
-            is_certified=True,
-            clean_loss=_CROSS_CORPUS_FABRICATED_CLEAN_LOSS,
-        )
-        for i in range(_CROSS_CORPUS_EVALUATION_POPULATION_ROWS)
-    ]
-    metrics = compute_evaluation_metrics(records=tuple(eval_records))
-
-    supported = metrics.false_negative_rate <= 0.35
-    outcome = ScientificOutcome.PASS if supported else ScientificOutcome.INSUFFICIENT_EVIDENCE
-
-    return CrossCorpusReport(
-        target_corpora_tested=_TARGET_CORPORA_TESTED,
-        mean_transfer_fnr=metrics.false_negative_rate,
-        transfer_supported=supported,
-        scientific_outcome=outcome,
-    )
-
-
-_LABEL_ALTERNATION_MODULUS = 2
-_TRAINING_POPULATION_ROWS = 20
-_VALIDATION_POPULATION_ROWS = 10
-_EVALUATION_POPULATION_ROWS = 50
-_FABRICATED_CLEAN_LOSS = 0.1
-
-
 @dataclass(frozen=True)
 class ProspectiveEvaluationReport:
     total_evaluations: EvaluationCount
@@ -132,161 +64,244 @@ class ProspectiveEvaluationReport:
     scientific_outcome: ScientificOutcome
 
 
+@dataclass(frozen=True)
+class _LamdaPopulation:
+    features: np.ndarray
+    labels: np.ndarray
+    months: np.ndarray
+    sample_ids: tuple[SampleIdentifier, ...]
+
+
+def _load_lamda_population(application: ExperimentRuntime) -> _LamdaPopulation | None:
+    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline" / "2023"
+    if not raw_root.is_dir():
+        LOGGER.warning("prospective evaluation has no LAMDA release at %s", raw_root)
+        return None
+    loaded = load_lamda_records(raw_root)
+    validate_lamda_dataset(loaded)
+    rule = label_derivation_rule(application.configuration.values.datasets.lamda)
+    keep = np.fromiter(
+        (audited_label(rule, record).binary_label is not None for record in loaded.records),
+        dtype=bool,
+        count=len(loaded.records),
+    )
+    if not np.any(keep):
+        LOGGER.warning("LAMDA contains no rows with an auditable binary label")
+        return None
+    records = tuple(
+        record for record, retained in zip(loaded.records, keep, strict=True) if retained
+    )
+    labels = np.fromiter(
+        (bool(audited_label(rule, record).binary_label) for record in records),
+        dtype=bool,
+        count=len(records),
+    )
+    months = np.fromiter(
+        (int(year_month_to_calendar_month(record.year_month)) for record in records),
+        dtype=np.int64,
+        count=len(records),
+    )
+    return _LamdaPopulation(
+        features=np.ascontiguousarray(loaded.features[keep], dtype=np.float64),
+        labels=labels,
+        months=months,
+        sample_ids=tuple(record.sample_hash for record in records),
+    )
+
+
+def _latest_eligible_cutoff(
+    application: ExperimentRuntime, population: _LamdaPopulation
+) -> int | None:
+    config = application.configuration.values
+    horizon = config.temporal.primary_confirmatory_horizon_months
+    history = config.temporal.historical_training_window_months
+    minimum = config.identification.minimum_support_per_class
+    for cutoff in range(int(population.months.max()) - horizon, int(population.months.min()), -1):
+        historical = (population.months >= cutoff - history) & (population.months < cutoff)
+        later = (population.months >= cutoff) & (population.months < cutoff + horizon)
+        if not historical.any() or not later.any():
+            continue
+        historical_labels = population.labels[historical]
+        later_labels = population.labels[later]
+        if (
+            np.count_nonzero(historical_labels) >= minimum
+            and np.count_nonzero(~historical_labels) >= minimum
+            and np.count_nonzero(later_labels) > 0
+            and np.count_nonzero(~later_labels) > 0
+        ):
+            return cutoff
+    return None
+
+
+def run_cross_corpus_generalization(application: ExperimentRuntime) -> CrossCorpusReport:
+    source_checkpoint = (
+        application.repository_root / "outputs" / "artifacts" / "models" / "lamda_locked.pt"
+    )
+    target_root = application.repository_root / "data" / "raw" / "EMBER2024"
+    if not source_checkpoint.is_file() or not target_root.is_dir():
+        LOGGER.warning(
+            "cross-corpus transfer abstains: locked source checkpoint=%s target=%s",
+            source_checkpoint.is_file(),
+            target_root.is_dir(),
+        )
+        return CrossCorpusReport(0, 0.0, False, ScientificOutcome.INSUFFICIENT_EVIDENCE)
+    LOGGER.warning("cross-corpus transfer requires a compatible locked feature adapter")
+    return CrossCorpusReport(1, 0.0, False, ScientificOutcome.INSUFFICIENT_EVIDENCE)
+
+
+def _score_cutoff_population(
+    application: ExperimentRuntime,
+    population: _LamdaPopulation,
+    historical: np.ndarray,
+    later: np.ndarray,
+) -> tuple[tuple[SampleIdentifier, ...], tuple[float, ...]] | None:
+    config = application.configuration.values
+    observations = tuple(
+        TrainingObservation(
+            sample_id=sample_id,
+            features=torch.tensor(feature, dtype=torch.float32),
+            month_index=int(month),
+            label=bool(label),
+        )
+        for sample_id, feature, month, label in zip(
+            np.asarray(population.sample_ids, dtype=object)[historical],
+            population.features[historical],
+            population.months[historical],
+            population.labels[historical],
+            strict=True,
+        )
+    )
+    validation_month = max(item.month_index for item in observations)
+    training = tuple(item for item in observations if item.month_index < validation_month)
+    validation = tuple(item for item in observations if item.month_index == validation_month)
+    if not training or not validation:
+        return None
+    encoder, encoder_selection = train_representation_encoder(
+        RepresentationDataset(training),
+        RepresentationDataset(validation),
+        population.features.shape[1],
+        DEFAULT_ENCODER_HIDDEN_DIMENSIONS,
+        EMBEDDING_DIMENSION,
+        config.training.maximum_epochs,
+        config.training.batch_size,
+        config.training.initial_learning_rate,
+        0.0,
+        config.seeds.representation[0],
+        config.numerical.projection_tie_tolerance,
+    )
+    LOGGER.info("selected representation checkpoint epoch=%s", encoder_selection.selected_epoch)
+    detector = train_base_detector(
+        encoder,
+        RepresentationDataset(training).feature_tensor(),
+        RepresentationDataset(training).label_tensor(),
+        RepresentationDataset(validation).feature_tensor(),
+        RepresentationDataset(validation).label_tensor(),
+        config.training.maximum_epochs,
+        config.training.batch_size,
+        config.training.initial_learning_rate,
+        0.0,
+        config.seeds.representation[0],
+        config.seeds.detector_training[0],
+        config.numerical.projection_tie_tolerance,
+    ).detector
+    challenge_file = (
+        application.repository_root
+        / config.workspace.directories.result_experiments
+        / "action-certificate-validation"
+        / "challenges.json"
+    )
+    if challenge_file.is_file():
+        challenges = read_challenge_sets(challenge_file)
+        if challenges:
+            detector = harden_detector_head(
+                encoder,
+                detector,
+                training,
+                validation,
+                challenges,
+                clean_false_negative_rate(detector, encoder, validation),
+                config.training.initial_learning_rate,
+                config.training.final_learning_rate,
+                config.training.maximum_epochs,
+                config.hardening.weight.maximum_clean_fnr_degradation_percentage_points,
+                config.numerical.projection_tie_tolerance,
+                config.hardening.weight.candidates[0],
+            ).detector
+    sample_ids = tuple(np.asarray(population.sample_ids, dtype=object)[later])
+    scored = score_samples(
+        encoder,
+        detector,
+        sample_ids,
+        torch.tensor(population.features[later], dtype=torch.float32),
+    )
+    return sample_ids, tuple(score.probability for score in scored)
+
+
 def run_prospective_fedact_evaluation(
     application: ExperimentRuntime,
 ) -> ProspectiveEvaluationReport:
+    certificate_result = (
+        application.repository_root
+        / application.configuration.values.workspace.directories.result_experiments
+        / "action-certificate-validation"
+        / "result.json"
+    )
+    if not certificate_result.is_file():
+        LOGGER.warning("prospective evaluation requires completed action-certificate evidence")
+        return ProspectiveEvaluationReport(
+            0, 0.0, 0.0, 0.0, ScientificOutcome.INSUFFICIENT_EVIDENCE
+        )
+    population = _load_lamda_population(application)
+    if population is None:
+        return ProspectiveEvaluationReport(
+            0, 0.0, 0.0, 0.0, ScientificOutcome.INSUFFICIENT_EVIDENCE
+        )
+    cutoff = _latest_eligible_cutoff(application, population)
+    if cutoff is None:
+        LOGGER.warning("no LAMDA cutoff satisfies configured history/support/horizon requirements")
+        return ProspectiveEvaluationReport(
+            0, 0.0, 0.0, 0.0, ScientificOutcome.INSUFFICIENT_EVIDENCE
+        )
+
     config = application.configuration.values
-    input_dim = 512
-    latent_dim = EMBEDDING_DIMENSION
-    encoder = RepresentationEncoder(input_dimension=input_dim)
-    detector = DetectorHead(latent_dimension=latent_dim)
-
-    nuisance_estimates = [
-        estimate_client_nuisance_subspace(
-            client_controls=torch.randn(20, latent_dim),
-            rank_selection=RankSelectionMethod.FIXED_RANK,
-            fixed_rank=config.identification.nuisance_rank.maximum,
-            eigengap_regularization=config.numerical.rank_clip_epsilon_relative,
-            scale_standardization_floor=config.numerical.scale_standardization_floor,
+    historical = (
+        population.months >= cutoff - config.temporal.historical_training_window_months
+    ) & (population.months < cutoff)
+    later = (population.months >= cutoff) & (
+        population.months < cutoff + config.temporal.primary_confirmatory_horizon_months
+    )
+    scored_population = _score_cutoff_population(application, population, historical, later)
+    if scored_population is None:
+        LOGGER.warning("cutoff has no disjoint chronological validation month")
+        return ProspectiveEvaluationReport(
+            0, 0.0, 0.0, 0.0, ScientificOutcome.INSUFFICIENT_EVIDENCE
         )
-        for _unused in range(5)
-    ]
-
-    replicates = [replicate for estimate in nuisance_estimates for replicate in estimate.replicates]
-    gate = ControlQualityGate(
-        held_out_residual_quantile=config.identification.control_reconstruction_gate.held_out_residual_quantile,
-        minimum_pass_fraction=config.identification.control_reconstruction_gate.minimum_pass_fraction,
-    )
-    _unused = filter_control_replicates(replicates=replicates, gate=gate)
-
-    feasible_set = build_nuisance_spaces(
-        nuisance_subspaces=tuple(e.subspace for e in nuisance_estimates),
-        uncertainty_radii=tuple(e.uncertainty_radius for e in nuisance_estimates),
-    )
-
-    action_displacements = [torch.randn(latent_dim) for _unused in range(30)]
-
-    certified_actions: list[torch.Tensor] = []
-    for action in action_displacements:
-        interval = solve_action_interval(action_vector=action, feasible_set=feasible_set)
-        decision = certify_action_interval(
-            action_interval=interval,
-            domain_validity=DomainValid(valid=True),
-            alignment_threshold=config.certification.alignment_threshold.percentile_candidates[0]
-            / 100.0,
-            ambiguity_width_threshold=config.certification.ambiguity_width.percentile_candidates[-1]
-            / 100.0,
-            set_diameter=feasible_set.diameter,
-            historical_realized_diameter_quantile=config.certification.forecast_set_diameter_abstention.historical_realized_diameter_quantile,
-        )
-        if decision.status is CertificationStatus.CERTIFIED_POSITIVE:
-            certified_actions.append(action)
-
-    train_pop = tuple(
-        TrainingObservation(
-            sample_id=SampleIdentifier(f"t_{i}"),
-            features=torch.randn(input_dim),
-            month_index=1,
-            label=bool(i % _LABEL_ALTERNATION_MODULUS == 0),
-        )
-        for i in range(_TRAINING_POPULATION_ROWS)
-    )
-    val_pop = tuple(
-        TrainingObservation(
-            sample_id=SampleIdentifier(f"v_{i}"),
-            features=torch.randn(input_dim),
-            month_index=1,
-            label=bool(i % _LABEL_ALTERNATION_MODULUS == 0),
-        )
-        for i in range(_VALIDATION_POPULATION_ROWS)
-    )
-    challenges = (
-        SampleChallengeSet(
-            source_sample_id=SampleIdentifier("t_0"),
-            challenge_embeddings=tuple(tuple(float(x) for x in a) for a in certified_actions),
-        ),
-    )
-    base_fnr = clean_false_negative_rate(detector, encoder, val_pop)
-    hardening_result = harden_detector_head(
-        encoder=encoder,
-        head=detector,
-        training_population=train_pop,
-        validation_population=val_pop,
-        challenge_sets=challenges,
-        baseline_clean_fnr=base_fnr,
-        initial_learning_rate=config.training.initial_learning_rate,
-        final_learning_rate=config.training.final_learning_rate,
-        maximum_epochs=config.training.maximum_epochs,
-        maximum_clean_fnr_degradation_percentage_points=(
-            config.hardening.weight.maximum_clean_fnr_degradation_percentage_points
-        ),
-        projection_tie_tolerance=config.numerical.projection_tie_tolerance,
-        hardening_weight=config.hardening.weight.candidates[0],
-    )
-
-    encoder.eval()
-    detector.eval()
-    evaluation_labels = tuple(
-        bool(i % _LABEL_ALTERNATION_MODULUS == 0) for i in range(_EVALUATION_POPULATION_ROWS)
-    )
-    evaluation_features = torch.stack(
-        [torch.randn(input_dim) for _unused in range(_EVALUATION_POPULATION_ROWS)]
-    )
-    with torch.no_grad():
-        evaluation_scores = detector_probabilities(detector(encoder(evaluation_features))).flatten()
-    eval_records: list[EvaluationRecord] = [
+    sample_ids, scores = scored_population
+    cutoff_id = SplitCutoffIdentity(f"lamda-{cutoff}")
+    records = tuple(
         EvaluationRecord(
             dataset=DatasetSelector.LAMDA,
-            cutoff_id=SplitCutoffIdentity("c1"),
-            sample_id=SampleIdentifier(f"p_{i}"),
+            cutoff_id=cutoff_id,
+            sample_id=sample_id,
             horizon_step=1,
-            true_label=evaluation_labels[i],
-            predicted_score=float(evaluation_scores[i]),
-            is_certified=True,
-            clean_loss=_FABRICATED_CLEAN_LOSS,
+            true_label=bool(label),
+            predicted_score=float(score),
+            is_certified=False,
+            clean_loss=0.0,
         )
-        for i in range(_EVALUATION_POPULATION_ROWS)
-    ]
-    metrics = compute_evaluation_metrics(records=tuple(eval_records))
-    validate_evaluation_metrics(metrics)
-    cumulative_exposure = compute_cumulative_exposure(
-        tuple(record.clean_loss for record in eval_records)
+        for sample_id, label, score in zip(
+            sample_ids,
+            population.labels[later],
+            scores,
+            strict=True,
+        )
     )
-    proxy = build_later_real_proxy(np.zeros((2, latent_dim)), np.ones((2, latent_dim)))
-    identification_baseline = matched_benign_subtraction(
-        proxy.observed_transition, proxy.observed_transition
-    )
-    security_baseline = static_security_baseline(latent_dim)
-    calibration_validator = validate_calibration_outcome
-    encoded = (
-        EncodedSample(
-            sample_id=SampleIdentifier("enc_0"),
-            embedding=np.zeros(latent_dim),
-            label=True,
-        ),
-    )
-    validate_encoded_samples(encoded, latent_dim)
-    if (
-        cumulative_exposure < 0
-        or identification_baseline.estimated_displacement.shape[0] == 0
-        or security_baseline.predicted_shift.shape[0] == 0
-        or calibration_validator is None
-    ):
-        raise RuntimeError("prospective evaluation lost a required comparator")
-
-    cert_rate = len(certified_actions) / max(1, len(action_displacements))
-    outcome = (
-        ScientificOutcome.PASS
-        if metrics.false_negative_rate < 0.30
-        else ScientificOutcome.INSUFFICIENT_EVIDENCE
-    )
-
+    metrics = compute_evaluation_metrics(records)
+    LOGGER.info("prospective baseline evaluated cutoff=%s rows=%s", cutoff_id, len(records))
     return ProspectiveEvaluationReport(
-        total_evaluations=len(eval_records),
+        total_evaluations=len(records),
         mean_false_negative_rate=metrics.false_negative_rate,
-        mean_certification_rate=cert_rate,
-        clean_fnr_degradation_percentage_points=(
-            hardening_result.clean_fnr_degradation_percentage_points
-        ),
-        scientific_outcome=outcome,
+        mean_certification_rate=0.0,
+        clean_fnr_degradation_percentage_points=0.0,
+        scientific_outcome=ScientificOutcome.INSUFFICIENT_EVIDENCE,
     )

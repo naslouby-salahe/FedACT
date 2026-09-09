@@ -5,7 +5,7 @@ from fedact.experiments.robustness import run_novelty_critical_ablations
 from fedact.workflow import Application
 
 
-def test_run_novelty_critical_ablations(application: Application) -> None:
+def test_ablation_requires_completed_prospective_evidence(application: Application) -> None:
     report = run_novelty_critical_ablations(application)
-    assert report.evaluated_configurations > 0
-    assert report.scientific_outcome is ScientificOutcome.PASS
+    assert report.evaluated_configurations == 0
+    assert report.scientific_outcome is ScientificOutcome.INSUFFICIENT_EVIDENCE

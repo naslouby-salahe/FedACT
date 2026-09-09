@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import copy
+import json
 import math
 from collections.abc import Sequence
 from dataclasses import dataclass
+from pathlib import Path
 
 import torch
 from torch.nn import functional as torch_functional
@@ -37,6 +39,41 @@ class CleanFnr:
 class SampleChallengeSet:
     source_sample_id: SampleIdentifier
     challenge_embeddings: tuple[tuple[EmbeddingComponent, ...], ...]
+
+
+def write_challenge_sets(challenge_sets: tuple[SampleChallengeSet, ...], destination: Path) -> None:
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    payload = [
+        {
+            "source_sample_id": challenge.source_sample_id,
+            "challenge_embeddings": challenge.challenge_embeddings,
+        }
+        for challenge in challenge_sets
+    ]
+    destination.write_text(json.dumps(payload), encoding="utf-8")
+
+
+def read_challenge_sets(source: Path) -> tuple[SampleChallengeSet, ...]:
+    payload = json.loads(source.read_text(encoding="utf-8"))
+    if not isinstance(payload, list):
+        raise ValueError("challenge artifact must contain a list")
+    challenges: list[SampleChallengeSet] = []
+    for entry in payload:
+        if not isinstance(entry, dict):
+            raise ValueError("challenge artifact contains a non-object entry")
+        sample_id = entry.get("source_sample_id")
+        embeddings = entry.get("challenge_embeddings")
+        if not isinstance(sample_id, str) or not isinstance(embeddings, list):
+            raise ValueError("challenge artifact is missing typed fields")
+        challenges.append(
+            SampleChallengeSet(
+                source_sample_id=SampleIdentifier(sample_id),
+                challenge_embeddings=tuple(
+                    tuple(float(value) for value in row) for row in embeddings
+                ),
+            )
+        )
+    return tuple(challenges)
 
 
 @dataclass(frozen=True)

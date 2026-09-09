@@ -5,9 +5,9 @@ from fedact.experiments.robustness import run_communication_limited_client_selec
 from fedact.workflow import Application
 
 
-def test_run_communication_limited_client_selection(
+def test_client_selection_requires_materialized_client_information(
     application: Application,
 ) -> None:
     report = run_communication_limited_client_selection(application)
-    assert report.budget_fractions_tested > 0
-    assert report.scientific_outcome is ScientificOutcome.PASS
+    assert report.budget_fractions_tested == 0
+    assert report.scientific_outcome is ScientificOutcome.INSUFFICIENT_EVIDENCE

@@ -5,9 +5,9 @@ from fedact.experiments.robustness import run_federation_geometry_evaluation
 from fedact.workflow import Application
 
 
-def test_run_federation_and_complementarity_evaluation(
+def test_federation_requires_natural_multi_client_evidence(
     application: Application,
 ) -> None:
     report = run_federation_geometry_evaluation(application)
-    assert report.geometries_tested > 0
-    assert report.scientific_outcome is ScientificOutcome.PASS
+    assert report.geometries_tested == 0
+    assert report.scientific_outcome is ScientificOutcome.INSUFFICIENT_EVIDENCE

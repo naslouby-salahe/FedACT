@@ -5,7 +5,9 @@ from fedact.experiments.validation import run_action_certificate_validation
 from fedact.workflow import Application
 
 
-def test_run_action_certificate_validation(application: Application) -> None:
+def test_action_validation_requires_calibrated_executable_operators(
+    application: Application,
+) -> None:
     report = run_action_certificate_validation(application)
-    assert report.total_actions > 0
-    assert report.scientific_outcome is ScientificOutcome.PASS
+    assert report.total_actions == 0
+    assert report.scientific_outcome is ScientificOutcome.INSUFFICIENT_EVIDENCE
