@@ -206,7 +206,7 @@ def _score_cutoff_population(
     ).detector
     challenge_file = (
         application.repository_root
-        / config.workspace.directories.result_experiments
+        / config.workspace.directories.experiments
         / "action-certificate-validation"
         / "challenges.json"
     )
@@ -240,13 +240,13 @@ def _score_cutoff_population(
 def run_prospective_fedact_evaluation(
     application: ExperimentRuntime,
 ) -> ProspectiveEvaluationReport:
-    certificate_result = (
+    action_evidence = (
         application.repository_root
-        / application.configuration.values.workspace.directories.result_experiments
+        / application.configuration.values.workspace.directories.experiments
         / "action-certificate-validation"
-        / "result.json"
+        / "actions.json"
     )
-    if not certificate_result.is_file():
+    if not action_evidence.is_file():
         LOGGER.warning("prospective evaluation requires completed action-certificate evidence")
         return ProspectiveEvaluationReport(
             0, 0.0, 0.0, 0.0, ScientificOutcome.INSUFFICIENT_EVIDENCE

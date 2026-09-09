@@ -40,10 +40,10 @@ from fedact.learning.representation import (
 LOGGER = logging.getLogger(__name__)
 
 
-def _result_directory(application: ExperimentRuntime, workflow: str) -> Path:
+def _experiment_directory(application: ExperimentRuntime, workflow: str) -> Path:
     return (
         application.repository_root
-        / application.configuration.values.workspace.directories.result_experiments
+        / application.configuration.values.workspace.directories.experiments
         / workflow
     )
 
@@ -77,7 +77,7 @@ class AblationExperimentReport:
 
 
 def run_novelty_critical_ablations(application: ExperimentRuntime) -> AblationExperimentReport:
-    source = _result_directory(application, "ablations") / "measurements.json"
+    source = _experiment_directory(application, "ablations") / "measurements.json"
     if not source.is_file():
         LOGGER.warning(
             "ablation measurements are missing: %s; prospective evaluation must provide "
@@ -176,7 +176,7 @@ class SelectionExperimentReport:
 def run_communication_limited_client_selection(
     application: ExperimentRuntime,
 ) -> SelectionExperimentReport:
-    source = _result_directory(application, "federation") / "clients.json"
+    source = _experiment_directory(application, "federation") / "clients.json"
     if not source.is_file():
         LOGGER.warning(
             "client-selection input is missing: %s; natural client observations are required",
@@ -214,7 +214,7 @@ class FederationGeometryReport:
 
 
 def run_federation_geometry_evaluation(application: ExperimentRuntime) -> FederationGeometryReport:
-    source = _result_directory(application, "federation") / "clients.json"
+    source = _experiment_directory(application, "federation") / "clients.json"
     if not source.is_file():
         LOGGER.warning(
             "federation input is missing: %s; an approved natural multi-client partition "

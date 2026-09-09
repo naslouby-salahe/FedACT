@@ -34,10 +34,10 @@ from fedact.learning.hardening import SampleChallengeSet, write_challenge_sets
 LOGGER = logging.getLogger(__name__)
 
 
-def _result_directory(application: ExperimentRuntime, workflow: str) -> Path:
+def _experiment_directory(application: ExperimentRuntime, workflow: str) -> Path:
     return (
         application.repository_root
-        / application.configuration.values.workspace.directories.result_experiments
+        / application.configuration.values.workspace.directories.experiments
         / workflow
     )
 
@@ -92,7 +92,7 @@ class ActionCertificateReport:
 
 
 def run_action_certificate_validation(application: ExperimentRuntime) -> ActionCertificateReport:
-    source = _result_directory(application, "action-certificate-validation") / "actions.json"
+    source = _experiment_directory(application, "action-certificate-validation") / "actions.json"
     if not source.is_file():
         LOGGER.warning(
             "action-validation input is missing: %s; executed semantically valid operators "
@@ -141,7 +141,7 @@ def run_action_certificate_validation(application: ExperimentRuntime) -> ActionC
 
 
 def run_nested_calibration(application: ExperimentRuntime) -> tuple[CalibrationCandidate, ...]:
-    source = _result_directory(application, "nested-calibration") / "observations.json"
+    source = _experiment_directory(application, "nested-calibration") / "observations.json"
     if not source.is_file():
         LOGGER.warning(
             "nested-calibration input is missing: %s; pre-cutoff pseudo-future observations "
@@ -223,7 +223,7 @@ def apply_corrupted_client_attack(
 
 
 def run_robustness_and_failure_boundaries(application: ExperimentRuntime) -> BoundaryStressReport:
-    source = _result_directory(application, "failure-boundaries") / "stress-measurements.json"
+    source = _experiment_directory(application, "failure-boundaries") / "stress-measurements.json"
     if not source.is_file():
         LOGGER.warning(
             "failure-boundary input is missing: %s; completed real stress measurements are "
