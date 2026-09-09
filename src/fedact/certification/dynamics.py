@@ -10,12 +10,14 @@ import torch
 from fedact.domain.types import (
     CoordinateValue,
     GateComplianceFlag,
+    IterationCount,
     MetricRate,
     NormValue,
     ReplicateIndex,
     SampleCount,
     ThresholdValue,
 )
+
 
 @dataclass(frozen=True)
 class ControlReplicate:
@@ -74,6 +76,7 @@ def filter_control_replicates(
         for replicate, residual in zip(replicates, residuals, strict=True)
         if residual <= threshold
     )
+
 
 @dataclass(frozen=True)
 class ScalarModelFit:
@@ -140,6 +143,7 @@ def propagate_radius(
     for _unused in range(horizon_steps):
         r = abs(a) * r + rw
     return r
+
 
 class AbstentionReason(StrEnum):
     ABSTAIN_NO_USABLE_CONTROL = "ABSTAIN_NO_USABLE_CONTROL"

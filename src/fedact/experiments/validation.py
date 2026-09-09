@@ -11,8 +11,16 @@ from fedact.certification.calibration import (
     HardeningWeightDegradations,
     generate_calibration_candidates,
 )
-from fedact.certification.certificate import DomainValid, build_nuisance_spaces, certify_action_interval
-from fedact.certification.uncertainty import NuisanceEstimate, estimate_client_nuisance_subspace, solve_action_interval
+from fedact.certification.certificate import (
+    DomainValid,
+    build_nuisance_spaces,
+    certify_action_interval,
+)
+from fedact.certification.uncertainty import (
+    NuisanceEstimate,
+    estimate_client_nuisance_subspace,
+    solve_action_interval,
+)
 from fedact.config.models import CorruptedClientAllowanceParameters
 from fedact.domain.types import (
     CertificationStatus,
@@ -35,7 +43,11 @@ from fedact.learning.hardening import (
     clean_false_negative_rate,
     harden_detector_head,
 )
-from fedact.learning.representation import EMBEDDING_DIMENSION, RepresentationEncoder, TrainingObservation
+from fedact.learning.representation import (
+    EMBEDDING_DIMENSION,
+    RepresentationEncoder,
+    TrainingObservation,
+)
 
 _ACTION_MAGNITUDE = 2.0
 
@@ -51,7 +63,6 @@ class ActionCertificateReport:
 
 
 def run_action_certificate_validation(application: ExperimentRuntime) -> ActionCertificateReport:
-
     config = application.configuration.values
     parity = verify_subtraction_comparator_parity(config.numerical.projection_tie_tolerance)
     if not parity.is_valid:
@@ -211,6 +222,7 @@ def run_nested_calibration(application: ExperimentRuntime) -> tuple[CalibrationC
         clean_degradations=clean_degradations,
     )
 
+
 _STRESS_SWEEP_BASELINE_ROWS = 20
 
 
@@ -264,7 +276,6 @@ def apply_corrupted_client_attack(
 
 
 def run_robustness_and_failure_boundaries(application: ExperimentRuntime) -> BoundaryStressReport:
-
     config = application.configuration.values
     latent_dim = 64
     allowance = config.robustness.corrupted_client_allowance

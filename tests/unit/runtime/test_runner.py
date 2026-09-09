@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-from fedact.domain.types import ArtifactBoundary
+from fedact.artifacts import ArtifactDependencyIndex, ArtifactIdentity, DependencyFingerprint
 from fedact.domain.records import BoundaryFingerprint, BoundaryFingerprints
+from fedact.domain.types import ArtifactBoundary
 from fedact.workflow import (
+    ArtifactExecutionState,
     IndexedArtifact,
     owned_boundaries_for_workflow,
     resolve_execution_requirements,
 )
-from fedact.workflow import ArtifactExecutionState
-from fedact.artifacts import ArtifactDependencyIndex
-from fedact.artifacts import ArtifactIdentity, DependencyFingerprint
 
 
 def identity(label: str) -> ArtifactIdentity:

@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from fedact.artifacts import WorkspaceLayout
 from fedact.config.loading import load_production_configuration
 from fedact.domain.types import ExperimentName
-from fedact.artifacts import WorkspaceLayout
 
 
 def layout(repository_root: Path) -> WorkspaceLayout:

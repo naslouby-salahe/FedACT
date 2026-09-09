@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fedact.domain.types import ScientificOutcome
 from fedact.analysis.reporting import (
     LatexMacroName,
     LatexMacroValue,
     generate_project_summary,
     synthesize_latex_macros,
 )
+from fedact.domain.types import ScientificOutcome
 
 
 def test_synthesize_latex_macros(tmp_path: Path) -> None:

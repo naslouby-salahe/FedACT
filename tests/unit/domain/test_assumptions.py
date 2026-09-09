@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import pytest
 
-from fedact.domain.types import ScientificAssumption, ScientificOutcome
 from fedact.domain.records import (
     CHRONOLOGY_CONSEQUENCE,
     CUTOFF_FIXED_REPRESENTATION_CONSEQUENCE,
@@ -18,7 +17,12 @@ from fedact.domain.records import (
     open_later_real_evaluation,
     verify_encoder_hash_lock,
 )
-from fedact.domain.types import ContentChecksum, SplitCutoffIdentity
+from fedact.domain.types import (
+    ContentChecksum,
+    ScientificAssumption,
+    ScientificOutcome,
+    SplitCutoffIdentity,
+)
 
 
 def test_every_roadmap_section_six_assumption_is_enumerated() -> None:

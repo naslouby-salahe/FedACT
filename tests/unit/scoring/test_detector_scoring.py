@@ -5,14 +5,17 @@ import torch
 
 from fedact.domain.types import SampleIdentifier
 from fedact.learning.detector import DetectorHead, detector_predictions, detector_probabilities
-from fedact.learning.representation import EMBEDDING_DIMENSION, RepresentationEncoder
+from fedact.learning.representation import (
+    EMBEDDING_DIMENSION,
+    RepresentationEncoder,
+    TrainingObservation,
+)
 from fedact.learning.scoring import (
     ScoringContractError,
     compute_detector_scores,
     materialize_embeddings,
     validate_scoring_output,
 )
-from fedact.learning.representation import TrainingObservation
 
 
 def observation(sid: str) -> TrainingObservation:

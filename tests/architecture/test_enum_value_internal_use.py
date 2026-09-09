@@ -21,8 +21,6 @@ BOUNDARY_MODULES = frozenset(
         "fedact.analysis.reporting",
         "fedact.config.loading",
         "fedact.artifacts",
-        "fedact.artifacts",
-        "fedact.artifacts",
     }
 )
 

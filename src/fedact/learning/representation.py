@@ -54,6 +54,7 @@ class RepresentationEncoder(nn.Module):
     def forward(self, features: Tensor) -> Tensor:
         return self.network(features)
 
+
 class TrainingContractError(ValueError):
     pass
 

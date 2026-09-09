@@ -39,8 +39,12 @@ from fedact.data.records import (
     prepare_records,
     select_low_variance_features,
 )
-from fedact.domain.types import DatasetSelector
-from fedact.domain.types import DatasetIdentity, SampleIdentifier, SplitCutoffIdentity
+from fedact.domain.types import (
+    DatasetIdentity,
+    DatasetSelector,
+    SampleIdentifier,
+    SplitCutoffIdentity,
+)
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 
@@ -336,8 +340,8 @@ def test_ember_conservative_timestamp_uses_collection_week_start(config: FedActC
     assert conservative_timestamp_month(WeekIdentifier("2023-W39")) == "2023-W39"
     record = EmberRawRecord(
         sample_hash=SampleIdentifier("x"),
-        format_client="win32_pe",
-        collection_week=WeekIdentifier("2023-W39"),
+        year_month="2023-10",
+        label=None,
         family=None,
     )
     assert record.family is None

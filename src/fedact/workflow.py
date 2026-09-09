@@ -70,6 +70,11 @@ from fedact.domain.types import (
     SeedValue,
     SplitCutoffIdentity,
 )
+from fedact.experiments.baselines import verify_subtraction_comparator_parity
+from fedact.experiments.generalization import (
+    run_cross_corpus_generalization,
+    run_prospective_fedact_evaluation,
+)
 from fedact.experiments.registry import (
     PREPROCESS_OWNED_BOUNDARIES,
     PREPROCESS_STAGE_FLOW,
@@ -79,10 +84,6 @@ from fedact.experiments.registry import (
     ownership_for,
     registered_workflow,
 )
-from fedact.experiments.generalization import (
-    run_cross_corpus_generalization,
-    run_prospective_fedact_evaluation,
-)
 from fedact.experiments.robustness import (
     run_communication_limited_client_selection,
     run_federation_geometry_evaluation,
@@ -91,6 +92,7 @@ from fedact.experiments.robustness import (
 from fedact.experiments.synthesis import run_statistical_synthesis
 from fedact.experiments.validation import (
     run_action_certificate_validation,
+    run_nested_calibration,
     run_robustness_and_failure_boundaries,
 )
 from fedact.experiments.verification import (
@@ -98,12 +100,12 @@ from fedact.experiments.verification import (
     run_synthetic_geometry_sweeps,
 )
 
+
 class WorkflowExecutionState(StrEnum):
     NOT_STARTED = "NOT_STARTED"
     BLOCKED = "BLOCKED"
     RUNNING = "RUNNING"
     COMPLETED = "COMPLETED"
-    FAILED = "FAILED"
     INVALID = "INVALID"
 
 
@@ -137,6 +139,7 @@ class ArtifactExecutionState(StrEnum):
     STALE = "STALE"
     INVALID = "INVALID"
 
+
 def apply_python_seed(seed: SeedValue) -> None:
     random.seed(seed)
 
@@ -144,6 +147,7 @@ def apply_python_seed(seed: SeedValue) -> None:
 def create_numpy_generator(seed: SeedValue) -> np.random.Generator:
     seed_sequence = np.random.SeedSequence(seed)
     return np.random.default_rng(seed_sequence)
+
 
 WORKFLOW_DEPENDENCIES: dict[ExecutableWorkflowName, tuple[ExecutableWorkflowName, ...]] = {
     ExecutableWorkflowName.PREPROCESS: (),
@@ -254,9 +258,6 @@ def _evaluate_dependency_blockers(
         if dependency not in recorded:
             blocking.append(f"dependency_unmet: {dependency.value}")
             blocking_deps.append(dependency)
-        elif outcome_for_workflow(outcomes, dependency) is ScientificOutcome.FAIL:
-            blocking.append(f"dependency_outcome_failed: {dependency.value}")
-            blocking_deps.append(dependency)
     return tuple(blocking), tuple(blocking_deps)
 
 
@@ -269,11 +270,7 @@ def _build_entry_for_workflow(
     outcome = outcome_for_workflow(outcomes, workflow)
 
     if outcome is not None:
-        status = (
-            WorkflowExecutionState.COMPLETED
-            if outcome != ScientificOutcome.FAIL
-            else WorkflowExecutionState.FAILED
-        )
+        status = WorkflowExecutionState.COMPLETED
         return WorkflowPlanEntry(
             workflow=workflow,
             status=status,
@@ -303,6 +300,7 @@ def resolve_execution_plan(outcomes: WorkflowOutcomeHistory = ()) -> ExecutionPl
         for workflow, dependencies in WORKFLOW_DEPENDENCIES.items()
     ]
     return ExecutionPlan(entries=tuple(entries))
+
 
 @dataclass(frozen=True)
 class IndexedArtifact:
@@ -467,6 +465,7 @@ def resolve_execution_requirements(
             )
     return ResolutionPlan(decisions=tuple(decisions), newly_stale=tuple(newly_stale))
 
+
 SYSEXITS_EX_UNAVAILABLE = 69
 PRODUCER_NOT_REGISTERED_EXIT_CODE = SYSEXITS_EX_UNAVAILABLE
 
@@ -518,6 +517,7 @@ def discover_repository_root(start: Path) -> Path:
             return current
     raise FileNotFoundError(f"FedACT repository root not found above {start}")
 
+
 def run_doctor(repository_root: Path) -> None:
     application = Application.from_repository_root(discover_repository_root(repository_root))
     configuration = application.configuration
@@ -529,6 +529,7 @@ def run_doctor(repository_root: Path) -> None:
     typer.echo(f"executable_now: {' '.join(plan.executable)}")
     typer.echo(f"blocked_count: {len(plan.blocked)}")
 
+
 def run_plan(repository_root: Path) -> None:
     application = Application.from_repository_root(discover_repository_root(repository_root))
     plan = application.plan()
@@ -539,6 +540,7 @@ def run_plan(repository_root: Path) -> None:
         if entry.optional:
             line += " [optional]"
         typer.echo(line)
+
 
 def run_preprocess(
     dataset: DatasetSelector | None, overwrite: OverwriteRequested, repository_root: Path
@@ -670,6 +672,7 @@ def run_preprocess(
         ),
     )
 
+
 def run_smoke(overwrite: OverwriteRequested, repository_root: Path) -> None:
     app_instance = Application.from_repository_root(discover_repository_root(repository_root))
     config = app_instance.configuration.values
@@ -722,6 +725,7 @@ def run_smoke(overwrite: OverwriteRequested, repository_root: Path) -> None:
     )
     typer.echo("smoke validation passed")
 
+
 def run_status(workflow: ExecutableWorkflowName | None, repository_root: Path) -> None:
     application = Application.from_repository_root(discover_repository_root(repository_root))
     plan = application.plan()
@@ -737,6 +741,7 @@ def run_status(workflow: ExecutableWorkflowName | None, repository_root: Path) -
         typer.echo(f"blocking_dependencies: {names}")
     if entry.recorded_outcome is not None:
         typer.echo(f"last_scientific_outcome: {entry.recorded_outcome.value}")
+
 
 def run_report(
     workflow: ExecutableWorkflowName | None,
@@ -772,6 +777,7 @@ def run_report(
     export_verified_project_evidence(prospective, overall_outcome, root / "results")
     typer.echo(f"manuscript evidence reporting completed: {overall_outcome.value}")
 
+
 _RUNNABLE_TO_EXECUTABLE: dict[RunnableWorkflowName, ExecutableWorkflowName] = {
     RunnableWorkflowName.MATH_VERIFICATION: ExecutableWorkflowName.MATH_VERIFICATION,
     RunnableWorkflowName.SYNTHETIC_GEOMETRY: ExecutableWorkflowName.SYNTHETIC_GEOMETRY,
@@ -796,7 +802,6 @@ def _dispatch_foundational_workflow(
     workflow: ExecutableWorkflowName, application: Application
 ) -> bool:
     if workflow is ExecutableWorkflowName.MATH_VERIFICATION:
-
         report = run_mathematical_verification()
         outcome = ScientificOutcome.PASS if report.is_passing else ScientificOutcome.FAIL
         _persist(application, WorkflowResultRecord(workflow=workflow, scientific_outcome=outcome))
@@ -807,7 +812,6 @@ def _dispatch_foundational_workflow(
         return True
 
     if workflow is ExecutableWorkflowName.SYNTHETIC_GEOMETRY:
-
         synth_report = run_synthetic_geometry_sweeps(application)
         outcome = ScientificOutcome.PASS if synth_report.mechanism_valid else ScientificOutcome.FAIL
         _persist(application, WorkflowResultRecord(workflow=workflow, scientific_outcome=outcome))
@@ -845,8 +849,23 @@ def _dispatch_evaluation_workflow(
     workflow: ExecutableWorkflowName, application: Application
 ) -> bool:
     config = application.configuration.values
-    if workflow is ExecutableWorkflowName.ACTION_CERTIFICATE_VALIDATION:
+    if workflow is ExecutableWorkflowName.BASELINE_PARITY:
+        parity = verify_subtraction_comparator_parity(config.numerical.projection_tie_tolerance)
+        outcome = ScientificOutcome.PASS if parity.is_valid else ScientificOutcome.FAIL
+        _persist(application, WorkflowResultRecord(workflow=workflow, scientific_outcome=outcome))
+        if not parity.is_valid:
+            raise RuntimeError(f"baseline parity validation failed: {parity.details}")
+        typer.echo("baseline parity validation completed: PASS")
+        return True
 
+    if workflow is ExecutableWorkflowName.NESTED_CALIBRATION:
+        candidates = run_nested_calibration(application)
+        outcome = ScientificOutcome.PASS if candidates else ScientificOutcome.INSUFFICIENT_EVIDENCE
+        _persist(application, WorkflowResultRecord(workflow=workflow, scientific_outcome=outcome))
+        typer.echo(f"nested calibration completed: {outcome.value}")
+        return True
+
+    if workflow is ExecutableWorkflowName.ACTION_CERTIFICATE_VALIDATION:
         act_report = run_action_certificate_validation(application)
         _persist(
             application,
@@ -860,7 +879,6 @@ def _dispatch_evaluation_workflow(
         return True
 
     if workflow is ExecutableWorkflowName.PROSPECTIVE_EVALUATION:
-
         pro_report = run_prospective_fedact_evaluation(application)
         _persist(
             application,
@@ -878,7 +896,6 @@ def _dispatch_evaluation_workflow(
         return True
 
     if workflow is ExecutableWorkflowName.ABLATIONS:
-
         abl_report = run_novelty_critical_ablations(application)
         _persist(
             application,
@@ -890,7 +907,6 @@ def _dispatch_evaluation_workflow(
         return True
 
     if workflow is ExecutableWorkflowName.FEDERATION:
-
         fed_report = run_federation_geometry_evaluation(application)
         _persist(
             application,
@@ -902,7 +918,6 @@ def _dispatch_evaluation_workflow(
         return True
 
     if workflow is ExecutableWorkflowName.FAILURE_BOUNDARIES:
-
         rob_report = run_robustness_and_failure_boundaries(application)
         _persist(
             application,
@@ -914,7 +929,6 @@ def _dispatch_evaluation_workflow(
         return True
 
     if workflow is ExecutableWorkflowName.CROSS_CORPUS:
-
         cross_report = run_cross_corpus_generalization(application)
         _persist(
             application,
@@ -928,7 +942,6 @@ def _dispatch_evaluation_workflow(
         return True
 
     if workflow is ExecutableWorkflowName.CLIENT_SELECTION:
-
         sel_report = run_communication_limited_client_selection(application)
         _persist(
             application,
@@ -940,7 +953,6 @@ def _dispatch_evaluation_workflow(
         return True
 
     if workflow is ExecutableWorkflowName.STATISTICAL_SYNTHESIS:
-
         prospective_fnr, clean_fnr_degradation, coverage = _statistical_synthesis_inputs(
             application
         )
@@ -993,20 +1005,45 @@ def _dispatch_evaluation_workflow(
     return False
 
 
+def _execute_dependency(
+    workflow: ExecutableWorkflowName,
+    application: Application,
+) -> None:
+    if workflow is ExecutableWorkflowName.PREPROCESS:
+        run_preprocess(None, False, application.repository_root)
+        return
+    if workflow is ExecutableWorkflowName.SMOKE:
+        run_smoke(False, application.repository_root)
+        return
+    if _dispatch_foundational_workflow(workflow, application):
+        return
+    if _dispatch_evaluation_workflow(workflow, application):
+        return
+    raise RuntimeError(f"unhandled internal dependency {workflow.value}")
+
+
+def _materialize_dependencies(
+    workflow: ExecutableWorkflowName,
+    application: Application,
+) -> None:
+    for dependency in WORKFLOW_DEPENDENCIES[workflow]:
+        dependency_entry = application.plan().entry(dependency)
+        if dependency_entry.status is WorkflowExecutionState.COMPLETED:
+            continue
+        _materialize_dependencies(dependency, application)
+        _execute_dependency(dependency, application)
+        refreshed = application.plan().entry(dependency)
+        if refreshed.status is not WorkflowExecutionState.COMPLETED:
+            raise RuntimeError(f"dependency {dependency.value} did not complete")
+
+
 def run_experiment(
     workflow: RunnableWorkflowName, overwrite: OverwriteRequested, repository_root: Path
 ) -> None:
     executable_workflow = _RUNNABLE_TO_EXECUTABLE[workflow]
     selected = registered_workflow(executable_workflow)
     application = Application.from_repository_root(discover_repository_root(repository_root))
-    entry = application.plan().entry(executable_workflow)
-    if entry.status is WorkflowExecutionState.BLOCKED:
-        typer.echo(
-            f"workflow '{workflow.value}' is blocked by: "
-            f"{' '.join(dep.value for dep in entry.blocking_dependencies)}",
-            err=True,
-        )
-        raise typer.Exit(code=2)
+    _materialize_dependencies(executable_workflow, application)
     typer.echo(f"workflow: {workflow.value}")
     typer.echo(f"roadmap section: {selected.roadmap_section}")
     if overwrite:

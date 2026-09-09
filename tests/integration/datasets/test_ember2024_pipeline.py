@@ -8,11 +8,9 @@ import pytest
 
 from fedact.data.ember2024 import (
     LoadedEmberDataset,
+    apply_log1p_transforms,
     ember2024_count_feature_mask,
     load_ember2024_records,
-)
-from fedact.data.ember2024 import (
-    apply_log1p_transforms,
     standardize_ember_features,
 )
 

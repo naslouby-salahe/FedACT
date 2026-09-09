@@ -4,7 +4,6 @@ from pathlib import Path
 
 import numpy as np
 
-from fedact.workflow import Application
 from fedact.config.loading import LoadedConfiguration
 from fedact.config.models import FederationGeometry
 from fedact.data.synthetic import (
@@ -12,9 +11,10 @@ from fedact.data.synthetic import (
     build_nuisance_spaces,
     draw_shared_transition,
     nuisance_dimension,
+    run_smoke_validation,
 )
-from fedact.data.synthetic import run_smoke_validation
 from fedact.experiments.verification import run_synthetic_geometry_sweeps
+from fedact.workflow import Application
 
 
 def test_synthetic_end_to_end_pipeline(

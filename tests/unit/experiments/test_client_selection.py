@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from fedact.workflow import Application
 from fedact.domain.types import ScientificOutcome
 from fedact.experiments.robustness import run_communication_limited_client_selection
+from fedact.workflow import Application
 
 
 def test_run_communication_limited_client_selection(

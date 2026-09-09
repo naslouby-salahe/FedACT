@@ -2,18 +2,18 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Annotated
 
 import numpy as np
 from numpy.typing import NDArray
-from pydantic import Field
 
 from fedact.domain.types import (
     BudgetAmount,
     ComparatorIdentifier,
     DetailMessage,
+    DimensionValue,
     FamilyName,
     RidgeLambda,
+    SeedValue,
     ThresholdValue,
     ValidationFlag,
 )
@@ -68,10 +68,6 @@ def covariance_weighted_reconstruction(
         method_name=BaselineIdentificationMethod.COVARIANCE_WEIGHTED_RECONSTRUCTION,
     )
 
-FloatArray = NDArray[np.float64]
-SpaceDimension = Annotated[int, Field(ge=1)]
-SeedIdentifier = Annotated[int, Field(ge=0)]
-
 
 @dataclass(frozen=True)
 class SecurityComparatorResult:
@@ -79,7 +75,7 @@ class SecurityComparatorResult:
     comparator_family: FamilyName
 
 
-def static_security_baseline(dimension: SpaceDimension) -> SecurityComparatorResult:
+def static_security_baseline(dimension: DimensionValue) -> SecurityComparatorResult:
     return SecurityComparatorResult(
         predicted_shift=np.zeros(dimension),
         comparator_family="static",
@@ -87,7 +83,7 @@ def static_security_baseline(dimension: SpaceDimension) -> SecurityComparatorRes
 
 
 def random_mutation_baseline(
-    dimension: SpaceDimension, seed: SeedIdentifier
+    dimension: DimensionValue, seed: SeedValue
 ) -> SecurityComparatorResult:
     rng = np.random.default_rng(seed)
     shift = rng.standard_normal(dimension)
@@ -105,8 +101,6 @@ def reactive_adaptation_baseline(
         predicted_shift=observed_recent_shift.copy(),
         comparator_family="reactive",
     )
-
-FloatArray = NDArray[np.float64]
 
 
 class FederationComparatorName(StrEnum):
@@ -139,6 +133,7 @@ def local_only_comparator(
         aggregate_shift=client_shift.copy(),
         condition_name=FederationComparatorName.LOCAL_ONLY,
     )
+
 
 SUBTRACTION_COMPARATOR_NAME: ComparatorIdentifier = "subtraction"
 SUBTRACTION_COMPARATOR_BUDGET: BudgetAmount = 10.0

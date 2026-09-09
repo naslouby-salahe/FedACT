@@ -4,3 +4,6 @@ training:
 synthetic:
   independent_draws_per_grid_cell: 1
   nested_noise_draws_per_seed: 1
+statistics:
+  bootstrap:
+    resamples: 500

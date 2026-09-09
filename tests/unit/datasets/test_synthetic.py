@@ -6,23 +6,21 @@ import pytest
 from fedact.config.models import FederationGeometry, PrivateTransitionSparsityMode
 from fedact.data.synthetic import (
     SYNTHETIC_DIMENSION,
+    action_rotation,
     build_nuisance_spaces,
+    common_intersection_dimension,
     deterministic_orthonormal_basis,
     draw_private_transition,
     draw_shared_transition,
     effective_support,
     nuisance_dimension,
     paired_seed_streams,
-)
-from fedact.data.synthetic import (
-    action_rotation,
-    common_intersection_dimension,
     principal_angles,
+    run_smoke_validation,
     spectral_conditioning_ratio,
     true_action_score,
     verify_orthonormality,
 )
-from fedact.data.synthetic import run_smoke_validation
 
 
 def test_nuisance_dimension_maps_configured_fractions_exactly() -> None:

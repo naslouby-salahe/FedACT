@@ -20,7 +20,6 @@ from tests.architecture.architecture_rules import (
 CONFIGURATION_AUTHORITY_MODULES = frozenset(
     {
         "fedact.config.models",
-        "fedact.config.models",
         "fedact.config.loading",
     }
 )

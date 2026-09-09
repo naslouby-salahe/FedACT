@@ -16,6 +16,7 @@ from fedact.learning.representation import (
     select_checkpoint_epoch,
 )
 
+
 class DetectorHead(nn.Module):
     def __init__(self, latent_dimension: int = EMBEDDING_DIMENSION) -> None:
         super().__init__()
@@ -31,6 +32,7 @@ def detector_probabilities(logits: Tensor) -> Tensor:
 
 def detector_predictions(probabilities: Tensor) -> Tensor:
     return (probabilities >= DETECTOR_THRESHOLD).to(dtype=probabilities.dtype)
+
 
 @dataclass(frozen=True)
 class BaseDetectorTrainingRun:

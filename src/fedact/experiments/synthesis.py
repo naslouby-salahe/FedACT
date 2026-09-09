@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from fedact.analysis.comparisons import (
     CutoffAggregate,
     PairedContrastInputs,
+    SensitivityAxis,
     SensitivityCoordinate,
     build_paired_contrast,
     contrast_effect_direction,
@@ -29,6 +30,7 @@ from fedact.domain.types import (
     ThresholdValue,
     ValidationFlag,
 )
+
 
 @dataclass(frozen=True)
 class ConfirmatoryContrastOutcome:

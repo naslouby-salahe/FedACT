@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import pytest
 
-from fedact.domain.types import ScientificAssumption, ScientificOutcome
-from fedact.domain.types import SampleIdentifier, SplitCutoffIdentity
 from fedact.certification.actions import (
     ACTION_VALIDITY_CONSEQUENCE,
     OPERATOR_COVERAGE_CONSEQUENCE,
@@ -18,6 +16,12 @@ from fedact.certification.actions import (
     ValidityAuditEntry,
     enumerate_candidates,
     run_validity_audit,
+)
+from fedact.domain.types import (
+    SampleIdentifier,
+    ScientificAssumption,
+    ScientificOutcome,
+    SplitCutoffIdentity,
 )
 
 CUTOFF = SplitCutoffIdentity("month-000024")

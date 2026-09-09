@@ -18,7 +18,11 @@ from fedact.domain.types import (
     ThresholdValue,
 )
 from fedact.learning.detector import DetectorHead
-from fedact.learning.representation import EpochSelection, RepresentationEncoder, TrainingObservation
+from fedact.learning.representation import (
+    EpochSelection,
+    RepresentationEncoder,
+    TrainingObservation,
+)
 
 _COSINE_ANNEALING_HALF_RANGE = 0.5
 

@@ -5,13 +5,12 @@ import torch
 from fedact.config.loading import LoadedConfiguration
 from fedact.domain.types import SampleIdentifier
 from fedact.learning.detector import DetectorHead
-from fedact.learning.representation import RepresentationEncoder
 from fedact.learning.hardening import (
     SampleChallengeSet,
     clean_false_negative_rate,
     harden_detector_head,
 )
-from fedact.learning.representation import TrainingObservation
+from fedact.learning.representation import RepresentationEncoder, TrainingObservation
 
 
 def test_certificates_to_hardening_integration(

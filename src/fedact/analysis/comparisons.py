@@ -17,6 +17,7 @@ from fedact.domain.types import (
     ThresholdValue,
 )
 
+
 @dataclass(frozen=True)
 class SeedLevelEndpointObservation:
     cutoff_identity: SplitCutoffIdentity
@@ -108,6 +109,7 @@ def contrast_effect_direction(
     if negative > positive:
         return EffectDirection.CONTRADICTORY
     return EffectDirection.NEUTRAL
+
 
 class SensitivityAxis(StrEnum):
     CONTROL_SPAN_VIOLATION = "control_span_violation"

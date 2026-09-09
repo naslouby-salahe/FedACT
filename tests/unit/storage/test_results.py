@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fedact.domain.types import ExecutableWorkflowName, ScientificOutcome
 from fedact.artifacts import (
     WorkflowResultRecord,
     read_workflow_result,
     write_workflow_result,
 )
+from fedact.domain.types import ExecutableWorkflowName, ScientificOutcome
 
 
 def test_workflow_result_round_trip(tmp_path: Path) -> None:

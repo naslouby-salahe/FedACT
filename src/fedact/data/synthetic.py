@@ -24,7 +24,7 @@ from fedact.domain.types import (
     ValidationFlag,
 )
 
-FloatArray = NDArray[np.float64]
+type FloatArray = NDArray[np.float64]
 GridCellIdentity = NewType("GridCellIdentity", str)
 StructuralSeedIdentity = NewType("StructuralSeedIdentity", str)
 NoiseSeedIdentity = NewType("NoiseSeedIdentity", str)
@@ -210,7 +210,7 @@ def noise_identity(seed_index: SeedValue, draw_index: DrawIndex) -> NoiseSeedIde
 def cutoff_label(month_index: CalendarMonth) -> SplitCutoffIdentity:
     return SplitCutoffIdentity(f"synthetic-month-{int(month_index):06d}")
 
-FloatArray = NDArray[np.float64]
+
 Tolerance = Annotated[float, Field(gt=0.0)]
 AngleDegrees = Annotated[float, Field(ge=0.0, le=360.0)]
 
@@ -284,6 +284,7 @@ def spectral_conditioning_ratio(singular_values: np.ndarray) -> ConditioningRati
         )
     ratio = positive.min() / positive.max()
     return float(ratio * ratio)
+
 
 class SmokeValidationError(ValueError):
     pass

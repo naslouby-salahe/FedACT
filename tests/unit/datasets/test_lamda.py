@@ -4,9 +4,12 @@ from pathlib import Path
 
 import numpy as np
 
-from fedact.data.lamda import load_lamda_records
-from fedact.data.lamda import filter_low_variance_features, standardize_features
-from fedact.data.lamda import validate_lamda_dataset
+from fedact.data.lamda import (
+    filter_low_variance_features,
+    load_lamda_records,
+    standardize_features,
+    validate_lamda_dataset,
+)
 
 
 def test_lamda_dataset_pipeline(tmp_path: Path) -> None:

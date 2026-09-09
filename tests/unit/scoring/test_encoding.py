@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from fedact.domain.types import SampleIdentifier
-from fedact.learning.representation import RepresentationEncoder
+from fedact.learning.representation import RepresentationEncoder, TrainingObservation
 from fedact.learning.scoring import encode_observations
-from fedact.learning.representation import TrainingObservation
 
 
 def test_encode_observations_produces_64d_embeddings() -> None:

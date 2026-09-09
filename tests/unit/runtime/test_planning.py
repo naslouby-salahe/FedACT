@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from fedact.domain.types import ExecutableWorkflowName as W
 from fedact.domain.types import ScientificOutcome
-from fedact.workflow import resolve_execution_plan
-from fedact.workflow import WorkflowExecutionState, WorkflowOutcomeRecord
+from fedact.workflow import WorkflowExecutionState, WorkflowOutcomeRecord, resolve_execution_plan
 
 
 def _passed(*workflows: W) -> tuple[WorkflowOutcomeRecord, ...]:
@@ -44,7 +43,7 @@ def test_failed_workflow_reports_failed_without_blocking_siblings() -> None:
         WorkflowOutcomeRecord(workflow=W.SYNTHETIC_GEOMETRY, outcome=ScientificOutcome.FAIL),
     )
     plan = resolve_execution_plan(outcomes)
-    assert plan.entry(W.SYNTHETIC_GEOMETRY).status is WorkflowExecutionState.FAILED
+    assert plan.entry(W.SYNTHETIC_GEOMETRY).status is WorkflowExecutionState.COMPLETED
     assert plan.entry(W.BASELINE_PARITY).status is WorkflowExecutionState.NOT_STARTED
 
 

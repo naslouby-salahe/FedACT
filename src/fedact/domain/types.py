@@ -314,6 +314,7 @@ SupportThreshold = PositiveInt
 MonthIndex = NonNegativeInt
 IterationCount = NonNegativeInt
 HorizonStep = NonNegativeInt
+CatchUpStep = NonNegativeInt
 WindowMonth = NonNegativeInt
 UsageCount = NonNegativeInt
 UnitCount = NonNegativeInt

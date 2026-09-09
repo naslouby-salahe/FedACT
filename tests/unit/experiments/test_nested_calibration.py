@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from fedact.workflow import Application
 from fedact.experiments.validation import run_nested_calibration
+from fedact.workflow import Application
 
 
 def test_run_nested_calibration_produces_candidates_for_every_grid_cell(

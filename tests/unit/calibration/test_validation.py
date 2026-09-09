@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from fedact.certification.calibration import CalibrationCandidate
-from fedact.certification.calibration import SelectedCalibration
-from fedact.certification.calibration import validate_calibration_outcome
+from fedact.certification.calibration import (
+    CalibrationCandidate,
+    SelectedCalibration,
+    validate_calibration_outcome,
+)
 
 
 def test_validate_calibration_outcome() -> None:

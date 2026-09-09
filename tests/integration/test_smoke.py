@@ -11,8 +11,8 @@ from fedact.data.synthetic import (
     build_nuisance_spaces,
     draw_shared_transition,
     nuisance_dimension,
+    run_smoke_validation,
 )
-from fedact.data.synthetic import run_smoke_validation
 
 runner = CliRunner()
 

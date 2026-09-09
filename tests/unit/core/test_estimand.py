@@ -11,10 +11,11 @@ from fedact.certification.actions import (
     smallest_positive_eigenvalue,
     support_interval,
 )
-from fedact.certification.certificate import DomainValid, certify_action_interval
 from fedact.certification.certificate import (
     ClientConstraint,
+    DomainValid,
     L2Ball,
+    certify_action_interval,
     chebyshev_center,
     intersect_constraints,
     minimum_uniform_inflation,

@@ -27,6 +27,7 @@ from fedact.domain.types import (
     SourceText,
 )
 
+
 @dataclass(frozen=True)
 class WorkspaceOutputDirectories:
     preprocessing: Path
@@ -82,6 +83,7 @@ class WorkspaceLayout:
     def staging_directory(self) -> Path:
         return self.resolve(self.workspace.directories.staging)
 
+
 DeterministicJsonPayload = NewType("DeterministicJsonPayload", str)
 HexDigest = NewType("HexDigest", str)
 ArtifactIdentity = NewType("ArtifactIdentity", str)
@@ -123,6 +125,7 @@ def compute_dependency_fingerprint(
     payload = deterministic_json([{"name": d.name, "value": d.content_hash} for d in ordered])
     return DependencyFingerprint(sha256_digest(payload))
 
+
 class PayloadStorageError(ValueError):
     pass
 
@@ -143,6 +146,7 @@ def read_bytes(source: Path) -> RawPayloadBytes:
     if not source.is_file():
         raise PayloadStorageError(f"payload is missing: {source}")
     return source.read_bytes()
+
 
 class WorkflowResultRecord(StrictModel):
     workflow: ExecutableWorkflowName
@@ -173,6 +177,7 @@ def read_workflow_result(experiment_directory: Path) -> WorkflowResultRecord | N
     if not source.is_file():
         return None
     return read_validated_json_model(source, WorkflowResultRecord)
+
 
 class ArtifactDependencyIndex:
     def __init__(self) -> None:

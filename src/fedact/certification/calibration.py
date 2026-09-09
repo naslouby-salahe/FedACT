@@ -6,8 +6,15 @@ from typing import Annotated
 import torch
 from pydantic import Field
 
-from fedact.certification.certificate import DomainValid, certify_action_interval, build_nuisance_spaces
-from fedact.certification.uncertainty import estimate_client_nuisance_subspace, solve_action_interval
+from fedact.certification.certificate import (
+    DomainValid,
+    build_nuisance_spaces,
+    certify_action_interval,
+)
+from fedact.certification.uncertainty import (
+    estimate_client_nuisance_subspace,
+    solve_action_interval,
+)
 from fedact.domain.types import (
     CertificationStatus,
     DegradationValue,
@@ -136,6 +143,7 @@ def generate_calibration_candidates(
                 idx += 1
     return tuple(candidates)
 
+
 CoverageThreshold = Annotated[float, Field(ge=0.0, le=1.0)]
 DegradationBound = Annotated[float, Field(ge=0.0)]
 
@@ -172,6 +180,7 @@ def select_best_calibration_candidate(
         selected_candidate=sorted_candidates[0],
         selection_rank=1,
     )
+
 
 class CalibrationValidationError(ValueError):
     pass

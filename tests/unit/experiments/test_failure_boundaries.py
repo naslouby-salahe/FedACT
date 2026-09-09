@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import torch
 
-from fedact.workflow import Application
-from fedact.config.models import CorruptedClientAllowanceParameters, CorruptedClientAttack
 from fedact.certification.uncertainty import NuisanceEstimate
+from fedact.config.models import CorruptedClientAllowanceParameters, CorruptedClientAttack
 from fedact.domain.types import ScientificOutcome
 from fedact.experiments.validation import (
     apply_corrupted_client_attack,
     run_robustness_and_failure_boundaries,
 )
+from fedact.workflow import Application
 
 
 def test_run_robustness_and_failure_boundary_evaluation(

@@ -4,10 +4,10 @@ from pathlib import Path
 
 from typer.testing import CliRunner, Result
 
-from fedact.workflow import Application, discover_repository_root
+from fedact.artifacts import WorkflowResultRecord, write_workflow_result
 from fedact.cli import app
 from fedact.domain.types import ExecutableWorkflowName, ScientificOutcome
-from fedact.artifacts import WorkflowResultRecord, write_workflow_result
+from fedact.workflow import Application, discover_repository_root
 
 RUNNER = CliRunner()
 
@@ -51,10 +51,10 @@ def test_unknown_workflow_is_rejected(repository_root: Path) -> None:
     assert result.exit_code == 2
 
 
-def test_blocked_workflow_cannot_run(repository_root: Path) -> None:
+def test_run_materializes_missing_internal_prerequisites(repository_root: Path) -> None:
     result = invoke("run", "ablations", "--repository-root", str(repository_root))
-    assert result.exit_code == 2
-    assert "blocked by" in result.output
+    assert result.exit_code == 0
+    assert "novelty-critical ablations completed" in result.output
 
 
 def test_executable_workflow_runs_when_producer_is_registered(

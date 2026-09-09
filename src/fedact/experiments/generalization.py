@@ -13,9 +13,16 @@ from fedact.analysis.metrics import (
     validate_evaluation_metrics,
 )
 from fedact.certification.calibration import validate_calibration_outcome
-from fedact.certification.certificate import DomainValid, build_nuisance_spaces, certify_action_interval
+from fedact.certification.certificate import (
+    DomainValid,
+    build_nuisance_spaces,
+    certify_action_interval,
+)
 from fedact.certification.dynamics import ControlQualityGate, filter_control_replicates
-from fedact.certification.uncertainty import estimate_client_nuisance_subspace, solve_action_interval
+from fedact.certification.uncertainty import (
+    estimate_client_nuisance_subspace,
+    solve_action_interval,
+)
 from fedact.domain.types import (
     CertificationStatus,
     DatasetSelector,
@@ -36,13 +43,17 @@ from fedact.learning.hardening import (
     clean_false_negative_rate,
     harden_detector_head,
 )
-from fedact.learning.representation import EMBEDDING_DIMENSION, RepresentationEncoder, TrainingObservation
+from fedact.learning.representation import (
+    EMBEDDING_DIMENSION,
+    RepresentationEncoder,
+    TrainingObservation,
+)
 from fedact.learning.scoring import EncodedSample, validate_encoded_samples
 
-_LABEL_ALTERNATION_MODULUS = 2
+_CROSS_CORPUS_LABEL_ALTERNATION_MODULUS = 2
 _TARGET_CORPORA_TESTED = 2
-_FABRICATED_CLEAN_LOSS = 0.1
-_EVALUATION_POPULATION_ROWS = 40
+_CROSS_CORPUS_FABRICATED_CLEAN_LOSS = 0.1
+_CROSS_CORPUS_EVALUATION_POPULATION_ROWS = 40
 _INPUT_DIMENSION = 512
 
 
@@ -59,7 +70,6 @@ class CrossCorpusReport:
 
 
 def run_cross_corpus_generalization(application: ExperimentRuntime) -> CrossCorpusReport:
-
     config = application.configuration.values
     _unused = config
     latent_dim = EMBEDDING_DIMENSION
@@ -69,10 +79,14 @@ def run_cross_corpus_generalization(application: ExperimentRuntime) -> CrossCorp
     detector.eval()
 
     evaluation_labels = tuple(
-        bool(i % _LABEL_ALTERNATION_MODULUS == 0) for i in range(_EVALUATION_POPULATION_ROWS)
+        bool(i % _CROSS_CORPUS_LABEL_ALTERNATION_MODULUS == 0)
+        for i in range(_CROSS_CORPUS_EVALUATION_POPULATION_ROWS)
     )
     evaluation_features = torch.stack(
-        [torch.randn(_INPUT_DIMENSION) for _unused_index in range(_EVALUATION_POPULATION_ROWS)]
+        [
+            torch.randn(_INPUT_DIMENSION)
+            for _unused_index in range(_CROSS_CORPUS_EVALUATION_POPULATION_ROWS)
+        ]
     )
     with torch.no_grad():
         evaluation_scores = detector_probabilities(detector(encoder(evaluation_features))).flatten()
@@ -85,9 +99,9 @@ def run_cross_corpus_generalization(application: ExperimentRuntime) -> CrossCorp
             true_label=evaluation_labels[i],
             predicted_score=float(evaluation_scores[i]),
             is_certified=True,
-            clean_loss=_FABRICATED_CLEAN_LOSS,
+            clean_loss=_CROSS_CORPUS_FABRICATED_CLEAN_LOSS,
         )
-        for i in range(_EVALUATION_POPULATION_ROWS)
+        for i in range(_CROSS_CORPUS_EVALUATION_POPULATION_ROWS)
     ]
     metrics = compute_evaluation_metrics(records=tuple(eval_records))
 
@@ -100,6 +114,7 @@ def run_cross_corpus_generalization(application: ExperimentRuntime) -> CrossCorp
         transfer_supported=supported,
         scientific_outcome=outcome,
     )
+
 
 _LABEL_ALTERNATION_MODULUS = 2
 _TRAINING_POPULATION_ROWS = 20
@@ -117,8 +132,9 @@ class ProspectiveEvaluationReport:
     scientific_outcome: ScientificOutcome
 
 
-def run_prospective_fedact_evaluation(application: ExperimentRuntime) -> ProspectiveEvaluationReport:
-
+def run_prospective_fedact_evaluation(
+    application: ExperimentRuntime,
+) -> ProspectiveEvaluationReport:
     config = application.configuration.values
     input_dim = 512
     latent_dim = EMBEDDING_DIMENSION

@@ -11,7 +11,6 @@ from fedact.certification.dynamics import (
     observed_nuisance_amplitude,
     weighted_control_center,
 )
-from fedact.domain.types import ScientificAssumption, ScientificOutcome
 from fedact.domain.records import (
     CONTROL_SPAN_VALIDITY_CONSEQUENCE,
     EXTENDED_ASSUMPTION_CONTRACTS,
@@ -20,6 +19,7 @@ from fedact.domain.records import (
     PRIVATE_TRANSITION_ALLOWANCE_CONSEQUENCE,
     SHARED_COMPONENT_CONSEQUENCE,
 )
+from fedact.domain.types import ScientificAssumption, ScientificOutcome
 
 
 @pytest.mark.parametrize(

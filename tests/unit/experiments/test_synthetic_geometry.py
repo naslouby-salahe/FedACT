@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from fedact.workflow import Application
 from fedact.domain.types import ScientificOutcome
 from fedact.experiments.verification import run_synthetic_geometry_sweeps
+from fedact.workflow import Application
 
 
 def test_synthetic_geometry_sweeps_executes_and_passes(

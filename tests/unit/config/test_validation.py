@@ -7,8 +7,8 @@ import yaml
 
 from fedact.config.loading import load_production_configuration
 from fedact.config.models import (
-    FedActConfig,
     ConfigurationConstraintError,
+    FedActConfig,
     validate_configuration_constraints,
 )
 

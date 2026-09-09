@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Protocol
+from typing import Protocol, cast
 
 from fedact.config.loading import LoadedConfiguration
 from fedact.domain.records import WorkflowContract
@@ -24,7 +24,10 @@ from fedact.domain.types import (
 
 
 class ExperimentRuntime(Protocol):
-    configuration: LoadedConfiguration
+    @property
+    def configuration(self) -> LoadedConfiguration:
+        return cast(LoadedConfiguration, None)
+
 
 _WORKFLOW_CONTRACTS: tuple[WorkflowContract, ...] = (
     WorkflowContract(

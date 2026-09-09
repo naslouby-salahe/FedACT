@@ -11,21 +11,28 @@ import torch
 from fedact.certification.actions import ActionInterval
 from fedact.certification.dynamics import AbstentionReason
 from fedact.domain.types import (
+    CertificationFlag,
     CertificationStatus,
     ClientIdentifier,
     ClientIndex,
     ContainmentFlag,
     CoordinateValue,
+    DiagnosisMessage,
     EigengapRatio,
+    EvaluationCount,
     FederationGeometry,
+    GateComplianceFlag,
     IntervalBound,
+    MetricRate,
     NormValue,
     RankDimension,
     SampleCount,
     SatisfactionFlag,
+    StabilityFlag,
     ThresholdValue,
     ValidationFlag,
 )
+
 
 @dataclass(frozen=True)
 class DomainValid:
@@ -155,6 +162,7 @@ def certify_action_interval(
         abstention_reason=abstention_reason,
     )
 
+
 class ConstraintSummaryFailure(StrEnum):
     INSUFFICIENT_SUPPORT = "insufficient_support"
     CONTROL_DIAGNOSTICS_FAILED = "control_diagnostics_failed"
@@ -185,6 +193,7 @@ def validate_summary(
     if not summary.control_diagnostics_passed:
         return ConstraintSummaryFailure.CONTROL_DIAGNOSTICS_FAILED
     return None
+
 
 @dataclass(frozen=True)
 class L2Ball:

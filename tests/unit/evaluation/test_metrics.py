@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from fedact.domain.types import DatasetSelector
-from fedact.domain.types import SampleIdentifier, SplitCutoffIdentity
-from fedact.analysis.metrics import compute_evaluation_metrics
-from fedact.analysis.metrics import EvaluationRecord
+from fedact.analysis.metrics import EvaluationRecord, compute_evaluation_metrics
+from fedact.domain.types import DatasetSelector, SampleIdentifier, SplitCutoffIdentity
 
 
 def test_compute_evaluation_metrics() -> None:

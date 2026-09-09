@@ -99,7 +99,10 @@ def test_cli_rule_rejects_scientific_logic_escape_hatches(snippet: str) -> None:
     [
         "import typer\ndef run() -> None:\n    raise typer.Exit(code=0)\n",
         "import typer\ndef run() -> None:\n    raise typer.Exit(code=1)\n",
-        "from fedact.workflow import Application\ndef run(app: Application) -> None:\n    app.plan()\n",
+        (
+            "from fedact.workflow import Application\n"
+            "def run(app: Application) -> None:\n    app.plan()\n"
+        ),
         "def render(value: object) -> None:\n    print_value(value)\n",
     ],
 )

@@ -6,8 +6,15 @@ import numpy as np
 import torch
 
 from fedact.certification.certificate import build_nuisance_spaces
-from fedact.certification.selection import ClientInformationMatrix, SelectionBudget, greedy_d_optimal
-from fedact.certification.uncertainty import estimate_client_nuisance_subspace, solve_action_interval
+from fedact.certification.selection import (
+    ClientInformationMatrix,
+    SelectionBudget,
+    greedy_d_optimal,
+)
+from fedact.certification.uncertainty import (
+    estimate_client_nuisance_subspace,
+    solve_action_interval,
+)
 from fedact.domain.types import (
     AblationIdentifier,
     ClientIdentifier,
@@ -22,6 +29,7 @@ from fedact.domain.types import (
 from fedact.experiments.baselines import centralized_pooled_comparator, local_only_comparator
 from fedact.experiments.registry import ExperimentRuntime
 from fedact.learning.federation import train_federated_detector
+
 
 @dataclass(frozen=True)
 class AblationResult:
@@ -43,7 +51,6 @@ class AblationExperimentReport:
 
 
 def run_novelty_critical_ablations(application: ExperimentRuntime) -> AblationExperimentReport:
-
     config = application.configuration.values
     latent_dim = 64
     nuisance = estimate_client_nuisance_subspace(
@@ -88,6 +95,7 @@ def run_novelty_critical_ablations(application: ExperimentRuntime) -> AblationEx
         scientific_outcome=outcome,
     )
 
+
 _CLIENT_MATRIX_NOISE_SCALE = 0.05
 
 
@@ -101,7 +109,6 @@ class SelectionExperimentReport:
 def run_communication_limited_client_selection(
     application: ExperimentRuntime,
 ) -> SelectionExperimentReport:
-
     config = application.configuration.values
     latent_dim = 16
     k = 5
@@ -138,6 +145,7 @@ def run_communication_limited_client_selection(
         scientific_outcome=outcome,
     )
 
+
 @dataclass(frozen=True)
 class FederationGeometryReport:
     clients_evaluated: EvaluationCount
@@ -148,7 +156,6 @@ class FederationGeometryReport:
 
 
 def run_federation_geometry_evaluation(application: ExperimentRuntime) -> FederationGeometryReport:
-
     config = application.configuration.values
     latent_dim = 64
     k = 5

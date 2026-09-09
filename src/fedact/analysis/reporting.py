@@ -42,8 +42,8 @@ def generate_latex_table(
     output_file.parent.mkdir(parents=True, exist_ok=True)
     output_file.write_text(chr(10).join(lines) + chr(10), encoding="utf-8")
 
+
 FigureIdentifier = Annotated[str, Field(min_length=1)]
-BACKSLASH = chr(92)
 
 
 def generate_prospective_metrics_figure(
@@ -66,10 +66,9 @@ def generate_prospective_metrics_figure(
     output_file.parent.mkdir(parents=True, exist_ok=True)
     output_file.write_text(chr(10).join(lines) + chr(10), encoding="utf-8")
 
+
 LatexMacroName = NewType("LatexMacroName", str)
 LatexMacroValue = NewType("LatexMacroValue", str)
-
-BACKSLASH = chr(92)
 
 
 @dataclass(frozen=True)

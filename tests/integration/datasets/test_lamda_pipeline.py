@@ -6,7 +6,6 @@ import numpy as np
 import pytest
 import torch
 
-from fedact.config.loading import LoadedConfiguration
 from fedact.certification.dynamics import (
     ControlQualityGate,
     ControlReplicate,
@@ -19,15 +18,16 @@ from fedact.certification.uncertainty import (
     select_rank_by_eigengap,
     weighted_covariance,
 )
-from fedact.data.splits import calendar_month
-from fedact.data.lamda import load_lamda_records
+from fedact.config.loading import LoadedConfiguration
 from fedact.data.lamda import (
     control_transition_replicates,
     label_derivation_rule,
+    load_lamda_records,
     malicious_transition_displacement,
     replicate_weights,
     year_month_to_calendar_month,
 )
+from fedact.data.splits import calendar_month
 
 LAMDA_BASELINE_DIRECTORY = (
     Path(__file__).resolve().parents[3] / "data" / "raw" / "LAMDA" / "Baseline"

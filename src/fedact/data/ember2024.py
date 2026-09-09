@@ -15,7 +15,6 @@ from typing import Annotated, NewType, SupportsFloat, cast
 
 import lief
 import numpy as np
-import pefile
 from pydantic import Field
 from sklearn.feature_extraction import FeatureHasher
 
@@ -734,6 +733,7 @@ def load_ember2024_records(data_directory: Path) -> LoadedEmberDataset:
     features = np.stack(feature_rows).astype(np.float32)
     return LoadedEmberDataset(records=tuple(records), features=features)
 
+
 def apply_log1p_transforms(features: np.ndarray, count_feature_mask: np.ndarray) -> np.ndarray:
     transformed = features.copy()
     transformed[:, count_feature_mask] = np.log1p(np.maximum(features[:, count_feature_mask], 0.0))
@@ -747,6 +747,7 @@ def standardize_ember_features(features: np.ndarray) -> np.ndarray:
     std = np.std(features, axis=0)
     std[std < 1e-12] = 1.0
     return (features - mean) / std
+
 
 class EmberValidationError(ValueError):
     pass
@@ -764,6 +765,7 @@ def run_empty_ember_transform_audit() -> None:
     standardized = standardize_ember_features(transformed)
     if standardized.shape[0] < 0:
         raise EmberValidationError("EMBER standardization produced an impossible shape")
+
 
 WeekIdentifier = NewType("WeekIdentifier", str)
 CalendarMonthCell = NewType("CalendarMonthCell", str)
@@ -861,6 +863,7 @@ def ember_client_semantics(
         observed_values=tuple(client.value for client in observed_format_clients),
         supports_natural_federation_claim=False,
     )
+
 
 PeFileBytes = NewType("PeFileBytes", bytes)
 

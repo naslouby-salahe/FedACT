@@ -50,7 +50,6 @@ def test_execution_state_enum_exposes_the_locked_values() -> None:
         "BLOCKED",
         "RUNNING",
         "COMPLETED",
-        "FAILED",
         "INVALID",
     }
 

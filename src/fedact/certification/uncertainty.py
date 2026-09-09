@@ -5,9 +5,9 @@ from dataclasses import dataclass
 from typing import Annotated
 
 import numpy as np
+import torch
 from numpy.typing import NDArray
 from pydantic import Field
-import torch
 
 from fedact.certification.actions import ActionInterval
 from fedact.certification.certificate import FeasibleSet
@@ -203,6 +203,7 @@ def estimate_client_nuisance_subspace(
         replicates=replicates,
     )
 
+
 FloatArray = NDArray[np.float64]
 Resamples = Annotated[int, Field(ge=1)]
 Alpha = Annotated[float, Field(gt=0.0, le=0.5)]
@@ -245,6 +246,7 @@ def client_radius(
     private_allowance: UncertaintyTerm,
 ) -> UncertaintyTerm:
     return sampling + subspace + control_span + private_allowance
+
 
 @dataclass(frozen=True)
 class SolverOptions:

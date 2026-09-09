@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from fedact.domain.types import ScientificAssumption, ScientificOutcome
 from fedact.domain.records import FEDACT_ASSUMPTION_CONTRACTS
+from fedact.domain.types import ScientificAssumption, ScientificOutcome
 
 
 def test_abstention_vs_fail_semantics_in_contracts() -> None:

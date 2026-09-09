@@ -2,14 +2,13 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Annotated
 
 import numpy as np
 from numpy.typing import NDArray
-from pydantic import Field
 
 from fedact.domain.types import (
     BinaryLabel,
+    CatchUpStep,
     CertificationFlag,
     DatasetSelector,
     HorizonStep,
@@ -21,6 +20,7 @@ from fedact.domain.types import (
     SplitCutoffIdentity,
 )
 
+
 @dataclass(frozen=True)
 class EvaluationRecord:
     dataset: DatasetSelector
@@ -31,6 +31,7 @@ class EvaluationRecord:
     predicted_score: ProbabilityValue
     is_certified: CertificationFlag
     clean_loss: LossValue
+
 
 @dataclass(frozen=True)
 class EvaluationMetrics:
@@ -63,6 +64,7 @@ def compute_evaluation_metrics(records: tuple[EvaluationRecord, ...]) -> Evaluat
         cumulative_exposure=exposure,
     )
 
+
 FloatArray = NDArray[np.float64]
 
 
@@ -84,10 +86,9 @@ def build_later_real_proxy(
         sample_count=min(embeddings_before.shape[0], embeddings_after.shape[0]),
     )
 
-LossValue = Annotated[float, Field(ge=0.0)]
-CumulativeLoss = Annotated[float, Field(ge=0.0)]
-LossThreshold = Annotated[float, Field(ge=0.0)]
-CatchUpStep = Annotated[int, Field(ge=0)]
+
+CumulativeLoss = LossValue
+LossThreshold = LossValue
 
 
 def compute_cumulative_exposure(losses: Sequence[LossValue]) -> CumulativeLoss:
@@ -103,6 +104,7 @@ def compute_time_to_catch_up(
         if abs(h - b) <= threshold:
             return t
     return None
+
 
 class MetricValidationError(ValueError):
     pass

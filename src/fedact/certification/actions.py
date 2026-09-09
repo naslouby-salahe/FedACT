@@ -19,8 +19,8 @@ from fedact.data.ember2024 import (
     PeImportName,
     PeSectionRenameTarget,
     UpxAction,
-    add_read_only_section,
     add_entry_point_trampoline,
+    add_read_only_section,
     add_unused_import,
     append_benign_eof_bytes,
     apply_upx_action,
@@ -41,8 +41,8 @@ from fedact.domain.types import (
     HashDigest,
     IntervalBound,
     MetricRate,
-    NormValue,
     NormalizedOperatorFormText,
+    NormValue,
     OperatorIdentifier,
     OrderIndex,
     ProvenanceText,
@@ -60,6 +60,7 @@ from fedact.domain.types import (
     UsageCount,
     ValidationFlag,
 )
+
 
 class NumericalFailureError(RuntimeError):
     pass
@@ -185,6 +186,7 @@ def box_diameter_bound(
 ) -> IntervalBound:
     diffs = [u_val - l_val for l_val, u_val in zip(lowers, uppers, strict=True)]
     return float(np.sqrt(sum(d * d for d in diffs)))
+
 
 OperatorName = NewType("OperatorName", str)
 NormalizedParameterString = NewType("NormalizedParameterString", str)
@@ -407,6 +409,7 @@ class OperatorCoverageAudit:
             )
         return coverage >= self.minimum_valid_coverage
 
+
 class ValidityStatus(StrEnum):
     VALID = "VALID"
     INVALID = "INVALID"
@@ -500,6 +503,7 @@ def validate_candidate_displacements(
 ) -> tuple[CandidateValidityRecord, ...]:
     return tuple(c for c in candidates if c.status is ValidityStatus.VALID)
 
+
 BENIGN_GADGET_LIBRARY = "cutoff-safe-benign-gadget-library"
 
 
@@ -536,6 +540,7 @@ def gadget_library_identity() -> GadgetLibraryIdentity:
 
 
 _ = PayloadBytes
+
 
 def pe_mutation_families() -> tuple[OperatorFamily, ...]:
     return (

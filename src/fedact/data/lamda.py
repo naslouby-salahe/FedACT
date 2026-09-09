@@ -77,6 +77,7 @@ def load_lamda_records(data_directory: Path) -> LoadedLamdaDataset:
     )
     return LoadedLamdaDataset(records=records, features=features)
 
+
 VarianceBound = Annotated[float, Field(ge=0.0)]
 
 
@@ -99,6 +100,7 @@ def standardize_features(features: np.ndarray) -> np.ndarray:
     std = np.std(features, axis=0)
     std[std < 1e-12] = 1.0
     return (features - mean) / std
+
 
 _LAMDA_EPOCH_YEAR = 2013
 _CALENDAR_YEAR_LENGTH = 12
@@ -376,6 +378,7 @@ def lamda_schema_manifest(
         first_observed_month=int(first_month),
         last_observed_month=int(last_month),
     )
+
 
 class LamdaValidationError(ValueError):
     pass

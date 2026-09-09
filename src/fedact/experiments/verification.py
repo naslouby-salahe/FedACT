@@ -4,22 +4,30 @@ from dataclasses import dataclass
 from typing import Annotated, NewType
 
 import numpy as np
+import torch
 from numpy.typing import NDArray
 from pydantic import Field
-import torch
 
 from fedact.certification.actions import NumericalFailureError, box_diameter_bound, support_interval
-from fedact.certification.certificate import DomainValid, L2Ball, build_nuisance_spaces, certify_action_interval
+from fedact.certification.certificate import (
+    DomainValid,
+    L2Ball,
+    build_nuisance_spaces,
+    certify_action_interval,
+)
 from fedact.certification.dynamics import fit_scalar_model
-from fedact.certification.uncertainty import estimate_client_nuisance_subspace, solve_action_interval
+from fedact.certification.uncertainty import (
+    estimate_client_nuisance_subspace,
+    solve_action_interval,
+)
 from fedact.domain.types import (
     AbstentionStatusFlag,
     AmbiguityStatusFlag,
     BoundValidityFlag,
     CertificationStatus,
     CertificationStatusFlag,
-    CorruptedClientAttack,
     CorrectnessFlag,
+    CorruptedClientAttack,
     IdentifiabilityFlag,
     IntervalBound,
     MechanismValidFlag,
@@ -35,8 +43,8 @@ from fedact.domain.types import (
     SyntheticCorruptionAttack,
     VerificationFlag,
 )
-from fedact.experiments.validation import apply_corrupted_client_attack
 from fedact.experiments.registry import ExperimentRuntime
+from fedact.experiments.validation import apply_corrupted_client_attack
 
 FloatArray = NDArray[np.float64]
 VerificationMetric = NewType("VerificationMetric", float)
@@ -238,6 +246,7 @@ def run_mathematical_verification() -> MathVerificationReport:
         )
     return report
 
+
 _MAJORITY_THRESHOLD_FRACTION = 0.5
 
 _SYNTHETIC_TO_CORRUPTED_CLIENT_ATTACK = {
@@ -272,7 +281,6 @@ class SyntheticSweepReport:
 
 
 def run_synthetic_geometry_sweeps(application: ExperimentRuntime) -> SyntheticSweepReport:
-
     config = application.configuration.values
     latent_dim = 64
     sigmas = config.synthetic.sweeps.synchronized_nuisance_over_sigma

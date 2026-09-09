@@ -4,13 +4,14 @@ from pathlib import Path
 
 import pytest
 
-from fedact.certification.actions import NormalizedParameterString, OperatorFamily
-from fedact.certification.actions import OperatorDomain as Domain
 from fedact.certification.actions import (
+    NormalizedParameterString,
+    OperatorFamily,
     UnsupportedOperatorFamilyError,
     apply_and_verify_pe_operator_family,
     pe_mutation_families,
 )
+from fedact.certification.actions import OperatorDomain as Domain
 from fedact.data.ember2024 import PeFileBytes
 
 SAMPLE_PE_PATH = Path(__file__).resolve().parents[2] / "fixtures" / "sample_pe.exe"

@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from fedact.domain.types import DatasetSelector
-from fedact.domain.types import SampleIdentifier, SplitCutoffIdentity
 from fedact.analysis.metrics import EvaluationRecord
+from fedact.domain.types import DatasetSelector, SampleIdentifier, SplitCutoffIdentity
 
 
 def test_evaluation_record_creation() -> None:

@@ -20,6 +20,7 @@ from fedact.domain.types import (
 from fedact.learning.detector import DetectorHead
 from fedact.learning.representation import RepresentationEncoder, TrainingObservation
 
+
 @dataclass(frozen=True)
 class EncodedSample:
     sample_id: SampleIdentifier
@@ -77,6 +78,7 @@ def encode_dataset(
         )
         for idx, (s_id, lbl) in enumerate(zip(sample_ids, labels, strict=True))
     )
+
 
 class ScoringContractError(ValueError):
     pass
@@ -249,6 +251,7 @@ def load_scored_samples(source_path: Path) -> tuple[ScoredSample, ...]:
             )
         )
     return tuple(scored)
+
 
 class ScoreValidationError(ValueError):
     pass

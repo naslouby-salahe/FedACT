@@ -3,9 +3,8 @@ from __future__ import annotations
 from fedact.config.loading import LoadedConfiguration
 from fedact.domain.types import ClientIdentifier, SampleIdentifier
 from fedact.learning.detector import DetectorHead
-from fedact.learning.representation import RepresentationEncoder
 from fedact.learning.federation import ClientTrainingPopulation, train_federated_detector
-from fedact.learning.representation import TrainingObservation
+from fedact.learning.representation import RepresentationEncoder, TrainingObservation
 
 
 def test_federated_training_pipeline_integration(
