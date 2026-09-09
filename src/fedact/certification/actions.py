@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from itertools import combinations
-from typing import NewType, cast
+from typing import NewType, Protocol, cast
 
 import lief
 import numpy as np
@@ -32,6 +32,7 @@ from fedact.data.ember2024 import (
 )
 from fedact.domain.records import AssumptionConsequence
 from fedact.domain.types import (
+    ActionCount,
     AmbiguityFlag,
     CertificationFlag,
     CoordinateValue,
@@ -272,7 +273,7 @@ class EnumerationContractError(ValueError):
 
 def _normalized_form(
     families: tuple[OperatorFamily, ...], parameters: tuple[NormalizedParameterString, ...]
-) -> str:
+) -> NormalizedOperatorFormText:
     pairs = zip(families, parameters, strict=True)
     parts = [f"{family.name}={parameter}" for family, parameter in pairs]
     return "|".join(parts)
@@ -289,7 +290,7 @@ def _ordered_composition(
 
 def _compositions_of_length(
     selections: tuple[tuple[OperatorFamily, NormalizedParameterString], ...],
-    length: int,
+    length: ActionCount,
 ) -> list[OperatorComposition]:
     compositions: list[OperatorComposition] = []
     for chosen in combinations(selections, length):
@@ -566,8 +567,7 @@ def pe_mutation_families() -> tuple[OperatorFamily, ...]:
             domain=OperatorDomain.WINDOWS_PE,
             listed_order=2,
             parameter_grid=tuple(
-                NormalizedParameterString(f"import={name.value}")
-                for name in sorted(PeImportName, key=lambda item: item.value)
+                NormalizedParameterString(f"import={name}") for name in sorted(PeImportName)
             ),
         ),
         OperatorFamily(
@@ -575,8 +575,8 @@ def pe_mutation_families() -> tuple[OperatorFamily, ...]:
             domain=OperatorDomain.WINDOWS_PE,
             listed_order=3,
             parameter_grid=tuple(
-                NormalizedParameterString(f"section={item.value}")
-                for item in sorted(PeSectionRenameTarget, key=lambda item: item.value)
+                NormalizedParameterString(f"section={item}")
+                for item in sorted(PeSectionRenameTarget)
             ),
         ),
         OperatorFamily(
@@ -618,8 +618,7 @@ def pe_mutation_families() -> tuple[OperatorFamily, ...]:
             domain=OperatorDomain.WINDOWS_PE,
             listed_order=9,
             parameter_grid=tuple(
-                NormalizedParameterString(f"action={item.value}")
-                for item in sorted(UpxAction, key=lambda item: item.value)
+                NormalizedParameterString(f"action={item}") for item in sorted(UpxAction)
             ),
         ),
     )
@@ -643,10 +642,17 @@ class MutationStructuralIntegrityError(ValueError):
     pass
 
 
-def _parameter_value(parameter: NormalizedParameterString) -> str:
+PeMachineCode = NewType("PeMachineCode", int)
+
+
+class PeFileHeader(Protocol):
+    Machine: PeMachineCode
+
+
+def _parameter_value(parameter: NormalizedParameterString) -> NormalizedParameterString:
     if "=" not in parameter:
         return parameter
-    return parameter.split("=", 1)[1].split(" ", 1)[0]
+    return NormalizedParameterString(parameter.split("=", 1)[1].split(" ", 1)[0])
 
 
 def apply_pe_operator_family(
@@ -681,8 +687,8 @@ def structural_validity_of(pe_bytes: PeFileBytes) -> StructuralValidity:
     try:
         secondary = pefile.PE(data=bytes(pe_bytes), fast_load=True)
         parser_secondary_ok = True
-        file_header = cast(object, secondary.FILE_HEADER)
-        machine_type = cast(int, getattr(file_header, _PEFILE_FILE_HEADER_MACHINE_ATTRIBUTE))
+        file_header = cast(PeFileHeader, secondary.FILE_HEADER)
+        machine_type = file_header.Machine
         expected_machine_type = machine_type in _EXPECTED_PE_MACHINE_TYPES
     except pefile.PEFormatError:
         parser_secondary_ok = False

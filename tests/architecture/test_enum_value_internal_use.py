@@ -14,23 +14,9 @@ from tests.architecture.architecture_rules import (
     terminal_name,
 )
 
-BOUNDARY_MODULES = frozenset(
-    {
-        "fedact.cli",
-        "fedact.data.ember2024",
-        "fedact.analysis.reporting",
-        "fedact.config.loading",
-        "fedact.artifacts",
-    }
-)
 
-
-def is_boundary_module(module: str) -> bool:
-    return any(module == prefix or module.startswith(prefix + ".") for prefix in BOUNDARY_MODULES)
-
-
-def _enum_typed_names(tree: ast.Module) -> set[str]:
-    local_enum_names = set(enum_definitions(tree))
+def _enum_typed_names(tree: ast.Module, enum_type_names: set[str]) -> set[str]:
+    local_enum_names = set(enum_definitions(tree)) | enum_type_names
     typed: set[str] = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
@@ -51,8 +37,10 @@ def _enum_typed_names(tree: ast.Module) -> set[str]:
     return local_enum_names | typed
 
 
-def internal_enum_value_violations_for_tree(module: str, path: str, tree: ast.Module) -> list[str]:
-    enum_typed_names = _enum_typed_names(tree)
+def internal_enum_value_violations_for_tree(
+    module: str, path: str, tree: ast.Module, enum_type_names: set[str] | None = None
+) -> list[str]:
+    enum_typed_names = _enum_typed_names(tree, enum_type_names or set())
     violations: list[str] = []
     for node in ast.walk(tree):
         if not isinstance(node, ast.Attribute) or node.attr != "value":
@@ -69,13 +57,15 @@ def internal_enum_value_violations_for_tree(module: str, path: str, tree: ast.Mo
 
 def internal_enum_value_violations(repository_root: Path) -> list[str]:
     violations: list[str] = []
+    canonical_types = parse_source(repository_root / "src" / "fedact" / "domain" / "types.py")
+    enum_type_names = set(enum_definitions(canonical_types))
     for source_file in production_source_files(repository_root):
         module = module_name(repository_root, source_file)
-        if is_boundary_module(module):
-            continue
         path = relative_source_path(repository_root, source_file)
         violations.extend(
-            internal_enum_value_violations_for_tree(module, path, parse_source(source_file))
+            internal_enum_value_violations_for_tree(
+                module, path, parse_source(source_file), enum_type_names
+            )
         )
     return violations
 
@@ -113,6 +103,20 @@ def test_internal_domain_code_does_not_unwrap_enum_values(repository_root: Path)
 )
 def test_internal_enum_value_rule_rejects_known_unwrap(snippet: str) -> None:
     assert snippet_violations(snippet), snippet
+
+
+def test_internal_enum_value_rule_rejects_imported_canonical_enum_unwrap() -> None:
+    snippet = (
+        "from fedact.domain.types import ScientificOutcome\n"
+        "def render(outcome: ScientificOutcome) -> None:\n"
+        "    print(outcome.value)\n"
+    )
+    assert internal_enum_value_violations_for_tree(
+        "fedact.example",
+        "example.py",
+        ast.parse(snippet),
+        {"ScientificOutcome"},
+    )
 
 
 @pytest.mark.parametrize(

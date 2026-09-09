@@ -2,19 +2,22 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Annotated
 
 import numpy as np
 from numpy.typing import NDArray
-from pydantic import Field
 
-from fedact.domain.types import ClientIdentifier, MetricRate, Probability, SampleCount
+from fedact.domain.types import (
+    ActionCount,
+    ClientIdentifier,
+    LogDeterminantGain,
+    MetricRate,
+    Probability,
+    RidgeLambda,
+    SampleCount,
+    SelectedCount,
+)
 
 FloatArray = NDArray[np.float64]
-Ridge = Annotated[float, Field(gt=0.0)]
-LogDeterminantGain = Annotated[float, Field()]
-ActionCount = Annotated[int, Field(ge=0)]
-SelectedCount = Annotated[int, Field(ge=1)]
 
 
 @dataclass(frozen=True)
@@ -30,7 +33,7 @@ class SelectionBudget:
 
 
 def d_optimal_gain(
-    current_sum: FloatArray, candidate: FloatArray, ridge_lambda: Ridge
+    current_sum: FloatArray, candidate: FloatArray, ridge_lambda: RidgeLambda
 ) -> LogDeterminantGain:
     identity = np.eye(current_sum.shape[0])
     combined = current_sum + candidate + ridge_lambda * identity
@@ -51,7 +54,7 @@ class ClientInformationMatrix:
 
 def greedy_d_optimal(
     information_matrices: tuple[ClientInformationMatrix, ...],
-    ridge_lambda: Ridge,
+    ridge_lambda: RidgeLambda,
     budget: SelectionBudget,
 ) -> tuple[ClientIdentifier, ...]:
     by_client = {entry.client: entry.matrix for entry in information_matrices}

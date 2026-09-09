@@ -23,6 +23,7 @@ from fedact.certification.uncertainty import (
 )
 from fedact.config.models import CorruptedClientAllowanceParameters
 from fedact.domain.types import (
+    AngleDegrees,
     CertificationStatus,
     CorruptedClientAttack,
     DegradationValue,
@@ -30,6 +31,7 @@ from fedact.domain.types import (
     EvaluationCount,
     MetricRate,
     RankSelectionMethod,
+    SampleCount,
     SampleIdentifier,
     ScientificOutcome,
     ThresholdValue,
@@ -147,7 +149,9 @@ _VALIDATION_POPULATION_ROWS = 10
 _LABEL_ALTERNATION_MODULUS = 2
 
 
-def _training_population(prefix: DetailMessage, size: int) -> tuple[TrainingObservation, ...]:
+def _training_population(
+    prefix: DetailMessage, size: SampleCount
+) -> tuple[TrainingObservation, ...]:
     return tuple(
         TrainingObservation(
             sample_id=SampleIdentifier(f"{prefix}_{i}"),
@@ -234,7 +238,7 @@ class BoundaryStressReport:
     boundary_points_tested: EvaluationCount = 5
 
 
-def _rotate_subspace(subspace: torch.Tensor, degrees: float) -> torch.Tensor:
+def _rotate_subspace(subspace: torch.Tensor, degrees: AngleDegrees) -> torch.Tensor:
     if subspace.numel() == 0 or subspace.shape[0] < 2:
         return subspace
     theta = math.radians(degrees)

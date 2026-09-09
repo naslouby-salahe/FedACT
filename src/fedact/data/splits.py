@@ -2,9 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Annotated, NewType
-
-from pydantic import Field
+from typing import NewType
 
 from fedact.domain.types import (
     DatasetSelector,
@@ -377,11 +375,8 @@ def construct_cutoff_split(
     return CutoffSplit(cutoff_identity=cutoff_identity, assignments=tuple(assignments))
 
 
-SupportCountValue = Annotated[int, Field(ge=0)]
-
-
 def is_meeting_support_floor(
-    counts: SupportCountValue, minimum_support_per_class: SupportThreshold
+    counts: SampleCount, minimum_support_per_class: SupportThreshold
 ) -> SufficiencyFlag:
     return counts >= minimum_support_per_class
 

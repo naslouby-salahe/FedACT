@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import cast
+from typing import Protocol, cast
 
 import numpy as np
 from scipy import stats as scipy_stats
@@ -31,6 +31,20 @@ _WILCOXON_P_VALUE_ATTRIBUTE = "pvalue"
 
 class InsufficientPairedDataError(ValueError):
     pass
+
+
+class BootstrapConfidenceIntervalResult(Protocol):
+    low: ThresholdValue
+    high: ThresholdValue
+
+
+class BootstrapResult(Protocol):
+    confidence_interval: BootstrapConfidenceIntervalResult
+
+
+class WilcoxonResult(Protocol):
+    statistic: TestStatisticValue
+    pvalue: PValue
 
 
 @dataclass(frozen=True)
@@ -74,11 +88,9 @@ def cutoff_clustered_bca_bootstrap(
         rng=rng,
         vectorized=True,
     )
-    confidence_interval = cast(
-        object, getattr(cast(object, result), _BOOTSTRAP_CONFIDENCE_INTERVAL_ATTRIBUTE)
-    )
-    lower = cast(float, getattr(confidence_interval, _CONFIDENCE_INTERVAL_LOWER_ATTRIBUTE))
-    upper = cast(float, getattr(confidence_interval, _CONFIDENCE_INTERVAL_UPPER_ATTRIBUTE))
+    confidence_interval = cast(BootstrapResult, result).confidence_interval
+    lower = confidence_interval.low
+    upper = confidence_interval.high
     return BootstrapEstimate(
         point_estimate=float(np.mean(sample)),
         interval=ConfidenceInterval(
@@ -122,8 +134,9 @@ def paired_wilcoxon_signed_rank_test(
         correction=not use_exact,
         alternative="two-sided",
     )
-    statistic = cast(float, getattr(cast(object, result), _WILCOXON_STATISTIC_ATTRIBUTE))
-    p_value = cast(float, getattr(cast(object, result), _WILCOXON_P_VALUE_ATTRIBUTE))
+    typed_result = cast(WilcoxonResult, result)
+    statistic = typed_result.statistic
+    p_value = typed_result.pvalue
     return WilcoxonSignedRankResult(
         statistic=float(statistic),
         p_value=float(p_value),

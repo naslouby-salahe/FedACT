@@ -6,16 +6,15 @@ import shutil
 import struct
 import subprocess
 import tempfile
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
-from typing import Annotated, NewType, SupportsFloat, cast
+from typing import NewType, cast
 
 import lief
 import numpy as np
-from pydantic import Field
 from sklearn.feature_extraction import FeatureHasher
 
 from fedact.data.records import ClientSemanticsAudit
@@ -28,7 +27,11 @@ from fedact.domain.types import (
     DegeneracyFlag,
     DetailMessage,
     DisplacementComponent,
+    EpochSeconds,
     FamilyName,
+    JsonEncodableValue,
+    NormValue,
+    SampleCount,
     SampleIdentifier,
     SupportThreshold,
     ValidationFlag,
@@ -277,30 +280,30 @@ _PEFILE_WARNING_DIMENSION = len(_PEFILE_WARNING_INDEX) + 1
 _FEATURE_HASHER_TRANSFORM_ATTRIBUTE = "transform"
 _SPARSE_MATRIX_TO_ARRAY_ATTRIBUTE = "toarray"
 
-
-def _scalar(value: object) -> float:
-    return float(cast(SupportsFloat, value))
-
-
-def _hashed_row(hasher: object, values: list[object]) -> np.ndarray:
-    transform = cast(
-        "Callable[[list[list[object]]], object]",
-        getattr(hasher, _FEATURE_HASHER_TRANSFORM_ATTRIBUTE),
-    )
-    dense_matrix = transform([values])
-    to_array = cast(
-        "Callable[[], np.ndarray]", getattr(dense_matrix, _SPARSE_MATRIX_TO_ARRAY_ATTRIBUTE)
-    )
-    return to_array()[0]
+EmberJsonObject = NewType("EmberJsonObject", dict[str, JsonEncodableValue])
+EmberJsonObjectList = NewType("EmberJsonObjectList", list[EmberJsonObject])
+EmberJsonStringList = NewType("EmberJsonStringList", list[str])
+EmberJsonIntegerList = NewType("EmberJsonIntegerList", list[int])
 
 
-def _general_file_info_vector(general: dict[str, object]) -> np.ndarray:
-    start_bytes = cast(list[int], general["start_bytes"])
+def _scalar(value: JsonEncodableValue) -> float:
+    if isinstance(value, (int, float)):
+        return float(value)
+    raise TypeError(f"EMBER numeric feature has unsupported value {value!r}")
+
+
+def _hashed_row(hasher: FeatureHasher, values: Sequence[JsonEncodableValue]) -> np.ndarray:
+    dense = cast(np.ndarray, hasher.transform([list(values)]).toarray())
+    return dense[0]
+
+
+def _general_file_info_vector(general: EmberJsonObject) -> np.ndarray:
+    start_bytes = cast(EmberJsonIntegerList, general["start_bytes"])
     return np.array(
         [
-            general["size"],
-            general["entropy"],
-            float(cast(int, general["is_pe"])),
+            _scalar(general["size"]),
+            _scalar(general["entropy"]),
+            _scalar(general["is_pe"]),
             *[float(value) for value in start_bytes],
         ],
         dtype=np.float32,
@@ -311,18 +314,19 @@ def _general_file_info_count_mask() -> np.ndarray:
     return np.array([True, False, False, False, False, False, False])
 
 
-def _normalized_histogram_vector(histogram: list[int]) -> np.ndarray:
+def _normalized_histogram_vector(histogram: EmberJsonIntegerList) -> np.ndarray:
     counts = np.array(histogram, dtype=np.float32)
     total = counts.sum()
     return counts / total if total > 0 else counts
 
 
-def _string_extractor_vector(strings: dict[str, object]) -> np.ndarray:
-    printables = cast(int, strings["printables"])
+def _string_extractor_vector(strings: EmberJsonObject) -> np.ndarray:
+    printables = _scalar(strings["printables"])
     divisor = float(printables) if printables > 0 else 1.0
     string_counts = np.zeros(len(_STRING_REGEX_NAMES), dtype=np.float32)
-    for regex_name, count in cast(dict[str, int], strings["string_counts"]).items():
-        string_counts[_STRING_REGEX_INDEX[regex_name]] = count
+    string_counts_payload = cast(EmberJsonObject, strings["string_counts"])
+    for regex_name, count in string_counts_payload.items():
+        string_counts[_STRING_REGEX_INDEX[regex_name]] = _scalar(count)
     printable_distribution = np.asarray(strings["printabledist"], dtype=np.float32) / divisor
     return np.hstack(
         [
@@ -347,19 +351,19 @@ def _string_extractor_count_mask() -> np.ndarray:
     )
 
 
-def _header_file_info_vector(header: dict[str, object]) -> np.ndarray:
+def _header_file_info_vector(header: EmberJsonObject) -> np.ndarray:
     if not header:
         return np.zeros(_HEADER_DIMENSION, dtype=np.float32)
-    coff = cast(dict[str, object], header["coff"])
-    optional = cast(dict[str, object], header["optional"])
-    dos = cast(dict[str, object], header["dos"])
+    coff = cast(EmberJsonObject, header["coff"])
+    optional = cast(EmberJsonObject, header["optional"])
+    dos = cast(EmberJsonObject, header["dos"])
     machine_index = _MACHINE_TYPE_INDEX.get(cast(str, coff["machine"]), 0)
     subsystem_index = _SUBSYSTEM_TYPE_INDEX.get(cast(str, optional["subsystem"]), 0)
-    coff_characteristics = cast(list[str], coff["characteristics"])
-    dll_characteristics = cast(list[str], optional["dll_characteristics"])
+    coff_characteristics = cast(EmberJsonStringList, coff["characteristics"])
+    dll_characteristics = cast(EmberJsonStringList, optional["dll_characteristics"])
     image_flags = [1.0 if flag in coff_characteristics else 0.0 for flag in _IMAGE_CHARACTERISTICS]
     dll_flags = [1.0 if flag in dll_characteristics else 0.0 for flag in _DLL_CHARACTERISTICS]
-    dos_values = [float(cast(int, dos[member])) for member in _DOS_HEADER_MEMBERS]
+    dos_values = [_scalar(dos[member]) for member in _DOS_HEADER_MEMBERS]
     return np.hstack(
         [
             _scalar(coff["timestamp"]),
@@ -419,11 +423,9 @@ def _header_file_info_count_mask() -> np.ndarray:
     )
 
 
-def _section_info_vector(section: dict[str, object]) -> np.ndarray:
-    sections = cast(list[dict[str, object]], section.get("sections", []))
-    overlay = cast(
-        dict[str, object], section.get("overlay", {"size": 0, "size_ratio": 0, "entropy": 0})
-    )
+def _section_info_vector(section: EmberJsonObject) -> np.ndarray:
+    sections = cast(EmberJsonObjectList, section.get("sections", []))
+    overlay = cast(EmberJsonObject, section.get("overlay", {}))
     entry = cast(str, section.get("entry", ""))
     n_sections = len(sections)
     n_zero_size = sum(1 for item in sections if item["size"] == 0)
@@ -431,19 +433,19 @@ def _section_info_vector(section: dict[str, object]) -> np.ndarray:
     n_rx = sum(
         1
         for item in sections
-        if "MEM_READ" in cast(list[str], item["props"])
-        and "MEM_EXECUTE" in cast(list[str], item["props"])
+        if "MEM_READ" in cast(EmberJsonStringList, item["props"])
+        and "MEM_EXECUTE" in cast(EmberJsonStringList, item["props"])
     )
-    n_w = sum(1 for item in sections if "MEM_WRITE" in cast(list[str], item["props"]))
-    entropies = [cast(float, item["entropy"]) for item in sections] + [
-        cast(float, overlay["entropy"]),
+    n_w = sum(1 for item in sections if "MEM_WRITE" in cast(EmberJsonStringList, item["props"]))
+    entropies = [_scalar(item["entropy"]) for item in sections] + [
+        _scalar(overlay.get("entropy", 0)),
         0.0,
     ]
-    size_ratios = [cast(float, item["size_ratio"]) for item in sections] + [
-        cast(float, overlay["size_ratio"]),
+    size_ratios = [_scalar(item["size_ratio"]) for item in sections] + [
+        _scalar(overlay.get("size_ratio", 0)),
         0.0,
     ]
-    vsize_ratios = [cast(float, item["vsize_ratio"]) for item in sections] + [0.0]
+    vsize_ratios = [_scalar(item["vsize_ratio"]) for item in sections] + [0.0]
     general = [
         n_sections,
         n_zero_size,
@@ -461,27 +463,29 @@ def _section_info_vector(section: dict[str, object]) -> np.ndarray:
     section_vsizes = [(item["name"], item["vsize"]) for item in sections]
     section_entropies = [(item["name"], item["entropy"]) for item in sections]
     characteristics = [
-        f"{item['name']}:{prop}" for item in sections for prop in cast(list[str], item["props"])
+        f"{item['name']}:{prop}"
+        for item in sections
+        for prop in cast(EmberJsonStringList, item["props"])
     ]
     size_hash = _hashed_row(
-        cast(object, FeatureHasher(_SECTION_HASH_BUCKETS, input_type="pair")),
-        cast(list[object], section_sizes),
+        FeatureHasher(_SECTION_HASH_BUCKETS, input_type="pair"),
+        cast(list[JsonEncodableValue], section_sizes),
     )
     vsize_hash = _hashed_row(
-        cast(object, FeatureHasher(_SECTION_HASH_BUCKETS, input_type="pair")),
-        cast(list[object], section_vsizes),
+        FeatureHasher(_SECTION_HASH_BUCKETS, input_type="pair"),
+        cast(list[JsonEncodableValue], section_vsizes),
     )
     entropy_hash = _hashed_row(
-        cast(object, FeatureHasher(_SECTION_HASH_BUCKETS, input_type="pair")),
-        cast(list[object], section_entropies),
+        FeatureHasher(_SECTION_HASH_BUCKETS, input_type="pair"),
+        cast(list[JsonEncodableValue], section_entropies),
     )
     characteristics_hash = _hashed_row(
-        cast(object, FeatureHasher(_SECTION_CHARACTERISTICS_HASH_BUCKETS, input_type="string")),
-        cast(list[object], characteristics),
+        FeatureHasher(_SECTION_CHARACTERISTICS_HASH_BUCKETS, input_type="string"),
+        cast(list[JsonEncodableValue], characteristics),
     )
     entry_hash = _hashed_row(
-        cast(object, FeatureHasher(_SECTION_ENTRY_NAME_HASH_BUCKETS, input_type="string")),
-        cast(list[object], [entry]),
+        FeatureHasher(_SECTION_ENTRY_NAME_HASH_BUCKETS, input_type="string"),
+        cast(list[JsonEncodableValue], [entry]),
     )
     return np.hstack(
         [
@@ -491,9 +495,9 @@ def _section_info_vector(section: dict[str, object]) -> np.ndarray:
             entropy_hash,
             characteristics_hash,
             entry_hash,
-            _scalar(overlay["size"]),
-            _scalar(overlay["size_ratio"]),
-            _scalar(overlay["entropy"]),
+            _scalar(overlay.get("size", 0)),
+            _scalar(overlay.get("size_ratio", 0)),
+            _scalar(overlay.get("entropy", 0)),
         ]
     ).astype(np.float32)
 
@@ -509,7 +513,7 @@ def _section_info_count_mask() -> np.ndarray:
     return np.hstack([general_mask, hash_mask, [True, False, False]])
 
 
-def _imports_info_vector(imports: dict[str, list[str]]) -> np.ndarray:
+def _imports_info_vector(imports: EmberJsonObject) -> np.ndarray:
     dimension = (
         _IMPORT_SUMMARY_FIELD_COUNT + _IMPORT_LIBRARY_HASH_BUCKETS + _IMPORT_FUNCTION_HASH_BUCKETS
     )
@@ -517,23 +521,17 @@ def _imports_info_vector(imports: dict[str, list[str]]) -> np.ndarray:
         return np.zeros(dimension, dtype=np.float32)
     libraries = list({library.lower() for library in imports})
     libraries_hash = _hashed_row(
-        cast(
-            object,
-            FeatureHasher(_IMPORT_LIBRARY_HASH_BUCKETS, input_type="string", alternate_sign=False),
-        ),
-        cast(list[object], libraries),
+        FeatureHasher(_IMPORT_LIBRARY_HASH_BUCKETS, input_type="string", alternate_sign=False),
+        cast(list[JsonEncodableValue], libraries),
     )
     fully_qualified = [
         f"{library.lower()}:{function}"
         for library, functions in imports.items()
-        for function in functions
+        for function in cast(EmberJsonStringList, functions)
     ]
     imports_hash = _hashed_row(
-        cast(
-            object,
-            FeatureHasher(_IMPORT_FUNCTION_HASH_BUCKETS, input_type="string", alternate_sign=False),
-        ),
-        cast(list[object], fully_qualified),
+        FeatureHasher(_IMPORT_FUNCTION_HASH_BUCKETS, input_type="string", alternate_sign=False),
+        cast(list[JsonEncodableValue], fully_qualified),
     )
     return np.hstack(
         [float(len(fully_qualified)), float(len(libraries)), libraries_hash, imports_hash]
@@ -549,12 +547,12 @@ def _imports_info_count_mask() -> np.ndarray:
     )
 
 
-def _exports_info_vector(exports: list[str]) -> np.ndarray:
+def _exports_info_vector(exports: EmberJsonStringList) -> np.ndarray:
     if not exports:
         return np.zeros(1 + _EXPORT_HASH_BUCKETS, dtype=np.float32)
     exports_hash = _hashed_row(
-        cast(object, FeatureHasher(_EXPORT_HASH_BUCKETS, input_type="string")),
-        cast(list[object], exports),
+        FeatureHasher(_EXPORT_HASH_BUCKETS, input_type="string"),
+        cast(list[JsonEncodableValue], exports),
     )
     return np.hstack([float(len(exports_hash)), exports_hash]).astype(np.float32)
 
@@ -563,17 +561,17 @@ def _exports_info_count_mask() -> np.ndarray:
     return np.zeros(1 + _EXPORT_HASH_BUCKETS, dtype=bool)
 
 
-def _data_directories_vector(datadirectories: list[dict[str, object]]) -> np.ndarray:
+def _data_directories_vector(datadirectories: EmberJsonObjectList) -> np.ndarray:
     dimension = _PAIRED_ENTRY_WIDTH * _DATA_DIRECTORY_COUNT + _PAIRED_ENTRY_WIDTH
     if not datadirectories:
         return np.zeros(dimension, dtype=np.float32)
     features = np.zeros(dimension, dtype=np.float32)
     for entry in datadirectories[1:-1]:
         index = _DATA_DIRECTORY_NAMES.index(cast(str, entry["name"]))
-        features[_PAIRED_ENTRY_WIDTH * index] = cast(float, entry["size"])
-        features[_PAIRED_ENTRY_WIDTH * index + 1] = cast(float, entry["virtual_address"])
-    features[-2] = cast(float, datadirectories[0]["has_relocs"])
-    features[-1] = cast(float, datadirectories[0]["has_dynamic_relocs"])
+        features[_PAIRED_ENTRY_WIDTH * index] = _scalar(entry["size"])
+        features[_PAIRED_ENTRY_WIDTH * index + 1] = _scalar(entry["virtual_address"])
+    features[-2] = _scalar(datadirectories[0]["has_relocs"])
+    features[-1] = _scalar(datadirectories[0]["has_dynamic_relocs"])
     return features
 
 
@@ -582,7 +580,7 @@ def _data_directories_count_mask() -> np.ndarray:
     return np.array([*per_directory, False, False])
 
 
-def _rich_header_vector(richheader: list[int]) -> np.ndarray:
+def _rich_header_vector(richheader: EmberJsonIntegerList) -> np.ndarray:
     dimension = 1 + _RICH_HEADER_HASH_BUCKETS
     if not richheader:
         return np.zeros(dimension, dtype=np.float32)
@@ -592,8 +590,8 @@ def _rich_header_vector(richheader: list[int]) -> np.ndarray:
         for index in range(0, len(richheader) - 1, _PAIRED_ENTRY_WIDTH)
     ]
     paired_hash = _hashed_row(
-        cast(object, FeatureHasher(_RICH_HEADER_HASH_BUCKETS, input_type="pair")),
-        cast(list[object], paired_values),
+        FeatureHasher(_RICH_HEADER_HASH_BUCKETS, input_type="pair"),
+        cast(list[JsonEncodableValue], paired_values),
     )
     return np.hstack([float(number_of_pairs), paired_hash]).astype(np.float32)
 
@@ -602,7 +600,7 @@ def _rich_header_count_mask() -> np.ndarray:
     return np.hstack([[True], np.zeros(_RICH_HEADER_HASH_BUCKETS, dtype=bool)])
 
 
-def _authenticode_vector(authenticode: dict[str, object]) -> np.ndarray:
+def _authenticode_vector(authenticode: EmberJsonObject) -> np.ndarray:
     if not authenticode:
         return np.zeros(_AUTHENTICODE_DIMENSION, dtype=np.float32)
     return np.array(
@@ -624,7 +622,7 @@ def _authenticode_count_mask() -> np.ndarray:
     return np.array([True, False, False, False, False, True, False, False])
 
 
-def _pefile_warnings_vector(warnings: list[str]) -> np.ndarray:
+def _pefile_warnings_vector(warnings: EmberJsonStringList) -> np.ndarray:
     vector = np.zeros(_PEFILE_WARNING_DIMENSION, dtype=np.float32)
     if not warnings:
         return vector
@@ -642,21 +640,21 @@ def _pefile_warnings_count_mask() -> np.ndarray:
     return mask
 
 
-def _ember2024_feature_vector(record: dict[str, object]) -> np.ndarray:
+def _ember2024_feature_vector(record: EmberJsonObject) -> np.ndarray:
     return np.hstack(
         [
-            _general_file_info_vector(cast(dict[str, object], record["general"])),
-            _normalized_histogram_vector(cast(list[int], record["histogram"])),
-            _normalized_histogram_vector(cast(list[int], record["byteentropy"])),
-            _string_extractor_vector(cast(dict[str, object], record["strings"])),
-            _header_file_info_vector(cast(dict[str, object], record["header"])),
-            _section_info_vector(cast(dict[str, object], record["section"])),
-            _imports_info_vector(cast(dict[str, list[str]], record["imports"])),
-            _exports_info_vector(cast(list[str], record["exports"])),
-            _data_directories_vector(cast(list[dict[str, object]], record["datadirectories"])),
-            _rich_header_vector(cast(list[int], record["richheader"])),
-            _authenticode_vector(cast(dict[str, object], record["authenticode"])),
-            _pefile_warnings_vector(cast(list[str], record["pefilewarnings"])),
+            _general_file_info_vector(cast(EmberJsonObject, record["general"])),
+            _normalized_histogram_vector(cast(EmberJsonIntegerList, record["histogram"])),
+            _normalized_histogram_vector(cast(EmberJsonIntegerList, record["byteentropy"])),
+            _string_extractor_vector(cast(EmberJsonObject, record["strings"])),
+            _header_file_info_vector(cast(EmberJsonObject, record["header"])),
+            _section_info_vector(cast(EmberJsonObject, record["section"])),
+            _imports_info_vector(cast(EmberJsonObject, record["imports"])),
+            _exports_info_vector(cast(EmberJsonStringList, record["exports"])),
+            _data_directories_vector(cast(EmberJsonObjectList, record["datadirectories"])),
+            _rich_header_vector(cast(EmberJsonIntegerList, record["richheader"])),
+            _authenticode_vector(cast(EmberJsonObject, record["authenticode"])),
+            _pefile_warnings_vector(cast(EmberJsonStringList, record["pefilewarnings"])),
         ]
     ).astype(np.float32)
 
@@ -694,20 +692,20 @@ class LoadedEmberDataset:
     features: np.ndarray
 
 
-def _year_month_from_epoch_seconds(epoch_seconds: float) -> CalendarMonthString:
+def _year_month_from_epoch_seconds(epoch_seconds: EpochSeconds) -> CalendarMonthString:
     moment = datetime.fromtimestamp(epoch_seconds, tz=UTC)
     return f"{moment.year:04d}-{moment.month:02d}"
 
 
-def _parse_record(payload: dict[str, object]) -> tuple[EmberRawRecord, np.ndarray]:
+def _parse_record(payload: EmberJsonObject) -> tuple[EmberRawRecord, np.ndarray]:
     sha256 = cast(str, payload["sha256"])
-    raw_label = cast(int, payload["label"])
-    submission_epoch = cast(float, payload["first_submission_date"])
+    raw_label = _scalar(payload["label"])
+    submission_epoch = _scalar(payload["first_submission_date"])
     family = cast(str | None, payload.get("family"))
     record = EmberRawRecord(
         sample_hash=SampleIdentifier(sha256),
         year_month=_year_month_from_epoch_seconds(submission_epoch),
-        label=None if raw_label < 0 else bool(raw_label),
+        label=None if raw_label < 0 else raw_label > 0,
         family=family,
     )
     return record, _ember2024_feature_vector(payload)
@@ -726,7 +724,7 @@ def load_ember2024_records(data_directory: Path) -> LoadedEmberDataset:
                 stripped = line.strip()
                 if not stripped:
                     continue
-                payload = cast(dict[str, object], json.loads(stripped))
+                payload = EmberJsonObject(cast(dict[str, JsonEncodableValue], json.loads(stripped)))
                 record, feature_row = _parse_record(payload)
                 records.append(record)
                 feature_rows.append(feature_row)
@@ -769,7 +767,6 @@ def run_empty_ember_transform_audit() -> None:
 
 WeekIdentifier = NewType("WeekIdentifier", str)
 CalendarMonthCell = NewType("CalendarMonthCell", str)
-SupportCount = Annotated[int, Field(ge=0)]
 
 
 @dataclass(frozen=True)
@@ -794,9 +791,9 @@ class ControlMatchingLevel:
 
 
 def choose_control_matching_level(
-    weekly_support_per_side: SupportCount,
+    weekly_support_per_side: SampleCount,
     minimum_support_per_class: SupportThreshold,
-    monthly_support_per_side: SupportCount,
+    monthly_support_per_side: SampleCount,
 ) -> ControlMatchingLevel | None:
     if weekly_support_per_side >= minimum_support_per_class:
         return ControlMatchingLevel(weekly=True)
@@ -860,7 +857,7 @@ def ember_client_semantics(
         dataset=DatasetSelector.EMBER2024,
         source_field="format_client",
         classification=ClientSemanticsClass.DIAGNOSTIC_PARTITION,
-        observed_values=tuple(client.value for client in observed_format_clients),
+        observed_values=tuple(observed_format_clients),
         supports_natural_federation_claim=False,
     )
 
@@ -886,7 +883,6 @@ APK_PAYLOAD_SIZES: tuple[PayloadBytes, ...] = (
     PayloadBytes(4096),
 )
 
-DisplacementNorm = Annotated[float, Field(ge=0.0)]
 CompositionLength = NewType("CompositionLength", int)
 
 
@@ -912,9 +908,9 @@ class UpxAction(StrEnum):
 class DisplacementVector:
     components: tuple[DisplacementComponent, ...]
 
-    def displacement_norm(self) -> DisplacementNorm:
+    def displacement_norm(self) -> NormValue:
         squared = sum(component * component for component in self.components)
-        value: DisplacementNorm = math.sqrt(squared)
+        value: NormValue = math.sqrt(squared)
         return value
 
     def normalized(self) -> DisplacementVector:
@@ -946,7 +942,7 @@ def _dump_pe(binary: lief.PE.Binary, *, rebuild_imports: bool = False) -> PeFile
 
 
 def append_benign_eof_bytes(pe_bytes: PeFileBytes, payload_size: PayloadBytes) -> PeFileBytes:
-    return PeFileBytes(bytes(pe_bytes) + bytes(int(payload_size)))
+    return PeFileBytes(bytes(pe_bytes) + bytes(payload_size))
 
 
 def fill_existing_section_slack(pe_bytes: PeFileBytes, payload_size: PayloadBytes) -> PeFileBytes:
@@ -957,7 +953,7 @@ def fill_existing_section_slack(pe_bytes: PeFileBytes, payload_size: PayloadByte
     slack = target.size - target.virtual_size
     if slack <= 0:
         raise PeMutationError("no section slack available to fill")
-    fill_length = min(int(payload_size), slack)
+    fill_length = min(payload_size, slack)
     content = list(target.content)
     content[target.virtual_size : target.virtual_size + fill_length] = [0x90] * fill_length
     target.content = content
@@ -985,7 +981,7 @@ def rename_section(pe_bytes: PeFileBytes, target: PeSectionRenameTarget) -> PeFi
 def add_read_only_section(pe_bytes: PeFileBytes, payload_size: PayloadBytes) -> PeFileBytes:
     binary = _load_pe(pe_bytes)
     section = lief.PE.Section(".fdroro")
-    section.content = [0] * int(payload_size)
+    section.content = [0] * payload_size
     section.characteristics = int(lief.PE.Section.CHARACTERISTICS.MEM_READ) | int(
         lief.PE.Section.CHARACTERISTICS.CNT_INITIALIZED_DATA
     )

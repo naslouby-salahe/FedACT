@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Annotated
 
 import torch
-from pydantic import Field
 
 from fedact.certification.certificate import (
     DomainValid,
@@ -17,6 +15,7 @@ from fedact.certification.uncertainty import (
 )
 from fedact.domain.types import (
     CertificationStatus,
+    CoverageLevel,
     DegradationValue,
     DetailMessage,
     MetricRate,
@@ -144,10 +143,6 @@ def generate_calibration_candidates(
     return tuple(candidates)
 
 
-CoverageThreshold = Annotated[float, Field(ge=0.0, le=1.0)]
-DegradationBound = Annotated[float, Field(ge=0.0)]
-
-
 class CalibrationSelectionError(ValueError):
     pass
 
@@ -160,8 +155,8 @@ class SelectedCalibration:
 
 def select_best_calibration_candidate(
     candidates: tuple[CalibrationCandidate, ...],
-    target_coverage: CoverageThreshold,
-    max_clean_degradation: DegradationBound,
+    target_coverage: CoverageLevel,
+    max_clean_degradation: DegradationValue,
 ) -> SelectedCalibration:
     valid = [
         c
@@ -187,7 +182,7 @@ class CalibrationValidationError(ValueError):
 
 
 def validate_calibration_outcome(
-    selected: SelectedCalibration, minimum_coverage: CoverageThreshold
+    selected: SelectedCalibration, minimum_coverage: CoverageLevel
 ) -> None:
     if selected.selected_candidate.observed_coverage < minimum_coverage:
         raise CalibrationValidationError(

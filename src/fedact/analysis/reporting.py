@@ -3,19 +3,18 @@ from __future__ import annotations
 import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Annotated, NewType
-
-from pydantic import Field
+from typing import NewType
 
 from fedact.artifacts import WorkflowResultRecord
 from fedact.domain.types import (
     ArtifactName,
     ArtifactVerificationStatus,
+    FigureIdentifier,
     MetricRate,
     ScientificOutcome,
+    TableIdentifier,
 )
 
-TableIdentifier = Annotated[str, Field(min_length=1)]
 LatexTableCell = NewType("LatexTableCell", str)
 BACKSLASH = chr(92)
 
@@ -41,9 +40,6 @@ def generate_latex_table(
     lines.extend([BACKSLASH + "hline", BACKSLASH + "end{tabular}", BACKSLASH + "end{table}"])
     output_file.parent.mkdir(parents=True, exist_ok=True)
     output_file.write_text(chr(10).join(lines) + chr(10), encoding="utf-8")
-
-
-FigureIdentifier = Annotated[str, Field(min_length=1)]
 
 
 def generate_prospective_metrics_figure(
@@ -97,7 +93,7 @@ def generate_project_summary(
     output_file.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "project": project,
-        "verdict": verdict.value,
+        "verdict": verdict,
         "prospective_fnr": prospective_fnr,
         "certification_rate": certification_rate,
     }

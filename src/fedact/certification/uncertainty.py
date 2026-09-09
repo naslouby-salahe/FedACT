@@ -2,26 +2,27 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Annotated
 
 import numpy as np
 import torch
 from numpy.typing import NDArray
-from pydantic import Field
 
 from fedact.certification.actions import ActionInterval
 from fedact.certification.certificate import FeasibleSet
 from fedact.certification.dynamics import ControlReplicate
 from fedact.domain.types import (
+    BootstrapAlpha,
     CoordinateValue,
     EigengapRatio,
     IterationCount,
     MetricRate,
+    NormValue,
     RankDimension,
     RankSelectionMethod,
     SampleCount,
     StabilityFlag,
     ThresholdValue,
+    UncertaintyRadius,
 )
 
 _PLACEHOLDER_UNCERTAINTY_RADIUS = 0.1
@@ -171,14 +172,14 @@ def estimate_client_nuisance_subspace(
     eigenvectors = eigenvectors[:, order]
 
     if rank_selection is RankSelectionMethod.FIXED_RANK:
-        k = min(int(fixed_rank), d)
+        k = min(fixed_rank, d)
     else:
         if variance_threshold is None:
             raise ValueError("variance_threshold is required when rank_selection is not FIXED_RANK")
         k = admissible_rank(
             spectrum=[float(value) for value in eigenvalues], variance_threshold=variance_threshold
         )
-        k = min(k, int(fixed_rank), d)
+        k = min(k, fixed_rank, d)
     k = max(1, k)
     subspace = torch.tensor(eigenvectors[:, :k], dtype=torch.float32)
     ratio = eigengap_ratio(
@@ -205,24 +206,19 @@ def estimate_client_nuisance_subspace(
 
 
 FloatArray = NDArray[np.float64]
-Resamples = Annotated[int, Field(ge=1)]
-Alpha = Annotated[float, Field(gt=0.0, le=0.5)]
-UncertaintyTerm = Annotated[float, Field(ge=0.0)]
-EigenFloor = Annotated[float, Field(gt=0.0)]
-BootstrapNorm = Annotated[float, Field(ge=0.0)]
 
 
 def sampling_uncertainty_quantile(
-    bootstrap_norms: tuple[BootstrapNorm, ...], alpha: Alpha
-) -> UncertaintyTerm:
+    bootstrap_norms: tuple[NormValue, ...], alpha: BootstrapAlpha
+) -> UncertaintyRadius:
     if not bootstrap_norms:
         raise ValueError("sampling uncertainty requires bootstrap draws")
     return float(np.quantile(bootstrap_norms, 1.0 - alpha, method="linear"))
 
 
 def subspace_uncertainty(
-    perturbed_projectors: tuple[FloatArray, ...], reference: FloatArray, alpha: Alpha
-) -> UncertaintyTerm:
+    perturbed_projectors: tuple[FloatArray, ...], reference: FloatArray, alpha: BootstrapAlpha
+) -> UncertaintyRadius:
     deviations = [
         float(np.linalg.norm(perturbed - reference, ord=2)) for perturbed in perturbed_projectors
     ]
@@ -230,21 +226,21 @@ def subspace_uncertainty(
 
 
 def standardized_subspace_term(
-    subspace_deviation: UncertaintyTerm,
-    amplitude: UncertaintyTerm,
-    smallest_eigenvalue: EigenFloor,
-) -> UncertaintyTerm:
+    subspace_deviation: UncertaintyRadius,
+    amplitude: UncertaintyRadius,
+    smallest_eigenvalue: ThresholdValue,
+) -> UncertaintyRadius:
     if smallest_eigenvalue <= 0.0:
         raise ValueError("standardization requires a positive minimal eigenvalue")
     return subspace_deviation * amplitude / float(np.sqrt(smallest_eigenvalue))
 
 
 def client_radius(
-    sampling: UncertaintyTerm,
-    subspace: UncertaintyTerm,
-    control_span: UncertaintyTerm,
-    private_allowance: UncertaintyTerm,
-) -> UncertaintyTerm:
+    sampling: UncertaintyRadius,
+    subspace: UncertaintyRadius,
+    control_span: UncertaintyRadius,
+    private_allowance: UncertaintyRadius,
+) -> UncertaintyRadius:
     return sampling + subspace + control_span + private_allowance
 
 

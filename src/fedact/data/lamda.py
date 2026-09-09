@@ -4,11 +4,10 @@ import hashlib
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Annotated, NewType, cast
+from typing import NewType, cast
 
 import numpy as np
 import pandas as pd
-from pydantic import Field
 
 from fedact.config.models import LamdaDatasetConfig
 from fedact.data.records import (
@@ -31,6 +30,7 @@ from fedact.domain.types import (
     SampleCount,
     SampleIdentifier,
     ThresholdValue,
+    VarianceThreshold,
     WindowSpanMonths,
 )
 
@@ -78,11 +78,8 @@ def load_lamda_records(data_directory: Path) -> LoadedLamdaDataset:
     return LoadedLamdaDataset(records=records, features=features)
 
 
-VarianceBound = Annotated[float, Field(ge=0.0)]
-
-
 def filter_low_variance_features(
-    features: np.ndarray, variance_threshold: VarianceBound
+    features: np.ndarray, variance_threshold: VarianceThreshold
 ) -> np.ndarray:
     if features.shape[0] == 0:
         return features
@@ -141,7 +138,7 @@ def audited_label(rule: LabelDerivationRule, record: LamdaRawRecord) -> LabelAud
     return LabelAuditOutcome(binary_label=None)
 
 
-def _expected_label(rule: LabelDerivationRule, vt_count: SampleCount) -> bool | None:
+def _expected_label(rule: LabelDerivationRule, vt_count: SampleCount) -> BinaryLabel | None:
     if vt_count == rule.benign_detection_count:
         return False
     if vt_count >= rule.malware_minimum_detection_count:
@@ -355,7 +352,7 @@ def lamda_schema_manifest(
         first_month = calendar_month(0)
         last_month = calendar_month(0)
     return SchemaChronologyManifest(
-        dataset=DatasetIdentity(DatasetSelector.LAMDA.value),
+        dataset=DatasetIdentity(DatasetSelector.LAMDA),
         acquisition_checksum=f"sha256:{digest}",
         fields=(
             SchemaManifestField(name="hash", observed=len(records) > 0),

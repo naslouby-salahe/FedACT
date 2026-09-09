@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Annotated, NewType
+from typing import NewType
 
 import numpy as np
 import torch
 from numpy.typing import NDArray
-from pydantic import Field
 
 from fedact.certification.actions import NumericalFailureError, box_diameter_bound, support_interval
 from fedact.certification.certificate import (
@@ -28,12 +27,14 @@ from fedact.domain.types import (
     CertificationStatusFlag,
     CorrectnessFlag,
     CorruptedClientAttack,
+    Epsilon,
     IdentifiabilityFlag,
     IntervalBound,
     MechanismValidFlag,
     MetricRate,
     MonotonicityFlag,
     NonIdentifiabilityFlag,
+    NormValue,
     ParameterName,
     ParameterValue,
     PassingFlag,
@@ -42,6 +43,7 @@ from fedact.domain.types import (
     ScientificOutcome,
     SyntheticCorruptionAttack,
     VerificationFlag,
+    ZeroDisplacementFloor,
 )
 from fedact.experiments.registry import ExperimentRuntime
 from fedact.experiments.validation import apply_corrupted_client_attack
@@ -108,12 +110,9 @@ def is_functionally_identifiable(
     return bool(np.linalg.norm(projected) > tolerance)
 
 
-WidthValue = Annotated[float, Field(ge=0.0)]
-
-
 def verify_action_width_bound(
     direction: FloatArray, information: FloatArray, epsilon: Epsilon
-) -> tuple[WidthValue, WidthValue]:
+) -> tuple[NormValue, NormValue]:
     pinv = np.linalg.pinv(information)
     bound = _WIDTH_BOUND_MULTIPLIER * epsilon * float(np.sqrt(direction @ pinv @ direction))
     center = np.zeros(direction.shape[0])
@@ -121,8 +120,8 @@ def verify_action_width_bound(
         center + epsilon * np.eye(direction.shape[0])[i] for i in range(direction.shape[0])
     )
     interval = support_interval(direction, ball_vertices)
-    observed: WidthValue = interval.width
-    limit: WidthValue = bound
+    observed: NormValue = interval.width
+    limit: NormValue = bound
     return observed, limit
 
 
@@ -136,12 +135,9 @@ def is_constraint_monotone(
     return inner.lower >= outer.lower and inner.upper <= outer.upper
 
 
-Epsilon = Annotated[float, Field(gt=0.0)]
-DisplacementNorm = Annotated[float, Field(ge=0.0)]
-ZeroFloor = Annotated[float, Field(gt=0.0)]
-
-
-def is_degenerate_rejection_correct(norm: DisplacementNorm, floor: ZeroFloor) -> CorrectnessFlag:
+def is_degenerate_rejection_correct(
+    norm: NormValue, floor: ZeroDisplacementFloor
+) -> CorrectnessFlag:
     return norm < floor
 
 
@@ -288,7 +284,7 @@ def run_synthetic_geometry_sweeps(application: ExperimentRuntime) -> SyntheticSw
 
     for sigma in sigmas:
         estimate = estimate_client_nuisance_subspace(
-            client_controls=torch.randn(20, latent_dim) * float(sigma),
+            client_controls=torch.randn(20, latent_dim) * sigma,
             rank_selection=RankSelectionMethod.FIXED_RANK,
             fixed_rank=config.identification.nuisance_rank.maximum,
             eigengap_regularization=config.numerical.rank_clip_epsilon_relative,
@@ -313,7 +309,7 @@ def run_synthetic_geometry_sweeps(application: ExperimentRuntime) -> SyntheticSw
         cells.append(
             SweepCellResult(
                 parameter_name="nuisance_variance",
-                parameter_value=float(sigma),
+                parameter_value=sigma,
                 coverage=1.0 if decision.status is CertificationStatus.CERTIFIED_POSITIVE else 0.0,
                 action_width=interval.width,
                 is_certified=decision.status is CertificationStatus.CERTIFIED_POSITIVE,

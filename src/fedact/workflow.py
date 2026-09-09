@@ -58,11 +58,13 @@ from fedact.domain.types import (
     ArtifactBoundary,
     DataAvailabilityFlag,
     DatasetSelector,
+    DegradationValue,
     DiagnosisMessage,
     ExecutableWorkflowName,
     ExecutionReason,
     ExperimentName,
     FederationGeometry,
+    MetricRate,
     OptionalFlag,
     OverwriteRequested,
     RunnableWorkflowName,
@@ -244,7 +246,7 @@ class ExecutionPlan:
         for item in self.entries:
             if item.workflow is workflow:
                 return item
-        raise KeyError(f"Workflow {workflow.value} not found in plan")
+        raise KeyError(f"Workflow {workflow} not found in plan")
 
 
 def _evaluate_dependency_blockers(
@@ -256,7 +258,7 @@ def _evaluate_dependency_blockers(
     blocking_deps: list[ExecutableWorkflowName] = []
     for dependency in dependencies:
         if dependency not in recorded:
-            blocking.append(f"dependency_unmet: {dependency.value}")
+            blocking.append(f"dependency_unmet: {dependency}")
             blocking_deps.append(dependency)
     return tuple(blocking), tuple(blocking_deps)
 
@@ -274,7 +276,7 @@ def _build_entry_for_workflow(
         return WorkflowPlanEntry(
             workflow=workflow,
             status=status,
-            blocking_reasons=(outcome.value,),
+            blocking_reasons=(outcome,),
             optional=is_optional,
             blocking_dependencies=(),
             recorded_outcome=outcome,
@@ -487,7 +489,7 @@ class Application:
         )
 
     def result_experiment_directory(self, workflow: ExecutableWorkflowName) -> Path:
-        return self.workspace_layout().result_experiment_directory(ExperimentName(workflow.value))
+        return self.workspace_layout().result_experiment_directory(ExperimentName(workflow))
 
     def raw_data_root(self) -> Path:
         return self.repository_root / "data" / "raw"
@@ -548,10 +550,10 @@ def run_preprocess(
     application = Application.from_repository_root(discover_repository_root(repository_root))
     config = application.configuration.values
     scope = [dataset] if dataset is not None else list(DatasetSelector)
-    typer.echo(f"preprocess scope: {' '.join(item.value for item in scope)}")
+    typer.echo(f"preprocess scope: {' '.join(scope)}")
     if overwrite:
         decision = ReuseDecision.OVERWRITE
-        typer.echo(f"overwrite: scoped to preprocess-owned artifacts ({decision.value})")
+        typer.echo(f"overwrite: scoped to preprocess-owned artifacts ({decision})")
 
     for stage in PREPROCESS_STAGE_FLOW:
         typer.echo(f"stage[{stage.stage_order}]: {stage.name}")
@@ -565,7 +567,7 @@ def run_preprocess(
             config.temporal.cutoff_step_months,
         )
         primary = [cutoff for cutoff in eligible if cutoff.primary_confirmatory]
-        typer.echo(f"{selected.value}: cutoffs={len(eligible)} primary_confirmatory={len(primary)}")
+        typer.echo(f"{selected}: cutoffs={len(eligible)} primary_confirmatory={len(primary)}")
         first_identity = eligible[0].cutoff_identity
         last_identity = eligible[-1].cutoff_identity
         chronology = audit_chronology(
@@ -575,10 +577,8 @@ def run_preprocess(
             history_start_month=source.first_observed_month,
             cutoff_exclusive_end_month=calendar_month(source.last_observed_month + 1),
         )
-        typer.echo(
-            f"{selected.value}: chronology_audit={'PASS' if chronology.is_passing else 'FAIL'}"
-        )
-        typer.echo(f"{selected.value}: first_cutoff={first_identity} last_cutoff={last_identity}")
+        typer.echo(f"{selected}: chronology_audit={'PASS' if chronology.is_passing else 'FAIL'}")
+        typer.echo(f"{selected}: first_cutoff={first_identity} last_cutoff={last_identity}")
 
         if selected is DatasetSelector.LAMDA:
             baseline_directory = application.raw_data_root() / "LAMDA" / "Baseline" / "2023"
@@ -592,13 +592,11 @@ def run_preprocess(
                 client_semantics = lamda_client_semantics()
                 eligibility = run_feasibility_audit(chronology, client_semantics, manifest)
                 typer.echo(
-                    f"{selected.value}: eligibility_role={eligibility.role.value} "
+                    f"{selected}: eligibility_role={eligibility.role} "
                     f"observed_rows={manifest.observed_row_count}"
                 )
                 if eligibility.role is DatasetEligibilityRole.UNUSABLE:
-                    typer.echo(
-                        f"{selected.value}: WARNING dataset is unusable for the intended evidence"
-                    )
+                    typer.echo(f"{selected}: WARNING dataset is unusable for the intended evidence")
 
                 split_cutoff = year_month_to_calendar_month("2023-11")
                 training_indices: set[IndexInPopulation] = set()
@@ -615,7 +613,7 @@ def run_preprocess(
                         test_indices.add(position)
                 prepared = prepare_records(
                     dataset=selected,
-                    cutoff_identity=SplitCutoffIdentity(f"{selected.value}-2023-11"),
+                    cutoff_identity=SplitCutoffIdentity(f"{selected}-2023-11"),
                     records=tuple(
                         PreparedSample(
                             sample_id=record.sample_hash,
@@ -631,12 +629,12 @@ def run_preprocess(
                     ExclusionReason.CONFLICTING_DUPLICATE
                 }
                 typer.echo(
-                    f"{selected.value}: prepared_retained={len(prepared.retained)} "
+                    f"{selected}: prepared_retained={len(prepared.retained)} "
                     f"exclusions={len(prepared.exclusions)} "
                     f"reasons={len(exclusion_reasons)}"
                 )
                 cutoff_split = construct_cutoff_split(
-                    cutoff_identity=SplitCutoffIdentity(f"{selected.value}-2023-11"),
+                    cutoff_identity=SplitCutoffIdentity(f"{selected}-2023-11"),
                     sample_ids=tuple(record.sample_hash for record in loaded_lamda.records),
                     training_indices=frozenset(training_indices),
                     validation_indices=frozenset(validation_indices),
@@ -648,21 +646,21 @@ def run_preprocess(
                 validation_count = partition_counts.for_partition(SplitPartition.VALIDATION)
                 test_count = partition_counts.for_partition(SplitPartition.TEST)
                 typer.echo(
-                    f"{selected.value}: split training={training_count} "
+                    f"{selected}: split training={training_count} "
                     f"validation={validation_count} test={test_count}"
                 )
             else:
-                typer.echo(f"{selected.value}: raw data unavailable at {baseline_directory}")
+                typer.echo(f"{selected}: raw data unavailable at {baseline_directory}")
         elif selected is DatasetSelector.EMBER2024:
             run_empty_ember_transform_audit()
 
     fit_ownership = ownership_for(SharedProducer.REPRESENTATION_DETECTOR_FIT)
-    typer.echo(f"shared_producer: {fit_ownership.producer.value} ({fit_ownership.reuse_scope})")
+    typer.echo(f"shared_producer: {fit_ownership.producer} ({fit_ownership.reuse_scope})")
     typer.echo(
         "preprocess may trigger representation fit only: "
         f"{is_preprocess_triggerable(SharedProducer.REPRESENTATION_DETECTOR_FIT)}"
     )
-    boundaries = " ".join(boundary.value for boundary in PREPROCESS_OWNED_BOUNDARIES)
+    boundaries = " ".join(PREPROCESS_OWNED_BOUNDARIES)
     typer.echo(f"owned_boundaries: {boundaries}")
     write_workflow_result(
         application.result_experiment_directory(ExecutableWorkflowName.PREPROCESS),
@@ -731,16 +729,16 @@ def run_status(workflow: ExecutableWorkflowName | None, repository_root: Path) -
     plan = application.plan()
     if workflow is None:
         for entry in plan.entries:
-            typer.echo(f"{entry.name.value}: {entry.status}")
+            typer.echo(f"{entry.name}: {entry.status}")
         return
     entry = plan.entry(workflow)
-    typer.echo(f"workflow: {entry.name.value}")
+    typer.echo(f"workflow: {entry.name}")
     typer.echo(f"status: {entry.status}")
     if entry.blocking_dependencies:
-        names = " ".join(dep.value for dep in entry.blocking_dependencies)
+        names = " ".join(entry.blocking_dependencies)
         typer.echo(f"blocking_dependencies: {names}")
     if entry.recorded_outcome is not None:
-        typer.echo(f"last_scientific_outcome: {entry.recorded_outcome.value}")
+        typer.echo(f"last_scientific_outcome: {entry.recorded_outcome}")
 
 
 def run_report(
@@ -750,7 +748,7 @@ def run_report(
 ) -> None:
     root = discover_repository_root(repository_root)
     application = Application.from_repository_root(root)
-    scope = workflow.value if workflow is not None else "all eligible completed workflows"
+    scope = workflow if workflow is not None else "all eligible completed workflows"
     typer.echo(f"report scope: {scope}")
     if overwrite:
         typer.echo("overwrite: scoped to reporting artifacts")
@@ -775,7 +773,7 @@ def run_report(
     )
 
     export_verified_project_evidence(prospective, overall_outcome, root / "results")
-    typer.echo(f"manuscript evidence reporting completed: {overall_outcome.value}")
+    typer.echo(f"manuscript evidence reporting completed: {overall_outcome}")
 
 
 _RUNNABLE_TO_EXECUTABLE: dict[RunnableWorkflowName, ExecutableWorkflowName] = {
@@ -824,7 +822,9 @@ def _dispatch_foundational_workflow(
     return False
 
 
-def _statistical_synthesis_inputs(application: Application) -> tuple[float, float, float]:
+def _statistical_synthesis_inputs(
+    application: Application,
+) -> tuple[MetricRate, DegradationValue, MetricRate]:
     prospective = read_workflow_result(
         application.result_experiment_directory(ExecutableWorkflowName.PROSPECTIVE_EVALUATION)
     )
@@ -862,7 +862,7 @@ def _dispatch_evaluation_workflow(
         candidates = run_nested_calibration(application)
         outcome = ScientificOutcome.PASS if candidates else ScientificOutcome.INSUFFICIENT_EVIDENCE
         _persist(application, WorkflowResultRecord(workflow=workflow, scientific_outcome=outcome))
-        typer.echo(f"nested calibration completed: {outcome.value}")
+        typer.echo(f"nested calibration completed: {outcome}")
         return True
 
     if workflow is ExecutableWorkflowName.ACTION_CERTIFICATE_VALIDATION:
@@ -873,9 +873,7 @@ def _dispatch_evaluation_workflow(
                 workflow=workflow, scientific_outcome=act_report.scientific_outcome
             ),
         )
-        typer.echo(
-            f"action certificate validation completed: {act_report.scientific_outcome.value}"
-        )
+        typer.echo(f"action certificate validation completed: {act_report.scientific_outcome}")
         return True
 
     if workflow is ExecutableWorkflowName.PROSPECTIVE_EVALUATION:
@@ -892,7 +890,7 @@ def _dispatch_evaluation_workflow(
                 ),
             ),
         )
-        typer.echo(f"prospective evaluation completed: {pro_report.scientific_outcome.value}")
+        typer.echo(f"prospective evaluation completed: {pro_report.scientific_outcome}")
         return True
 
     if workflow is ExecutableWorkflowName.ABLATIONS:
@@ -903,7 +901,7 @@ def _dispatch_evaluation_workflow(
                 workflow=workflow, scientific_outcome=abl_report.scientific_outcome
             ),
         )
-        typer.echo(f"novelty-critical ablations completed: {abl_report.scientific_outcome.value}")
+        typer.echo(f"novelty-critical ablations completed: {abl_report.scientific_outcome}")
         return True
 
     if workflow is ExecutableWorkflowName.FEDERATION:
@@ -914,7 +912,7 @@ def _dispatch_evaluation_workflow(
                 workflow=workflow, scientific_outcome=fed_report.scientific_outcome
             ),
         )
-        typer.echo(f"federation geometry completed: {fed_report.scientific_outcome.value}")
+        typer.echo(f"federation geometry completed: {fed_report.scientific_outcome}")
         return True
 
     if workflow is ExecutableWorkflowName.FAILURE_BOUNDARIES:
@@ -925,7 +923,7 @@ def _dispatch_evaluation_workflow(
                 workflow=workflow, scientific_outcome=rob_report.scientific_outcome
             ),
         )
-        typer.echo(f"failure boundaries completed: {rob_report.scientific_outcome.value}")
+        typer.echo(f"failure boundaries completed: {rob_report.scientific_outcome}")
         return True
 
     if workflow is ExecutableWorkflowName.CROSS_CORPUS:
@@ -936,9 +934,7 @@ def _dispatch_evaluation_workflow(
                 workflow=workflow, scientific_outcome=cross_report.scientific_outcome
             ),
         )
-        typer.echo(
-            f"cross corpus generalization completed: {cross_report.scientific_outcome.value}"
-        )
+        typer.echo(f"cross corpus generalization completed: {cross_report.scientific_outcome}")
         return True
 
     if workflow is ExecutableWorkflowName.CLIENT_SELECTION:
@@ -949,7 +945,7 @@ def _dispatch_evaluation_workflow(
                 workflow=workflow, scientific_outcome=sel_report.scientific_outcome
             ),
         )
-        typer.echo(f"client selection completed: {sel_report.scientific_outcome.value}")
+        typer.echo(f"client selection completed: {sel_report.scientific_outcome}")
         return True
 
     if workflow is ExecutableWorkflowName.STATISTICAL_SYNTHESIS:
@@ -997,9 +993,7 @@ def _dispatch_evaluation_workflow(
                 scientific_outcome=verd_report.overall_scientific_outcome,
             ),
         )
-        typer.echo(
-            f"statistical synthesis completed: {verd_report.overall_scientific_outcome.value}"
-        )
+        typer.echo(f"statistical synthesis completed: {verd_report.overall_scientific_outcome}")
         return True
 
     return False
@@ -1019,7 +1013,7 @@ def _execute_dependency(
         return
     if _dispatch_evaluation_workflow(workflow, application):
         return
-    raise RuntimeError(f"unhandled internal dependency {workflow.value}")
+    raise RuntimeError(f"unhandled internal dependency {workflow}")
 
 
 def _materialize_dependencies(
@@ -1034,7 +1028,7 @@ def _materialize_dependencies(
         _execute_dependency(dependency, application)
         refreshed = application.plan().entry(dependency)
         if refreshed.status is not WorkflowExecutionState.COMPLETED:
-            raise RuntimeError(f"dependency {dependency.value} did not complete")
+            raise RuntimeError(f"dependency {dependency} did not complete")
 
 
 def run_experiment(
@@ -1044,7 +1038,7 @@ def run_experiment(
     selected = registered_workflow(executable_workflow)
     application = Application.from_repository_root(discover_repository_root(repository_root))
     _materialize_dependencies(executable_workflow, application)
-    typer.echo(f"workflow: {workflow.value}")
+    typer.echo(f"workflow: {workflow}")
     typer.echo(f"roadmap section: {selected.roadmap_section}")
     if overwrite:
         typer.echo("overwrite: scoped to this workflow's artifacts")
@@ -1053,4 +1047,4 @@ def run_experiment(
         return
     if _dispatch_evaluation_workflow(executable_workflow, application):
         return
-    raise RuntimeError(f"unhandled workflow {workflow.value}")
+    raise RuntimeError(f"unhandled workflow {workflow}")

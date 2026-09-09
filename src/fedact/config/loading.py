@@ -13,6 +13,7 @@ from fedact.domain.types import JsonEncodableValue
 
 ConfigurationHash = NewType("ConfigurationHash", str)
 ConfigurationPayloadText = NewType("ConfigurationPayloadText", str)
+ConfigurationRawMapping = NewType("ConfigurationRawMapping", dict[str, JsonEncodableValue])
 
 
 class DuplicateYamlKeyError(ValueError):
@@ -23,16 +24,17 @@ class _DuplicateKeyRejectingLoader(yaml.SafeLoader):
     pass
 
 
-def _construct_mapping(loader: yaml.Loader, node: yaml.Node) -> dict[object, object]:
+def _construct_mapping(loader: yaml.Loader, node: yaml.Node) -> ConfigurationRawMapping:
     if not isinstance(node, yaml.MappingNode):
         raise TypeError("configuration mappings must deserialize from YAML mapping nodes")
-    seen: set[object] = set()
+    seen: set[str] = set()
     for key_node, _unused in node.value:
-        key = cast(object, loader.construct_object(key_node))
+        key = cast(str, loader.construct_object(key_node))
         if key in seen:
             raise DuplicateYamlKeyError(f"duplicate configuration key encountered: {key!r}")
         seen.add(key)
-    return cast(dict[object, object], loader.construct_mapping(node))
+    mapping = cast(dict[str, JsonEncodableValue], loader.construct_mapping(node))
+    return ConfigurationRawMapping(mapping)
 
 
 _DuplicateKeyRejectingLoader.add_constructor(
@@ -62,7 +64,7 @@ def parse_configuration_payload(payload: ConfigurationPayloadText) -> FedActConf
     raw = yaml.load(payload, Loader=_DuplicateKeyRejectingLoader)
     if not isinstance(raw, dict):
         raise ValueError("configuration payload must deserialize to a mapping")
-    return FedActConfig.model_validate(cast(dict[str, object], raw))
+    return FedActConfig.model_validate(cast(ConfigurationRawMapping, raw))
 
 
 @dataclass(frozen=True)

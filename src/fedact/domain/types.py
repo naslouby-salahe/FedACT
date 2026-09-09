@@ -339,6 +339,7 @@ Quantile = UnitInterval
 CoverageLevel = UnitInterval
 SignificanceLevel = UnitInterval
 ConfidenceLevel = UnitInterval
+BootstrapAlpha = Annotated[float, Field(gt=0.0, le=0.5, allow_inf_nan=False)]
 ScalarCoefficient = Annotated[
     float,
     Field(gt=0.0, le=1.0, allow_inf_nan=False),
@@ -353,6 +354,7 @@ RidgeLambda = PositiveFloat
 Tolerance = PositiveFloat
 KurtosisExcess = PositiveFloat
 SensitivityMultiplier = PositiveFloat
+EffectiveSampleSize = PositiveFloat
 Sigma = PositiveFloat
 TimeoutSeconds = PositiveFloat
 Epsilon = PositiveFloat
@@ -370,13 +372,17 @@ RankIncrement = PositiveInt
 BudgetAmount = NonNegativeFloat
 
 LossValue = FiniteFloat
+ActionScore = FiniteFloat
+LogDeterminantGain = FiniteFloat
 LogitValue = FiniteFloat
 ProbabilityValue = UnitInterval
 NormValue = NonNegativeFloat
+UncertaintyRadius = NonNegativeFloat
 CoordinateValue = FiniteFloat
 IntervalBound = FiniteFloat
 DegradationValue = FiniteFloat
 ThresholdValue = FiniteFloat
+EpochSeconds = FiniteFloat
 EigengapRatio = PositiveFloat
 SimilarityScore = UnitInterval
 ParameterValue = FiniteFloat
@@ -402,6 +408,8 @@ ProvenanceText = NonEmptyString
 NormalizedOperatorFormText = NonEmptyString
 ArtifactName = NonEmptyString
 ToolchainIdentifier = NonEmptyString
+TableIdentifier = NonEmptyString
+FigureIdentifier = NonEmptyString
 ComparatorIdentifier = NonEmptyString
 RoadmapSectionId = NonEmptyString
 ParameterName = NonEmptyString
@@ -512,6 +520,7 @@ __all__ = [
     "AbstentionFlag",
     "AbstentionReason",
     "ActionCount",
+    "ActionScore",
     "ActionDecision",
     "ActivationFlag",
     "AmbiguityFlag",
@@ -521,6 +530,7 @@ __all__ = [
     "ArtifactName",
     "ArtifactVerificationStatus",
     "BatchSize",
+    "BootstrapAlpha",
     "BinaryLabel",
     "BoundValidityFlag",
     "BudgetAmount",
@@ -566,11 +576,13 @@ __all__ = [
     "DrawCount",
     "DrawIndex",
     "EffectDirection",
+    "EffectiveSampleSize",
     "EigengapRatio",
     "EligibilityFlag",
     "EligibilityStatus",
     "EmbeddingComponent",
     "EpochCount",
+    "EpochSeconds",
     "EpochIndex",
     "Epsilon",
     "EvaluationCount",
@@ -584,6 +596,7 @@ __all__ = [
     "FamilyName",
     "FeasibilityCondition",
     "FeatureValue",
+    "FigureIdentifier",
     "FederationClientCount",
     "FederationGeometry",
     "FieldName",
@@ -605,6 +618,7 @@ __all__ = [
     "KurtosisExcess",
     "LearningRate",
     "LogNamespace",
+    "LogDeterminantGain",
     "LoggerName",
     "LogitValue",
     "LossValue",
@@ -694,8 +708,10 @@ __all__ = [
     "TimeoutSeconds",
     "Tolerance",
     "ToolchainIdentifier",
+    "TableIdentifier",
     "TriggerabilityFlag",
     "UnitCount",
+    "UncertaintyRadius",
     "UsageCount",
     "ValidationFlag",
     "VarianceThreshold",

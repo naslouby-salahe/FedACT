@@ -15,6 +15,7 @@ from fedact.domain.types import (
     ExecutableWorkflowName,
     InformationFlowPhase,
     OptionalFlag,
+    OverwriteRequested,
     PartitionScheme,
     RoadmapSectionId,
     TriggerabilityFlag,
@@ -458,7 +459,7 @@ REGISTRY_NAMES: dict[ExecutableWorkflowName, RegisteredWorkflow] = {
 def registered_workflow(name: ExecutableWorkflowName) -> RegisteredWorkflow:
     if name in REGISTRY_NAMES:
         return REGISTRY_NAMES[name]
-    raise KeyError(f"Workflow {name.value} not registered in scientific registry")
+    raise KeyError(f"Workflow {name} not registered in scientific registry")
 
 
 CLI_SELECTABLE_WORKFLOWS: tuple[ExecutableWorkflowName, ...] = tuple(
@@ -556,7 +557,7 @@ class SharedProducer(StrEnum):
 
 
 class OverwriteRequest:
-    def __init__(self, requested: bool = False) -> None:
+    def __init__(self, requested: OverwriteRequested = False) -> None:
         self.requested = requested
 
 

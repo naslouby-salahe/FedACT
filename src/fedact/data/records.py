@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Annotated, NewType
-
-from pydantic import Field
+from typing import NewType
 
 from fedact.data.splits import ChronologyAuditResult
 from fedact.domain.types import (
@@ -53,11 +51,8 @@ class LabelDerivationRule:
     discard_detection_counts: tuple[DetectionCount, ...]
 
 
-VirusTotalDetectionCount = Annotated[int, Field(ge=0)]
-
-
 def is_derived_label_malicious(
-    rule: LabelDerivationRule, vt_detection_count: VirusTotalDetectionCount
+    rule: LabelDerivationRule, vt_detection_count: DetectionCount
 ) -> MaliciousnessFlag:
     if vt_detection_count == rule.benign_detection_count:
         return False
@@ -144,7 +139,7 @@ def corpus_level_client_audit(dataset: DatasetSelector) -> ClientSemanticsAudit:
         dataset=dataset,
         source_field="none",
         classification=ClientSemanticsClass.CORPUS_LEVEL_CLIENT,
-        observed_values=(dataset.value,),
+        observed_values=(dataset,),
         supports_natural_federation_claim=False,
     )
 
@@ -170,7 +165,6 @@ class DatasetEligibilityOutcome:
 
 
 FeatureValue = NewType("FeatureValue", float)
-SupportCount = Annotated[int, Field(ge=0)]
 FeatureColumnIndex = NewType("FeatureColumnIndex", int)
 
 
@@ -294,10 +288,10 @@ def select_low_variance_features(
 
 @dataclass(frozen=True)
 class SupportAssessment:
-    malicious_support_before: SupportCount
-    malicious_support_after: SupportCount
-    control_support_before: SupportCount
-    control_support_after: SupportCount
+    malicious_support_before: SampleCount
+    malicious_support_after: SampleCount
+    control_support_before: SampleCount
+    control_support_after: SampleCount
 
     def is_meeting_minimum(self, minimum_support_per_class: SupportThreshold) -> SufficiencyFlag:
         return (
@@ -309,7 +303,7 @@ class SupportAssessment:
 
 
 def is_adjacent_window_pooling_prohibited(
-    support_a: SupportCount, support_b: SupportCount, minimum: SupportThreshold
+    support_a: SampleCount, support_b: SampleCount, minimum: SupportThreshold
 ) -> ProhibitionFlag:
     return support_a >= minimum and support_b >= minimum
 

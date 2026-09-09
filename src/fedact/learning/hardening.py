@@ -12,6 +12,7 @@ from fedact.domain.types import (
     DegradationValue,
     EmbeddingComponent,
     EpochIndex,
+    LearningRate,
     LossValue,
     MetricRate,
     SampleIdentifier,
@@ -78,19 +79,16 @@ def clean_false_negative_rate(
 
 
 def _cosine_annealed_learning_rate(
-    epoch_index: int,
-    total_epochs: int,
-    initial_rate: ThresholdValue,
-    terminal_rate: ThresholdValue,
-) -> float:
+    epoch_index: EpochIndex,
+    total_epochs: EpochIndex,
+    initial_rate: LearningRate,
+    terminal_rate: LearningRate,
+) -> LearningRate:
     if total_epochs <= 1:
-        return float(terminal_rate)
+        return terminal_rate
     progress = epoch_index / (total_epochs - 1)
-    return float(
-        terminal_rate
-        + _COSINE_ANNEALING_HALF_RANGE
-        * (initial_rate - terminal_rate)
-        * (1.0 + math.cos(math.pi * progress))
+    return terminal_rate + _COSINE_ANNEALING_HALF_RANGE * (initial_rate - terminal_rate) * (
+        1.0 + math.cos(math.pi * progress)
     )
 
 

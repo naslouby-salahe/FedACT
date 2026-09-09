@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader, TensorDataset
 
 from fedact.domain.types import (
     BinaryLabel,
+    DimensionValue,
     EmbeddingComponent,
     EpochIndex,
     LossValue,
@@ -25,15 +26,15 @@ from fedact.domain.types import (
 
 EMBEDDING_DIMENSION = 64
 DETECTOR_THRESHOLD = 0.5
-DEFAULT_ENCODER_HIDDEN_DIMENSIONS: tuple[int, ...] = (512, 256)
+DEFAULT_ENCODER_HIDDEN_DIMENSIONS: tuple[DimensionValue, ...] = (512, 256)
 
 
 class RepresentationEncoder(nn.Module):
     def __init__(
         self,
-        input_dimension: int,
-        hidden_dimensions: Sequence[int] = DEFAULT_ENCODER_HIDDEN_DIMENSIONS,
-        latent_dimension: int = EMBEDDING_DIMENSION,
+        input_dimension: DimensionValue,
+        hidden_dimensions: Sequence[DimensionValue] = DEFAULT_ENCODER_HIDDEN_DIMENSIONS,
+        latent_dimension: RankDimension = EMBEDDING_DIMENSION,
     ) -> None:
         super().__init__()
         layers: list[nn.Module] = []

@@ -98,7 +98,7 @@ def leave_one_client_out_stability(
     req = int(math.ceil(len(decisions) * minimum_unchanged_fraction))
     return LeaveOneClientOutStabilityOutcome(
         is_stable=dominant >= req,
-        required_agreement_count=int(len(decisions) * minimum_unchanged_fraction),
+        required_agreement_count=req,
     )
 
 

@@ -52,7 +52,7 @@ class WorkspaceLayout:
     workspace: WorkspaceConfig
 
     def resolve(self, relative_path: RelativePosixPath | ExperimentName) -> Path:
-        return self.repository_root / str(relative_path)
+        return self.repository_root / relative_path
 
     def output_directories(self) -> WorkspaceOutputDirectories:
         directories = self.workspace.directories

@@ -18,7 +18,7 @@ from fedact.learning.representation import (
 
 
 class DetectorHead(nn.Module):
-    def __init__(self, latent_dimension: int = EMBEDDING_DIMENSION) -> None:
+    def __init__(self, latent_dimension: RankDimension = EMBEDDING_DIMENSION) -> None:
         super().__init__()
         self.head = nn.Linear(latent_dimension, 1)
 

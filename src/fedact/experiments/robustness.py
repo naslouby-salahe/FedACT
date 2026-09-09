@@ -131,7 +131,7 @@ def run_communication_limited_client_selection(
         greedy_d_optimal(
             information_matrices=spd_matrices,
             ridge_lambda=config.client_selection.d_optimal_ridge,
-            budget=SelectionBudget(budget_fraction=float(frac), eligible_clients=k),
+            budget=SelectionBudget(budget_fraction=frac, eligible_clients=k),
         )
         for frac in fractions
     ]
@@ -186,11 +186,11 @@ def run_federation_geometry_evaluation(application: ExperimentRuntime) -> Federa
     w_comp = solve_action_interval(action_vector=action, feasible_set=comp_set).width
     w_red = solve_action_interval(action_vector=action, feasible_set=red_set).width
 
-    delta_w = float(w_red - w_comp)
+    delta_w = w_red - w_comp
     shift = estimates[0].subspace[:, 0].detach().cpu().numpy()
     pooled = centralized_pooled_comparator((shift, shift))
     local = local_only_comparator(shift)
-    verified = bool(delta_w >= -1e-6) and pooled.condition_name != local.condition_name
+    verified = delta_w >= -1e-6 and pooled.condition_name != local.condition_name
     if train_federated_detector is None:
         verified = False
     outcome = ScientificOutcome.PASS if verified else ScientificOutcome.FAIL
