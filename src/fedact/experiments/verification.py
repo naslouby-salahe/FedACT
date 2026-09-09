@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import NewType
+from typing import NewType, cast
 
 import numpy as np
 import torch
@@ -11,13 +11,27 @@ from fedact.certification.actions import NumericalFailureError, box_diameter_bou
 from fedact.certification.certificate import (
     DomainValid,
     L2Ball,
-    build_nuisance_spaces,
     certify_action_interval,
+)
+from fedact.certification.certificate import (
+    build_nuisance_spaces as build_certificate_nuisance_spaces,
 )
 from fedact.certification.dynamics import fit_scalar_model
 from fedact.certification.uncertainty import (
+    NuisanceEstimate,
     estimate_client_nuisance_subspace,
     solve_action_interval,
+)
+from fedact.data.synthetic import (
+    SYNTHETIC_DIMENSION,
+    action_rotation,
+    draw_private_transition,
+    draw_shared_transition,
+    nuisance_dimension,
+    seeded_generator,
+)
+from fedact.data.synthetic import (
+    build_nuisance_spaces as build_synthetic_nuisance_spaces,
 )
 from fedact.domain.types import (
     AbstentionStatusFlag,
@@ -25,10 +39,13 @@ from fedact.domain.types import (
     BoundValidityFlag,
     CertificationStatus,
     CertificationStatusFlag,
+    ClientIndex,
     CorrectnessFlag,
     CorruptedClientAttack,
     Epsilon,
+    FederationGeometry,
     IdentifiabilityFlag,
+    IntersectionDimension,
     IntervalBound,
     MechanismValidFlag,
     MetricRate,
@@ -38,8 +55,10 @@ from fedact.domain.types import (
     ParameterName,
     ParameterValue,
     PassingFlag,
+    PrivateTransitionSparsityMode,
     RankSelectionMethod,
     SampleCount,
+    SampleSize,
     ScientificOutcome,
     SyntheticCorruptionAttack,
     VerificationFlag,
@@ -243,8 +262,6 @@ def run_mathematical_verification() -> MathVerificationReport:
     return report
 
 
-_MAJORITY_THRESHOLD_FRACTION = 0.5
-
 _SYNTHETIC_TO_CORRUPTED_CLIENT_ATTACK = {
     SyntheticCorruptionAttack.ROTATION: CorruptedClientAttack.BASIS_ROTATION,
     SyntheticCorruptionAttack.RANK_MISREPORT: CorruptedClientAttack.FALSE_RANK_REPORTING,
@@ -276,112 +293,196 @@ class SyntheticSweepReport:
     scientific_outcome: ScientificOutcome
 
 
-def run_synthetic_geometry_sweeps(application: ExperimentRuntime) -> SyntheticSweepReport:
+def _synthetic_sweep_cell(
+    application: ExperimentRuntime,
+    axis_name: ParameterName,
+    axis_value: ParameterValue,
+    cell_index: SampleCount,
+    geometry: FederationGeometry | None = None,
+    private_sparsity: PrivateTransitionSparsityMode | None = None,
+    synthetic_attack: SyntheticCorruptionAttack | None = None,
+) -> SweepCellResult:
     config = application.configuration.values
-    latent_dim = 64
-    sigmas = config.synthetic.sweeps.synchronized_nuisance_over_sigma
-    cells: list[SweepCellResult] = []
-
-    for sigma in sigmas:
-        estimate = estimate_client_nuisance_subspace(
-            client_controls=torch.randn(20, latent_dim) * sigma,
-            rank_selection=RankSelectionMethod.FIXED_RANK,
-            fixed_rank=config.identification.nuisance_rank.maximum,
-            eigengap_regularization=config.numerical.rank_clip_epsilon_relative,
-            scale_standardization_floor=config.numerical.scale_standardization_floor,
+    defaults = config.synthetic.defaults
+    nuisance_fraction = defaults.nuisance_dimension_fraction
+    amplitude = defaults.control_malicious_amplitude_ratio
+    principal_angle = defaults.pairwise_principal_angle_degrees
+    intersection = defaults.common_intersection_dimension
+    client_count = defaults.federation_client_count
+    selected_geometry = geometry or defaults.federation_geometry
+    control_size = defaults.control_sample_size
+    control_span = defaults.control_span_violation_over_sigma
+    synchronized = defaults.synchronized_nuisance_over_sigma
+    private_norm = defaults.private_transition_norm_over_sigma
+    action_angle = defaults.action_rotation_angle_degrees
+    if axis_name == "nuisance_dimension":
+        nuisance_fraction = axis_value
+    elif axis_name == "control_malicious_amplitude":
+        amplitude = axis_value
+    elif axis_name == "principal_angle":
+        principal_angle = axis_value
+    elif axis_name == "common_intersection":
+        intersection = cast(IntersectionDimension, axis_value)
+    elif axis_name == "control_sample_size":
+        control_size = cast(SampleSize, axis_value)
+    elif axis_name == "malicious_sample_size":
+        amplitude *= axis_value / defaults.malicious_sample_size
+    elif axis_name == "control_span_violation":
+        control_span = axis_value
+    elif axis_name == "synchronized_nuisance":
+        synchronized = axis_value
+    elif axis_name == "spectral_conditioning":
+        amplitude *= axis_value / defaults.spectral_conditioning_ratio
+    elif axis_name == "action_rotation":
+        action_angle = axis_value
+    elif axis_name == "federation":
+        client_count = cast(ClientIndex, axis_value)
+    elif axis_name == "private_transition":
+        private_norm = axis_value
+    generator = seeded_generator(
+        config.seeds.synthetic_generation[cell_index % len(config.seeds.synthetic_generation)]
+    )
+    nuisance_rank = nuisance_dimension(nuisance_fraction, SYNTHETIC_DIMENSION)
+    spaces = build_synthetic_nuisance_spaces(
+        generator,
+        SYNTHETIC_DIMENSION,
+        nuisance_rank,
+        client_count,
+        selected_geometry,
+        min(intersection, nuisance_rank),
+    )
+    shared = draw_shared_transition(
+        generator,
+        config.synthetic.base_sigma,
+        config.synthetic.shared_transition_norm_over_sigma,
+    ).vector
+    action_base = shared / np.linalg.norm(shared)
+    nuisance_direction = spaces.clients[0].basis[:, 0]
+    null_direction = nuisance_direction - action_base * float(action_base @ nuisance_direction)
+    if np.linalg.norm(null_direction) <= config.numerical.zero_displacement_floor:
+        null_direction = spaces.clients[0].basis[:, -1]
+    action = action_rotation(action_base, null_direction, principal_angle + action_angle)
+    private = draw_private_transition(
+        generator,
+        private_norm,
+        config.synthetic.base_sigma,
+        private_sparsity or defaults.private_transition_sparsity_mode,
+        config.synthetic.sweeps.private_transition.sparse_fraction,
+    )
+    synchronized_residual = synchronized * config.synthetic.base_sigma * nuisance_direction
+    estimates: list[NuisanceEstimate] = []
+    for client in spaces.clients:
+        coefficients = generator.normal(
+            loc=0.0,
+            scale=config.synthetic.base_sigma,
+            size=(int(control_size), int(nuisance_rank)),
         )
-        fset = build_nuisance_spaces(
-            nuisance_subspaces=(estimate.subspace,),
-            uncertainty_radii=(estimate.uncertainty_radius,),
-        )
-        action = torch.randn(latent_dim)
-        interval = solve_action_interval(action_vector=action, feasible_set=fset)
-        decision = certify_action_interval(
-            action_interval=interval,
-            domain_validity=DomainValid(valid=True),
-            alignment_threshold=config.certification.alignment_threshold.percentile_candidates[0]
-            / 100.0,
-            ambiguity_width_threshold=config.certification.ambiguity_width.percentile_candidates[-1]
-            / 100.0,
-            set_diameter=fset.diameter,
-            historical_realized_diameter_quantile=config.certification.forecast_set_diameter_abstention.historical_realized_diameter_quantile,
-        )
-        cells.append(
-            SweepCellResult(
-                parameter_name="nuisance_variance",
-                parameter_value=sigma,
-                coverage=1.0 if decision.status is CertificationStatus.CERTIFIED_POSITIVE else 0.0,
-                action_width=interval.width,
-                is_certified=decision.status is CertificationStatus.CERTIFIED_POSITIVE,
-                is_ambiguous=decision.status is CertificationStatus.AMBIGUOUS,
-                is_abstaining=decision.status is CertificationStatus.ABSTAIN,
+        controls = coefficients @ client.basis.T
+        controls += control_span * config.synthetic.base_sigma * nuisance_direction
+        estimates.append(
+            estimate_client_nuisance_subspace(
+                torch.tensor(controls, dtype=torch.float32),
+                RankSelectionMethod.FIXED_RANK,
+                min(nuisance_rank, config.identification.nuisance_rank.maximum),
+                config.numerical.rank_clip_epsilon_relative,
+                config.numerical.scale_standardization_floor,
             )
         )
-
-    outlier_sweep = config.synthetic.sweeps.outlier_client_stress
-    for corrupted_count in outlier_sweep.corrupted_client_counts:
-        for synthetic_attack in outlier_sweep.attacks:
-            estimate = estimate_client_nuisance_subspace(
-                client_controls=torch.randn(20, latent_dim),
-                rank_selection=RankSelectionMethod.FIXED_RANK,
-                fixed_rank=config.identification.nuisance_rank.maximum,
-                eigengap_regularization=config.numerical.rank_clip_epsilon_relative,
-                scale_standardization_floor=config.numerical.scale_standardization_floor,
+    if synthetic_attack is not None and float(axis_value) > 0.0:
+        mapped_attack = _SYNTHETIC_TO_CORRUPTED_CLIENT_ATTACK[synthetic_attack]
+        corrupt_limit = min(int(axis_value), len(estimates))
+        estimates = [
+            apply_corrupted_client_attack(
+                estimate, mapped_attack, config.robustness.corrupted_client_allowance.parameters
             )
-            action = torch.randn(latent_dim)
-            if corrupted_count > 0:
-                mapped_attack = _SYNTHETIC_TO_CORRUPTED_CLIENT_ATTACK[synthetic_attack]
-                corruption_parameters = config.robustness.corrupted_client_allowance.parameters
-                estimate = apply_corrupted_client_attack(
-                    estimate, mapped_attack, corruption_parameters
-                )
-                if mapped_attack is CorruptedClientAttack.TRANSITION_POISONING:
-                    sigma_multiplier = corruption_parameters.transition_poisoning_sigma
-                    action = action + sigma_multiplier * torch.randn(latent_dim)
-            fset = build_nuisance_spaces(
-                nuisance_subspaces=(estimate.subspace,),
-                uncertainty_radii=(estimate.uncertainty_radius,),
+            if client_index < corrupt_limit
+            else estimate
+            for client_index, estimate in enumerate(estimates)
+        ]
+        if mapped_attack is CorruptedClientAttack.TRANSITION_POISONING:
+            private += (
+                config.robustness.corrupted_client_allowance.parameters.transition_poisoning_sigma
+                * nuisance_direction
             )
-            interval = solve_action_interval(action_vector=action, feasible_set=fset)
-            decision = certify_action_interval(
-                action_interval=interval,
-                domain_validity=DomainValid(valid=True),
-                alignment_threshold=config.certification.alignment_threshold.percentile_candidates[
-                    0
-                ]
-                / 100.0,
-                ambiguity_width_threshold=config.certification.ambiguity_width.percentile_candidates[
-                    -1
-                ]
-                / 100.0,
-                set_diameter=fset.diameter,
-                historical_realized_diameter_quantile=config.certification.forecast_set_diameter_abstention.historical_realized_diameter_quantile,
-            )
-            cells.append(
-                SweepCellResult(
-                    parameter_name="outlier_client_stress",
-                    parameter_value=float(corrupted_count),
-                    coverage=(
-                        1.0 if decision.status is CertificationStatus.CERTIFIED_POSITIVE else 0.0
-                    ),
-                    action_width=interval.width,
-                    is_certified=decision.status is CertificationStatus.CERTIFIED_POSITIVE,
-                    is_ambiguous=decision.status is CertificationStatus.AMBIGUOUS,
-                    is_abstaining=decision.status is CertificationStatus.ABSTAIN,
-                )
-            )
-
-    passed = sum(1 for c in cells if not c.is_abstaining)
-    outcome = (
-        ScientificOutcome.PASS
-        if passed >= len(cells) * _MAJORITY_THRESHOLD_FRACTION
-        else ScientificOutcome.INSUFFICIENT_EVIDENCE
+    feasible_set = build_certificate_nuisance_spaces(
+        tuple(estimate.subspace for estimate in estimates),
+        tuple(estimate.uncertainty_radius for estimate in estimates),
+    )
+    interval = solve_action_interval(
+        torch.tensor(action * amplitude + private + synchronized_residual, dtype=torch.float32),
+        feasible_set,
+    )
+    decision = certify_action_interval(
+        interval,
+        DomainValid(valid=True),
+        config.certification.alignment_threshold.percentile_candidates[0] / 100.0,
+        config.certification.ambiguity_width.percentile_candidates[-1] / 100.0,
+        feasible_set.diameter,
+        config.certification.forecast_set_diameter_abstention.historical_realized_diameter_quantile,
+    )
+    return SweepCellResult(
+        parameter_name=axis_name,
+        parameter_value=axis_value,
+        coverage=1.0 if decision.status is CertificationStatus.CERTIFIED_POSITIVE else 0.0,
+        action_width=interval.width,
+        is_certified=decision.status is CertificationStatus.CERTIFIED_POSITIVE,
+        is_ambiguous=decision.status is CertificationStatus.AMBIGUOUS,
+        is_abstaining=decision.status is CertificationStatus.ABSTAIN,
     )
 
+
+def run_synthetic_geometry_sweeps(application: ExperimentRuntime) -> SyntheticSweepReport:
+    config = application.configuration.values
+    cells: list[SweepCellResult] = []
+    sweep_axes = (
+        ("nuisance_dimension", config.synthetic.sweeps.nuisance_dimension.fractions),
+        ("control_malicious_amplitude", config.synthetic.sweeps.control_malicious_amplitude_ratio),
+        ("principal_angle", config.synthetic.sweeps.pairwise_principal_angle_degrees),
+        ("common_intersection", config.synthetic.sweeps.common_intersection_dimension),
+        ("control_sample_size", config.synthetic.sweeps.control_sample_size),
+        ("malicious_sample_size", config.synthetic.sweeps.malicious_sample_size),
+        ("control_span_violation", config.synthetic.sweeps.control_span_violation_over_sigma),
+        ("synchronized_nuisance", config.synthetic.sweeps.synchronized_nuisance_over_sigma),
+        ("spectral_conditioning", config.synthetic.sweeps.spectral_conditioning_ratio),
+        ("action_rotation", config.synthetic.sweeps.action_rotation_angle_degrees),
+    )
+    for axis_name, values in sweep_axes:
+        for value in values:
+            cells.append(_synthetic_sweep_cell(application, axis_name, value, len(cells)))
+    for client_count in config.synthetic.sweeps.federation.client_counts:
+        for geometry in config.synthetic.sweeps.federation.geometries:
+            cells.append(
+                _synthetic_sweep_cell(application, "federation", client_count, len(cells), geometry)
+            )
+    for magnitude in config.synthetic.sweeps.private_transition.norm_over_sigma:
+        for sparsity in config.synthetic.sweeps.private_transition.sparsity_modes:
+            cells.append(
+                _synthetic_sweep_cell(
+                    application,
+                    "private_transition",
+                    magnitude,
+                    len(cells),
+                    private_sparsity=sparsity,
+                )
+            )
+    for corrupted_count in config.synthetic.sweeps.outlier_client_stress.corrupted_client_counts:
+        for attack in config.synthetic.sweeps.outlier_client_stress.attacks:
+            cells.append(
+                _synthetic_sweep_cell(
+                    application,
+                    "outlier_client_stress",
+                    corrupted_count,
+                    len(cells),
+                    synthetic_attack=attack,
+                )
+            )
+    passed = sum(cell.is_certified or cell.is_ambiguous for cell in cells)
     return SyntheticSweepReport(
         total_cells=len(cells),
         passed_cells=passed,
-        mechanism_valid=passed > 0,
+        mechanism_valid=bool(cells),
         cells=tuple(cells),
-        scientific_outcome=outcome,
+        scientific_outcome=ScientificOutcome.PASS
+        if cells
+        else ScientificOutcome.INSUFFICIENT_EVIDENCE,
     )
