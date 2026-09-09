@@ -6,7 +6,7 @@ import pytest
 
 from fedact.config.loading import LoadedConfiguration, load_production_configuration
 from fedact.config.models import FedActConfig
-from fedact.datasets.chronology import (
+from fedact.data.splits import (
     LAMDA_MISSING_2015_GAP,
     ChronologyError,
     HorizonAvailability,
@@ -23,7 +23,7 @@ from fedact.datasets.chronology import (
     reuse_source_checkpoint_month,
     transition_windows,
 )
-from fedact.domain.enums import ScientificOutcome
+from fedact.domain.types import ScientificOutcome
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 PRODUCTION_CONFIGURATION = REPOSITORY_ROOT / "configs" / "fedact.yaml"

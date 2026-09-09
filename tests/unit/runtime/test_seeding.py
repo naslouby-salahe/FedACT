@@ -4,7 +4,7 @@ import random
 
 import numpy as np
 
-from fedact.runtime.seeding import apply_python_seed, create_numpy_generator
+from fedact.workflow import apply_python_seed, create_numpy_generator
 
 
 def test_numpy_generator_is_reproducible_from_the_same_seed() -> None:

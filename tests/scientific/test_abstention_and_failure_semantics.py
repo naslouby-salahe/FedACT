@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fedact.domain.enums import ScientificAssumption, ScientificOutcome
+from fedact.domain.types import ScientificAssumption, ScientificOutcome
 from fedact.domain.records import FEDACT_ASSUMPTION_CONTRACTS
 
 

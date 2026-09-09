@@ -3,8 +3,8 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from fedact.core.feasible_sets import L2Ball
-from fedact.experiments.math_verification import (
+from fedact.certification.certificate import L2Ball
+from fedact.experiments.verification import (
     is_constraint_monotone,
     is_degenerate_rejection_correct,
     is_diameter_upper_bound_valid,

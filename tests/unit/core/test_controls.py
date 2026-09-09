@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from fedact.core.controls import (
+from fedact.certification.dynamics import (
     ControlQualityGate,
     ControlReplicate,
     build_control_displacement,

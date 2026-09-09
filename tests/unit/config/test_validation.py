@@ -6,8 +6,8 @@ import pytest
 import yaml
 
 from fedact.config.loading import load_production_configuration
-from fedact.config.models import FedActConfig
-from fedact.config.validation import (
+from fedact.config.models import (
+    FedActConfig,
     ConfigurationConstraintError,
     validate_configuration_constraints,
 )

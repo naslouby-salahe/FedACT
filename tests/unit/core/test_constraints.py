@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from fedact.core.constraints import ClientConstraintSummary, validate_summary
+from fedact.certification.certificate import ClientConstraintSummary, validate_summary
 from fedact.domain.types import ClientIdentifier
 
 

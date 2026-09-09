@@ -7,21 +7,21 @@ import pytest
 import torch
 
 from fedact.config.loading import LoadedConfiguration
-from fedact.core.controls import (
+from fedact.certification.dynamics import (
     ControlQualityGate,
     ControlReplicate,
     filter_control_replicates,
 )
-from fedact.core.nuisance import (
+from fedact.certification.uncertainty import (
     admissible_rank,
     eigengap_ratio,
     regularized_covariance,
     select_rank_by_eigengap,
     weighted_covariance,
 )
-from fedact.datasets.chronology import calendar_month
-from fedact.datasets.lamda.loader import load_lamda_records
-from fedact.datasets.lamda.semantics import (
+from fedact.data.splits import calendar_month
+from fedact.data.lamda import load_lamda_records
+from fedact.data.lamda import (
     control_transition_replicates,
     label_derivation_rule,
     malicious_transition_displacement,

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from fedact.baselines.security import (
+from fedact.experiments.baselines import (
     random_mutation_baseline,
     reactive_adaptation_baseline,
     static_security_baseline,

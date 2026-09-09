@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from fedact.evaluation.later_real import build_later_real_proxy
+from fedact.analysis.metrics import build_later_real_proxy
 
 
 def test_build_later_real_proxy() -> None:

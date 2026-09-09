@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from fedact.domain.enums import ExecutableWorkflowName, ScientificOutcome
-from fedact.runtime.status import (
+from fedact.domain.types import ExecutableWorkflowName, ScientificOutcome
+from fedact.workflow import (
     ArtifactExecutionState,
     WorkflowExecutionState,
     WorkflowOutcomeRecord,

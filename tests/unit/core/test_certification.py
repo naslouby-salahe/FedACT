@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from fedact.core.actions import ActionInterval
-from fedact.core.certification import (
+from fedact.certification.actions import ActionInterval
+from fedact.certification.certificate import (
     DomainValid,
     certify_action_interval,
     decide,
     is_forecast_set_within_gate,
     leave_one_client_out_stability,
 )
-from fedact.core.transitions import AbstentionReason
-from fedact.domain.enums import CertificationStatus
+from fedact.certification.dynamics import AbstentionReason
+from fedact.domain.types import CertificationStatus
 
 
 def test_decide_certifies_positive_bounded_interval() -> None:

@@ -4,8 +4,8 @@ import numpy as np
 import pytest
 
 from fedact.domain.types import SampleIdentifier
-from fedact.scoring.encoding import EncodedSample
-from fedact.scoring.validation import ScoreValidationError, validate_encoded_samples
+from fedact.learning.scoring import EncodedSample
+from fedact.learning.scoring import ScoreValidationError, validate_encoded_samples
 
 
 def test_validate_encoded_samples_checks_dimension() -> None:

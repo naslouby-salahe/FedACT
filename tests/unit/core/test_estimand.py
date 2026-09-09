@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from fedact.core.actions import (
+from fedact.certification.actions import (
     ActionInterval,
     NumericalFailureError,
     action_conditioning_index,
@@ -11,16 +11,16 @@ from fedact.core.actions import (
     smallest_positive_eigenvalue,
     support_interval,
 )
-from fedact.core.certification import DomainValid, certify_action_interval
-from fedact.core.feasible_sets import (
+from fedact.certification.certificate import DomainValid, certify_action_interval
+from fedact.certification.certificate import (
     ClientConstraint,
     L2Ball,
     chebyshev_center,
     intersect_constraints,
     minimum_uniform_inflation,
 )
-from fedact.core.temporal import fit_scalar_model, process_error_radius, propagate_radius
-from fedact.domain.enums import CertificationStatus
+from fedact.certification.dynamics import fit_scalar_model, process_error_radius, propagate_radius
+from fedact.domain.types import CertificationStatus
 
 
 def test_projector_is_idempotent_and_matches_orthogonal_complement() -> None:

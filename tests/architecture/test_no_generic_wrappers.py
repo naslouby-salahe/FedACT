@@ -67,10 +67,10 @@ def test_public_boundaries_do_not_use_generic_numeric_wrappers(repository_root: 
 
 def test_generic_wrapper_rule_detects_positive_int_parameter() -> None:
     tree = ast.parse("def run(count: PositiveInt) -> None:\n    return\n")
-    violations = generic_wrapper_violations_for_tree("fedact.datasets.splits", "x.py", tree)
+    violations = generic_wrapper_violations_for_tree("fedact.data.splits", "x.py", tree)
     assert violations
 
 
 def test_generic_wrapper_rule_accepts_semantic_domain_type() -> None:
     tree = ast.parse("def run(count: SampleCount) -> None:\n    return\n")
-    assert generic_wrapper_violations_for_tree("fedact.datasets.splits", "x.py", tree) == []
+    assert generic_wrapper_violations_for_tree("fedact.data.splits", "x.py", tree) == []

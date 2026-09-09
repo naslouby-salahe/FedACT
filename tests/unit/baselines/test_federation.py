@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from fedact.baselines.federation import (
+from fedact.experiments.baselines import (
     centralized_pooled_comparator,
     local_only_comparator,
 )

@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typer.testing import CliRunner
 
-from fedact.cli.main import app
-from fedact.domain.enums import ArtifactBoundary, DatasetSelector
+from fedact.cli import app
+from fedact.domain.types import ArtifactBoundary, DatasetSelector
 from fedact.domain.types import DependencyFingerprint
-from fedact.experiments import (
+from fedact.experiments.registry import (
     PREPROCESS_OWNED_BOUNDARIES,
     PREPROCESS_STAGE_FLOW,
     OverwriteRequest,

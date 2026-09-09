@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from fedact.core.nuisance import (
+from fedact.certification.uncertainty import (
     admissible_rank,
     eigengap_ratio,
     is_rank_stable,

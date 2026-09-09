@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from fedact.datasets.records import EligibilityStatus
-from fedact.datasets.splits import (
+from fedact.data.records import EligibilityStatus
+from fedact.data.splits import (
     IndexInPopulation,
     SplitConstructionError,
     SplitPartition,

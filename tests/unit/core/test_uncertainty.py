@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from fedact.core.uncertainty import (
+from fedact.certification.uncertainty import (
     client_radius,
     sampling_uncertainty_quantile,
     standardized_subspace_term,

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from fedact.evaluation.metrics import EvaluationMetrics
-from fedact.evaluation.validation import validate_evaluation_metrics
+from fedact.analysis.metrics import EvaluationMetrics
+from fedact.analysis.metrics import validate_evaluation_metrics
 
 
 def test_validate_evaluation_metrics() -> None:

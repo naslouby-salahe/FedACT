@@ -1,4 +1,4 @@
-.PHONY: setup format lint typecheck dead-code depcheck imports unit architecture quality tests checks
+.PHONY: setup format lint typecheck dead-code depcheck imports unit architecture tests checks
 
 export PYTHONDONTWRITEBYTECODE := 1
 
@@ -29,10 +29,7 @@ unit:
 architecture:
 	uv run pytest tests/architecture
 
-quality:
-	uv run pytest tests/quality
-
 tests:
 	uv run pytest --cov=fedact --cov-fail-under=85
 
-checks: lint typecheck dead-code depcheck imports architecture quality tests
+checks: lint typecheck dead-code depcheck imports architecture tests

@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from fedact.core.actions import (
+from fedact.certification.actions import (
     action_support_bounds,
     box_diameter_bound,
     evaluate_displacement,

@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from fedact.config.loading import LoadedConfiguration
 from fedact.domain.types import ClientIdentifier, SampleIdentifier
-from fedact.models.detector import DetectorHead
-from fedact.models.representation import RepresentationEncoder
-from fedact.training.federated import ClientTrainingPopulation, train_federated_detector
-from fedact.training.representation import TrainingObservation
+from fedact.learning.detector import DetectorHead
+from fedact.learning.representation import RepresentationEncoder
+from fedact.learning.federation import ClientTrainingPopulation, train_federated_detector
+from fedact.learning.representation import TrainingObservation
 
 
 def test_train_federated_detector(production_configuration: LoadedConfiguration) -> None:

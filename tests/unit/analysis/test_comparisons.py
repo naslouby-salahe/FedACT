@@ -6,7 +6,7 @@ from fedact.analysis.comparisons import (
     aggregate_cutoff_from_seeds,
     build_paired_contrast,
 )
-from fedact.domain.enums import MissingCutoffReason
+from fedact.domain.types import MissingCutoffReason
 from fedact.domain.types import SplitCutoffIdentity
 
 

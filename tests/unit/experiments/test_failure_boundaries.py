@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import torch
 
-from fedact.app import Application
+from fedact.workflow import Application
 from fedact.config.models import CorruptedClientAllowanceParameters, CorruptedClientAttack
-from fedact.core.nuisance import NuisanceEstimate
-from fedact.domain.enums import ScientificOutcome
-from fedact.experiments.failure_boundaries import (
+from fedact.certification.uncertainty import NuisanceEstimate
+from fedact.domain.types import ScientificOutcome
+from fedact.experiments.validation import (
     apply_corrupted_client_attack,
     run_robustness_and_failure_boundaries,
 )

@@ -1,9 +1,251 @@
 from __future__ import annotations
 
+from enum import StrEnum
 from pathlib import Path
 from typing import Annotated, NewType
 
 from pydantic import Field, JsonValue, StringConstraints
+
+
+class WorkflowName(StrEnum):
+    SCIENTIFIC_AND_CONFIGURATION_AUTHORITY = "scientific-and-configuration-authority"
+    MATHEMATICAL_AND_NUMERICAL_VERIFICATION = "mathematical-and-numerical-verification"
+    SYNTHETIC_GENERATOR_SMOKE_VALIDATION = "synthetic-generator-smoke-validation"
+    SYNTHETIC_THEORY_AND_GEOMETRY_VALIDATION = "synthetic-theory-and-geometry-validation"
+    REAL_DATA_FEASIBILITY_AND_CONTROL_AUDIT = "real-data-feasibility-and-control-audit"
+    BASELINE_REPRODUCTION_AND_PARITY_VALIDATION = "baseline-reproduction-and-parity-validation"
+    NESTED_PRE_CUTOFF_CALIBRATION = "nested-pre-cutoff-calibration"
+    REAL_DATA_ACTION_CERTIFICATE_VALIDATION = "real-data-action-certificate-validation"
+    MAIN_PROSPECTIVE_FEDACT_EVALUATION = "main-prospective-fedact-evaluation"
+    NOVELTY_CRITICAL_ABLATIONS = "novelty-critical-ablations"
+    FEDERATION_AND_COMPLEMENTARITY_EVALUATION = "federation-and-complementarity-evaluation"
+    ROBUSTNESS_AND_FAILURE_BOUNDARY_EVALUATION = "robustness-and-failure-boundary-evaluation"
+    CROSS_CORPUS_GENERALIZATION = "cross-corpus-generalization"
+    COMMUNICATION_LIMITED_CLIENT_SELECTION = "communication-limited-client-selection"
+    STATISTICAL_SYNTHESIS = "statistical-synthesis"
+    MANUSCRIPT_EVIDENCE_GENERATION = "manuscript-evidence-generation"
+
+
+class ScientificAssumption(StrEnum):
+    CHRONOLOGY = "chronology"
+    SHARED_COMPONENT = "shared-component"
+    INFORMATIVE_CONTROLS = "informative-controls"
+    CONTROL_SPAN_VALIDITY = "control-span-validity"
+    PRIVATE_TRANSITION_ALLOWANCE = "private-transition-allowance"
+    CUTOFF_FIXED_REPRESENTATION = "cutoff-fixed-representation"
+    ACTION_VALIDITY = "action-validity"
+    HISTORICAL_PREDICTABILITY = "historical-predictability"
+    EIGENDECOMPOSITION_STABILITY = "eigendecomposition-stability"
+    MINIMUM_SUPPORT = "minimum-support"
+    PLAUSIBILITY_SET_COVERAGE = "plausibility-set-coverage"
+    HONEST_PRIMARY_FEDERATION = "honest-primary-federation"
+    OPERATOR_COVERAGE = "operator-coverage"
+    TEMPORAL_STABILITY = "temporal-stability"
+
+
+class ScientificOutcome(StrEnum):
+    PASS = "PASS"
+    FAIL = "FAIL"
+    INSUFFICIENT_EVIDENCE = "INSUFFICIENT_EVIDENCE"
+    INFEASIBLE = "INFEASIBLE"
+    NUMERICAL_FAILURE = "NUMERICAL_FAILURE"
+    ASSUMPTION_VIOLATION = "ASSUMPTION_VIOLATION"
+    ABSTENTION_EXPECTED = "ABSTENTION_EXPECTED"
+
+
+class MissingCutoffReason(StrEnum):
+    INFRASTRUCTURE_FAILURE = "INFRASTRUCTURE_FAILURE"
+    NUMERICAL_FAILURE = "NUMERICAL_FAILURE"
+    SCIENTIFIC_INFEASIBILITY = "SCIENTIFIC_INFEASIBILITY"
+    ASSUMPTION_VIOLATION = "ASSUMPTION_VIOLATION"
+    EXPECTED_ABSTENTION = "EXPECTED_ABSTENTION"
+    MISSING_SOURCE_DATA = "MISSING_SOURCE_DATA"
+
+
+class EffectDirection(StrEnum):
+    FAVORABLE = "FAVORABLE"
+    CONTRADICTORY = "CONTRADICTORY"
+    NEUTRAL = "NEUTRAL"
+
+
+class ArtifactBoundary(StrEnum):
+    INPUTS = "inputs"
+    DATASET_PREPARATION = "dataset-preparation"
+    PREPROCESSING_AND_SPLITS = "preprocessing-and-splits"
+    TRAINING_CHECKPOINTS = "training-checkpoints"
+    SCORING_AND_SUMMARIES = "scoring-and-summaries"
+    CALIBRATION_AND_CERTIFICATION = "calibration-and-certification"
+    EVALUATION = "evaluation"
+    ANALYSIS = "analysis"
+    REPORTING = "reporting"
+
+
+class ExecutableWorkflowName(StrEnum):
+    PREPROCESS = "preprocess"
+    SMOKE = "smoke"
+    BASELINE_PARITY = "baseline-parity"
+    NESTED_CALIBRATION = "nested-calibration"
+    MATH_VERIFICATION = "math-verification"
+    SYNTHETIC_GEOMETRY = "synthetic-geometry"
+    ACTION_CERTIFICATE_VALIDATION = "action-certificate-validation"
+    PROSPECTIVE_EVALUATION = "prospective-evaluation"
+    ABLATIONS = "ablations"
+    FEDERATION = "federation"
+    FAILURE_BOUNDARIES = "failure-boundaries"
+    CROSS_CORPUS = "cross-corpus"
+    CLIENT_SELECTION = "client-selection"
+    STATISTICAL_SYNTHESIS = "statistical-synthesis"
+
+
+class RunnableWorkflowName(StrEnum):
+    MATH_VERIFICATION = "math-verification"
+    SYNTHETIC_GEOMETRY = "synthetic-geometry"
+    ACTION_CERTIFICATE_VALIDATION = "action-certificate-validation"
+    PROSPECTIVE_EVALUATION = "prospective-evaluation"
+    ABLATIONS = "ablations"
+    FEDERATION = "federation"
+    FAILURE_BOUNDARIES = "failure-boundaries"
+    CROSS_CORPUS = "cross-corpus"
+    CLIENT_SELECTION = "client-selection"
+    STATISTICAL_SYNTHESIS = "statistical-synthesis"
+
+
+class DatasetSelector(StrEnum):
+    LAMDA = "lamda"
+    EMBER2024 = "ember2024"
+
+
+class FederationGeometry(StrEnum):
+    REDUNDANT = "redundant"
+    COMPLEMENTARY = "complementary"
+
+
+class RankSelectionMethod(StrEnum):
+    FIXED_RANK = "FIXED_RANK"
+    EIGENGAP = "EIGENGAP"
+    VARIANCE_THRESHOLD = "VARIANCE_THRESHOLD"
+
+
+class DatasetSplit(StrEnum):
+    HISTORICAL = "HISTORICAL"
+    PROSPECTIVE = "PROSPECTIVE"
+    VALIDATION = "VALIDATION"
+
+
+class InformationFlowPhase(StrEnum):
+    OBSERVATION_COLLECTION = "OBSERVATION_COLLECTION"
+    PREPROCESSING = "PREPROCESSING"
+    HISTORICAL_CALIBRATION = "HISTORICAL_CALIBRATION"
+    PROSPECTIVE_EVALUATION = "PROSPECTIVE_EVALUATION"
+
+
+class PartitionScheme(StrEnum):
+    CHRONOLOGICAL = "CHRONOLOGICAL"
+    FEDERATED = "FEDERATED"
+
+
+class CertificationStatus(StrEnum):
+    CERTIFIED_POSITIVE = "CERTIFIED_POSITIVE"
+    CERTIFIED_NEGATIVE = "CERTIFIED_NEGATIVE"
+    AMBIGUOUS = "AMBIGUOUS"
+    ABSTAIN = "ABSTAIN"
+
+
+class ArtifactVerificationStatus(StrEnum):
+    VERIFIED = "verified"
+    MISSING = "missing"
+
+
+class ConfirmatoryFormat(StrEnum):
+    WIN32_PE = "win32_pe"
+    WIN64_PE = "win64_pe"
+
+
+class PrivateTransitionSparsityMode(StrEnum):
+    DENSE = "dense"
+    TEN_PERCENT_SPARSE = "ten_percent_sparse"
+
+
+class CorruptedClientAttack(StrEnum):
+    BASIS_ROTATION = "basis_rotation"
+    FALSE_RANK_REPORTING = "false_rank_reporting"
+    BETA_UNDER_REPORTING = "beta_under_reporting"
+    TRANSITION_POISONING = "transition_poisoning"
+    FABRICATED_COMPLEMENTARITY = "fabricated_complementarity"
+
+
+class SyntheticCorruptionAttack(StrEnum):
+    ROTATION = "rotation"
+    RANK_MISREPORT = "rank_misreport"
+    BETA_UNDERREPORT = "beta_underreport"
+    POISONING = "poisoning"
+    FABRICATED_COMPLEMENTARITY = "fabricated_complementarity"
+
+
+class ExclusionReason(StrEnum):
+    CONFLICTING_DUPLICATE = "CONFLICTING_DUPLICATE"
+    MALFORMED_RECORD = "MALFORMED_RECORD"
+    NONFINITE_FEATURE = "NONFINITE_FEATURE"
+    MISSING_SAMPLE_IDENTITY = "MISSING_SAMPLE_IDENTITY"
+    MISSING_CHRONOLOGY = "MISSING_CHRONOLOGY"
+    MISSING_BINARY_LABEL = "MISSING_BINARY_LABEL"
+    LABEL_VT_COUNT_CONFLICT = "LABEL_VT_COUNT_CONFLICT"
+    LOW_VARIANCE_FEATURE = "LOW_VARIANCE_FEATURE"
+    VALIDATION_STRATUM_TOO_SMALL = "VALIDATION_STRATUM_TOO_SMALL"
+
+
+class EligibilityStatus(StrEnum):
+    ELIGIBLE = "ELIGIBLE"
+    OPERATOR_INELIGIBLE = "operator_ineligible"
+
+
+class ClientSemanticsClass(StrEnum):
+    NATURAL_ORGANIZATION = "natural-organization"
+    NATURAL_SOURCE = "natural-source"
+    DIAGNOSTIC_PARTITION = "diagnostic-partition"
+    CORPUS_LEVEL_CLIENT = "corpus-level-client"
+
+
+class DatasetEligibilityRole(StrEnum):
+    PRIMARY_EVIDENCE = "eligible-for-primary-evidence"
+    SECONDARY_EVIDENCE = "eligible-for-secondary-evidence"
+    DIAGNOSTIC_ONLY = "diagnostic-only"
+    UNUSABLE = "unusable-for-the-intended-evidence"
+
+
+class FeasibilityCondition(StrEnum):
+    CHRONOLOGY_VALID = "chronology-valid"
+    MALICIOUS_HISTORY_SUFFICIENT = "malicious-history-sufficient"
+    CONTROLS_SUFFICIENT = "controls-sufficient"
+    CONTEXT_FIELDS_OBSERVED = "required-context-fields-observed"
+    COHORTS_CUTOFF_SAFE = "cohorts-cutoff-safe"
+    OPERATOR_ARTIFACTS_AVAILABLE = "raw-operator-artifacts-available"
+    REPRESENTATION_TRAINABLE_WITHOUT_LEAKAGE = "representation-trainable-without-leakage"
+
+
+class HorizonAvailability(StrEnum):
+    OBSERVABLE = "OBSERVABLE"
+    MISSING_SOURCE_DATA = "MISSING_SOURCE_DATA"
+
+
+class AbstentionReason(StrEnum):
+    ABSTAIN_NO_USABLE_CONTROL = "ABSTAIN_NO_USABLE_CONTROL"
+    ABSTAIN_INSUFFICIENT_MALICIOUS_SUPPORT = "ABSTAIN_INSUFFICIENT_MALICIOUS_SUPPORT"
+    ABSTAIN_INSUFFICIENT_CONTROL_SUPPORT = "ABSTAIN_INSUFFICIENT_CONTROL_SUPPORT"
+    ABSTAIN_INSUFFICIENT_PRIVATE_ALLOWANCE_HISTORY = (
+        "ABSTAIN_INSUFFICIENT_PRIVATE_ALLOWANCE_HISTORY"
+    )
+    ABSTAIN_UNSTABLE_NUISANCE_RANK = "ABSTAIN_UNSTABLE_NUISANCE_RANK"
+    ABSTAIN_WEAK_EIGENGAP = "ABSTAIN_WEAK_EIGENGAP"
+    ABSTAIN_CONTROL_RECONSTRUCTION_FAILURE = "ABSTAIN_CONTROL_RECONSTRUCTION_FAILURE"
+    ABSTAIN_FEASIBLE_SET_INCONSISTENT = "ABSTAIN_FEASIBLE_SET_INCONSISTENT"
+    ABSTAIN_INSUFFICIENT_TEMPORAL_HISTORY = "ABSTAIN_INSUFFICIENT_TEMPORAL_HISTORY"
+    ABSTAIN_FORECAST_SET_TOO_WIDE = "ABSTAIN_FORECAST_SET_TOO_WIDE"
+    ABSTAIN_NO_CERTIFIED_ACTION = "ABSTAIN_NO_CERTIFIED_ACTION"
+    ABSTAIN_OPERATOR_COVERAGE_INSUFFICIENT = "ABSTAIN_OPERATOR_COVERAGE_INSUFFICIENT"
+    ABSTAIN_SYNCHRONIZED_NUISANCE_RISK = "ABSTAIN_SYNCHRONIZED_NUISANCE_RISK"
+    ABSTAIN_SINGLE_CLIENT_CERTIFICATE_DOMINANCE = "ABSTAIN_SINGLE_CLIENT_CERTIFICATE_DOMINANCE"
+
 
 NonNegativeInt = Annotated[
     int,
@@ -267,37 +509,50 @@ ExperimentDirectoryName = NonEmptyString
 __all__ = [
     "AblationIdentifier",
     "AbstentionFlag",
+    "AbstentionReason",
     "ActionCount",
     "ActionDecision",
     "ActivationFlag",
     "AmbiguityFlag",
+    "AmbiguityStatusFlag",
     "AngleDegrees",
+    "ArtifactBoundary",
     "ArtifactName",
+    "ArtifactVerificationStatus",
     "BatchSize",
     "BinaryLabel",
     "BoundValidityFlag",
     "BudgetAmount",
     "CalendarMonthString",
     "CertificationFlag",
+    "CertificationStatus",
+    "CertificationStatusFlag",
     "ClientCount",
     "ClientIdentifier",
     "ClientIndex",
+    "ClientSemanticsClass",
     "CohortDefinition",
     "CohortIdentifier",
     "CommitHash",
     "ConditionNumberLimit",
     "ConfidenceLevel",
     "ConfirmatoryFlag",
+    "ConfirmatoryFormat",
     "ContainmentFlag",
     "ContentChecksum",
     "CoordinateValue",
+    "CorrectionAppliedFlag",
     "CorrectnessFlag",
+    "CorruptedClientAttack",
     "CoverageLevel",
     "CutoffCount",
     "CutoffDifferenceValue",
     "DataAvailabilityFlag",
+    "DatasetEligibilityRole",
     "DatasetIdentity",
     "DatasetName",
+    "DatasetSelector",
+    "DatasetSplit",
     "DegeneracyFlag",
     "DegradationValue",
     "DependencyFingerprint",
@@ -305,29 +560,42 @@ __all__ = [
     "DetectionCount",
     "DiagnosisMessage",
     "DimensionValue",
+    "DisplacementComponent",
     "DomainValidityFlag",
     "DrawCount",
     "DrawIndex",
+    "EffectDirection",
     "EigengapRatio",
     "EligibilityFlag",
+    "EligibilityStatus",
+    "EmbeddingComponent",
     "EpochCount",
     "EpochIndex",
     "Epsilon",
     "EvaluationCount",
     "EventCount",
+    "ExactDistributionFlag",
+    "ExclusionReason",
+    "ExecutableWorkflowName",
     "ExecutionReason",
+    "ExperimentDirectoryName",
     "ExperimentName",
     "FamilyName",
+    "FeasibilityCondition",
+    "FeatureValue",
     "FederationClientCount",
+    "FederationGeometry",
     "FieldName",
     "FilePath",
     "Fraction",
     "GateComplianceFlag",
     "GridCellLabel",
     "HashDigest",
+    "HorizonAvailability",
     "HorizonMonths",
     "HorizonStep",
     "IdentifiabilityFlag",
+    "InformationFlowPhase",
     "IntegrityCheckName",
     "IntersectionDimension",
     "IntervalBound",
@@ -341,9 +609,12 @@ __all__ = [
     "LossValue",
     "MaliciousnessFlag",
     "ManifestFieldName",
+    "MatchedTotalSamplesFlag",
     "MaximumIterations",
+    "MechanismValidFlag",
     "MetricRate",
     "MinimumDetectionCount",
+    "MissingCutoffReason",
     "ModuleQualifiedName",
     "MonotonicityFlag",
     "MonthIndex",
@@ -364,10 +635,13 @@ __all__ = [
     "PairedCutoffCount",
     "ParameterName",
     "ParameterValue",
+    "PartitionScheme",
     "PassingFlag",
     "PercentagePoints",
     "PercentileValue",
+    "PositiveInt",
     "PreprocessingIdentity",
+    "PrivateTransitionSparsityMode",
     "Probability",
     "ProducerIdentifier",
     "ProhibitionFlag",
@@ -376,6 +650,7 @@ __all__ = [
     "RankBiserialEffectSize",
     "RankDimension",
     "RankIncrement",
+    "RankSelectionMethod",
     "RawPayloadBytes",
     "ReferenceCenterCount",
     "RelativePosixPath",
@@ -389,12 +664,15 @@ __all__ = [
     "RoundCount",
     "RuleDescription",
     "RunResultSummary",
+    "RunnableWorkflowName",
     "SampleCount",
     "SampleIdentifier",
     "SampleSize",
     "SatisfactionFlag",
     "ScalarCoefficient",
+    "ScientificAssumption",
     "ScientificInvariantName",
+    "ScientificOutcome",
     "SeedValue",
     "SelectedCount",
     "SensitivityMultiplier",
@@ -410,6 +688,7 @@ __all__ = [
     "StrictBytes",
     "SufficiencyFlag",
     "SupportThreshold",
+    "SyntheticCorruptionAttack",
     "ThresholdValue",
     "TimeoutSeconds",
     "Tolerance",
@@ -419,10 +698,12 @@ __all__ = [
     "UsageCount",
     "ValidationFlag",
     "VarianceThreshold",
+    "VerificationFlag",
     "VersionText",
     "WindowMonth",
     "WindowSpanMonths",
     "WorkflowDescription",
+    "WorkflowName",
     "WorkflowStatus",
     "ZeroDisplacementFloor",
     "ZeroExclusionFlag",

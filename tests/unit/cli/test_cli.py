@@ -4,10 +4,10 @@ from pathlib import Path
 
 from typer.testing import CliRunner, Result
 
-from fedact.app import Application, discover_repository_root
-from fedact.cli.main import app
-from fedact.domain.enums import ExecutableWorkflowName, ScientificOutcome
-from fedact.storage.results import WorkflowResultRecord, write_workflow_result
+from fedact.workflow import Application, discover_repository_root
+from fedact.cli import app
+from fedact.domain.types import ExecutableWorkflowName, ScientificOutcome
+from fedact.artifacts import WorkflowResultRecord, write_workflow_result
 
 RUNNER = CliRunner()
 

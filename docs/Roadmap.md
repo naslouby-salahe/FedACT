@@ -4938,564 +4938,82 @@ A favorable detector score without this chain does **not** establish the FedACT 
 # 36. Repository Structure
 
 ```text
-fedact/
-│
-├── README.md                                      # Project overview, scientific scope, setup, and canonical CLI workflow.
-├── pyproject.toml                                 # Python package metadata, dependencies, tooling, and fedact console entry point.
-├── uv.lock                                        # Locked Python dependency graph for reproducible environments.
-├── noxfile.py                                     # Reproducible linting, testing, architecture-check, and validation sessions.
-├── Makefile                                       # Short developer commands for setup, checks, tests, and canonical CLI entry points.
-├── .gitignore                                     # Excludes generated outputs, caches, environments, and other non-versioned artifacts.
-│
-├── configs/                                       # Configuration data only; scientific behavior remains defined by the roadmap/code.
-│   ├── fedact.yaml                                # Single authoritative production configuration for the locked FedACT study.
-│   ├── tests.yml                                  # Test-only configuration for deterministic lightweight fixtures.
-│   └── smoke.yml                                  # Smoke-only configuration for fast implementation validation.
-│
-├── data/
-│   └── raw -> /external/datasets                  # SYMLINK — immutable external raw datasets; never written by FedACT.
-│
-├── outputs/                                       # Git-ignored regenerable computational workspace; may contain large reusable artifacts.
-│   │
-│   ├── preprocessing/                             # Dataset preparation and cutoff-safe preprocessing products.
-│   │   ├── inventories/                           # Raw discovery, file inventories, checksums, and acquisition identities.
-│   │   ├── validation/                            # Chronology, support, control, client-semantics, operator, and representation audits.
-│   │   ├── prepared/                              # Canonical parsed LAMDA and EMBER2024 records derived from immutable raw data.
-│   │   ├── splits/                                # Cutoff-safe train/validation/test, client, cohort, and eligibility partitions.
-│   │   ├── features/                              # Fitted cutoff-safe transforms and materialized transformed feature products.
-│   │   └── metadata/                              # Dataset observations, exclusions, cutoff metadata, and preprocessing provenance.
-│   │
-│   ├── artifacts/                                 # Project-wide artifacts reusable only when dependency fingerprints are compatible.
-│   │   ├── models/                                # Shared cutoff-fixed representation and base-detector checkpoints.
-│   │   │   ├── representations/
-│   │   │   └── detectors/
-│   │   │
-│   │   ├── scores/                                # Shared heavy encoding/scoring products reused across compatible workflows.
-│   │   │   ├── encodings/
-│   │   │   ├── detector_scores/
-│   │   │   └── detector_predictions/
-│   │   │
-│   │   ├── fitted/                                # Reusable fitted scientific objects produced before experiment-specific evaluation.
-│   │   │   ├── nuisance/
-│   │   │   ├── constraints/
-│   │   │   ├── calibration/
-│   │   │   ├── temporal/
-│   │   │   └── feasible_sets/
-│   │   │
-│   │   ├── baselines/                             # Shared baseline artifacts when their scientific condition is identical across workflows.
-│   │   │   ├── checkpoints/
-│   │   │   ├── scores/
-│   │   │   └── parity/
-│   │   │
-│   │   ├── derived/                               # Reusable derived FedACT objects that are not themselves fitted models.
-│   │   │   ├── transitions/
-│   │   │   ├── action_displacements/
-│   │   │   ├── operators/
-│   │   │   └── certificates/
-│   │   │
-│   │   └── provenance/                            # Project-wide artifact lifecycle, completion, and dependency metadata.
-│   │       ├── manifests/
-│   │       ├── completion_records/
-│   │       └── indexes/
-│   │           ├── artifact_index.jsonl           # Generated active-artifact index containing identities and validity states.
-│   │           └── dependency_index.json          # Generated forward/reverse dependency index for selective invalidation.
-│   │
-│   ├── experiments/                               # Workflow-owned execution state; create one subtree per descriptive scientific workflow.
-│   │   └── <descriptive-experiment-name>/         # Placeholder only; one subtree is created for each descriptive scientific workflow.
-│   │       ├── artifacts/
-│   │       │   ├── fitted/
-│   │       │   ├── predictions/
-│   │       │   └── derived/
-│   │       │
-│   │       ├── evaluations/
-│   │       │   ├── records/
-│   │       │   ├── comparisons/
-│   │       │   └── aggregates/
-│   │       │
-│   │       ├── metrics/
-│   │       │   ├── per_seed/
-│   │       │   ├── per_condition/
-│   │       │   └── aggregate/
-│   │       │
-│   │       ├── statistics/
-│   │       │   ├── tests/
-│   │       │   ├── confidence_intervals/
-│   │       │   ├── effects/
-│   │       │   └── multiplicity/
-│   │       │
-│   │       ├── checkpoints/
-│   │       │   ├── training/
-│   │       │   └── execution/
-│   │       │
-│   │       ├── diagnostics/
-│   │       │   ├── scientific/
-│   │       │   ├── numerical/
-│   │       │   └── runtime/
-│   │       │
-│   │       ├── logs/
-│   │       │   ├── execution/
-│   │       │   └── failures/
-│   │       │
-│   │       └── provenance/
-│   │           ├── configuration/
-│   │           ├── data/
-│   │           ├── seeds/
-│   │           ├── code/
-│   │           ├── environment/
-│   │           └── dependencies/
-│   │
-│   └── cache/                                     # Disposable or reproducible intermediate material never treated as scientific evidence.
-│       ├── preprocessing/
-│       ├── models/
-│       ├── evaluation/
-│       ├── analysis/                              # Bootstrap draws and other heavy statistical intermediates remain here.
-│       └── staging/                               # Atomic-write staging area; incomplete content is never reusable.
-│
-├── results/                                       # Compact verified manuscript-facing evidence; never consumed by scientific execution.
-│   │
-│   ├── experiments/
-│   │   └── <descriptive-experiment-name>/         # Placeholder for verified exports from one completed scientific workflow.
-│   │       ├── figures/
-│   │       │   ├── main/
-│   │       │   └── supplementary/
-│   │       │
-│   │       ├── tables/
-│   │       │   ├── main/
-│   │       │   └── supplementary/
-│   │       │
-│   │       ├── metrics/
-│   │       │   ├── primary/
-│   │       │   ├── secondary/
-│   │       │   └── summary/
-│   │       │
-│   │       └── statistics/
-│   │           ├── tests/
-│   │           ├── confidence_intervals/
-│   │           ├── effects/
-│   │           └── multiplicity/
-│   │
-│   └── project_summary/                           # Cross-workflow manuscript evidence and compact reproducibility information.
-│       ├── figures/
-│       │   ├── main/
-│       │   └── supplementary/
-│       │
-│       ├── tables/
-│       │   ├── main/
-│       │   └── supplementary/
-│       │
-│       ├── metrics/
-│       │   ├── primary/
-│       │   └── summary/
-│       │
-│       ├── statistics/
-│       │   ├── comparisons/
-│       │   ├── confidence_intervals/
-│       │   ├── effects/
-│       │   └── multiplicity/
-│       │
-│       └── reproducibility/
-│           ├── configuration/
-│           ├── datasets/
-│           ├── seeds/
-│           ├── software/
-│           └── execution/
-│               └── evidence_index.json            # Generated compact index linking manuscript evidence to verified output artifact identities.
-│
+FedACT/
+├── configs/
+│   ├── fedact.yaml                         # Authoritative production configuration.
+│   └── smoke.yaml                          # Scale-reduced smoke overlay.
 ├── docs/
-│   └── Roadmap.md                                 # Authoritative FedACT scientific and execution roadmap tracked with the implementation.
-│
+│   └── Roadmap.md                          # Authoritative scientific and execution roadmap.
 ├── src/
 │   └── fedact/
-│       │
-│       ├── __init__.py                            # FedACT package identity and public package metadata.
-│       │
-│       ├── app.py                                 # Composition root wiring configuration, workspace layout, runtime planning, scientific workflows, and reporting.
-│       │
-│       ├── domain/                                # Shared strongly typed scientific vocabulary.
-│       │   ├── __init__.py                        # Exposes stable domain types without leaking implementation details.
-│       │   ├── enums.py                           # Dataset, workflow, action-state, abstention, outcome, and failure enums.
-│       │   └── records.py                         # Typed scientific identities and records shared across package boundaries.
-│       │
-│       ├── config/                                # Loading and validation of the locked configuration data.
-│       │   ├── __init__.py                        # Exposes configuration loading and validated configuration types.
-│       │   ├── models.py                          # Typed models for fedact.yaml, tests.yml, and smoke.yml configuration data.
-│       │   ├── loading.py                         # Loads configuration, computes configuration hashes, and resolves test/smoke overlays.
-│       │   └── validation.py                      # Enforces configuration schema, locked ranges, cross-field constraints, and YAML discipline.
-│       │
-│       ├── datasets/                              # Canonical data preparation, chronology, splitting, and corpus-specific semantics.
-│       │   ├── __init__.py                        # Exposes supported dataset identities and common dataset contracts.
-│       │   ├── records.py                         # Canonical sample, cutoff, split, client, cohort, and eligibility records.
-│       │   ├── chronology.py                      # Rolling cutoffs, historical windows, transition windows, and leakage-safe temporal boundaries.
-│       │   ├── splits.py                          # Cutoff-safe train/validation/test construction and support eligibility logic.
-│       │   ├── validation.py                      # Shared chronology, support, control, client-semantics, and operator audit orchestration.
-│       │   │
-│       │   ├── synthetic/
-│       │   │   ├── __init__.py                    # Exposes the known-truth synthetic dataset generator.
-│       │   │   ├── generator.py                   # Generates locked FedACT observation-model components and known ground truth.
-│       │   │   ├── geometry.py                    # Constructs redundant/complementary nuisance spaces, nullspaces, and controlled action geometry.
-│       │   │   └── validation.py                  # Validates orthogonality, intersections, deterministic replay, and generator invariants.
-│       │   │
-│       │   ├── lamda/
-│       │   │   ├── __init__.py                    # Exposes LAMDA acquisition/preparation semantics to the common dataset layer.
-│       │   │   ├── loader.py                      # Discovers and parses the pinned LAMDA release and authoritative source fields.
-│       │   │   ├── preprocessing.py               # Applies LAMDA variance filtering and cutoff-fitted standardization.
-│       │   │   ├── semantics.py                   # Defines LAMDA labels, chronology, family cohorts, temporal clients, and benign control matching.
-│       │   │   └── validation.py                  # Validates LAMDA schema, timestamps, labels, feature basis, support, and observed metadata.
-│       │   │
-│       │   └── ember2024/
-│       │       ├── __init__.py                    # Exposes EMBER2024 acquisition/preparation semantics to the common dataset layer.
-│       │       ├── loader.py                      # Discovers and parses the pinned EMBER2024 Win32/Win64 study subset.
-│       │       ├── preprocessing.py               # Applies count-feature log1p transforms and cutoff-fitted standardization.
-│       │       ├── semantics.py                   # Defines EMBER2024 chronology, family cohorts, Win32/Win64 clients, and control strata.
-│       │       └── validation.py                  # Validates EMBER2024 schema, formats, timestamps, tags, support, and observed metadata.
-│       │
-│       ├── models/                                # Locked FedACT representation and detector architectures.
-│       │   ├── __init__.py                        # Exposes the representation encoder and detector model constructors.
-│       │   ├── representation.py                  # Implements the fixed 512→256→64 tabular MLP representation architecture.
-│       │   └── detector.py                        # Implements the fixed linear sigmoid detector over cutoff-fixed 64-dimensional embeddings.
-│       │
-│       ├── training/                              # Training procedures distinct from FedACT transition identification.
-│       │   ├── __init__.py                        # Exposes cutoff-safe model fitting and hardening entry points.
-│       │   ├── representation.py                  # Trains and selects cutoff-safe representation checkpoints using locked validation semantics.
-│       │   ├── detector.py                        # Trains the base detector against the exact cutoff-fixed representation checkpoint.
-│       │   ├── federated.py                       # Implements ordinary federated detector training used only where the roadmap requires it.
-│       │   └── hardening.py                       # Performs FedACT certified-action hardening before later-real evaluation.
-│       │
-│       ├── scoring/                               # Cutoff-fixed inference products reusable across compatible scientific workflows.
-│       │   ├── __init__.py                        # Exposes deterministic encoding and detector-scoring operations.
-│       │   ├── encoding.py                        # Materializes cutoff-fixed representation embeddings for cutoff-safe sample populations.
-│       │   ├── detector.py                        # Computes detector scores and predictions from immutable checkpoints and sample identities.
-│       │   └── validation.py                      # Checks score completeness, checkpoint/sample identity, determinism, and leakage invariants.
-│       │
-│       ├── operators/                             # Domain-valid problem-space actions and their validity contracts.
-│       │   ├── __init__.py                        # Exposes the dataset-specific operator libraries.
-│       │   ├── common.py                          # Shared operator records, composition limits, displacement construction, and zero-displacement rejection.
-│       │   ├── lamda.py                           # Implements the locked APK benign-gadget and permission-neutral resource operators.
-│       │   ├── ember2024.py                       # Implements the locked PE mutation families using the pinned PE toolchain.
-│       │   └── validation.py                      # Enforces format, executability, maliciousness, behavioral-equivalence, coverage, and provenance rules.
-│       │
-│       ├── core/                                  # Scientific core of Federated Action-Certified Threat Dynamics.
-│       │   ├── __init__.py                        # Exposes FedACT scientific primitives without exposing experiment orchestration.
-│       │   ├── transitions.py                     # Computes cutoff-safe malicious transition summaries from cutoff-fixed representations.
-│       │   ├── controls.py                        # Builds matched benign control transitions and held-out control-quality diagnostics.
-│       │   ├── nuisance.py                        # Estimates nuisance covariance, rank, eigengaps, low-rank bases, and projection operations.
-│       │   ├── uncertainty.py                     # Computes sampling, subspace, control-span, private-transition, and plausibility uncertainty components.
-│       │   ├── constraints.py                     # Builds, validates, and transmits client constraint summaries and quality-gate outcomes.
-│       │   ├── feasible_sets.py                   # Constructs historical compatible sets, plausibility intersections, centers, and infeasibility diagnostics.
-│       │   ├── solver.py                          # Solves support and feasibility problems under the locked numerical contract.
-│       │   ├── temporal.py                        # Fits stable low-capacity temporal dynamics and propagates prospective feasible sets.
-│       │   ├── actions.py                         # Computes normalized operator displacements, action support intervals, and action-conditioning quantities.
-│       │   ├── certification.py                   # Applies positive/negative/ambiguous states, certificates, stability gates, challenge selection, and abstention.
-│       │   └── client_selection.py                # Implements the optional equal-budget action-interval-contraction client-selection objective.
-│       │
-│       ├── calibration/                           # Nested pre-cutoff scientific calibration only.
-│       │   ├── __init__.py                        # Exposes nested calibration results and validated selection operations.
-│       │   ├── nested.py                          # Creates inner pseudo-futures and evaluates only cutoff-safe calibration candidates.
-│       │   ├── selection.py                       # Applies the locked calibration objective hierarchy and deterministic tie-breaking rules.
-│       │   └── validation.py                      # Validates calibration temporal isolation, candidate completeness, and failure semantics.
-│       │
-│       ├── baselines/                             # Required comparator implementations and parity validation.
-│       │   ├── __init__.py                        # Exposes only roadmap-approved baseline families and parity checks.
-│       │   ├── identification.py                  # Implements subtraction, projection, point reconstruction, covariance-weighted, and generic uncertainty comparators.
-│       │   ├── security.py                        # Implements static, temporal, generative, random-mutation, hardening, and reactive security comparators.
-│       │   ├── federation.py                      # Implements centralized, local-only, ordinary-federated, redundant, and complementary comparator conditions.
-│       │   └── parity.py                          # Verifies chronology, information budget, capacity, tuning, action-count, and implementation parity before use.
-│       │
-│       ├── experiments/                           # Roadmap-defined scientific workflow ownership and manipulations.
-│       │   ├── __init__.py                        # Exposes the locked workflow registry, dependency order, contracts, and preprocess ownership.
-│       │   ├── math_verification.py               # Implements exact-set, identifiability, support-bound, monotonicity, solver, degeneracy, and infeasibility verification.
-│       │   ├── synthetic_geometry.py              # Implements the full locked known-truth geometry, uncertainty, sample-size, conditioning, and failure sweeps.
-│       │   ├── action_certificate_validation.py   # Implements later-real comparison of certified, ambiguous, negative, and matched-random valid actions.
-│       │   ├── prospective_evaluation.py          # Implements the locked rolling-cutoff FedACT hardening and prospective baseline evaluation.
-│       │   ├── ablations.py                       # Implements all novelty-critical control, set, uncertainty, temporal, action, width-gate, and hardening ablations.
-│       │   ├── federation.py                      # Implements local/federated, redundant/complementary, centralized-equivalence, and geometry-control experiments.
-│       │   ├── failure_boundaries.py              # Implements sparse-control, eigengap, contamination, synchronized-nuisance, geometry, horizon, and corruption boundaries.
-│       │   ├── cross_corpus.py                    # Applies unchanged FedACT scientific semantics to the locked EMBER2024 generalization study.
-│       │   ├── client_selection.py                # Implements the optional communication-limited equal-budget client-selection study.
-│       │   └── statistical_synthesis.py           # Executes the locked confirmatory contrast, multiplicity, and sensitivity synthesis over verified experiment evidence.
-│       │
-│       ├── evaluation/                            # Full-precision scientific outcome construction before statistical synthesis.
-│       │   ├── __init__.py                        # Exposes evaluation records, metrics, and validation functions.
-│       │   ├── records.py                         # Typed per-dataset/cutoff/cohort/client/action/horizon/seed evaluation records and missingness classifications.
-│       │   ├── metrics.py                         # Implements all locked coverage, certification, predictive, geometry, clean-cost, and communication metrics.
-│       │   ├── later_real.py                      # Constructs the cutoff-safe later-real transition proxy and prospective action-alignment outcomes.
-│       │   ├── exposure.py                        # Computes early-horizon FNR, cumulative pre-adaptation exposure, and time-to-catch-up.
-│       │   └── validation.py                      # Rejects invalid denominators, incomplete populations, leakage, mismatched pairing, and malformed metric outputs.
-│       │
-│       ├── analysis/                              # Statistical inference and sensitivity over verified evaluations.
-│       │   ├── __init__.py                        # Exposes locked statistical analysis operations.
-│       │   ├── statistics.py                      # Implements cutoff-clustered BCa bootstrap, Wilcoxon tests, rank-biserial effects, quantiles, and BH correction.
-│       │   ├── comparisons.py                     # Builds prespecified paired confirmatory contrasts and effect-direction classification.
-│       │   └── sensitivity.py                     # Computes the locked rho, xi, radius, threshold, horizon, rank, coverage, and geometry sensitivity surfaces.
-│       │
-│       ├── storage/                               # Simple workspace path resolution, checksums, checkpoints, and workflow result records.
-│       │   ├── __init__.py                        # Exposes storage services to producers and runtime code.
-│       │   ├── paths.py                           # Resolves the configured outputs/results directory layout.
-│       │   ├── metadata.py                        # Deterministic hashing and material dependency fingerprints.
-│       │   ├── checkpoints.py                     # Atomic payload writes and checksum-verified checkpoint bytes.
-│       │   ├── results.py                         # Typed per-workflow result records and their JSON persistence.
-│       │   └── index.py                           # In-memory artifact dependency index for reuse/recompute decisions.
-│       │
-│       ├── runtime/                               # Deterministic execution planning and recovery services.
-│       │   ├── __init__.py                        # Exposes seeding, planning, status, and runner services.
-│       │   ├── seeding.py                         # Applies seed streams and deterministic/repeatability rules without conflating conceptual randomness.
-│       │   ├── planning.py                        # Resolves workflows into executable plans, dependencies, and blocked work.
-│       │   ├── status.py                          # Tracks workflow/artifact execution states and recorded scientific outcomes.
-│       │   └── runner.py                          # Executes reuse→invalidate→recompute semantics and scoped overwrite decisions.
-│       │
-│       ├── reporting/                             # Pure export layer from verified outputs into compact manuscript-facing results.
-│       │   ├── __init__.py                        # Exposes verified reporting/export operations only.
-│       │   ├── tables.py                          # Renders locked main/supplementary scientific tables from verified full-precision analysis artifacts.
-│       │   ├── figures.py                         # Renders locked main/supplementary figures without altering scientific calculations.
-│       │   └── export.py                          # Writes compact verified metrics/statistics/reproducibility evidence into results/ without recomputation.
-│       │
-│       └── cli/
-│           ├── __init__.py                        # Exposes the FedACT command-line application.
-│           ├── main.py                            # Defines the Typer CLI and registers only roadmap-authorized public commands.
-│           └── commands/
-│               ├── __init__.py                    # Collects public command handlers without compatibility aliases.
-│               ├── doctor.py                      # Implements read-only readiness, configuration, and next-action inspection.
-│               ├── preprocess.py                  # Runs dataset preparation, cutoff/split construction, preprocessing, and real-data audits.
-│               ├── plan.py                        # Displays the dependency-resolved scientific plan and blocked work.
-│               ├── smoke.py                       # Runs the synthetic generator smoke-validation workflow and scoped overwrite behavior.
-│               ├── run.py                         # Executes one predefined scientific workflow with dependency-aware resume and reuse.
-│               ├── status.py                      # Reports workflow progress, recorded outcomes, and resume location.
-│               └── report.py                      # Exports verified manuscript evidence without retraining, rescoring, recalibration, or reanalysis.
-│
-└── tests/
-    ├── conftest.py
-    │
-    ├── architecture/
-    │   ├── test_dependency_boundaries.py
-    │   │   — Enforces allowed dependency directions between architectural layers and prevents architectural responsibility violations.
-    │   │
-    │   ├── test_public_type_boundaries.py
-    │   │   — Ensures public, domain, and application APIs use explicit meaningful types rather than loosely typed interfaces or inappropriate raw primitives.
-    │   │
-    │   ├── test_no_any_dict_object.py
-    │   │   — Rejects inappropriate use of Any, object, and anonymous dict-based domain/configuration payloads, except narrowly justified external-library boundaries.
-    │   │
-    │   ├── test_no_primitive_leaks.py
-    │   │   — Detects inappropriate str/int/float/bool/list/dict primitives crossing domain or architectural boundaries, including primitive public inputs and outputs where meaningful domain types should be used.
-    │   │
-    │   ├── test_no_hardcoded_values.py
-    │   │   — Detects hardcoded scientific, experimental, statistical, dataset, seed, threshold, algorithm, protocol, and other governed values outside their authoritative owner.
-    │   │
-    │   ├── test_configuration_ownership.py
-    │   │   — Ensures configuration values have one authoritative owner and are not repeated or copied into constants, implementation code, CLI defaults, tests, or parallel configuration structures.
-    │   │
-    │   ├── test_no_duplicate_constants.py
-    │   │   — Detects duplicate constants and equivalent independently maintained values across the repository.
-    │   │
-    │   ├── test_dead_code.py
-    │   │   — Detects dead, unused, unreachable, obsolete, and superseded production modules, classes, functions, methods, constants, and other symbols.
-    │   │
-    │   ├── test_enum_integrity.py
-    │   │   — Detects unused enums and ensures authoritative enums are actually used rather than being bypassed by equivalent free-form strings or duplicate identities.
-    │   │
-    │   ├── test_no_test_only_production_code.py
-    │   │   — Detects production code that exists or is referenced only for tests and has no legitimate production use.
-    │   │
-    │   ├── test_no_redirects_shims_reexports.py
-    │   │   — Rejects obsolete redirect modules, compatibility shims, legacy aliases, transitional wrappers, and unnecessary re-export-only modules.
-    │   │
-    │   ├── test_naming_policy.py
-    │   │   — Enforces descriptive names for modules, classes, functions, methods, variables, and parameters; rejects vague, generic, strange, misleading, or unjustifiably short names and abbreviations.
-    │   │
-    │   ├── test_canonical_vocabulary.py
-    │   │   — Enforces canonical project, scientific, algorithm, dataset, policy, experiment, and architectural terminology and rejects stale aliases, obsolete terminology, opaque names, and artificial version naming.
-    │   │
-    │   ├── test_no_comments_or_docstrings.py
-    │   │   — Rejects Python source comments and module/class/function/method docstrings.
-    │   │
-    │   ├── test_no_todos_or_temporary_code.py
-    │   │   — Rejects TODO, FIXME, HACK, XXX, commented-out implementations, temporary markers, unfinished code residue, and similar development leftovers.
-    │   │
-    │   ├── test_static_typing.py
-    │   │   — Runs repository-wide strict Pyright across production and tests so Pyright/Pylance-visible typing violations fail the test suite.
-    │   │
-    │   ├── test_code_quality.py
-    │   │   — Enforces Ruff formatting and linting so unformatted or lint-invalid Python code cannot remain in the repository.
-    │   │
-    │   └── test_dependency_hygiene.py
-    │       — Enforces dependency hygiene and detects unused, missing, or incorrectly declared dependencies.
-    │
-    ├── unit/
-    │   ├── domain/
-    │   │   ├── test_enums.py
-    │   │   └── test_records.py
-    │   │
-    │   ├── config/
-    │   │   ├── test_models.py
-    │   │   ├── test_loading.py
-    │   │   └── test_validation.py
-    │   │
-    │   ├── datasets/
-    │   │   ├── test_chronology.py
-    │   │   ├── test_splits.py
-    │   │   ├── test_synthetic.py
-    │   │   ├── test_lamda.py
-    │   │   └── test_ember2024.py
-    │   │
-    │   ├── models/
-    │   │   ├── test_representation.py
-    │   │   └── test_detector.py
-    │   │
-    │   ├── training/
-    │   │   ├── test_representation_training.py
-    │   │   ├── test_detector_training.py
-    │   │   ├── test_federated_training.py
-    │   │   └── test_hardening.py
-    │   │
-    │   ├── scoring/
-    │   │   ├── test_encoding.py
-    │   │   ├── test_detector_scoring.py
-    │   │   └── test_validation.py
-    │   │
-    │   ├── operators/
-    │   │   ├── test_common.py
-    │   │   ├── test_lamda.py
-    │   │   ├── test_ember2024.py
-    │   │   └── test_validation.py
-    │   │
-    │   ├── core/
-    │   │   ├── test_transitions.py
-    │   │   ├── test_controls.py
-    │   │   ├── test_nuisance.py
-    │   │   ├── test_uncertainty.py
-    │   │   ├── test_constraints.py
-    │   │   ├── test_feasible_sets.py
-    │   │   ├── test_solver.py
-    │   │   ├── test_temporal.py
-    │   │   ├── test_actions.py
-    │   │   ├── test_certification.py
-    │   │   └── test_client_selection.py
-    │   │
-    │   ├── calibration/
-    │   │   ├── test_nested.py
-    │   │   ├── test_selection.py
-    │   │   └── test_validation.py
-    │   │
-    │   ├── baselines/
-    │   │   ├── test_identification.py
-    │   │   ├── test_security.py
-    │   │   ├── test_federation.py
-    │   │   └── test_parity.py
-    │   │
-    │   ├── experiments/
-    │   │   ├── test_registry.py
-    │   │   ├── test_definitions.py
-    │   │   ├── test_dependencies.py
-    │   │   ├── test_math_verification.py
-    │   │   ├── test_synthetic_geometry.py
-    │   │   ├── test_action_certificate_validation.py
-    │   │   ├── test_prospective_evaluation.py
-    │   │   ├── test_ablations.py
-    │   │   ├── test_federation.py
-    │   │   ├── test_failure_boundaries.py
-    │   │   ├── test_cross_corpus.py
-    │   │   ├── test_client_selection.py
-    │   │   ├── test_nested_calibration.py
-    │   │   └── test_statistical_synthesis.py
-    │   │
-    │   ├── evaluation/
-    │   │   ├── test_records.py
-    │   │   ├── test_metrics.py
-    │   │   ├── test_later_real.py
-    │   │   ├── test_exposure.py
-    │   │   └── test_validation.py
-    │   │
-    │   ├── analysis/
-    │   │   ├── test_statistics.py
-    │   │   ├── test_comparisons.py
-    │   │   └── test_sensitivity.py
-    │   │
-    │   ├── storage/
-    │   │   ├── test_paths.py
-    │   │   ├── test_metadata.py
-    │   │   └── test_results.py
-    │   │
-    │   ├── runtime/
-    │   │   ├── test_seeding.py
-    │   │   ├── test_planning.py
-    │   │   ├── test_status.py
-    │   │   └── test_runner.py
-    │   │
-    │   ├── reporting/
-    │   │   ├── test_tables.py
-    │   │   ├── test_figures.py
-    │   │   └── test_export.py
-    │   │
-    │   └── cli/
-    │       ├── test_doctor.py
-    │       ├── test_preprocess_command.py
-    │       ├── test_plan.py
-    │       ├── test_smoke.py
-    │       ├── test_run.py
-    │       ├── test_status.py
-    │       └── test_report.py
-    │
-    ├── scientific/
-    │   ├── test_chronological_information_boundary.py
-    │   ├── test_control_quality_contracts.py
-    │   ├── test_feasible_set_contracts.py
-    │   ├── test_functional_identifiability_contracts.py
-    │   ├── test_action_certificate_contracts.py
-    │   ├── test_abstention_and_failure_semantics.py
-    │   ├── test_statistical_inference_contracts.py
-    │   ├── test_baseline_fairness.py
-    │   └── test_claim_boundaries.py
-    │
-    ├── integration/
-    │   ├── datasets/
-    │   │   ├── test_lamda_pipeline.py
-    │   │   ├── test_ember2024_pipeline.py
-    │   │   └── test_synthetic_pipeline.py
-    │   │
-    │   ├── training/
-    │   │   ├── test_representation_detector_pipeline.py
-    │   │   └── test_federated_training_pipeline.py
-    │   │
-    │   ├── core/
-    │   │   ├── test_controls_to_constraints.py
-    │   │   ├── test_constraints_to_certificates.py
-    │   │   └── test_certificates_to_hardening.py
-    │   │
-    │   ├── execution/
-    │   │   ├── test_dependency_resolution.py
-    │   │   └── test_resume_and_invalidation.py
-    │   │
-    │   ├── artifacts/
-    │   │   ├── test_artifact_lifecycle.py
-    │   │   └── test_provenance_round_trip.py
-    │   │
-    │   └── reporting/
-    │       ├── test_verified_export.py
-    │       └── test_results_never_feed_execution.py
-    │
-    ├── e2e/
-    │   ├── test_doctor_preprocess_plan.py
-    │   ├── test_smoke_and_math_verification.py
-    │   ├── test_run_status_report.py
-    │   └── test_reuse_and_recovery.py
-    │
-    └── smoke/
-        └── test_smoke.py
+│       ├── __init__.py
+│       ├── cli.py                          # Thin Typer command declarations and dispatch.
+│       ├── workflow.py                     # doctor, preprocess, plan, smoke, run, status, report orchestration.
+│       ├── artifacts.py                    # Authoritative paths, persistence, metadata, indexes, and checkpoints.
+│       ├── domain/
+│       │   ├── __init__.py
+│       │   ├── types.py                    # Domain enums, identifiers, constrained values, and scalar types.
+│       │   └── records.py                  # Shared typed domain records.
+│       ├── config/
+│       │   ├── __init__.py
+│       │   ├── models.py                   # Validated scientific and runtime configuration.
+│       │   └── loading.py                  # Configuration loading, merging, and hashes.
+│       ├── data/
+│       │   ├── __init__.py
+│       │   ├── records.py
+│       │   ├── splits.py
+│       │   ├── ember2024.py                # EMBER2024 loading, transforms, validation, metadata, and PE preparation.
+│       │   ├── lamda.py                    # LAMDA loading, transforms, validation, metadata, and preparation.
+│       │   └── synthetic.py                # Synthetic generation and geometry validation.
+│       ├── learning/
+│       │   ├── __init__.py
+│       │   ├── detector.py
+│       │   ├── representation.py
+│       │   ├── federation.py
+│       │   ├── hardening.py
+│       │   └── scoring.py
+│       ├── certification/
+│       │   ├── __init__.py
+│       │   ├── actions.py
+│       │   ├── calibration.py
+│       │   ├── certificate.py
+│       │   ├── dynamics.py
+│       │   ├── selection.py
+│       │   └── uncertainty.py
+│       ├── experiments/
+│       │   ├── __init__.py                 # Package marker only.
+│       │   ├── registry.py                 # Single authoritative experiment registry.
+│       │   ├── baselines.py
+│       │   ├── verification.py
+│       │   ├── validation.py
+│       │   ├── robustness.py
+│       │   ├── generalization.py
+│       │   └── synthesis.py
+│       └── analysis/
+│           ├── __init__.py
+│           ├── metrics.py
+│           ├── statistics.py
+│           ├── comparisons.py
+│           └── reporting.py                # Figures, tables, exports, and report construction.
+├── tests/
+│   ├── conftest.py
+│   ├── architecture/                        # Architecture, typing, import, configuration, and artifact ownership checks.
+│   ├── unit/
+│   ├── integration/                         # Includes smoke and end-to-end behavior.
+│   └── scientific/
+├── .gitignore
+├── LICENSE
+├── README.md
+├── Makefile
+├── pyproject.toml
+└── uv.lock
 ```
 
-`configs/` is version-controlled. `configs/fedact.yaml` is the single authoritative production scientific configuration whose complete contents are reproduced in the Configuration YAML section of this roadmap. `configs/tests.yml` and `configs/smoke.yml` are execution-only configurations for deterministic tests and smoke validation; they do not redefine production scientific parameters or workflow semantics.
+`outputs/` is Git-ignored regenerable computational workspace; `results/` is compact verified manuscript-facing evidence and is never a scientific execution input. `artifacts.py` is the sole code-level authority for their paths, names, persistence, metadata, indexes, and checkpoint handling. Raw datasets are configured external inputs, never a committed project-specific symlink.
 
-The resolved authoritative production configuration produces the `configuration_hash` used for whole-run configuration-lock verification. A change to a configuration item invalidates only artifacts whose material dependency fingerprint captures that item; unrelated configuration changes do not invalidate unaffected artifacts.
+The dependency direction is `domain` → `config`/`data`/`learning` → `certification` → `experiments` → `analysis`; `workflow.py` composes those layers and `cli.py` only invokes workflows. Lower scientific layers never depend on experiments, analysis, workflow, or CLI.
 
-`data/raw` is the immutable symlink to `/external/datasets`; FedACT never writes to raw source data.
-
-`tests/` verifies implementation correctness. It does not replace mathematical/numerical scientific verification or synthetic smoke validation.
-
-`outputs/` is Git-ignored regenerable computational working state. Shared reusable artifacts live under `outputs/artifacts/`; workflow-owned execution state lives under `outputs/experiments/<descriptive-experiment-name>/`; disposable intermediates live under `outputs/cache/`.
-
-`results/` contains compact verified manuscript-facing evidence only and is never consumed by scientific execution. Workflow exports live under `results/experiments/<descriptive-experiment-name>/`, while cross-workflow evidence and reproducibility information live under `results/project_summary/`.
-
-`docs/Roadmap.md` is the authoritative roadmap tracked with the implementation.
+The Makefile and uv provide the project toolchain; Nox is not part of the repository.
 
 ---
 

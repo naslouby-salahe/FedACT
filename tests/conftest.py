@@ -7,7 +7,7 @@ from typing import cast
 import pytest
 import yaml
 
-from fedact.app import Application
+from fedact.workflow import Application
 from fedact.config.loading import LoadedConfiguration, load_production_configuration
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]

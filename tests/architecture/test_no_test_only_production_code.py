@@ -55,7 +55,7 @@ def unreachable_production_module_violations(repository_root: Path) -> list[str]
 
     violations: list[str] = []
     for module, path in sorted(package_modules.items()):
-        if module in {"fedact", "fedact.cli.main", "fedact.app"}:
+        if module in {"fedact", "fedact.cli", "fedact.workflow"}:
             continue
         producers = production_imports.get(module, set()) - {module}
         referenced_by_child = any(
@@ -114,7 +114,7 @@ def test_test_only_rule_accepts_module_imported_from_production(tmp_path: Path) 
     package.mkdir(parents=True)
     (package / "__init__.py").write_text("from fedact.used import VALUE\n", encoding="utf-8")
     (package / "used.py").write_text("VALUE = 1\n", encoding="utf-8")
-    (package / "app.py").write_text("from fedact.used import VALUE\n", encoding="utf-8")
+    (package / "workflow.py").write_text("from fedact.used import VALUE\n", encoding="utf-8")
     tests = tmp_path / "tests"
     tests.mkdir()
     assert unreachable_production_module_violations(tmp_path) == []

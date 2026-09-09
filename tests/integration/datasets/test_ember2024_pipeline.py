@@ -6,12 +6,12 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from fedact.datasets.ember2024.loader import (
+from fedact.data.ember2024 import (
     LoadedEmberDataset,
     ember2024_count_feature_mask,
     load_ember2024_records,
 )
-from fedact.datasets.ember2024.preprocessing import (
+from fedact.data.ember2024 import (
     apply_log1p_transforms,
     standardize_ember_features,
 )

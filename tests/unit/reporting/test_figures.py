@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fedact.reporting.figures import generate_prospective_metrics_figure
+from fedact.analysis.reporting import generate_prospective_metrics_figure
 
 
 def test_generate_prospective_metrics_figure(tmp_path: Path) -> None:

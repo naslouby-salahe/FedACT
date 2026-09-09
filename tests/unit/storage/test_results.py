@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fedact.domain.enums import ExecutableWorkflowName, ScientificOutcome
-from fedact.storage.results import (
+from fedact.domain.types import ExecutableWorkflowName, ScientificOutcome
+from fedact.artifacts import (
     WorkflowResultRecord,
     read_workflow_result,
     write_workflow_result,

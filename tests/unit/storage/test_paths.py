@@ -4,7 +4,7 @@ from pathlib import Path
 
 from fedact.config.loading import load_production_configuration
 from fedact.domain.types import ExperimentName
-from fedact.storage.paths import WorkspaceLayout
+from fedact.artifacts import WorkspaceLayout
 
 
 def layout(repository_root: Path) -> WorkspaceLayout:

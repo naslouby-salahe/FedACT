@@ -4,12 +4,12 @@ from pathlib import Path
 
 import numpy as np
 
-from fedact.datasets.ember2024.loader import ember2024_count_feature_mask, load_ember2024_records
-from fedact.datasets.ember2024.preprocessing import (
+from fedact.data.ember2024 import ember2024_count_feature_mask, load_ember2024_records
+from fedact.data.ember2024 import (
     apply_log1p_transforms,
     standardize_ember_features,
 )
-from fedact.datasets.ember2024.validation import validate_ember_dataset
+from fedact.data.ember2024 import validate_ember_dataset
 
 
 def test_ember2024_dataset_pipeline_on_empty_directory(tmp_path: Path) -> None:

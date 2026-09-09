@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from fedact.core.constraints import ClientConstraintSummary, validate_summary
-from fedact.core.controls import build_control_displacement
+from fedact.certification.certificate import ClientConstraintSummary, validate_summary
+from fedact.certification.dynamics import build_control_displacement
 from fedact.domain.types import ClientIdentifier
 
 

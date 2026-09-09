@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fedact.calibration.nested import (
+from fedact.certification.calibration import (
     HardeningWeightDegradation,
     HardeningWeightDegradations,
     generate_calibration_candidates,

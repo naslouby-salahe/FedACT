@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from fedact.baselines.parity import (
+from fedact.experiments.baselines import (
     BaselineParityViolationError,
     verify_chronology_and_budget_parity,
 )

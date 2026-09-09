@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from fedact.calibration.nested import CalibrationCandidate
-from fedact.calibration.selection import select_best_calibration_candidate
+from fedact.certification.calibration import CalibrationCandidate
+from fedact.certification.calibration import select_best_calibration_candidate
 
 
 def test_select_best_calibration_candidate() -> None:

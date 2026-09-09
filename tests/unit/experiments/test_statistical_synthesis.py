@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from fedact.app import Application
-from fedact.domain.enums import ScientificOutcome
-from fedact.experiments.statistical_synthesis import run_statistical_synthesis
+from fedact.workflow import Application
+from fedact.domain.types import ScientificOutcome
+from fedact.experiments.synthesis import run_statistical_synthesis
 
 
 def test_run_statistical_synthesis(application: Application) -> None:

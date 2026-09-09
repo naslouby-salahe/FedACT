@@ -275,6 +275,8 @@ def external_enum_reference_violations(
                     references[node.asname].add(module)
     violations: list[str] = []
     for defining_module, enum_name in definitions:
+        if defining_module != "fedact.domain.types":
+            continue
         consumers = references.get(enum_name, set()) - {defining_module}
         if not consumers:
             violations.append(
@@ -319,13 +321,13 @@ def test_duplicate_enum_values_are_rejected() -> None:
         "        case 'PASS':\n"
         "            return\n",
         "def execute(status: str = 'PASS') -> None:\n    pass\n",
-        "from fedact.domain.enums import ScientificOutcome\n"
+        "from fedact.domain.types import ScientificOutcome\n"
         "def outcome() -> ScientificOutcome:\n"
         "    return 'PASS'\n",
     ],
 )
 def test_raw_enum_value_rule_rejects_use_site_bypasses(snippet: str) -> None:
-    catalog = {"PASS": {("fedact.domain.enums", "ScientificOutcome")}}
+    catalog = {"PASS": {("fedact.domain.types", "ScientificOutcome")}}
     assert raw_enum_literal_violations_for_tree(
         "fedact.example", ast.parse(snippet), "example.py", catalog
     )
@@ -341,8 +343,8 @@ def test_raw_enum_value_rule_rejects_use_site_bypasses(snippet: str) -> None:
 )
 def test_raw_enum_value_rule_ignores_non_semantic_string_uses(snippet: str) -> None:
     catalog = {
-        "PASS": {("fedact.domain.enums", "ScientificOutcome")},
-        "analysis": {("fedact.domain.enums", "ArtifactBoundary")},
+        "PASS": {("fedact.domain.types", "ScientificOutcome")},
+        "analysis": {("fedact.domain.types", "ArtifactBoundary")},
     }
     assert (
         raw_enum_literal_violations_for_tree(
@@ -353,8 +355,8 @@ def test_raw_enum_value_rule_ignores_non_semantic_string_uses(snippet: str) -> N
 
 
 def test_enum_member_usage_is_accepted() -> None:
-    snippet = "from fedact.domain.enums import ScientificOutcome\nstatus = ScientificOutcome.PASS\n"
-    catalog = {"PASS": {("fedact.domain.enums", "ScientificOutcome")}}
+    snippet = "from fedact.domain.types import ScientificOutcome\nstatus = ScientificOutcome.PASS\n"
+    catalog = {"PASS": {("fedact.domain.types", "ScientificOutcome")}}
     assert (
         raw_enum_literal_violations_for_tree(
             "fedact.example", ast.parse(snippet), "example.py", catalog

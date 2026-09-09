@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from fedact.core.transitions import (
+from fedact.certification.dynamics import (
     AbstentionReason,
     effective_support,
     geometric_median,
@@ -11,7 +11,7 @@ from fedact.core.transitions import (
     observed_nuisance_amplitude,
     weighted_control_center,
 )
-from fedact.domain.enums import ScientificAssumption, ScientificOutcome
+from fedact.domain.types import ScientificAssumption, ScientificOutcome
 from fedact.domain.records import (
     CONTROL_SPAN_VALIDITY_CONSEQUENCE,
     EXTENDED_ASSUMPTION_CONTRACTS,

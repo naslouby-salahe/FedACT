@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fedact.storage.metadata import (
+from fedact.artifacts import (
     MaterialDependency,
     compute_dependency_fingerprint,
     content_checksum,

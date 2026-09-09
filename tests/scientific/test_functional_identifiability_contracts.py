@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from fedact.experiments.math_verification import is_functionally_identifiable
+from fedact.experiments.verification import is_functionally_identifiable
 
 
 def test_functional_identifiability_contract_orthogonal_decomposition() -> None:

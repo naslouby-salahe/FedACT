@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import numpy as np
 
-from fedact.core.actions import action_support_bounds
-from fedact.core.certification import DomainValid, decide
-from fedact.domain.enums import CertificationStatus
+from fedact.certification.actions import action_support_bounds
+from fedact.certification.certificate import DomainValid, decide
+from fedact.domain.types import CertificationStatus
 
 
 def test_constraints_to_certificates_integration() -> None:

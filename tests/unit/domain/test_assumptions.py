@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from fedact.domain.enums import ScientificAssumption, ScientificOutcome
+from fedact.domain.types import ScientificAssumption, ScientificOutcome
 from fedact.domain.records import (
     CHRONOLOGY_CONSEQUENCE,
     CUTOFF_FIXED_REPRESENTATION_CONSEQUENCE,

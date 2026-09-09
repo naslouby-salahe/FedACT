@@ -2,13 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from fedact.domain.enums import (
-    ArtifactBoundary,
-    ScientificAssumption,
-    ScientificOutcome,
-    WorkflowName,
-)
 from fedact.domain.types import (
+    ArtifactBoundary,
     ArtifactName,
     ContentChecksum,
     DependencyFingerprint,
@@ -16,10 +11,13 @@ from fedact.domain.types import (
     MonthIndex,
     OperationalizationText,
     PassingFlag,
+    ScientificAssumption,
+    ScientificOutcome,
     SplitCutoffIdentity,
     UnitCount,
     ValidationFlag,
     WorkflowDescription,
+    WorkflowName,
 )
 
 

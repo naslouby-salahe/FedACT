@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from fedact.core.solver import SolverToleranceSettings, solve_support_bounds
+from fedact.certification.uncertainty import SolverToleranceSettings, solve_support_bounds
 
 SETTINGS = SolverToleranceSettings(
     relative_tolerance=1e-8,

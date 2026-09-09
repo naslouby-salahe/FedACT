@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from fedact.app import Application
-from fedact.domain.enums import ScientificOutcome
-from fedact.experiments.ablations import run_novelty_critical_ablations
+from fedact.workflow import Application
+from fedact.domain.types import ScientificOutcome
+from fedact.experiments.robustness import run_novelty_critical_ablations
 
 
 def test_run_novelty_critical_ablations(application: Application) -> None:

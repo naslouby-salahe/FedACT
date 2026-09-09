@@ -4,14 +4,14 @@ import torch
 
 from fedact.config.loading import LoadedConfiguration
 from fedact.domain.types import SampleIdentifier
-from fedact.models.detector import DetectorHead
-from fedact.models.representation import RepresentationEncoder
-from fedact.training.hardening import (
+from fedact.learning.detector import DetectorHead
+from fedact.learning.representation import RepresentationEncoder
+from fedact.learning.hardening import (
     SampleChallengeSet,
     clean_false_negative_rate,
     harden_detector_head,
 )
-from fedact.training.representation import TrainingObservation
+from fedact.learning.representation import TrainingObservation
 
 
 def test_harden_detector_head_runs_and_respects_clean_fnr_limit(

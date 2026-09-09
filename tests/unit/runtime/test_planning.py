@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from fedact.domain.enums import ExecutableWorkflowName as W
-from fedact.domain.enums import ScientificOutcome
-from fedact.runtime.planning import resolve_execution_plan
-from fedact.runtime.status import WorkflowExecutionState, WorkflowOutcomeRecord
+from fedact.domain.types import ExecutableWorkflowName as W
+from fedact.domain.types import ScientificOutcome
+from fedact.workflow import resolve_execution_plan
+from fedact.workflow import WorkflowExecutionState, WorkflowOutcomeRecord
 
 
 def _passed(*workflows: W) -> tuple[WorkflowOutcomeRecord, ...]:

@@ -17,12 +17,12 @@ from tests.architecture.architecture_rules import (
 BOUNDARY_MODULES = frozenset(
     {
         "fedact.cli",
-        "fedact.operators",
-        "fedact.reporting",
+        "fedact.data.ember2024",
+        "fedact.analysis.reporting",
         "fedact.config.loading",
-        "fedact.storage.results",
-        "fedact.storage.metadata",
-        "fedact.storage.checkpoints",
+        "fedact.artifacts",
+        "fedact.artifacts",
+        "fedact.artifacts",
     }
 )
 
@@ -84,7 +84,7 @@ def internal_enum_value_violations(repository_root: Path) -> list[str]:
 
 def snippet_violations(snippet: str) -> list[str]:
     return internal_enum_value_violations_for_tree(
-        "fedact.core.example", "example.py", ast.parse(snippet)
+        "fedact.certification.example", "example.py", ast.parse(snippet)
     )
 
 

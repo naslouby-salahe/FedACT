@@ -1,0 +1,270 @@
+from __future__ import annotations
+
+from collections.abc import Sequence
+from dataclasses import dataclass
+from enum import StrEnum
+
+import numpy as np
+import torch
+
+from fedact.domain.types import (
+    CoordinateValue,
+    GateComplianceFlag,
+    MetricRate,
+    NormValue,
+    ReplicateIndex,
+    SampleCount,
+    ThresholdValue,
+)
+
+@dataclass(frozen=True)
+class ControlReplicate:
+    replicate_index: ReplicateIndex
+    displacement: torch.Tensor
+    support_before: SampleCount
+    support_after: SampleCount
+
+
+@dataclass(frozen=True)
+class ControlQualityGate:
+    held_out_residual_quantile: ThresholdValue
+    minimum_pass_fraction: MetricRate
+
+
+def build_control_displacement(
+    prior: np.ndarray | torch.Tensor,
+    recent: np.ndarray | torch.Tensor,
+) -> np.ndarray:
+    p = prior.detach().cpu().numpy() if isinstance(prior, torch.Tensor) else prior
+    r = recent.detach().cpu().numpy() if isinstance(recent, torch.Tensor) else recent
+    return r - p
+
+
+def held_out_reconstruction_residuals(
+    replicates: Sequence[np.ndarray | torch.Tensor],
+) -> tuple[NormValue, ...]:
+    if not replicates:
+        return ()
+    arrs = [r.detach().cpu().numpy() if isinstance(r, torch.Tensor) else r for r in replicates]
+    mean = np.mean(arrs, axis=0)
+    return tuple(float(np.linalg.norm(r - mean)) for r in arrs)
+
+
+def is_control_gate_passing(
+    residuals: Sequence[NormValue],
+    gate: ControlQualityGate,
+) -> GateComplianceFlag:
+    if not residuals:
+        return False
+    threshold = float(np.quantile(residuals, gate.held_out_residual_quantile))
+    passed = sum(1 for r in residuals if r <= threshold)
+    return bool(passed / len(residuals) >= gate.minimum_pass_fraction)
+
+
+def filter_control_replicates(
+    replicates: list[ControlReplicate],
+    gate: ControlQualityGate,
+) -> tuple[ControlReplicate, ...]:
+    if not replicates:
+        return ()
+    residuals = held_out_reconstruction_residuals([r.displacement for r in replicates])
+    threshold = float(np.quantile(residuals, gate.held_out_residual_quantile))
+    return tuple(
+        replicate
+        for replicate, residual in zip(replicates, residuals, strict=True)
+        if residual <= threshold
+    )
+
+@dataclass(frozen=True)
+class ScalarModelFit:
+    coefficient: ThresholdValue
+    residuals: np.ndarray
+
+
+def fit_scalar_model(
+    centers: Sequence[np.ndarray | torch.Tensor],
+    maximum_coefficient: ThresholdValue,
+) -> ScalarModelFit:
+    if len(centers) < 2:
+        return ScalarModelFit(coefficient=1.0, residuals=np.zeros((1, 1)))
+    arrs = [np.array(c) if isinstance(c, torch.Tensor) else c for c in centers]
+    x = np.stack(arrs[:-1])
+    y = np.stack(arrs[1:])
+    denom = np.sum(x * x)
+    a = float(np.sum(x * y) / denom) if denom > 1e-12 else 1.0
+    a = min(maximum_coefficient, max(0.0, a))
+    residuals = y - a * x
+    return ScalarModelFit(coefficient=a, residuals=residuals)
+
+
+def process_error_radius(
+    residuals: np.ndarray | torch.Tensor,
+    quantile: ThresholdValue,
+) -> NormValue:
+    arr = np.array(residuals) if isinstance(residuals, torch.Tensor) else residuals
+    norms = np.linalg.norm(arr, axis=-1)
+    return float(np.quantile(norms, quantile)) if norms.size > 0 else 0.1
+
+
+def propagate_radius(
+    initial_radius: NormValue | None = None,
+    a_coefficient: CoordinateValue | None = None,
+    process_noise_radius: NormValue | None = None,
+    horizon_steps: SampleCount = 1,
+    initial_set_radius: NormValue | None = None,
+    coefficient: CoordinateValue | None = None,
+    process_radius: NormValue | None = None,
+) -> NormValue:
+    if initial_radius is not None:
+        r0 = initial_radius
+    elif initial_set_radius is not None:
+        r0 = initial_set_radius
+    else:
+        r0 = 1.0
+
+    if a_coefficient is not None:
+        a = a_coefficient
+    elif coefficient is not None:
+        a = coefficient
+    else:
+        a = 1.0
+
+    if process_noise_radius is not None:
+        rw = process_noise_radius
+    elif process_radius is not None:
+        rw = process_radius
+    else:
+        rw = 0.1
+
+    r = r0
+    for _unused in range(horizon_steps):
+        r = abs(a) * r + rw
+    return r
+
+class AbstentionReason(StrEnum):
+    ABSTAIN_NO_USABLE_CONTROL = "ABSTAIN_NO_USABLE_CONTROL"
+    ABSTAIN_INSUFFICIENT_MALICIOUS_SUPPORT = "ABSTAIN_INSUFFICIENT_MALICIOUS_SUPPORT"
+    ABSTAIN_INSUFFICIENT_CONTROL_SUPPORT = "ABSTAIN_INSUFFICIENT_CONTROL_SUPPORT"
+    ABSTAIN_INSUFFICIENT_PRIVATE_ALLOWANCE_HISTORY = (
+        "ABSTAIN_INSUFFICIENT_PRIVATE_ALLOWANCE_HISTORY"
+    )
+    ABSTAIN_UNSTABLE_NUISANCE_RANK = "ABSTAIN_UNSTABLE_NUISANCE_RANK"
+    ABSTAIN_WEAK_EIGENGAP = "ABSTAIN_WEAK_EIGENGAP"
+    ABSTAIN_CONTROL_RECONSTRUCTION_FAILURE = "ABSTAIN_CONTROL_RECONSTRUCTION_FAILURE"
+    ABSTAIN_FEASIBLE_SET_INCONSISTENT = "ABSTAIN_FEASIBLE_SET_INCONSISTENT"
+    ABSTAIN_INSUFFICIENT_TEMPORAL_HISTORY = "ABSTAIN_INSUFFICIENT_TEMPORAL_HISTORY"
+    ABSTAIN_FORECAST_SET_TOO_WIDE = "ABSTAIN_FORECAST_SET_TOO_WIDE"
+    ABSTAIN_NO_CERTIFIED_ACTION = "ABSTAIN_NO_CERTIFIED_ACTION"
+    ABSTAIN_OPERATOR_COVERAGE_INSUFFICIENT = "ABSTAIN_OPERATOR_COVERAGE_INSUFFICIENT"
+    ABSTAIN_SYNCHRONIZED_NUISANCE_RISK = "ABSTAIN_SYNCHRONIZED_NUISANCE_RISK"
+    ABSTAIN_SINGLE_CLIENT_CERTIFICATE_DOMINANCE = "ABSTAIN_SINGLE_CLIENT_CERTIFICATE_DOMINANCE"
+
+
+def effective_support(
+    *args: SampleCount | Sequence[SampleCount] | tuple[SampleCount, SampleCount],
+) -> CoordinateValue:
+    if len(args) == 2 and isinstance(args[0], (int, float)) and isinstance(args[1], (int, float)):
+        n1, n2 = float(args[0]), float(args[1])
+        return float(n1 * n2 / (n1 + n2)) if (n1 + n2) > 0 else 0.0
+    if len(args) == 1 and isinstance(args[0], tuple) and len(args[0]) == 2:
+        n1, n2 = float(args[0][0]), float(args[0][1])
+        return float(n1 * n2 / (n1 + n2)) if (n1 + n2) > 0 else 0.0
+    if len(args) == 1 and isinstance(args[0], (list, tuple)):
+        return float(sum(args[0]))
+    return float(sum(float(a) for a in args if isinstance(a, (int, float))))
+
+
+def geometric_median(
+    points: np.ndarray | Sequence[np.ndarray | torch.Tensor],
+    tolerance: ThresholdValue,
+    maximum_iterations: IterationCount,
+) -> np.ndarray:
+    if isinstance(points, (list, tuple)):
+        arr = np.asarray([np.asarray(p, dtype=np.float64) for p in points], dtype=np.float64)
+    else:
+        arr = np.asarray(points, dtype=np.float64)
+    if arr.ndim == 1:
+        return arr
+    if arr.shape[0] == 1:
+        return arr[0]
+
+    current = np.mean(arr, axis=0)
+    for _unused in range(maximum_iterations):
+        diffs = arr - current
+        distances = np.linalg.norm(diffs, axis=1)
+        zero_dist = distances < 1e-12
+        if np.any(zero_dist):
+            return arr[np.nonzero(zero_dist)[0][0]]
+        weights = 1.0 / distances
+        weights /= np.sum(weights)
+        next_val = np.sum(arr * weights[:, None], axis=0)
+        if np.linalg.norm(next_val - current) < tolerance:
+            return next_val
+        current = next_val
+    return current
+
+
+def weighted_control_center(
+    controls: Sequence[np.ndarray | torch.Tensor],
+    weights: Sequence[CoordinateValue | tuple[SampleCount, SampleCount]] | None = None,
+) -> np.ndarray:
+    if not controls:
+        return np.zeros(1)
+    arrs = [np.array(c) if isinstance(c, torch.Tensor) else c for c in controls]
+    if weights is None:
+        return np.mean(arrs, axis=0)
+
+    scalar_weights: list[float] = []
+    for w in weights:
+        if isinstance(w, tuple) and len(w) == 2:
+            n1, n2 = w
+            sw = float(n1 * n2 / (n1 + n2)) if (n1 + n2) > 0 else 0.0
+        else:
+            sw = float(w)
+        scalar_weights.append(sw)
+
+    total_w = sum(scalar_weights)
+    if total_w < 1e-12:
+        return np.mean(arrs, axis=0)
+
+    norm_w = [sw / total_w for sw in scalar_weights]
+    return np.sum([p * nw for p, nw in zip(arrs, norm_w, strict=True)], axis=0)
+
+
+def observed_nuisance_amplitude(
+    displacements: Sequence[np.ndarray | torch.Tensor],
+    quantile: ThresholdValue,
+    supports: Sequence[CoordinateValue | tuple[SampleCount, SampleCount]] | None = None,
+) -> CoordinateValue:
+    arrs = [np.array(d) if isinstance(d, torch.Tensor) else d for d in displacements]
+    norms = [float(np.linalg.norm(a)) for a in arrs]
+    if supports is not None and len(supports) == len(norms):
+        active_norms: list[float] = []
+        for n, s in zip(norms, supports, strict=False):
+            val = float(s[0] + s[1]) if isinstance(s, tuple) else float(s)
+            if val > 0:
+                active_norms.append(float(n))
+        norms = active_norms
+    return float(np.quantile(norms, quantile)) if norms else 0.0
+
+
+def later_real_proxy(
+    pre_means: Sequence[np.ndarray | torch.Tensor],
+    post_means: Sequence[np.ndarray | torch.Tensor],
+    pre_supports: Sequence[SampleCount],
+    post_supports: Sequence[SampleCount],
+) -> np.ndarray:
+    diffs = [
+        np.array(post) - np.array(pre) for pre, post in zip(pre_means, post_means, strict=True)
+    ]
+    eff_supports = [
+        n_pre * n_post / (n_pre + n_post) if (n_pre + n_post) > 0 else 0
+        for n_pre, n_post in zip(pre_supports, post_supports, strict=True)
+    ]
+    total_supp = sum(eff_supports)
+    if total_supp < 1e-12:
+        return np.mean(diffs, axis=0)
+    return np.sum(
+        [d * (s / total_supp) for d, s in zip(diffs, eff_supports, strict=True)],
+        axis=0,
+    )

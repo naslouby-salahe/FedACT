@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fedact.reporting.tables import LatexTableCell, generate_latex_table
+from fedact.analysis.reporting import LatexTableCell, generate_latex_table
 
 
 def test_generate_latex_table(tmp_path: Path) -> None:

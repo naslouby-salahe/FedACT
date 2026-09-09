@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fedact.domain.enums import (
+from fedact.domain.types import (
     ArtifactBoundary,
     ScientificOutcome,
     WorkflowName,

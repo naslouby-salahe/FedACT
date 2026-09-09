@@ -20,7 +20,7 @@ dependencies = [
 ]
 
 [project.scripts]
-fedact = "fedact.cli.main:main"
+fedact = "fedact.cli:main"
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]
@@ -54,7 +54,6 @@ addopts = "--import-mode=importlib -n auto"
 
 [dependency-groups]
 dev = [
-    "nox>=2026.8.10",
     "vulture>=2.14",
     "deptry>=0.23",
     "pytest>=8.0",
@@ -70,11 +69,10 @@ dev = [
 known_first_party = ["fedact"]
 
 [tool.deptry.per_rule_ignores]
-DEP004 = ["nox"]
 DEP002 = ["types-pyyaml", "torch", "cvxpy", "ecos", "pandas", "pyarrow"]
 
 [tool.ruff.lint.per-file-ignores]
-"src/fedact/cli/main.py" = ["UP045"]
+"src/fedact/cli.py" = ["UP045"]
 
 [tool.importlinter]
 root_packages = ["fedact"]
@@ -85,21 +83,13 @@ type = "forbidden"
 source_modules = ["fedact.domain"]
 forbidden_modules = [
     "fedact.config",
-    "fedact.datasets",
-    "fedact.models",
-    "fedact.training",
-    "fedact.operators",
-    "fedact.core",
-    "fedact.scoring",
-    "fedact.storage",
-    "fedact.baselines",
-    "fedact.calibration",
-    "fedact.evaluation",
-    "fedact.analysis",
-    "fedact.reporting",
-    "fedact.runtime",
+    "fedact.data",
+    "fedact.learning",
+    "fedact.certification",
     "fedact.experiments",
-    "fedact.app",
+    "fedact.analysis",
+    "fedact.artifacts",
+    "fedact.workflow",
     "fedact.cli",
 ]
 
@@ -108,59 +98,38 @@ name = "Configuration depends only inward on domain"
 type = "forbidden"
 source_modules = ["fedact.config"]
 forbidden_modules = [
-    "fedact.datasets",
-    "fedact.models",
-    "fedact.training",
-    "fedact.operators",
-    "fedact.core",
-    "fedact.scoring",
-    "fedact.storage",
-    "fedact.baselines",
-    "fedact.calibration",
-    "fedact.evaluation",
-    "fedact.analysis",
-    "fedact.reporting",
-    "fedact.runtime",
+    "fedact.data",
+    "fedact.learning",
+    "fedact.certification",
     "fedact.experiments",
-    "fedact.app",
+    "fedact.analysis",
+    "fedact.artifacts",
+    "fedact.workflow",
     "fedact.cli",
 ]
 
 [[tool.importlinter.contracts]]
-name = "Lower layers never depend on orchestration surfaces"
+name = "Lower scientific layers never depend on orchestration surfaces"
 type = "forbidden"
 source_modules = [
     "fedact.domain",
     "fedact.config",
-    "fedact.datasets",
-    "fedact.models",
-    "fedact.training",
-    "fedact.operators",
-    "fedact.core",
-    "fedact.scoring",
-    "fedact.storage",
-    "fedact.baselines",
-    "fedact.calibration",
-    "fedact.evaluation",
-    "fedact.analysis",
+    "fedact.data",
+    "fedact.learning",
+    "fedact.certification",
 ]
 forbidden_modules = [
-    "fedact.reporting",
-    "fedact.runtime",
     "fedact.experiments",
-    "fedact.app",
+    "fedact.analysis",
+    "fedact.workflow",
     "fedact.cli",
 ]
 
 [[tool.importlinter.contracts]]
-name = "Peer infrastructure packages remain independent"
-type = "independence"
-modules = [
-    "fedact.datasets",
-    "fedact.models",
-    "fedact.operators",
-    "fedact.storage",
-]
+name = "Data and learning stay below certification"
+type = "forbidden"
+source_modules = ["fedact.data", "fedact.learning"]
+forbidden_modules = ["fedact.certification"]
 
 [tool.coverage.run]
 source = ["src/fedact"]

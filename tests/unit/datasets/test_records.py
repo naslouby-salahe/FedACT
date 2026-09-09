@@ -6,19 +6,19 @@ import pytest
 
 from fedact.config.loading import LoadedConfiguration, load_production_configuration
 from fedact.config.models import ConfirmatoryFormat, FedActConfig
-from fedact.datasets.ember2024.semantics import (
+from fedact.data.ember2024 import (
     EmberRawRecord,
     WeekIdentifier,
     choose_control_matching_level,
     ember_client_semantics,
 )
-from fedact.datasets.lamda.semantics import (
+from fedact.data.lamda import (
     LamdaRawRecord,
     audited_label,
     label_derivation_rule,
     lamda_client_semantics,
 )
-from fedact.datasets.records import (
+from fedact.data.records import (
     ClientSemanticsAudit,
     ClientSemanticsClass,
     CohortRecord,
@@ -39,7 +39,7 @@ from fedact.datasets.records import (
     prepare_records,
     select_low_variance_features,
 )
-from fedact.domain.enums import DatasetSelector
+from fedact.domain.types import DatasetSelector
 from fedact.domain.types import DatasetIdentity, SampleIdentifier, SplitCutoffIdentity
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
@@ -300,7 +300,7 @@ def test_feasibility_conditions_narrow_role_instead_of_inventing_semantics() -> 
 
 
 def test_operator_ineligibility_follows_raw_artifact_presence() -> None:
-    from fedact.datasets.lamda.semantics import OperatorEligibility
+    from fedact.data.lamda import OperatorEligibility
 
     assert OperatorEligibility(has_matching_raw_artifact=True).is_eligible() is True
     assert OperatorEligibility(has_matching_raw_artifact=False).is_eligible() is False
@@ -331,7 +331,7 @@ def test_ember_weekly_vs_monthly_control_level_is_deterministic(config: FedActCo
 
 
 def test_ember_conservative_timestamp_uses_collection_week_start(config: FedActConfig) -> None:
-    from fedact.datasets.ember2024.semantics import conservative_timestamp_month
+    from fedact.data.ember2024 import conservative_timestamp_month
 
     assert conservative_timestamp_month(WeekIdentifier("2023-W39")) == "2023-W39"
     record = EmberRawRecord(

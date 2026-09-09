@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from fedact.config.models import FederationGeometry, PrivateTransitionSparsityMode
-from fedact.datasets.synthetic.generator import (
+from fedact.data.synthetic import (
     SYNTHETIC_DIMENSION,
     build_nuisance_spaces,
     deterministic_orthonormal_basis,
@@ -14,7 +14,7 @@ from fedact.datasets.synthetic.generator import (
     nuisance_dimension,
     paired_seed_streams,
 )
-from fedact.datasets.synthetic.geometry import (
+from fedact.data.synthetic import (
     action_rotation,
     common_intersection_dimension,
     principal_angles,
@@ -22,7 +22,7 @@ from fedact.datasets.synthetic.geometry import (
     true_action_score,
     verify_orthonormality,
 )
-from fedact.datasets.synthetic.validation import run_smoke_validation
+from fedact.data.synthetic import run_smoke_validation
 
 
 def test_nuisance_dimension_maps_configured_fractions_exactly() -> None:

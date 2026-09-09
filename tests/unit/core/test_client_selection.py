@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from fedact.core.client_selection import (
+from fedact.certification.selection import (
     ClientInformationMatrix,
     SelectionBudget,
     d_optimal_gain,

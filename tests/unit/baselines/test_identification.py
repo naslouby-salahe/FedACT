@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from fedact.baselines.identification import (
+from fedact.experiments.baselines import (
     covariance_weighted_reconstruction,
     matched_benign_subtraction,
     projected_point_reconstruction,

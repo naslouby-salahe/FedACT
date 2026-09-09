@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from fedact.core.certification import (
+from fedact.certification.certificate import (
     DomainValid,
     decide,
 )
-from fedact.domain.enums import CertificationStatus
+from fedact.domain.types import CertificationStatus
 
 
 def test_action_certificate_requires_worst_case_lower_bound() -> None:

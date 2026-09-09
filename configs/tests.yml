@@ -1,7 +1,0 @@
-training:
-  maximum_epochs: 2
-synthetic:
-  independent_draws_per_grid_cell: 2
-statistics:
-  bootstrap:
-    resamples: 200

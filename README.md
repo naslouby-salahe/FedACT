@@ -15,8 +15,7 @@ defers to it; no scientific value is invented at runtime.
 
 `configs/fedact.yaml` is the single authoritative production configuration. It must remain
 byte-identical to the roadmap Configuration YAML block, which an architecture test enforces.
-`configs/tests.yml` and `configs/smoke.yml` are scale-reduced overlays for deterministic
-lightweight fixtures and fast smoke validation.
+`configs/smoke.yaml` is the scale-reduced overlay for fast smoke validation.
 
 ## Setup
 
@@ -32,11 +31,9 @@ This creates a locked environment from `pyproject.toml` and `uv.lock`.
 make checks
 ```
 
-Equivalent nox sessions are available through `noxfile.py` (`lint`, `typing`, `unit`,
-`architecture`). The architecture suite enforces dependency directions, configuration
-ownership, governed-value hardcoding, naming policy, canonical vocabulary, typing, formatting,
-dead code, dependency hygiene, and the absence of comments, docstrings, redirects, and
-temporary residue.
+The architecture suite enforces dependency directions, configuration ownership,
+governed-value hardcoding, naming policy, canonical vocabulary, typing, formatting, dead code,
+dependency hygiene, and the absence of comments, docstrings, redirects, and temporary residue.
 
 ## Canonical CLI workflow
 

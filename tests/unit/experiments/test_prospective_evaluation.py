@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from fedact.app import Application
-from fedact.domain.enums import ScientificOutcome
-from fedact.experiments.prospective_evaluation import run_prospective_fedact_evaluation
+from fedact.workflow import Application
+from fedact.domain.types import ScientificOutcome
+from fedact.experiments.generalization import run_prospective_fedact_evaluation
 
 
 def test_run_prospective_fedact_evaluation(application: Application) -> None:

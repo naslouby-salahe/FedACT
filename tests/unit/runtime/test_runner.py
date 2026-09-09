@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from fedact.domain.enums import ArtifactBoundary
+from fedact.domain.types import ArtifactBoundary
 from fedact.domain.records import BoundaryFingerprint, BoundaryFingerprints
-from fedact.runtime.runner import (
+from fedact.workflow import (
     IndexedArtifact,
     owned_boundaries_for_workflow,
     resolve_execution_requirements,
 )
-from fedact.runtime.status import ArtifactExecutionState
-from fedact.storage.index import ArtifactDependencyIndex
-from fedact.storage.metadata import ArtifactIdentity, DependencyFingerprint
+from fedact.workflow import ArtifactExecutionState
+from fedact.artifacts import ArtifactDependencyIndex
+from fedact.artifacts import ArtifactIdentity, DependencyFingerprint
 
 
 def identity(label: str) -> ArtifactIdentity:
@@ -171,7 +171,7 @@ def test_upstream_must_be_active_and_complete_for_reuse() -> None:
 
 
 def test_owned_scopes_cover_the_locked_commands() -> None:
-    from fedact.domain.enums import ExecutableWorkflowName as W
+    from fedact.domain.types import ExecutableWorkflowName as W
 
     assert owned_boundaries_for_workflow(W.NESTED_CALIBRATION) == (
         ArtifactBoundary.CALIBRATION_AND_CERTIFICATION,

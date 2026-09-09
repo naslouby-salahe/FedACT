@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fedact.evaluation.exposure import compute_cumulative_exposure, compute_time_to_catch_up
+from fedact.analysis.metrics import compute_cumulative_exposure, compute_time_to_catch_up
 
 
 def test_exposure_calculations() -> None:

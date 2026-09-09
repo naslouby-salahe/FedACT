@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from fedact.domain.enums import ExecutableWorkflowName
-from fedact.experiments import (
+from fedact.domain.types import ExecutableWorkflowName
+from fedact.experiments.registry import (
     REGISTRY_NAMES,
     WORKFLOW_REGISTRY,
     registered_workflow,

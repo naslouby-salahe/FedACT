@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import torch
 
-from fedact.models.detector import (
+from fedact.learning.detector import (
     DetectorHead,
     detector_predictions,
     detector_probabilities,
 )
-from fedact.models.representation import (
+from fedact.learning.representation import (
     DETECTOR_THRESHOLD,
     EMBEDDING_DIMENSION,
     RepresentationEncoder,

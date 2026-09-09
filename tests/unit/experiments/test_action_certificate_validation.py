@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from fedact.app import Application
-from fedact.domain.enums import ScientificOutcome
-from fedact.experiments.action_certificate_validation import run_action_certificate_validation
+from fedact.workflow import Application
+from fedact.domain.types import ScientificOutcome
+from fedact.experiments.validation import run_action_certificate_validation
 
 
 def test_run_action_certificate_validation(application: Application) -> None:

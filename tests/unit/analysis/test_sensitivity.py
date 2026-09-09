@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fedact.analysis.sensitivity import SensitivityAxis, enumerate_sensitivity_coordinates
+from fedact.analysis.comparisons import SensitivityAxis, enumerate_sensitivity_coordinates
 
 
 def test_enumerate_sensitivity_coordinates_covers_locked_axes() -> None:

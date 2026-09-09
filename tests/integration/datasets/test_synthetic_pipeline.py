@@ -4,17 +4,17 @@ from pathlib import Path
 
 import numpy as np
 
-from fedact.app import Application
+from fedact.workflow import Application
 from fedact.config.loading import LoadedConfiguration
 from fedact.config.models import FederationGeometry
-from fedact.datasets.synthetic.generator import (
+from fedact.data.synthetic import (
     SYNTHETIC_DIMENSION,
     build_nuisance_spaces,
     draw_shared_transition,
     nuisance_dimension,
 )
-from fedact.datasets.synthetic.validation import run_smoke_validation
-from fedact.experiments.synthetic_geometry import run_synthetic_geometry_sweeps
+from fedact.data.synthetic import run_smoke_validation
+from fedact.experiments.verification import run_synthetic_geometry_sweeps
 
 
 def test_synthetic_end_to_end_pipeline(

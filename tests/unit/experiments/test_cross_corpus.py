@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from fedact.app import Application
-from fedact.domain.enums import ScientificOutcome
-from fedact.experiments.cross_corpus import run_cross_corpus_generalization
+from fedact.workflow import Application
+from fedact.domain.types import ScientificOutcome
+from fedact.experiments.generalization import run_cross_corpus_generalization
 
 
 def test_run_cross_corpus_generalization(application: Application) -> None:

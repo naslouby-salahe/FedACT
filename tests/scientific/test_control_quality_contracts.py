@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from fedact.core.controls import (
+from fedact.certification.dynamics import (
     ControlQualityGate,
     held_out_reconstruction_residuals,
     is_control_gate_passing,

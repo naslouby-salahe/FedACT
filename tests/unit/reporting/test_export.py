@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fedact.domain.enums import ScientificOutcome
-from fedact.reporting.export import (
+from fedact.domain.types import ScientificOutcome
+from fedact.analysis.reporting import (
     LatexMacroName,
     LatexMacroValue,
     generate_project_summary,

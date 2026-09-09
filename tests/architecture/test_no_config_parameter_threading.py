@@ -12,7 +12,7 @@ from tests.architecture.architecture_rules import (
 )
 
 CONFIGURATION_OWNER_PREFIXES = ("fedact.config",)
-CONTEXT_OWNER_MODULES = frozenset({"fedact.app"})
+CONTEXT_OWNER_MODULES = frozenset({"fedact.workflow"})
 FORBIDDEN_CONFIG_TYPES = frozenset(
     {
         "FedActConfig",
@@ -72,4 +72,4 @@ def test_config_threading_rule_accepts_application_context_owner() -> None:
         "def from_repository_root(cls, configuration: LoadedConfiguration) -> object:\n"
         "    return cls\n"
     )
-    assert config_parameter_violations_for_tree("fedact.app", "src/fedact/app.py", tree) == []
+    assert config_parameter_violations_for_tree("fedact.workflow", "src/fedact/app.py", tree) == []

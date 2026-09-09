@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from fedact.core.temporal import (
+from fedact.certification.dynamics import (
     fit_scalar_model,
     process_error_radius,
     propagate_radius,

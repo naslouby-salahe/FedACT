@@ -8,8 +8,7 @@ from typing import NewType, Self, cast
 
 import yaml
 
-from fedact.config.models import FedActConfig
-from fedact.config.validation import validate_configuration_constraints
+from fedact.config.models import FedActConfig, validate_configuration_constraints
 from fedact.domain.types import JsonEncodableValue
 
 ConfigurationHash = NewType("ConfigurationHash", str)
