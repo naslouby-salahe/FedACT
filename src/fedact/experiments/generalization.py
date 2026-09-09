@@ -2,11 +2,20 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from pathlib import Path
 
 import numpy as np
 import torch
+from pydantic import Field
 
 from fedact.analysis.metrics import EvaluationRecord, compute_evaluation_metrics
+from fedact.config.models import StrictModel
+from fedact.data.ember2024 import (
+    apply_log1p_transforms,
+    ember2024_count_feature_mask,
+    load_ember2024_records,
+    validate_ember_dataset,
+)
 from fedact.data.lamda import (
     audited_label,
     label_derivation_rule,
@@ -15,17 +24,21 @@ from fedact.data.lamda import (
     year_month_to_calendar_month,
 )
 from fedact.domain.types import (
+    BinaryLabel,
     DatasetSelector,
     DegradationValue,
+    DimensionValue,
     EvaluationCount,
     MetricRate,
+    RankDimension,
+    RelativePosixPath,
     SampleIdentifier,
     ScientificOutcome,
     SplitCutoffIdentity,
     ValidationFlag,
 )
 from fedact.experiments.registry import ExperimentRuntime
-from fedact.learning.detector import train_base_detector
+from fedact.learning.detector import load_trained_detector, train_base_detector
 from fedact.learning.hardening import (
     clean_false_negative_rate,
     harden_detector_head,
@@ -36,11 +49,59 @@ from fedact.learning.representation import (
     EMBEDDING_DIMENSION,
     RepresentationDataset,
     TrainingObservation,
+    load_representation_encoder,
     train_representation_encoder,
 )
 from fedact.learning.scoring import score_samples
 
 LOGGER = logging.getLogger(__name__)
+
+
+class _TransferManifest(StrictModel):
+    encoder_checkpoint: RelativePosixPath
+    detector_checkpoint: RelativePosixPath
+    feature_adapter: RelativePosixPath
+    input_dimension: RankDimension = Field(gt=0)
+
+
+@dataclass(frozen=True)
+class _FeatureAdapter:
+    mean: np.ndarray
+    scale: np.ndarray
+    projection: np.ndarray
+
+
+def _workspace_path(application: ExperimentRuntime, relative_path: RelativePosixPath) -> Path:
+    resolved = (application.repository_root / relative_path).resolve()
+    if not resolved.is_relative_to(application.repository_root.resolve()):
+        raise ValueError(f"transfer artifact escapes repository root: {relative_path}")
+    return resolved
+
+
+def _load_feature_adapter(source: Path, input_dimension: DimensionValue) -> _FeatureAdapter:
+    if not source.is_file():
+        raise FileNotFoundError(f"locked feature adapter is missing: {source}")
+    with np.load(source) as payload:
+        mean = payload["mean"]
+        scale = payload["scale"]
+        projection = payload["projection"]
+    if mean.ndim != 1 or scale.shape != mean.shape or projection.shape[0] != mean.size:
+        raise ValueError("feature adapter arrays have incompatible dimensions")
+    if projection.shape[1] != input_dimension:
+        raise ValueError("feature adapter output does not match locked encoder dimension")
+    if not np.isfinite(mean).all() or not np.isfinite(scale).all() or np.any(scale <= 0.0):
+        raise ValueError("feature adapter has invalid fitted normalization parameters")
+    return _FeatureAdapter(
+        mean=np.asarray(mean, dtype=np.float32),
+        scale=np.asarray(scale, dtype=np.float32),
+        projection=np.asarray(projection, dtype=np.float32),
+    )
+
+
+def _labeled_target_value(value: BinaryLabel | None) -> BinaryLabel:
+    if value is None:
+        raise ValueError("selected EMBER evaluation row has no label")
+    return value
 
 
 @dataclass(frozen=True)
@@ -134,19 +195,80 @@ def _latest_eligible_cutoff(
 
 
 def run_cross_corpus_generalization(application: ExperimentRuntime) -> CrossCorpusReport:
-    source_checkpoint = (
-        application.repository_root / "outputs" / "artifacts" / "models" / "lamda_locked.pt"
+    manifest_path = (
+        application.repository_root
+        / application.configuration.values.workspace.directories.experiments
+        / "cross-corpus"
+        / "transfer.json"
     )
     target_root = application.repository_root / "data" / "raw" / "EMBER2024"
-    if not source_checkpoint.is_file() or not target_root.is_dir():
+    if not manifest_path.is_file() or not target_root.is_dir():
         LOGGER.warning(
-            "cross-corpus transfer abstains: locked source checkpoint=%s target=%s",
-            source_checkpoint.is_file(),
+            "cross-corpus transfer requires a locked transfer manifest=%s target=%s",
+            manifest_path.is_file(),
             target_root.is_dir(),
         )
         return CrossCorpusReport(0, 0.0, False, ScientificOutcome.INSUFFICIENT_EVIDENCE)
-    LOGGER.warning("cross-corpus transfer requires a compatible locked feature adapter")
-    return CrossCorpusReport(1, 0.0, False, ScientificOutcome.INSUFFICIENT_EVIDENCE)
+    manifest = _TransferManifest.model_validate_json(manifest_path.read_text(encoding="utf-8"))
+    encoder_path = _workspace_path(application, manifest.encoder_checkpoint)
+    detector_path = _workspace_path(application, manifest.detector_checkpoint)
+    adapter = _load_feature_adapter(
+        _workspace_path(application, manifest.feature_adapter), manifest.input_dimension
+    )
+    if not encoder_path.is_file() or not detector_path.is_file():
+        raise FileNotFoundError("locked source encoder or detector checkpoint is missing")
+    target = load_ember2024_records(target_root)
+    validate_ember_dataset(target)
+    labeled = np.fromiter(
+        (record.label is not None for record in target.records),
+        dtype=bool,
+        count=len(target.records),
+    )
+    if not labeled.any():
+        return CrossCorpusReport(0, 0.0, False, ScientificOutcome.INSUFFICIENT_EVIDENCE)
+    target_features = apply_log1p_transforms(
+        target.features[labeled], ember2024_count_feature_mask()
+    )
+    if target_features.shape[1] != adapter.mean.size:
+        raise ValueError("locked adapter input does not match EMBER feature schema")
+    adapted = ((target_features - adapter.mean) / adapter.scale) @ adapter.projection
+    encoder = load_representation_encoder(
+        encoder_path,
+        manifest.input_dimension,
+        DEFAULT_ENCODER_HIDDEN_DIMENSIONS,
+        EMBEDDING_DIMENSION,
+    )
+    detector = load_trained_detector(detector_path, EMBEDDING_DIMENSION)
+    selected_records = tuple(
+        record for record, include in zip(target.records, labeled, strict=True) if include
+    )
+    scores = score_samples(
+        encoder,
+        detector,
+        tuple(record.sample_hash for record in selected_records),
+        torch.tensor(adapted, dtype=torch.float32),
+    )
+    evaluations = tuple(
+        EvaluationRecord(
+            dataset=DatasetSelector.EMBER2024,
+            cutoff_id=SplitCutoffIdentity("ember2024-locked-transfer"),
+            sample_id=record.sample_hash,
+            horizon_step=1,
+            true_label=_labeled_target_value(record.label),
+            predicted_score=score.probability,
+            is_certified=False,
+            clean_loss=0.0,
+        )
+        for record, score in zip(selected_records, scores, strict=True)
+    )
+    metrics = compute_evaluation_metrics(evaluations)
+    LOGGER.info("cross-corpus locked transfer scored target_rows=%s", len(evaluations))
+    return CrossCorpusReport(
+        len(evaluations),
+        metrics.false_negative_rate,
+        True,
+        ScientificOutcome.PASS,
+    )
 
 
 def _score_cutoff_population(
