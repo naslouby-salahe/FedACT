@@ -10,9 +10,6 @@ import typer
 
 from fedact.analysis.reporting import export_verified_project_evidence
 from fedact.artifacts import (
-    ArtifactDependencyIndex,
-    ArtifactIdentity,
-    DependencyFingerprint,
     WorkflowResultRecord,
     WorkspaceLayout,
     read_workflow_result,
@@ -52,16 +49,12 @@ from fedact.data.synthetic import (
     run_smoke_validation,
     seeded_generator,
 )
-from fedact.domain.records import BoundaryFingerprints
 from fedact.domain.types import (
-    ActionDecision,
-    ArtifactBoundary,
     DataAvailabilityFlag,
     DatasetSelector,
     DegradationValue,
     DiagnosisMessage,
     ExecutableWorkflowName,
-    ExecutionReason,
     ExperimentName,
     FederationGeometry,
     MetricRate,
@@ -78,12 +71,7 @@ from fedact.experiments.generalization import (
     run_prospective_fedact_evaluation,
 )
 from fedact.experiments.registry import (
-    PREPROCESS_OWNED_BOUNDARIES,
-    PREPROCESS_STAGE_FLOW,
-    ReuseDecision,
-    SharedProducer,
-    is_preprocess_triggerable,
-    ownership_for,
+    WORKFLOW_REGISTRY,
     registered_workflow,
 )
 from fedact.experiments.robustness import (
@@ -135,13 +123,6 @@ def workflows_with_recorded_outcomes(
     return frozenset(record.workflow for record in history)
 
 
-class ArtifactExecutionState(StrEnum):
-    STAGING = "STAGING"
-    COMPLETE = "COMPLETE"
-    STALE = "STALE"
-    INVALID = "INVALID"
-
-
 def apply_python_seed(seed: SeedValue) -> None:
     random.seed(seed)
 
@@ -149,51 +130,6 @@ def apply_python_seed(seed: SeedValue) -> None:
 def create_numpy_generator(seed: SeedValue) -> np.random.Generator:
     seed_sequence = np.random.SeedSequence(seed)
     return np.random.default_rng(seed_sequence)
-
-
-WORKFLOW_DEPENDENCIES: dict[ExecutableWorkflowName, tuple[ExecutableWorkflowName, ...]] = {
-    ExecutableWorkflowName.PREPROCESS: (),
-    ExecutableWorkflowName.SMOKE: (),
-    ExecutableWorkflowName.MATH_VERIFICATION: (),
-    ExecutableWorkflowName.SYNTHETIC_GEOMETRY: (
-        ExecutableWorkflowName.MATH_VERIFICATION,
-        ExecutableWorkflowName.SMOKE,
-    ),
-    ExecutableWorkflowName.BASELINE_PARITY: (ExecutableWorkflowName.PREPROCESS,),
-    ExecutableWorkflowName.NESTED_CALIBRATION: (
-        ExecutableWorkflowName.PREPROCESS,
-        ExecutableWorkflowName.BASELINE_PARITY,
-    ),
-    ExecutableWorkflowName.ACTION_CERTIFICATE_VALIDATION: (
-        ExecutableWorkflowName.PREPROCESS,
-        ExecutableWorkflowName.BASELINE_PARITY,
-        ExecutableWorkflowName.NESTED_CALIBRATION,
-    ),
-    ExecutableWorkflowName.PROSPECTIVE_EVALUATION: (
-        ExecutableWorkflowName.ACTION_CERTIFICATE_VALIDATION,
-    ),
-    ExecutableWorkflowName.ABLATIONS: (ExecutableWorkflowName.PROSPECTIVE_EVALUATION,),
-    ExecutableWorkflowName.FEDERATION: (ExecutableWorkflowName.PROSPECTIVE_EVALUATION,),
-    ExecutableWorkflowName.FAILURE_BOUNDARIES: (ExecutableWorkflowName.PROSPECTIVE_EVALUATION,),
-    ExecutableWorkflowName.CROSS_CORPUS: (
-        ExecutableWorkflowName.PROSPECTIVE_EVALUATION,
-        ExecutableWorkflowName.FAILURE_BOUNDARIES,
-        ExecutableWorkflowName.PREPROCESS,
-    ),
-    ExecutableWorkflowName.CLIENT_SELECTION: (ExecutableWorkflowName.FEDERATION,),
-    ExecutableWorkflowName.STATISTICAL_SYNTHESIS: (
-        ExecutableWorkflowName.ACTION_CERTIFICATE_VALIDATION,
-        ExecutableWorkflowName.PROSPECTIVE_EVALUATION,
-        ExecutableWorkflowName.ABLATIONS,
-        ExecutableWorkflowName.FEDERATION,
-        ExecutableWorkflowName.FAILURE_BOUNDARIES,
-        ExecutableWorkflowName.CROSS_CORPUS,
-    ),
-}
-
-OPTIONAL_WORKFLOWS: frozenset[ExecutableWorkflowName] = frozenset(
-    {ExecutableWorkflowName.CLIENT_SELECTION}
-)
 
 
 @dataclass(frozen=True)
@@ -253,12 +189,13 @@ def _evaluate_dependency_blockers(
     dependencies: tuple[ExecutableWorkflowName, ...],
     outcomes: WorkflowOutcomeHistory,
 ) -> tuple[tuple[DiagnosisMessage, ...], tuple[ExecutableWorkflowName, ...]]:
-    recorded = workflows_with_recorded_outcomes(outcomes)
     blocking: list[DiagnosisMessage] = []
     blocking_deps: list[ExecutableWorkflowName] = []
     for dependency in dependencies:
-        if dependency not in recorded:
-            blocking.append(f"dependency_unmet: {dependency}")
+        outcome = outcome_for_workflow(outcomes, dependency)
+        if outcome is not ScientificOutcome.PASS:
+            reason = "dependency_unmet" if outcome is None else f"dependency_outcome_{outcome}"
+            blocking.append(f"{reason}: {dependency}")
             blocking_deps.append(dependency)
     return tuple(blocking), tuple(blocking_deps)
 
@@ -268,11 +205,15 @@ def _build_entry_for_workflow(
     dependencies: tuple[ExecutableWorkflowName, ...],
     outcomes: WorkflowOutcomeHistory,
 ) -> WorkflowPlanEntry:
-    is_optional = workflow in OPTIONAL_WORKFLOWS
+    is_optional = registered_workflow(workflow).optional
     outcome = outcome_for_workflow(outcomes, workflow)
 
     if outcome is not None:
-        status = WorkflowExecutionState.COMPLETED
+        status = (
+            WorkflowExecutionState.COMPLETED
+            if outcome is ScientificOutcome.PASS
+            else WorkflowExecutionState.INVALID
+        )
         return WorkflowPlanEntry(
             workflow=workflow,
             status=status,
@@ -298,174 +239,10 @@ def _build_entry_for_workflow(
 
 def resolve_execution_plan(outcomes: WorkflowOutcomeHistory = ()) -> ExecutionPlan:
     entries = [
-        _build_entry_for_workflow(workflow, dependencies, outcomes)
-        for workflow, dependencies in WORKFLOW_DEPENDENCIES.items()
+        _build_entry_for_workflow(workflow.name, workflow.dependencies, outcomes)
+        for workflow in WORKFLOW_REGISTRY
     ]
     return ExecutionPlan(entries=tuple(entries))
-
-
-@dataclass(frozen=True)
-class IndexedArtifact:
-    identity: ArtifactIdentity
-    boundary: ArtifactBoundary
-    state: ArtifactExecutionState
-    dependency_fingerprint: DependencyFingerprint
-    upstream_identities: tuple[ArtifactIdentity, ...]
-
-
-@dataclass(frozen=True)
-class BoundaryDecision:
-    boundary: ArtifactBoundary
-    action: ActionDecision
-    reused_identity: ArtifactIdentity | None
-    reason: ExecutionReason
-
-
-@dataclass(frozen=True)
-class ResolutionPlan:
-    decisions: tuple[BoundaryDecision, ...]
-    newly_stale: tuple[ArtifactIdentity, ...]
-
-    def recompute_boundaries(self) -> tuple[ArtifactBoundary, ...]:
-        return tuple(
-            decision.boundary for decision in self.decisions if decision.action == "recompute"
-        )
-
-    def reuse_identities(self) -> tuple[ArtifactIdentity, ...]:
-        return tuple(
-            decision.reused_identity
-            for decision in self.decisions
-            if decision.action == "reuse" and decision.reused_identity is not None
-        )
-
-
-EXECUTABLE_WORKFLOW_BOUNDARY_MAP: dict[ExecutableWorkflowName, tuple[ArtifactBoundary, ...]] = {
-    ExecutableWorkflowName.PREPROCESS: (
-        ArtifactBoundary.DATASET_PREPARATION,
-        ArtifactBoundary.PREPROCESSING_AND_SPLITS,
-    ),
-    ExecutableWorkflowName.BASELINE_PARITY: (ArtifactBoundary.TRAINING_CHECKPOINTS,),
-    ExecutableWorkflowName.NESTED_CALIBRATION: (ArtifactBoundary.CALIBRATION_AND_CERTIFICATION,),
-    ExecutableWorkflowName.PROSPECTIVE_EVALUATION: (ArtifactBoundary.EVALUATION,),
-    ExecutableWorkflowName.STATISTICAL_SYNTHESIS: (ArtifactBoundary.ANALYSIS,),
-}
-
-
-def owned_boundaries_for_workflow(
-    workflow: ExecutableWorkflowName,
-) -> tuple[ArtifactBoundary, ...]:
-    return EXECUTABLE_WORKFLOW_BOUNDARY_MAP.get(workflow, ())
-
-
-def _active_candidate_for_boundary(
-    boundary: ArtifactBoundary,
-    indexed: tuple[IndexedArtifact, ...],
-    index: ArtifactDependencyIndex,
-    expected_fingerprint: DependencyFingerprint | None,
-) -> IndexedArtifact | None:
-    candidates = [
-        artifact
-        for artifact in indexed
-        if artifact.boundary is boundary
-        and artifact.state is ArtifactExecutionState.COMPLETE
-        and (
-            expected_fingerprint is None or artifact.dependency_fingerprint == expected_fingerprint
-        )
-        and index.is_active(artifact.identity)
-        and all(index.is_active(upstream) for upstream in artifact.upstream_identities)
-    ]
-    if not candidates:
-        return None
-    return candidates[0]
-
-
-def _normalize_indexed(
-    indexed: tuple[IndexedArtifact, ...] | None,
-    indexed_artifacts: tuple[IndexedArtifact, ...] | None,
-) -> tuple[IndexedArtifact, ...]:
-    if indexed is not None:
-        return indexed
-    if indexed_artifacts is not None:
-        return indexed_artifacts
-    return ()
-
-
-def _normalize_index(
-    index: ArtifactDependencyIndex | None,
-    dependency_index: ArtifactDependencyIndex | None,
-) -> ArtifactDependencyIndex:
-    if index is not None:
-        return index
-    if dependency_index is not None:
-        return dependency_index
-    return ArtifactDependencyIndex()
-
-
-def _deactivate_mismatches(
-    actual_indexed: tuple[IndexedArtifact, ...],
-    actual_index: ArtifactDependencyIndex,
-    expected_fingerprints: BoundaryFingerprints,
-) -> None:
-    for candidate_artifact in actual_indexed:
-        exp_fp = expected_fingerprints.for_boundary(candidate_artifact.boundary)
-        if exp_fp is not None and candidate_artifact.dependency_fingerprint != exp_fp:
-            actual_index.deactivate(candidate_artifact.identity)
-            for desc in actual_index.descendants(candidate_artifact.identity):
-                actual_index.deactivate(desc)
-
-
-def resolve_execution_requirements(
-    required_boundaries: tuple[ArtifactBoundary, ...],
-    indexed: tuple[IndexedArtifact, ...] | None = None,
-    index: ArtifactDependencyIndex | None = None,
-    expected_fingerprints: BoundaryFingerprints | None = None,
-    force_recompute_boundaries: frozenset[ArtifactBoundary] = frozenset(),
-    overwrite_boundaries: frozenset[ArtifactBoundary] = frozenset(),
-    indexed_artifacts: tuple[IndexedArtifact, ...] | None = None,
-    dependency_index: ArtifactDependencyIndex | None = None,
-) -> ResolutionPlan:
-    actual_indexed = _normalize_indexed(indexed, indexed_artifacts)
-    actual_index = _normalize_index(index, dependency_index)
-    actual_expected_fingerprints = expected_fingerprints or BoundaryFingerprints()
-
-    decisions: list[BoundaryDecision] = []
-    newly_stale: list[ArtifactIdentity] = []
-    recompute_cascading = False
-    forces = force_recompute_boundaries | overwrite_boundaries
-
-    if actual_expected_fingerprints:
-        _deactivate_mismatches(actual_indexed, actual_index, actual_expected_fingerprints)
-
-    for boundary in required_boundaries:
-        expected_fp = actual_expected_fingerprints.for_boundary(boundary)
-        candidate = _active_candidate_for_boundary(
-            boundary, actual_indexed, actual_index, expected_fp
-        )
-        must_recompute = boundary in forces or recompute_cascading or candidate is None
-        if must_recompute:
-            recompute_cascading = True
-            if candidate is not None and boundary in forces:
-                newly_stale.append(candidate.identity)
-            reason = "forced" if boundary in forces else "upstream_modified_or_missing"
-            decisions.append(
-                BoundaryDecision(
-                    boundary=boundary,
-                    action="recompute",
-                    reused_identity=None,
-                    reason=reason,
-                )
-            )
-        else:
-            assert candidate is not None
-            decisions.append(
-                BoundaryDecision(
-                    boundary=boundary,
-                    action="reuse",
-                    reused_identity=candidate.identity,
-                    reason="fingerprint_matched_active",
-                )
-            )
-    return ResolutionPlan(decisions=tuple(decisions), newly_stale=tuple(newly_stale))
 
 
 SYSEXITS_EX_UNAVAILABLE = 69
@@ -552,11 +329,7 @@ def run_preprocess(
     scope = [dataset] if dataset is not None else list(DatasetSelector)
     typer.echo(f"preprocess scope: {' '.join(scope)}")
     if overwrite:
-        decision = ReuseDecision.OVERWRITE
-        typer.echo(f"overwrite: scoped to preprocess-owned artifacts ({decision})")
-
-    for stage in PREPROCESS_STAGE_FLOW:
-        typer.echo(f"stage[{stage.stage_order}]: {stage.name}")
+        typer.echo("overwrite: scoped to preprocess outputs")
 
     for selected in scope:
         source = dataset_source_chronology(selected)
@@ -654,14 +427,6 @@ def run_preprocess(
         elif selected is DatasetSelector.EMBER2024:
             run_empty_ember_transform_audit()
 
-    fit_ownership = ownership_for(SharedProducer.REPRESENTATION_DETECTOR_FIT)
-    typer.echo(f"shared_producer: {fit_ownership.producer} ({fit_ownership.reuse_scope})")
-    typer.echo(
-        "preprocess may trigger representation fit only: "
-        f"{is_preprocess_triggerable(SharedProducer.REPRESENTATION_DETECTOR_FIT)}"
-    )
-    boundaries = " ".join(PREPROCESS_OWNED_BOUNDARIES)
-    typer.echo(f"owned_boundaries: {boundaries}")
     write_workflow_result(
         application.result_experiment_directory(ExecutableWorkflowName.PREPROCESS),
         WorkflowResultRecord(
@@ -1020,7 +785,7 @@ def _materialize_dependencies(
     workflow: ExecutableWorkflowName,
     application: Application,
 ) -> None:
-    for dependency in WORKFLOW_DEPENDENCIES[workflow]:
+    for dependency in registered_workflow(workflow).dependencies:
         dependency_entry = application.plan().entry(dependency)
         if dependency_entry.status is WorkflowExecutionState.COMPLETED:
             continue
@@ -1039,7 +804,7 @@ def run_experiment(
     application = Application.from_repository_root(discover_repository_root(repository_root))
     _materialize_dependencies(executable_workflow, application)
     typer.echo(f"workflow: {workflow}")
-    typer.echo(f"roadmap section: {selected.roadmap_section}")
+    typer.echo(f"roadmap section: {selected.section}")
     if overwrite:
         typer.echo("overwrite: scoped to this workflow's artifacts")
 

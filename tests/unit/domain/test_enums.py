@@ -1,31 +1,6 @@
 from __future__ import annotations
 
-from fedact.domain.types import (
-    ArtifactBoundary,
-    ScientificOutcome,
-    WorkflowName,
-)
-
-
-def test_workflow_names_match_roadmap_titles_exactly() -> None:
-    assert {workflow.value for workflow in WorkflowName} == {
-        "scientific-and-configuration-authority",
-        "mathematical-and-numerical-verification",
-        "synthetic-generator-smoke-validation",
-        "synthetic-theory-and-geometry-validation",
-        "real-data-feasibility-and-control-audit",
-        "baseline-reproduction-and-parity-validation",
-        "nested-pre-cutoff-calibration",
-        "real-data-action-certificate-validation",
-        "main-prospective-fedact-evaluation",
-        "novelty-critical-ablations",
-        "federation-and-complementarity-evaluation",
-        "robustness-and-failure-boundary-evaluation",
-        "cross-corpus-generalization",
-        "communication-limited-client-selection",
-        "statistical-synthesis",
-        "manuscript-evidence-generation",
-    }
+from fedact.domain.types import ArtifactBoundary, ScientificOutcome
 
 
 def test_scientific_outcomes_are_the_exact_roadmap_vocabulary() -> None:

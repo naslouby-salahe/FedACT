@@ -16,8 +16,6 @@ from fedact.domain.types import (
     SplitCutoffIdentity,
     UnitCount,
     ValidationFlag,
-    WorkflowDescription,
-    WorkflowName,
 )
 
 
@@ -170,17 +168,6 @@ def open_later_real_evaluation(gate: LaterRealIsolationGate) -> None:
             "evaluation producers after all corresponding scientific inputs and decision "
             "artifacts have reached COMPLETE; later-real data are evaluation-only"
         )
-
-
-@dataclass(frozen=True)
-class WorkflowContract:
-    name: WorkflowName
-    scientific_purpose: WorkflowDescription
-    required_upstream_artifacts: tuple[ArtifactBoundary, ...]
-    manipulations_and_comparators: WorkflowDescription
-    metrics: WorkflowDescription
-    applicable_statistical_analysis: WorkflowDescription
-    resulting_artifacts: WorkflowDescription
 
 
 @dataclass(frozen=True)

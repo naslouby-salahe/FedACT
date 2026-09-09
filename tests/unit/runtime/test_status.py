@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from fedact.domain.types import ExecutableWorkflowName, ScientificOutcome
 from fedact.workflow import (
-    ArtifactExecutionState,
     WorkflowExecutionState,
     WorkflowOutcomeRecord,
     outcome_for_workflow,
@@ -50,14 +49,5 @@ def test_execution_state_enum_exposes_the_locked_values() -> None:
         "BLOCKED",
         "RUNNING",
         "COMPLETED",
-        "INVALID",
-    }
-
-
-def test_artifact_execution_state_enum_exposes_the_locked_values() -> None:
-    assert {state.value for state in ArtifactExecutionState} == {
-        "STAGING",
-        "COMPLETE",
-        "STALE",
         "INVALID",
     }

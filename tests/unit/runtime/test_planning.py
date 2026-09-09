@@ -38,12 +38,12 @@ def test_completed_workflows_report_completed_status() -> None:
     assert plan.entry(W.PREPROCESS).status is WorkflowExecutionState.COMPLETED
 
 
-def test_failed_workflow_reports_failed_without_blocking_siblings() -> None:
+def test_failed_workflow_is_invalid_and_blocks_its_dependents() -> None:
     outcomes = _passed(W.PREPROCESS, W.SMOKE, W.MATH_VERIFICATION) + (
         WorkflowOutcomeRecord(workflow=W.SYNTHETIC_GEOMETRY, outcome=ScientificOutcome.FAIL),
     )
     plan = resolve_execution_plan(outcomes)
-    assert plan.entry(W.SYNTHETIC_GEOMETRY).status is WorkflowExecutionState.COMPLETED
+    assert plan.entry(W.SYNTHETIC_GEOMETRY).status is WorkflowExecutionState.INVALID
     assert plan.entry(W.BASELINE_PARITY).status is WorkflowExecutionState.NOT_STARTED
 
 

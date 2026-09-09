@@ -7,25 +7,6 @@ from typing import Annotated, NewType
 from pydantic import Field, JsonValue, StringConstraints
 
 
-class WorkflowName(StrEnum):
-    SCIENTIFIC_AND_CONFIGURATION_AUTHORITY = "scientific-and-configuration-authority"
-    MATHEMATICAL_AND_NUMERICAL_VERIFICATION = "mathematical-and-numerical-verification"
-    SYNTHETIC_GENERATOR_SMOKE_VALIDATION = "synthetic-generator-smoke-validation"
-    SYNTHETIC_THEORY_AND_GEOMETRY_VALIDATION = "synthetic-theory-and-geometry-validation"
-    REAL_DATA_FEASIBILITY_AND_CONTROL_AUDIT = "real-data-feasibility-and-control-audit"
-    BASELINE_REPRODUCTION_AND_PARITY_VALIDATION = "baseline-reproduction-and-parity-validation"
-    NESTED_PRE_CUTOFF_CALIBRATION = "nested-pre-cutoff-calibration"
-    REAL_DATA_ACTION_CERTIFICATE_VALIDATION = "real-data-action-certificate-validation"
-    MAIN_PROSPECTIVE_FEDACT_EVALUATION = "main-prospective-fedact-evaluation"
-    NOVELTY_CRITICAL_ABLATIONS = "novelty-critical-ablations"
-    FEDERATION_AND_COMPLEMENTARITY_EVALUATION = "federation-and-complementarity-evaluation"
-    ROBUSTNESS_AND_FAILURE_BOUNDARY_EVALUATION = "robustness-and-failure-boundary-evaluation"
-    CROSS_CORPUS_GENERALIZATION = "cross-corpus-generalization"
-    COMMUNICATION_LIMITED_CLIENT_SELECTION = "communication-limited-client-selection"
-    STATISTICAL_SYNTHESIS = "statistical-synthesis"
-    MANUSCRIPT_EVIDENCE_GENERATION = "manuscript-evidence-generation"
-
-
 class ScientificAssumption(StrEnum):
     CHRONOLOGY = "chronology"
     SHARED_COMPONENT = "shared-component"
@@ -124,24 +105,6 @@ class RankSelectionMethod(StrEnum):
     FIXED_RANK = "FIXED_RANK"
     EIGENGAP = "EIGENGAP"
     VARIANCE_THRESHOLD = "VARIANCE_THRESHOLD"
-
-
-class DatasetSplit(StrEnum):
-    HISTORICAL = "HISTORICAL"
-    PROSPECTIVE = "PROSPECTIVE"
-    VALIDATION = "VALIDATION"
-
-
-class InformationFlowPhase(StrEnum):
-    OBSERVATION_COLLECTION = "OBSERVATION_COLLECTION"
-    PREPROCESSING = "PREPROCESSING"
-    HISTORICAL_CALIBRATION = "HISTORICAL_CALIBRATION"
-    PROSPECTIVE_EVALUATION = "PROSPECTIVE_EVALUATION"
-
-
-class PartitionScheme(StrEnum):
-    CHRONOLOGICAL = "CHRONOLOGICAL"
-    FEDERATED = "FEDERATED"
 
 
 class CertificationStatus(StrEnum):
@@ -563,7 +526,6 @@ __all__ = [
     "DatasetIdentity",
     "DatasetName",
     "DatasetSelector",
-    "DatasetSplit",
     "DegeneracyFlag",
     "DegradationValue",
     "DependencyFingerprint",
@@ -609,7 +571,6 @@ __all__ = [
     "HorizonMonths",
     "HorizonStep",
     "IdentifiabilityFlag",
-    "InformationFlowPhase",
     "IntegrityCheckName",
     "IntersectionDimension",
     "IntervalBound",
@@ -650,7 +611,6 @@ __all__ = [
     "PairedCutoffCount",
     "ParameterName",
     "ParameterValue",
-    "PartitionScheme",
     "PassingFlag",
     "PercentagePoints",
     "PercentileValue",
@@ -720,7 +680,6 @@ __all__ = [
     "WindowMonth",
     "WindowSpanMonths",
     "WorkflowDescription",
-    "WorkflowName",
     "WorkflowStatus",
     "ZeroDisplacementFloor",
     "ZeroExclusionFlag",

@@ -55,7 +55,7 @@ _SECTION_HASH_GROUP_TOTAL = 3
 _PAIRED_ENTRY_WIDTH = 2
 _IMPORT_SUMMARY_FIELD_COUNT = 2
 
-_PEFILE_WARNINGS_PATH = Path(__file__).parent / "pefile_warnings.txt"
+_PEFILE_WARNING_HASH_BUCKETS = 128
 
 _STRING_REGEX_NAMES = (
     ".click(",
@@ -264,17 +264,6 @@ _DATA_DIRECTORY_NAMES = (
     "COM_DESCRIPTOR",
     "RESERVED",
 )
-
-
-def _pefile_warning_index() -> dict[str, int]:
-    lines = [
-        line for line in _PEFILE_WARNINGS_PATH.read_text(encoding="utf-8").splitlines() if line
-    ]
-    return {line: index for index, line in enumerate(lines)}
-
-
-_PEFILE_WARNING_INDEX = _pefile_warning_index()
-_PEFILE_WARNING_DIMENSION = len(_PEFILE_WARNING_INDEX) + 1
 
 
 _FEATURE_HASHER_TRANSFORM_ATTRIBUTE = "transform"
@@ -623,19 +612,15 @@ def _authenticode_count_mask() -> np.ndarray:
 
 
 def _pefile_warnings_vector(warnings: EmberJsonStringList) -> np.ndarray:
-    vector = np.zeros(_PEFILE_WARNING_DIMENSION, dtype=np.float32)
-    if not warnings:
-        return vector
-    for warning in warnings:
-        index = _PEFILE_WARNING_INDEX.get(warning)
-        if index is not None:
-            vector[index] = 1.0
-    vector[-1] = len(warnings)
-    return vector
+    hashed = _hashed_row(
+        FeatureHasher(_PEFILE_WARNING_HASH_BUCKETS, input_type="string"),
+        cast(list[JsonEncodableValue], warnings),
+    )
+    return np.hstack([hashed, float(len(warnings))]).astype(np.float32)
 
 
 def _pefile_warnings_count_mask() -> np.ndarray:
-    mask = np.zeros(_PEFILE_WARNING_DIMENSION, dtype=bool)
+    mask = np.zeros(_PEFILE_WARNING_HASH_BUCKETS + 1, dtype=bool)
     mask[-1] = True
     return mask
 
