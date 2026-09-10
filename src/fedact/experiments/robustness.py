@@ -26,6 +26,7 @@ from fedact.domain.types import (
     ClientIdentifier,
     ClientIndex,
     ClientSelectionComparator,
+    CorrelationCoefficient,
     DegradationValue,
     EmbeddingComponent,
     EvaluationCount,
@@ -80,7 +81,21 @@ class _ProspectiveCutoffComparisonArtifact(StrictModel):
     comparisons: list[_ProspectiveCutoffComparisonRecord]
 
 
+class _CentralPatternCutoffRecord(StrictModel):
+    cutoff_id: SplitCutoffIdentity
+    certified_precision: MetricRate | None = None
+    point_selected_precision: MetricRate | None = None
+    matched_random_precision: MetricRate | None = None
+    matched_random_match_quality_sufficient: ValidationFlag = False
+
+
+class _CentralPatternArtifact(StrictModel):
+    cutoffs: list[_CentralPatternCutoffRecord]
+    rank_alignment_spearman_rho: CorrelationCoefficient | None = None
+
+
 HARDENING_OFF_ABLATION_NAME: AblationIdentifier = "hardening_off"
+POINT_VS_SET_ABLATION_NAME: AblationIdentifier = "point_vs_set"
 
 
 @dataclass(frozen=True)
@@ -130,11 +145,38 @@ def _hardening_off_ablation_result(application: ExperimentRuntime) -> AblationRe
     )
 
 
+def _point_vs_set_ablation_result(application: ExperimentRuntime) -> AblationResult | None:
+    source = (
+        _experiment_directory(application, "action-certificate-validation") / "central-pattern.json"
+    )
+    if not source.is_file():
+        return None
+    artifact = _CentralPatternArtifact.model_validate_json(source.read_text(encoding="utf-8"))
+    paired = [
+        (cutoff.certified_precision, cutoff.point_selected_precision)
+        for cutoff in artifact.cutoffs
+        if cutoff.certified_precision is not None and cutoff.point_selected_precision is not None
+    ]
+    if not paired:
+        return None
+    mean_certified_precision = sum(certified for certified, _point in paired) / len(paired)
+    mean_point_precision = sum(point for _certified, point in paired) / len(paired)
+    return AblationResult(
+        ablation_name=POINT_VS_SET_ABLATION_NAME,
+        degradation_percentage_points=100.0 * (mean_certified_precision - mean_point_precision),
+        measured=True,
+    )
+
+
 def run_novelty_critical_ablations(application: ExperimentRuntime) -> AblationExperimentReport:
     results: list[AblationResult] = []
+    real_ablation_names = frozenset({HARDENING_OFF_ABLATION_NAME, POINT_VS_SET_ABLATION_NAME})
     hardening_off = _hardening_off_ablation_result(application)
     if hardening_off is not None:
         results.append(hardening_off)
+    point_vs_set = _point_vs_set_ablation_result(application)
+    if point_vs_set is not None:
+        results.append(point_vs_set)
     source = _experiment_directory(application, "ablations") / "measurements.json"
     if source.is_file():
         artifact = _AblationArtifact.model_validate_json(source.read_text(encoding="utf-8"))
@@ -149,7 +191,7 @@ def run_novelty_critical_ablations(application: ExperimentRuntime) -> AblationEx
                 measured=True,
             )
             for measurement in artifact.measurements
-            if measurement.ablation_name != HARDENING_OFF_ABLATION_NAME or hardening_off is None
+            if measurement.ablation_name not in real_ablation_names
         )
     if not results:
         LOGGER.warning(
@@ -160,19 +202,20 @@ def run_novelty_critical_ablations(application: ExperimentRuntime) -> AblationEx
             source,
         )
         return AblationExperimentReport(0, (), ScientificOutcome.INSUFFICIENT_EVIDENCE)
-    hardening_benefit_supported = (
-        hardening_off is not None and hardening_off.degradation_percentage_points > 0.0
+    real_results = [result for result in (hardening_off, point_vs_set) if result is not None]
+    novelty_critical_claims_supported = bool(real_results) and all(
+        result.degradation_percentage_points > 0.0 for result in real_results
     )
     LOGGER.info(
-        "novelty-critical ablations evaluated ablations=%s hardening_benefit_supported=%s",
+        "novelty-critical ablations evaluated ablations=%s novelty_critical_claims_supported=%s",
         len(results),
-        hardening_benefit_supported,
+        novelty_critical_claims_supported,
     )
     return AblationExperimentReport(
         len(results),
         tuple(results),
         ScientificOutcome.PASS
-        if hardening_benefit_supported
+        if novelty_critical_claims_supported
         else ScientificOutcome.INSUFFICIENT_EVIDENCE,
     )
 

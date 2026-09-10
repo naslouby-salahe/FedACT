@@ -56,3 +56,45 @@ def test_hardening_off_ablation_measures_real_degradation(
     result = report.results[0]
     assert result.ablation_name == "hardening_off"
     assert result.degradation_percentage_points == pytest.approx(30.0)
+
+
+def test_point_vs_set_ablation_measures_real_precision_gap(
+    isolated_application: Application,
+) -> None:
+    destination = (
+        isolated_application.repository_root
+        / isolated_application.configuration.values.workspace.directories.experiments
+        / "action-certificate-validation"
+        / "central-pattern.json"
+    )
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(
+        json.dumps(
+            {
+                "cutoffs": [
+                    {
+                        "cutoff_id": "lamda-1",
+                        "certified_precision": 0.9,
+                        "point_selected_precision": 0.5,
+                        "matched_random_precision": 0.2,
+                        "matched_random_match_quality_sufficient": True,
+                    },
+                    {
+                        "cutoff_id": "lamda-2",
+                        "certified_precision": 0.8,
+                        "point_selected_precision": 0.4,
+                        "matched_random_precision": 0.1,
+                        "matched_random_match_quality_sufficient": True,
+                    },
+                ],
+                "rank_alignment_spearman_rho": 0.6,
+            }
+        ),
+        encoding="utf-8",
+    )
+    report = run_novelty_critical_ablations(isolated_application)
+    assert report.evaluated_configurations == 1
+    assert report.scientific_outcome is ScientificOutcome.PASS
+    result = report.results[0]
+    assert result.ablation_name == "point_vs_set"
+    assert result.degradation_percentage_points == pytest.approx(40.0)
