@@ -45,6 +45,7 @@ from fedact.domain.types import (
     ValidationFlag,
 )
 from fedact.experiments.identification import (
+    run_lamda_allowance_sensitivity_stress,
     run_lamda_sparse_control_stress,
     run_lamda_weak_eigengap_stress,
 )
@@ -533,6 +534,15 @@ def run_robustness_and_failure_boundaries(application: ExperimentRuntime) -> Bou
         sparse_control.endpoint,
         sparse_control_completed,
         sparse_control_reached,
+    )
+
+    allowance_sensitivity = run_lamda_allowance_sensitivity_stress(application)
+    LOGGER.info(
+        "allowance sensitivity real stress endpoint=%s control_span_points=%s "
+        "private_contamination_points=%s",
+        allowance_sensitivity.endpoint,
+        len(allowance_sensitivity.control_span_results),
+        len(allowance_sensitivity.private_contamination_results),
     )
 
     real_completed = weak_eigengap_completed + sparse_control_completed

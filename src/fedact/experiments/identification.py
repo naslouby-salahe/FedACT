@@ -50,6 +50,7 @@ from fedact.data.splits import (
     transition_windows,
 )
 from fedact.domain.types import (
+    BootstrapAlpha,
     EigengapRatio,
     EvaluationCount,
     FamilyName,
@@ -92,6 +93,8 @@ class ClientConstraintFit:
     subspace_term: UncertaintyRadius
     control_span_term: UncertaintyRadius
     private_term: UncertaintyRadius
+    control_span_term_sensitivity: tuple[UncertaintyRadius, ...] = ()
+    private_term_sensitivity: tuple[UncertaintyRadius | None, ...] = ()
 
 
 def fit_lamda_client_constraint(
@@ -105,6 +108,8 @@ def fit_lamda_client_constraint(
     historical_endpoints: tuple[CalendarMonth, ...],
     earlier_malicious_endpoints: tuple[CalendarMonth, ...],
     control_replicates_override: tuple[ControlTransitionReplicate, ...] | None = None,
+    control_span_sensitivity_alphas: tuple[BootstrapAlpha, ...] = (),
+    private_contamination_sensitivity_alphas: tuple[BootstrapAlpha, ...] = (),
 ) -> ClientConstraintFit | AbstentionReason:
     config = application.configuration.values
     transition_interval_months: WindowSpanMonths = config.temporal.transition_interval_months
@@ -207,6 +212,16 @@ def fit_lamda_client_constraint(
         config.identification.control_span_violation.primary_alpha,
         smallest_malicious_eigenvalue,
     )
+    control_span_term_sensitivity = tuple(
+        control_span_violation_term(
+            replicate_displacements,
+            replicate_supports,
+            rank_selection.selected_rank,
+            sensitivity_alpha,
+            smallest_malicious_eigenvalue,
+        )
+        for sensitivity_alpha in control_span_sensitivity_alphas
+    )
 
     earlier_transitions: list[FloatArray] = []
     for earlier_endpoint in earlier_malicious_endpoints:
@@ -234,6 +249,17 @@ def fit_lamda_client_constraint(
     )
     if private_term is None:
         return AbstentionReason.ABSTAIN_INSUFFICIENT_PRIVATE_ALLOWANCE_HISTORY
+    private_term_sensitivity = tuple(
+        private_transition_term_single_client(
+            earlier_transitions,
+            projector,
+            sensitivity_alpha,
+            smallest_malicious_eigenvalue,
+            config.numerical.rank_clip_epsilon_relative,
+            config.identification.nuisance_rank.bootstrap_resamples,
+        )
+        for sensitivity_alpha in private_contamination_sensitivity_alphas
+    )
 
     beta = client_radius(sampling_term, subspace_term, control_span_term, private_term)
     constraint = ClientConstraint(
@@ -265,6 +291,8 @@ def fit_lamda_client_constraint(
         subspace_term=subspace_term,
         control_span_term=control_span_term,
         private_term=private_term,
+        control_span_term_sensitivity=control_span_term_sensitivity,
+        private_term_sensitivity=private_term_sensitivity,
     )
 
 
@@ -1005,6 +1033,93 @@ def run_lamda_weak_eigengap_stress(application: ExperimentRuntime) -> WeakEigeng
     )
 
 
+@dataclass(frozen=True)
+class _BaselineIdentificationContext:
+    cohort: FamilyName
+    cohort_records: tuple[LamdaRawRecord, ...]
+    all_records: tuple[LamdaRawRecord, ...]
+    embedded_features: FloatArray
+    embedded_cohort_features: FloatArray
+    endpoint: CalendarMonth
+    historical_endpoints: tuple[CalendarMonth, ...]
+    earlier_malicious_endpoints: tuple[CalendarMonth, ...]
+    baseline_fit: ClientConstraintFit
+
+
+def _locate_baseline_identification_context(
+    application: ExperimentRuntime,
+) -> _BaselineIdentificationContext | None:
+    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline" / "2023"
+    if not raw_root.is_dir():
+        return None
+    config = application.configuration.values
+    loaded = _load_variance_filtered_lamda_dataset(
+        raw_root, config.datasets.lamda.preprocessing.raw_variance_threshold_when_required
+    )
+    rule = label_derivation_rule(config.datasets.lamda)
+    cohort = _dominant_malicious_family_cohort(loaded.records, rule)
+    if cohort is None:
+        return None
+    cohort_mask = np.fromiter(
+        (record.family == cohort for record in loaded.records),
+        dtype=bool,
+        count=len(loaded.records),
+    )
+    cohort_records = tuple(
+        record for record, keep in zip(loaded.records, cohort_mask, strict=True) if keep
+    )
+    all_months = np.fromiter(
+        (int(year_month_to_calendar_month(record.year_month)) for record in loaded.records),
+        dtype=np.int64,
+        count=len(loaded.records),
+    )
+    month_min, month_max = int(all_months.min()), int(all_months.max())
+    history = config.temporal.historical_training_window_months
+
+    encoder = _train_cutoff_representation_encoder(
+        application, loaded.records, loaded.features, rule, calendar_month(month_max + 1)
+    )
+    if encoder is None:
+        return None
+    embedded_features = _embed_features(encoder, loaded.features)
+    embedded_cohort_features = embedded_features[cohort_mask]
+
+    for endpoint_ordinal in range(month_max, month_min, -1):
+        candidate_endpoint = calendar_month(endpoint_ordinal)
+        candidate_historical_endpoints = tuple(
+            calendar_month(candidate)
+            for candidate in range(max(month_min, endpoint_ordinal - history), endpoint_ordinal)
+        )
+        candidate_earlier_malicious_endpoints = tuple(
+            calendar_month(candidate)
+            for candidate in range(max(month_min, endpoint_ordinal - history), endpoint_ordinal - 1)
+        )
+        candidate_fit = fit_lamda_client_constraint(
+            application,
+            cohort_records,
+            embedded_cohort_features,
+            loaded.records,
+            embedded_features,
+            rule,
+            candidate_endpoint,
+            candidate_historical_endpoints,
+            candidate_earlier_malicious_endpoints,
+        )
+        if isinstance(candidate_fit, ClientConstraintFit):
+            return _BaselineIdentificationContext(
+                cohort=cohort,
+                cohort_records=cohort_records,
+                all_records=loaded.records,
+                embedded_features=embedded_features,
+                embedded_cohort_features=embedded_cohort_features,
+                endpoint=candidate_endpoint,
+                historical_endpoints=candidate_historical_endpoints,
+                earlier_malicious_endpoints=candidate_earlier_malicious_endpoints,
+                baseline_fit=candidate_fit,
+            )
+    return None
+
+
 class _SparseControlStressRecord(StrictModel):
     retention_fraction: Fraction
     baseline_beta: UncertaintyRadius
@@ -1029,104 +1144,35 @@ class SparseControlStressReport:
 
 
 def run_lamda_sparse_control_stress(application: ExperimentRuntime) -> SparseControlStressReport:
-    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline" / "2023"
-    if not raw_root.is_dir():
-        LOGGER.warning("sparse-control stress has no LAMDA release at %s", raw_root)
-        return SparseControlStressReport(None, (), ScientificOutcome.INSUFFICIENT_EVIDENCE)
-    config = application.configuration.values
-    loaded = _load_variance_filtered_lamda_dataset(
-        raw_root, config.datasets.lamda.preprocessing.raw_variance_threshold_when_required
-    )
-    rule = label_derivation_rule(config.datasets.lamda)
-    cohort = _dominant_malicious_family_cohort(loaded.records, rule)
-    if cohort is None:
-        LOGGER.warning("sparse-control stress found no family-labeled cohort")
-        return SparseControlStressReport(None, (), ScientificOutcome.INSUFFICIENT_EVIDENCE)
-    cohort_mask = np.fromiter(
-        (record.family == cohort for record in loaded.records),
-        dtype=bool,
-        count=len(loaded.records),
-    )
-    cohort_records = tuple(
-        record for record, keep in zip(loaded.records, cohort_mask, strict=True) if keep
-    )
-    all_months = np.fromiter(
-        (int(year_month_to_calendar_month(record.year_month)) for record in loaded.records),
-        dtype=np.int64,
-        count=len(loaded.records),
-    )
-    month_min, month_max = int(all_months.min()), int(all_months.max())
-    history = config.temporal.historical_training_window_months
-    transition_interval_months = config.temporal.transition_interval_months
-
-    encoder = _train_cutoff_representation_encoder(
-        application, loaded.records, loaded.features, rule, calendar_month(month_max + 1)
-    )
-    if encoder is None:
-        LOGGER.warning("sparse-control stress could not train a cutoff-fixed encoder")
-        return SparseControlStressReport(None, (), ScientificOutcome.INSUFFICIENT_EVIDENCE)
-    embedded_features = _embed_features(encoder, loaded.features)
-    embedded_cohort_features = embedded_features[cohort_mask]
-
-    baseline_fit: ClientConstraintFit | AbstentionReason | None = None
-    endpoint: CalendarMonth | None = None
-    historical_endpoints: tuple[CalendarMonth, ...] = ()
-    for endpoint_ordinal in range(month_max, month_min, -1):
-        candidate_endpoint = calendar_month(endpoint_ordinal)
-        candidate_historical_endpoints = tuple(
-            calendar_month(candidate)
-            for candidate in range(max(month_min, endpoint_ordinal - history), endpoint_ordinal)
-        )
-        candidate_earlier_malicious_endpoints = tuple(
-            calendar_month(candidate)
-            for candidate in range(max(month_min, endpoint_ordinal - history), endpoint_ordinal - 1)
-        )
-        candidate_fit = fit_lamda_client_constraint(
-            application,
-            cohort_records,
-            embedded_cohort_features,
-            loaded.records,
-            embedded_features,
-            rule,
-            candidate_endpoint,
-            candidate_historical_endpoints,
-            candidate_earlier_malicious_endpoints,
-        )
-        if isinstance(candidate_fit, ClientConstraintFit):
-            baseline_fit = candidate_fit
-            endpoint = candidate_endpoint
-            historical_endpoints = candidate_historical_endpoints
-            break
-    if baseline_fit is None or endpoint is None:
+    context = _locate_baseline_identification_context(application)
+    if context is None:
         LOGGER.warning("sparse-control stress found no endpoint with a successful baseline fit")
         return SparseControlStressReport(None, (), ScientificOutcome.INSUFFICIENT_EVIDENCE)
-    assert isinstance(baseline_fit, ClientConstraintFit)
-
-    earlier_malicious_endpoints = tuple(
-        calendar_month(candidate)
-        for candidate in range(max(month_min, int(endpoint) - history), int(endpoint) - 1)
-    )
+    config = application.configuration.values
+    rule = label_derivation_rule(config.datasets.lamda)
+    transition_interval_months = config.temporal.transition_interval_months
+    baseline_fit = context.baseline_fit
 
     results: list[_SparseControlStressRecord] = []
     for fraction in config.robustness.real_stress.control_support_fractions:
         sparse_replicates = sparse_control_transition_replicates(
-            loaded.records,
-            embedded_features,
+            context.all_records,
+            context.embedded_features,
             rule,
-            historical_endpoints,
+            context.historical_endpoints,
             transition_interval_months,
             fraction,
         )
         perturbed_fit = fit_lamda_client_constraint(
             application,
-            cohort_records,
-            embedded_cohort_features,
-            loaded.records,
-            embedded_features,
+            context.cohort_records,
+            context.embedded_cohort_features,
+            context.all_records,
+            context.embedded_features,
             rule,
-            endpoint,
-            historical_endpoints,
-            earlier_malicious_endpoints,
+            context.endpoint,
+            context.historical_endpoints,
+            context.earlier_malicious_endpoints,
             control_replicates_override=sparse_replicates,
         )
         if isinstance(perturbed_fit, ClientConstraintFit):
@@ -1152,7 +1198,7 @@ def run_lamda_sparse_control_stress(application: ExperimentRuntime) -> SparseCon
             )
         LOGGER.info(
             "sparse-control stress endpoint=%s fraction=%s baseline_beta=%.6f fitted=%s",
-            endpoint,
+            context.endpoint,
             fraction,
             baseline_fit.beta,
             results[-1].fitted,
@@ -1167,15 +1213,131 @@ def run_lamda_sparse_control_stress(application: ExperimentRuntime) -> SparseCon
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(
         _SparseControlStressArtifact(
-            endpoint=endpoint, cohort=cohort, results=results
+            endpoint=context.endpoint, cohort=context.cohort, results=results
         ).model_dump_json(indent=_EVIDENCE_JSON_INDENT_SPACES),
         encoding="utf-8",
     )
     return SparseControlStressReport(
-        endpoint=endpoint,
+        endpoint=context.endpoint,
         results=tuple(results),
         scientific_outcome=(
             ScientificOutcome.PASS if results else ScientificOutcome.INSUFFICIENT_EVIDENCE
+        ),
+    )
+
+
+class _AllowanceSensitivityStressRecord(StrictModel):
+    sensitivity_alpha: BootstrapAlpha
+    primary_control_span_term: UncertaintyRadius
+    sensitivity_control_span_term: UncertaintyRadius
+    primary_private_term: UncertaintyRadius
+    sensitivity_private_term: UncertaintyRadius | None = None
+
+
+class _AllowanceSensitivityStressArtifact(StrictModel):
+    endpoint: CalendarMonth
+    cohort: FamilyName
+    control_span_results: list[_AllowanceSensitivityStressRecord]
+    private_contamination_results: list[_AllowanceSensitivityStressRecord]
+
+
+@dataclass(frozen=True)
+class AllowanceSensitivityStressReport:
+    endpoint: CalendarMonth | None
+    control_span_results: tuple[_AllowanceSensitivityStressRecord, ...]
+    private_contamination_results: tuple[_AllowanceSensitivityStressRecord, ...]
+    scientific_outcome: ScientificOutcome
+
+
+def run_lamda_allowance_sensitivity_stress(
+    application: ExperimentRuntime,
+) -> AllowanceSensitivityStressReport:
+    context = _locate_baseline_identification_context(application)
+    if context is None:
+        LOGGER.warning(
+            "allowance sensitivity stress found no endpoint with a successful baseline fit"
+        )
+        return AllowanceSensitivityStressReport(
+            None, (), (), ScientificOutcome.INSUFFICIENT_EVIDENCE
+        )
+    config = application.configuration.values
+    rule = label_derivation_rule(config.datasets.lamda)
+    control_span_alphas = tuple(config.identification.control_span_violation.sensitivity_alpha)
+    private_alphas = tuple(config.identification.private_contamination.sensitivity_alpha)
+
+    refit = fit_lamda_client_constraint(
+        application,
+        context.cohort_records,
+        context.embedded_cohort_features,
+        context.all_records,
+        context.embedded_features,
+        rule,
+        context.endpoint,
+        context.historical_endpoints,
+        context.earlier_malicious_endpoints,
+        control_span_sensitivity_alphas=control_span_alphas,
+        private_contamination_sensitivity_alphas=private_alphas,
+    )
+    if not isinstance(refit, ClientConstraintFit):
+        LOGGER.warning("allowance sensitivity stress lost the baseline fit while re-deriving")
+        return AllowanceSensitivityStressReport(
+            None, (), (), ScientificOutcome.INSUFFICIENT_EVIDENCE
+        )
+
+    control_span_results = [
+        _AllowanceSensitivityStressRecord(
+            sensitivity_alpha=alpha,
+            primary_control_span_term=refit.control_span_term,
+            sensitivity_control_span_term=sensitivity_term,
+            primary_private_term=refit.private_term,
+        )
+        for alpha, sensitivity_term in zip(
+            control_span_alphas, refit.control_span_term_sensitivity, strict=True
+        )
+    ]
+    private_contamination_results = [
+        _AllowanceSensitivityStressRecord(
+            sensitivity_alpha=alpha,
+            primary_control_span_term=refit.control_span_term,
+            sensitivity_control_span_term=refit.control_span_term,
+            primary_private_term=refit.private_term,
+            sensitivity_private_term=sensitivity_term,
+        )
+        for alpha, sensitivity_term in zip(
+            private_alphas, refit.private_term_sensitivity, strict=True
+        )
+    ]
+    LOGGER.info(
+        "allowance sensitivity stress endpoint=%s control_span_alphas=%s private_alphas=%s",
+        context.endpoint,
+        control_span_alphas,
+        private_alphas,
+    )
+
+    destination = (
+        application.repository_root
+        / config.workspace.directories.experiments
+        / "failure-boundaries"
+        / "allowance-sensitivity-stress.json"
+    )
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(
+        _AllowanceSensitivityStressArtifact(
+            endpoint=context.endpoint,
+            cohort=context.cohort,
+            control_span_results=control_span_results,
+            private_contamination_results=private_contamination_results,
+        ).model_dump_json(indent=_EVIDENCE_JSON_INDENT_SPACES),
+        encoding="utf-8",
+    )
+    return AllowanceSensitivityStressReport(
+        endpoint=context.endpoint,
+        control_span_results=tuple(control_span_results),
+        private_contamination_results=tuple(private_contamination_results),
+        scientific_outcome=(
+            ScientificOutcome.PASS
+            if control_span_results or private_contamination_results
+            else ScientificOutcome.INSUFFICIENT_EVIDENCE
         ),
     )
 
