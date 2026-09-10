@@ -1214,8 +1214,10 @@ class _SparseControlStressRecord(StrictModel):
     baseline_beta: UncertaintyRadius
     baseline_selected_rank: RankDimension
     fitted: ValidationFlag
+    baseline_eigengap_ratio: EigengapRatio | None = None
     perturbed_beta: UncertaintyRadius | None = None
     perturbed_selected_rank: RankDimension | None = None
+    perturbed_eigengap_ratio: EigengapRatio | None = None
     abstention_reason: AbstentionReason | None = None
 
 
@@ -1271,8 +1273,10 @@ def run_lamda_sparse_control_stress(application: ExperimentRuntime) -> SparseCon
                     baseline_beta=baseline_fit.beta,
                     baseline_selected_rank=baseline_fit.selected_rank,
                     fitted=True,
+                    baseline_eigengap_ratio=baseline_fit.eigengap_ratio,
                     perturbed_beta=perturbed_fit.beta,
                     perturbed_selected_rank=perturbed_fit.selected_rank,
+                    perturbed_eigengap_ratio=perturbed_fit.eigengap_ratio,
                 )
             )
         else:
@@ -1282,6 +1286,7 @@ def run_lamda_sparse_control_stress(application: ExperimentRuntime) -> SparseCon
                     baseline_beta=baseline_fit.beta,
                     baseline_selected_rank=baseline_fit.selected_rank,
                     fitted=False,
+                    baseline_eigengap_ratio=baseline_fit.eigengap_ratio,
                     abstention_reason=perturbed_fit,
                 )
             )
