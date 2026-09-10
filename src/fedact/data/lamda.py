@@ -287,6 +287,26 @@ def malicious_transition_displacement(
     )
 
 
+def windowed_malicious_features(
+    records: Sequence[LamdaRawRecord],
+    features: np.ndarray,
+    rule: LabelDerivationRule,
+    endpoint_month: CalendarMonth,
+    transition_interval_months: WindowSpanMonths,
+) -> tuple[np.ndarray, np.ndarray]:
+    windows = transition_windows(endpoint_month, transition_interval_months)
+    months, keep = _labeled_months(records, rule, want_malicious=True)
+    kept_features = features[keep].astype(np.float64)
+    kept_months = months[keep]
+    before_mask = (kept_months >= windows.before_window_start_inclusive) & (
+        kept_months < windows.before_window_end_exclusive
+    )
+    after_mask = (kept_months >= windows.after_window_start_inclusive) & (
+        kept_months < windows.after_window_end_exclusive
+    )
+    return kept_features[before_mask], kept_features[after_mask]
+
+
 def control_transition_replicates(
     records: Sequence[LamdaRawRecord],
     features: np.ndarray,

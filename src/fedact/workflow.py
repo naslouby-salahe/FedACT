@@ -72,6 +72,7 @@ from fedact.experiments.generalization import (
     run_cross_corpus_generalization,
     run_prospective_fedact_evaluation,
 )
+from fedact.experiments.identification import run_lamda_identification_diagnostics
 from fedact.experiments.registry import (
     WORKFLOW_REGISTRY,
     registered_workflow,
@@ -669,6 +670,13 @@ def _dispatch_evaluation_workflow(
             ),
         )
         typer.echo(f"prospective evaluation completed: {pro_report.scientific_outcome}")
+        identification_report = run_lamda_identification_diagnostics(application)
+        typer.echo(
+            "lamda identification diagnostics completed: "
+            f"{identification_report.scientific_outcome} "
+            f"(cutoffs_fitted={identification_report.cutoffs_fitted}/"
+            f"{identification_report.cutoffs_evaluated})"
+        )
         return True
 
     if workflow is ExecutableWorkflowName.ABLATIONS:

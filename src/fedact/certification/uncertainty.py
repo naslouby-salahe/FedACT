@@ -40,15 +40,9 @@ def weighted_covariance(
     weights: Sequence[CoordinateValue] | None = None,
 ) -> np.ndarray:
     if isinstance(samples, (list, tuple)):
-        arrs = [np.asarray(s, dtype=np.float64) for s in samples]
-        if weights is not None:
-            w = np.array(weights, dtype=np.float64) / sum(weights)
-            cov = np.zeros((arrs[0].shape[0], arrs[0].shape[0]), dtype=np.float64)
-            for a, wi in zip(arrs, w, strict=True):
-                cov += wi * np.outer(a, a)
-            return cov
-        return np.cov(np.stack(arrs), rowvar=False)
-    s = np.asarray(samples, dtype=np.float64)
+        s = np.stack([np.asarray(sample, dtype=np.float64) for sample in samples])
+    else:
+        s = np.asarray(samples, dtype=np.float64)
     if s.shape[0] <= 1:
         return np.eye(s.shape[1] if s.ndim > 1 else 1, dtype=np.float64)
     if weights is not None:
