@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from pathlib import Path
+
+import pytest
 import torch
 
 from fedact.certification.uncertainty import NuisanceEstimate
@@ -12,10 +15,15 @@ from fedact.experiments.validation import (
 from fedact.workflow import Application
 
 
+@pytest.fixture
+def isolated_application(tmp_path: Path, application: Application) -> Application:
+    return Application(repository_root=tmp_path, configuration=application.configuration)
+
+
 def test_failure_boundary_evaluation_requires_real_base_evidence(
-    application: Application,
+    isolated_application: Application,
 ) -> None:
-    report = run_robustness_and_failure_boundaries(application)
+    report = run_robustness_and_failure_boundaries(isolated_application)
     assert report.boundary_points_tested == 0
     assert report.scientific_outcome is ScientificOutcome.INSUFFICIENT_EVIDENCE
 

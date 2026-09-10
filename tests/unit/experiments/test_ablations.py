@@ -98,3 +98,45 @@ def test_point_vs_set_ablation_measures_real_precision_gap(
     result = report.results[0]
     assert result.ablation_name == "point_vs_set"
     assert result.degradation_percentage_points == pytest.approx(40.0)
+
+
+def test_no_controls_ablation_measures_real_beta_widening(
+    isolated_application: Application,
+) -> None:
+    destination = (
+        isolated_application.repository_root
+        / isolated_application.configuration.values.workspace.directories.experiments
+        / "prospective-evaluation"
+        / "identification-diagnostics.json"
+    )
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(
+        json.dumps(
+            {
+                "cohort": "smsreg",
+                "cutoffs": [
+                    {
+                        "cutoff": 121,
+                        "cohort": "smsreg",
+                        "fitted": True,
+                        "beta": 0.2,
+                        "no_controls_beta": 0.5,
+                    },
+                    {
+                        "cutoff": 122,
+                        "cohort": "smsreg",
+                        "fitted": True,
+                        "beta": 0.3,
+                        "no_controls_beta": 0.6,
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    report = run_novelty_critical_ablations(isolated_application)
+    assert report.evaluated_configurations == 1
+    assert report.scientific_outcome is ScientificOutcome.PASS
+    result = report.results[0]
+    assert result.ablation_name == "no_controls"
+    assert result.degradation_percentage_points == pytest.approx(30.0)

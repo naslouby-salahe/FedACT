@@ -241,6 +241,108 @@ def fit_lamda_client_constraint(
     )
 
 
+def fit_lamda_client_constraint_no_controls(
+    application: ExperimentRuntime,
+    cohort_records: tuple[LamdaRawRecord, ...],
+    cohort_features: FloatArray,
+    rule: LabelDerivationRule,
+    endpoint: CalendarMonth,
+    earlier_malicious_endpoints: tuple[CalendarMonth, ...],
+) -> ClientConstraintFit | AbstentionReason:
+    config = application.configuration.values
+    transition_interval_months: WindowSpanMonths = config.temporal.transition_interval_months
+
+    malicious = malicious_transition_displacement(
+        cohort_records, cohort_features, rule, endpoint, transition_interval_months
+    )
+    if (
+        malicious is None
+        or malicious.support_before < config.identification.minimum_support_per_class
+        or malicious.support_after < config.identification.minimum_support_per_class
+    ):
+        return AbstentionReason.ABSTAIN_INSUFFICIENT_MALICIOUS_SUPPORT
+
+    dimension = cohort_features.shape[1]
+    identity_projector = np.eye(dimension)
+
+    window_minus, window_plus = windowed_malicious_features(
+        cohort_records, cohort_features, rule, endpoint, transition_interval_months
+    )
+    malicious_covariance_raw = malicious_transition_covariance(window_minus, window_plus)
+    malicious_covariance = regularized_covariance(
+        malicious_covariance_raw,
+        coefficient=config.identification.covariance_regularization.primary_c,
+        floor=config.numerical.scale_standardization_floor,
+    )
+    smallest_malicious_eigenvalue = float(np.linalg.eigvalsh(malicious_covariance).min())
+
+    coverage = config.identification.target_coverage.primary
+    alpha = (1.0 - coverage) / (
+        _ALPHA_ALLOCATION_DENOMINATOR_FACTOR * _SINGLE_CORPUS_LEVEL_CLIENT_COUNT
+    )
+    sampling_term = bootstrap_malicious_sampling_term(
+        window_minus,
+        window_plus,
+        malicious.displacement,
+        identity_projector,
+        malicious_covariance,
+        alpha,
+        config.identification.uncertainty.bootstrap_resamples,
+        config.seeds.calibration[0],
+    )
+
+    earlier_transitions: list[FloatArray] = []
+    for earlier_endpoint in earlier_malicious_endpoints:
+        earlier = malicious_transition_displacement(
+            cohort_records, cohort_features, rule, earlier_endpoint, transition_interval_months
+        )
+        if (
+            earlier is not None
+            and earlier.support_before >= config.identification.minimum_support_per_class
+            and earlier.support_after >= config.identification.minimum_support_per_class
+        ):
+            earlier_transitions.append(earlier.displacement)
+    if (
+        len(earlier_transitions)
+        < config.identification.private_contamination.minimum_history_residuals
+    ):
+        return AbstentionReason.ABSTAIN_INSUFFICIENT_PRIVATE_ALLOWANCE_HISTORY
+    private_term = private_transition_term_single_client(
+        earlier_transitions,
+        identity_projector,
+        config.identification.private_contamination.primary_alpha,
+        smallest_malicious_eigenvalue,
+        config.numerical.rank_clip_epsilon_relative,
+        config.identification.nuisance_rank.bootstrap_resamples,
+    )
+    if private_term is None:
+        return AbstentionReason.ABSTAIN_INSUFFICIENT_PRIVATE_ALLOWANCE_HISTORY
+
+    beta = client_radius(sampling_term, 0.0, 0.0, private_term)
+    constraint = ClientConstraint(
+        client_index=0,
+        uncertainty_radius=beta,
+        beta=beta,
+        subspace=None,
+        projector=identity_projector,
+        covariance=malicious_covariance,
+    )
+    LOGGER.info(
+        "lamda no-controls client constraint fitted endpoint=%s beta=%.6f "
+        "sampling=%.6f private=%.6f",
+        endpoint,
+        beta,
+        sampling_term,
+        private_term,
+    )
+    return ClientConstraintFit(
+        constraint=constraint,
+        selected_rank=dimension,
+        eigengap_ratio=1.0,
+        beta=beta,
+    )
+
+
 class _IdentificationCutoffRecord(StrictModel):
     cutoff: CalendarMonth
     cohort: FamilyName
@@ -249,6 +351,7 @@ class _IdentificationCutoffRecord(StrictModel):
     selected_rank: RankDimension | None = None
     eigengap_ratio: EigengapRatio | None = None
     beta: UncertaintyRadius | None = None
+    no_controls_beta: UncertaintyRadius | None = None
 
 
 class _IdentificationDiagnosticsArtifact(StrictModel):
@@ -472,6 +575,19 @@ def run_lamda_identification_diagnostics(
         )
         if isinstance(result, ClientConstraintFit):
             fitted += 1
+            no_controls_result = fit_lamda_client_constraint_no_controls(
+                application,
+                cohort_records,
+                embedded_cohort_features,
+                rule,
+                endpoint,
+                earlier_malicious_endpoints,
+            )
+            no_controls_beta = (
+                no_controls_result.beta
+                if isinstance(no_controls_result, ClientConstraintFit)
+                else None
+            )
             records_list.append(
                 _IdentificationCutoffRecord(
                     cutoff=endpoint,
@@ -480,6 +596,7 @@ def run_lamda_identification_diagnostics(
                     selected_rank=result.selected_rank,
                     eigengap_ratio=result.eigengap_ratio,
                     beta=result.beta,
+                    no_controls_beta=no_controls_beta,
                 )
             )
         else:
