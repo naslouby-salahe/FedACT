@@ -162,7 +162,12 @@ def _group_false_negative_rate(records: tuple[EvaluationRecord, ...]) -> MetricR
 
 def read_prospective_cutoff_aggregates(
     application: ExperimentRuntime,
-) -> tuple[tuple[CutoffAggregate, ...], tuple[CutoffAggregate, ...]]:
+) -> tuple[
+    tuple[CutoffAggregate, ...],
+    tuple[CutoffAggregate, ...],
+    tuple[CutoffAggregate, ...],
+    tuple[CutoffAggregate, ...],
+]:
     source = (
         application.repository_root
         / application.configuration.values.workspace.directories.experiments
@@ -170,7 +175,7 @@ def read_prospective_cutoff_aggregates(
         / "cutoff-comparisons.json"
     )
     if not source.is_file():
-        return (), ()
+        return (), (), (), ()
     artifact = _CutoffComparisonArtifact.model_validate_json(source.read_text(encoding="utf-8"))
     certified = tuple(
         CutoffAggregate(comparison.cutoff_id, comparison.certified_false_negative_rate, None)
@@ -180,7 +185,17 @@ def read_prospective_cutoff_aggregates(
         CutoffAggregate(comparison.cutoff_id, comparison.ambiguous_false_negative_rate, None)
         for comparison in artifact.comparisons
     )
-    return certified, ambiguous
+    hardened = tuple(
+        CutoffAggregate(comparison.cutoff_id, comparison.hardened_false_negative_rate, None)
+        for comparison in artifact.comparisons
+    )
+    static_chronological = tuple(
+        CutoffAggregate(
+            comparison.cutoff_id, comparison.static_chronological_false_negative_rate, None
+        )
+        for comparison in artifact.comparisons
+    )
+    return certified, ambiguous, hardened, static_chronological
 
 
 @dataclass(frozen=True)

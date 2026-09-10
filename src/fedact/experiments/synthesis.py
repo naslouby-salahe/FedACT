@@ -47,6 +47,7 @@ class StatisticalSynthesisReport:
     overall_scientific_outcome: ScientificOutcome
     sensitivity_coordinates: tuple[SensitivityCoordinate, ...]
     contrast_outcome: ConfirmatoryContrastOutcome | None
+    early_exposure_contrast_outcome: ConfirmatoryContrastOutcome | None = None
 
 
 def _evaluate_primary_contrast(
@@ -117,6 +118,8 @@ def run_statistical_synthesis(
     statistics_seed: SeedValue,
     certified_series: tuple[CutoffAggregate, ...] = (),
     ambiguous_series: tuple[CutoffAggregate, ...] = (),
+    hardened_series: tuple[CutoffAggregate, ...] = (),
+    static_chronological_series: tuple[CutoffAggregate, ...] = (),
 ) -> StatisticalSynthesisReport:
     coverage_satisfied = coverage >= (1.0 - maximum_coverage_deficit)
     clean_cost_satisfied = clean_fnr_degradation <= maximum_clean_fnr_degradation
@@ -151,10 +154,26 @@ def run_statistical_synthesis(
         outcome = ScientificOutcome.INSUFFICIENT_EVIDENCE
     elif coverage_satisfied and clean_cost_satisfied:
         outcome = ScientificOutcome.PASS
+
+    early_exposure_contrast_outcome = None
+    if hardened_series and static_chronological_series:
+        early_exposure_contrast_outcome = _evaluate_primary_contrast(
+            method_a=hardened_series,
+            method_b=static_chronological_series,
+            minimum_paired_cutoffs=minimum_paired_cutoffs,
+            maximum_missing_cutoff_fraction=maximum_missing_cutoff_fraction,
+            bootstrap_resamples=bootstrap_resamples,
+            confidence_level=confidence_level,
+            maximum_nonzero_pairs_for_exact=maximum_nonzero_pairs_for_exact,
+            multiplicity_q=multiplicity_q,
+            seed=statistics_seed,
+        )
+
     return StatisticalSynthesisReport(
         coverage_satisfied=coverage_satisfied,
         clean_cost_satisfied=clean_cost_satisfied,
         overall_scientific_outcome=outcome,
         sensitivity_coordinates=coordinates,
         contrast_outcome=contrast_outcome,
+        early_exposure_contrast_outcome=early_exposure_contrast_outcome,
     )

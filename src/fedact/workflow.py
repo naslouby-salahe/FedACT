@@ -595,6 +595,8 @@ def _statistical_synthesis_inputs(
     MetricRate,
     tuple[CutoffAggregate, ...],
     tuple[CutoffAggregate, ...],
+    tuple[CutoffAggregate, ...],
+    tuple[CutoffAggregate, ...],
 ]:
     prospective = read_workflow_result(
         application.result_experiment_directory(ExecutableWorkflowName.PROSPECTIVE_EVALUATION)
@@ -609,13 +611,17 @@ def _statistical_synthesis_inputs(
             "statistical synthesis requires a completed prospective evaluation result", err=True
         )
         raise typer.Exit(code=2)
-    certified_series, ambiguous_series = read_prospective_cutoff_aggregates(application)
+    certified_series, ambiguous_series, hardened_series, static_chronological_series = (
+        read_prospective_cutoff_aggregates(application)
+    )
     return (
         prospective.mean_false_negative_rate,
         prospective.clean_fnr_degradation_percentage_points,
         prospective.mean_certification_rate,
         certified_series,
         ambiguous_series,
+        hardened_series,
+        static_chronological_series,
     )
 
 
@@ -754,11 +760,15 @@ def _dispatch_evaluation_workflow(
             coverage,
             certified_series,
             ambiguous_series,
+            hardened_series,
+            static_chronological_series,
         ) = _statistical_synthesis_inputs(application)
         verd_report = run_statistical_synthesis(
             prospective_fnr=prospective_fnr,
             clean_fnr_degradation=clean_fnr_degradation,
             coverage=coverage,
+            hardened_series=hardened_series,
+            static_chronological_series=static_chronological_series,
             maximum_coverage_deficit=(
                 config.statistics.minimum_material_effects.maximum_coverage_deficit_absolute
             ),
@@ -799,6 +809,11 @@ def _dispatch_evaluation_workflow(
             ),
         )
         typer.echo(f"statistical synthesis completed: {verd_report.overall_scientific_outcome}")
+        if verd_report.early_exposure_contrast_outcome is not None:
+            typer.echo(
+                "early-exposure contrast (FedACT vs static-chronological) sufficient: "
+                f"{verd_report.early_exposure_contrast_outcome.contrast_inputs.sufficient}"
+            )
         return True
 
     return False

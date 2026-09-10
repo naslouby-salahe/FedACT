@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from fedact.domain.types import ScientificOutcome
+from fedact.analysis.comparisons import CutoffAggregate
+from fedact.domain.types import ScientificOutcome, SplitCutoffIdentity
 from fedact.experiments.synthesis import run_statistical_synthesis
 from fedact.workflow import Application
 
@@ -41,3 +42,50 @@ def test_run_statistical_synthesis(application: Application) -> None:
     assert report.clean_cost_satisfied
     assert report.overall_scientific_outcome is ScientificOutcome.INSUFFICIENT_EVIDENCE
     assert report.sensitivity_coordinates
+    assert report.early_exposure_contrast_outcome is None
+
+
+def test_run_statistical_synthesis_computes_early_exposure_contrast(
+    application: Application,
+) -> None:
+    config = application.configuration.values
+    hardened_series = tuple(
+        CutoffAggregate(SplitCutoffIdentity(f"lamda-{i}"), 0.1, None) for i in range(8)
+    )
+    static_chronological_series = tuple(
+        CutoffAggregate(SplitCutoffIdentity(f"lamda-{i}"), 0.4, None) for i in range(8)
+    )
+    report = run_statistical_synthesis(
+        prospective_fnr=0.08,
+        clean_fnr_degradation=1.0,
+        coverage=0.99,
+        maximum_coverage_deficit=(
+            config.statistics.minimum_material_effects.maximum_coverage_deficit_absolute
+        ),
+        maximum_clean_fnr_degradation=(
+            config.hardening.weight.maximum_clean_fnr_degradation_percentage_points
+        ),
+        control_span_alphas=tuple(config.identification.control_span_violation.sensitivity_alpha),
+        private_contamination_alphas=tuple(
+            config.identification.private_contamination.sensitivity_alpha
+        ),
+        radius_multipliers=tuple(
+            config.identification.historical_plausibility_radius.sensitivity_multipliers
+        ),
+        alignment_percentiles=tuple(config.certification.alignment_threshold.percentile_candidates),
+        ambiguity_percentiles=tuple(config.certification.ambiguity_width.percentile_candidates),
+        forecast_horizons=tuple(config.temporal.forecast_horizons_months),
+        nuisance_ranks=tuple(config.identification.nuisance_rank.candidates),
+        coverage_levels=tuple(config.identification.target_coverage.candidates),
+        minimum_paired_cutoffs=config.statistics.minimum_paired_cutoffs,
+        maximum_missing_cutoff_fraction=config.statistics.maximum_missing_cutoff_fraction,
+        bootstrap_resamples=config.statistics.bootstrap.resamples,
+        confidence_level=config.statistics.confidence_level,
+        maximum_nonzero_pairs_for_exact=config.statistics.wilcoxon.maximum_nonzero_pairs_for_exact,
+        multiplicity_q=config.statistics.multiplicity.q,
+        statistics_seed=config.seeds.analysis[0],
+        hardened_series=hardened_series,
+        static_chronological_series=static_chronological_series,
+    )
+    assert report.early_exposure_contrast_outcome is not None
+    assert report.early_exposure_contrast_outcome.contrast_inputs.sufficient
