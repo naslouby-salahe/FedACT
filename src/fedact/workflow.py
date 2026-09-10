@@ -432,8 +432,8 @@ def run_preprocess(
         elif selected is DatasetSelector.EMBER2024:
             run_empty_ember_transform_audit()
 
-    write_workflow_result(
-        application.result_experiment_directory(ExecutableWorkflowName.PREPROCESS),
+    _persist(
+        application,
         WorkflowResultRecord(
             workflow=ExecutableWorkflowName.PREPROCESS,
             scientific_outcome=ScientificOutcome.PASS,
@@ -475,8 +475,8 @@ def run_smoke(overwrite: OverwriteRequested, repository_root: Path) -> None:
         seed_pair=seed_pair,
     )
     if not report.is_passing:
-        write_workflow_result(
-            app_instance.result_experiment_directory(ExecutableWorkflowName.SMOKE),
+        _persist(
+            app_instance,
             WorkflowResultRecord(
                 workflow=ExecutableWorkflowName.SMOKE,
                 scientific_outcome=ScientificOutcome.FAIL,
@@ -484,8 +484,8 @@ def run_smoke(overwrite: OverwriteRequested, repository_root: Path) -> None:
         )
         typer.echo("smoke validation failed", err=True)
         raise typer.Exit(code=1)
-    write_workflow_result(
-        app_instance.result_experiment_directory(ExecutableWorkflowName.SMOKE),
+    _persist(
+        app_instance,
         WorkflowResultRecord(
             workflow=ExecutableWorkflowName.SMOKE,
             scientific_outcome=ScientificOutcome.PASS,

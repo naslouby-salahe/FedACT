@@ -101,6 +101,7 @@ def test_preprocess_accepts_defined_selectors_and_scoped_overwrite(
     for result, scope in ((plain, "lamda ember2024"), (selected, "lamda"), (scoped, "ember2024")):
         assert result.exit_code == 0
         assert scope in result.output
+    assert (repository_root / "outputs" / "experiments" / "preprocess" / "evidence.json").is_file()
 
 
 def test_smoke_supports_only_the_locked_form(repository_root: Path) -> None:
@@ -110,6 +111,7 @@ def test_smoke_supports_only_the_locked_form(repository_root: Path) -> None:
     scoped = invoke("smoke", "--overwrite", "--repository-root", str(repository_root))
     assert scoped.exit_code == 0
     assert "overwrite: scoped to smoke-owned artifacts" in scoped.output
+    assert (repository_root / "outputs" / "experiments" / "smoke" / "evidence.json").is_file()
 
 
 def test_report_forms_validate_workflow_names(repository_root: Path) -> None:
