@@ -13,6 +13,7 @@ def test_feasible_set_preserves_ground_truth_inclusion() -> None:
     c1 = ClientConstraint(
         projector=np.eye(2),
         covariance=np.eye(2),
+        uncertainty_radius=0.25,
         beta=1.5,
         client_index=0,
     )

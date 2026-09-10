@@ -173,11 +173,11 @@ class ClientConstraintSummary:
     support_before: SampleCount
     support_after: SampleCount
     eigengap_ratio: EigengapRatio
+    uncertainty_radius: ThresholdValue
+    beta: ThresholdValue
+    selected_rank: RankDimension
+    control_diagnostics_passed: ValidationFlag
     subspace: torch.Tensor | None = None
-    uncertainty_radius: ThresholdValue = 0.1
-    beta: ThresholdValue = 1.0
-    selected_rank: RankDimension = 1
-    control_diagnostics_passed: ValidationFlag = True
     client_id: ClientIdentifier | None = None
     basis: np.ndarray | None = None
     transition_vector: np.ndarray | None = None
@@ -212,11 +212,11 @@ class L2Ball:
 @dataclass(frozen=True)
 class ClientConstraint:
     client_index: ClientIndex
+    uncertainty_radius: ThresholdValue
+    beta: ThresholdValue
     subspace: torch.Tensor | np.ndarray | None = None
-    uncertainty_radius: ThresholdValue = 0.1
     projector: np.ndarray | None = None
     covariance: np.ndarray | None = None
-    beta: ThresholdValue = 1.0
 
 
 @dataclass(frozen=True)
@@ -236,7 +236,8 @@ def intersect_constraints(
     *args: L2Ball | Sequence[ClientConstraint],
     vertices: SampleCount,
 ) -> FeasibleSet:
-    _unused = vertices
+    if vertices <= 0:
+        raise ValueError("constraint intersection requires a positive vertex budget")
     plausibility_ball: L2Ball | None = None
     constraints_list: list[ClientConstraint] = []
     for arg in args:
@@ -245,15 +246,6 @@ def intersect_constraints(
         elif isinstance(arg, (list, tuple)):
             constraints_list.extend(arg)
 
-    if len(constraints_list) > 1 and all(c.beta <= 0.01 for c in constraints_list):
-        return FeasibleSet(
-            nuisance_subspaces=(),
-            uncertainty_radii=(),
-            diameter=0.0,
-            constraints=(),
-            plausibility_ball=plausibility_ball,
-        )
-
     subs: list[torch.Tensor] = [
         torch.tensor(c.subspace, dtype=torch.float32)
         if isinstance(c.subspace, np.ndarray)
@@ -261,10 +253,16 @@ def intersect_constraints(
         for c in constraints_list
     ]
     rads = [c.uncertainty_radius for c in constraints_list]
+    uncertainty_diameter = 2.0 * sum(rads)
+    diameter = (
+        min(uncertainty_diameter, 2.0 * plausibility_ball.radius)
+        if plausibility_ball is not None
+        else uncertainty_diameter
+    )
     return FeasibleSet(
         nuisance_subspaces=tuple(subs),
         uncertainty_radii=tuple(rads),
-        diameter=0.2,
+        diameter=diameter,
         constraints=tuple(constraints_list),
         plausibility_ball=plausibility_ball,
     )
@@ -280,16 +278,64 @@ def chebyshev_center(
     target: FeasibleSet | Sequence[ClientConstraint] | np.ndarray,
 ) -> ChebyshevCenterResult:
     if isinstance(target, np.ndarray):
-        return ChebyshevCenterResult(center=np.mean(target, axis=0), radius=0.0)
-    return ChebyshevCenterResult(center=np.zeros(2), radius=0.0)
+        if target.size == 0:
+            raise ValueError("Chebyshev center requires at least one point")
+        center = np.mean(target, axis=0)
+        radius = float(np.max(np.linalg.norm(target - center, axis=1)))
+        return ChebyshevCenterResult(center=center, radius=radius)
+    if isinstance(target, FeasibleSet):
+        if target.center is not None:
+            center = (
+                target.center.detach().cpu().numpy()
+                if isinstance(target.center, torch.Tensor)
+                else target.center
+            )
+        elif target.plausibility_ball is not None:
+            center = (
+                target.plausibility_ball.center.detach().cpu().numpy()
+                if isinstance(target.plausibility_ball.center, torch.Tensor)
+                else target.plausibility_ball.center
+            )
+        else:
+            dimension = target.nuisance_subspaces[0].shape[0] if target.nuisance_subspaces else 0
+            center = np.zeros(dimension)
+        return ChebyshevCenterResult(center=center, radius=target.diameter / 2.0)
+    if not target:
+        raise ValueError("Chebyshev center requires at least one constraint")
+    dimension = next(
+        (constraint.subspace.shape[0] for constraint in target if constraint.subspace is not None),
+        0,
+    )
+    return ChebyshevCenterResult(
+        center=np.zeros(dimension),
+        radius=sum(constraint.uncertainty_radius for constraint in target),
+    )
 
 
 def minimum_uniform_inflation(
     *args: L2Ball | Sequence[ClientConstraint],
     vertices: SampleCount,
 ) -> CoordinateValue:
-    _unused = (args, vertices)
-    return 1.0
+    if vertices <= 0:
+        raise ValueError("uniform inflation requires a positive vertex budget")
+    plausibility_ball = next((arg for arg in args if isinstance(arg, L2Ball)), None)
+    constraints = tuple(
+        constraint for arg in args if isinstance(arg, (list, tuple)) for constraint in arg
+    )
+    if plausibility_ball is None or not constraints:
+        raise ValueError("uniform inflation requires a plausibility ball and client constraints")
+    center = (
+        plausibility_ball.center.detach().cpu().numpy()
+        if isinstance(plausibility_ball.center, torch.Tensor)
+        else plausibility_ball.center
+    )
+    requirements: list[CoordinateValue] = []
+    for constraint in constraints:
+        if constraint.projector is None:
+            continue
+        residual = center - constraint.projector @ center
+        requirements.append(float(np.linalg.norm(residual)) / constraint.uncertainty_radius)
+    return max(1.0, *requirements)
 
 
 def build_nuisance_spaces(
@@ -297,17 +343,27 @@ def build_nuisance_spaces(
     uncertainty_radii: Sequence[ThresholdValue],
     geometry: FederationGeometry = FederationGeometry.COMPLEMENTARY,
 ) -> FeasibleSet:
+    if len(nuisance_subspaces) != len(uncertainty_radii):
+        raise ValueError("each nuisance subspace requires a matching uncertainty radius")
+    if not nuisance_subspaces:
+        raise ValueError("feasible-set construction requires client nuisance subspaces")
     _unused = geometry
     return FeasibleSet(
         nuisance_subspaces=tuple(nuisance_subspaces),
         uncertainty_radii=tuple(uncertainty_radii),
-        diameter=0.2,
+        diameter=2.0 * sum(uncertainty_radii),
     )
 
 
 def compute_chebyshev_center(feasible_set: FeasibleSet) -> torch.Tensor:
+    if feasible_set.center is not None:
+        return (
+            feasible_set.center
+            if isinstance(feasible_set.center, torch.Tensor)
+            else torch.tensor(feasible_set.center, dtype=torch.float32)
+        )
     if not feasible_set.nuisance_subspaces:
-        return torch.zeros(1)
+        raise ValueError("Chebyshev center requires nuisance subspaces or an explicit center")
     d = feasible_set.nuisance_subspaces[0].shape[0]
     return torch.zeros(d, dtype=feasible_set.nuisance_subspaces[0].dtype)
 

@@ -18,6 +18,7 @@ def test_controls_to_constraints_integration() -> None:
         covariance=np.eye(4),
         support_before=10,
         support_after=10,
+        uncertainty_radius=0.25,
         beta=1.0,
         eigengap_ratio=2.0,
         selected_rank=2,

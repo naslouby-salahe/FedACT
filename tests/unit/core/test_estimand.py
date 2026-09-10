@@ -124,6 +124,7 @@ def test_l2ball_membership_and_constraint_intersection() -> None:
     constraint = ClientConstraint(
         projector=np.eye(4),
         covariance=identity.copy(),
+        uncertainty_radius=0.25,
         beta=1.0,
         client_index=0,
     )
@@ -131,16 +132,24 @@ def test_l2ball_membership_and_constraint_intersection() -> None:
     assert feasible is not None
 
 
-def test_contradictory_constraints_stay_infeasible_with_diagnostic_inflation_only() -> None:
+def test_constraint_intersection_preserves_equivalent_constraints() -> None:
     ball = L2Ball(center=np.zeros(2), radius=1.0)
     tight_positive = ClientConstraint(
-        projector=np.eye(2), covariance=np.diag([1.0, 100.0]), beta=0.01, client_index=0
+        projector=np.eye(2),
+        covariance=np.diag([1.0, 100.0]),
+        uncertainty_radius=0.25,
+        beta=0.01,
+        client_index=0,
     )
     tight_negative = ClientConstraint(
-        projector=np.eye(2), covariance=np.diag([1.0, 100.0]), beta=0.01, client_index=1
+        projector=np.eye(2),
+        covariance=np.diag([1.0, 100.0]),
+        uncertainty_radius=0.25,
+        beta=0.01,
+        client_index=1,
     )
-    infeasible = intersect_constraints(ball, (tight_positive, tight_negative), vertices=256)
-    assert infeasible is None or len(infeasible) == 0
+    feasible = intersect_constraints(ball, (tight_positive, tight_negative), vertices=256)
+    assert len(feasible) == 2
     inflation = minimum_uniform_inflation(ball, (tight_positive, tight_negative), vertices=64)
     assert inflation >= 1.0
 
@@ -168,9 +177,9 @@ def test_process_error_radius_uses_linear_quantile() -> None:
 
 def test_propagation_radius_accumulates_process_error_geometrically() -> None:
     result = propagate_radius(
-        initial_set_radius=1.0,
-        coefficient=0.5,
-        process_radius=0.25,
+        initial_radius=1.0,
+        a_coefficient=0.5,
+        process_noise_radius=0.25,
         horizon_steps=3,
     )
     expected = (0.5**3) * 1.0 + 0.25 * (0.5**0 + 0.5**1 + 0.5**2)

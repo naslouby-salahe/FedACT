@@ -20,6 +20,7 @@ def test_intersect_constraints_combines_multiple_balls() -> None:
     c1 = ClientConstraint(
         projector=np.eye(2),
         covariance=np.eye(2),
+        uncertainty_radius=0.25,
         beta=1.5,
         client_index=0,
     )
@@ -31,6 +32,7 @@ def test_minimum_uniform_inflation_for_disjoint_sets() -> None:
     c1 = ClientConstraint(
         projector=np.eye(2),
         covariance=np.eye(2),
+        uncertainty_radius=0.25,
         beta=0.1,
         client_index=0,
     )

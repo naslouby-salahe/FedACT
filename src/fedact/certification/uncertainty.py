@@ -277,7 +277,9 @@ def solve_support_bounds(
         if isinstance(constraint_limits, torch.Tensor)
         else constraint_limits
     )
-    max_lim = float(np.max(lim_arr)) if lim_arr.size > 0 else 1.0
+    if lim_arr.size == 0:
+        raise ValueError("support bounds require nonempty constraint limits")
+    max_lim = float(np.max(lim_arr))
     return ActionInterval(lower=-max_lim * norm, upper=max_lim * norm)
 
 
@@ -291,5 +293,7 @@ def solve_action_interval(
         val = float(np.linalg.norm(action_vector.detach().cpu().numpy()))
     else:
         val = 0.0
-    rad = sum(feasible_set.uncertainty_radii) if feasible_set.uncertainty_radii else 0.1
+    if not feasible_set.uncertainty_radii:
+        raise ValueError("action intervals require client uncertainty radii")
+    rad = sum(feasible_set.uncertainty_radii)
     return ActionInterval(lower=val - rad, upper=val + rad)
