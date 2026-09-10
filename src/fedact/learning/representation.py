@@ -196,26 +196,35 @@ def train_representation_encoder(
         hidden_dimensions=hidden_dimensions,
         latent_dimension=latent_dimension,
     )
-    optimizer = torch.optim.Adam(encoder.parameters(), lr=learning_rate, weight_decay=weight_decay)
+    supervision_head = nn.Linear(latent_dimension, 1)
+    optimizer = torch.optim.Adam(
+        list(encoder.parameters()) + list(supervision_head.parameters()),
+        lr=learning_rate,
+        weight_decay=weight_decay,
+    )
+    criterion = torch.nn.BCEWithLogitsLoss()
     train_features = training_dataset.feature_tensor()
     train_labels = training_dataset.label_tensor().float()
     val_features = validation_dataset.feature_tensor()
+    val_labels = validation_dataset.label_tensor().float()
     dataset = TensorDataset(train_features, train_labels)
     loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0)
     val_losses: list[float] = []
     saved_states: list[dict[str, torch.Tensor]] = []
     for _unused in range(epochs):
         encoder.train()
-        for batch_x, _unused in loader:
+        supervision_head.train()
+        for batch_x, batch_y in loader:
             optimizer.zero_grad()
-            latent = encoder(batch_x)
-            loss = torch.mean(latent * latent)
+            logits = supervision_head(encoder(batch_x)).squeeze(-1)
+            loss = criterion(logits, batch_y)
             loss.backward()
             optimizer.step()
         encoder.eval()
+        supervision_head.eval()
         with torch.no_grad():
-            val_latent = encoder(val_features)
-            val_loss = float(torch.mean(val_latent * val_latent).item())
+            val_logits = supervision_head(encoder(val_features)).squeeze(-1)
+            val_loss = float(criterion(val_logits, val_labels).item())
         val_losses.append(val_loss)
         saved_states.append({k: v.cpu().clone() for k, v in encoder.state_dict().items()})
     selection = select_checkpoint_epoch(tuple(val_losses), tie_tolerance, epochs)
