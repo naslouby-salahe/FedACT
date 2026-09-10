@@ -768,15 +768,22 @@ def _score_cutoff_population(
     scored = score_samples(encoder, detector, sample_ids, later_features)
 
     matched_benign_subtraction_scores: tuple[ProbabilityValue, ...] | None = None
+    projected_point_reconstruction_scores: tuple[ProbabilityValue, ...] | None = None
+    raw_future_transition_forecast_scores: tuple[ProbabilityValue, ...] | None = None
     endpoint = calendar_month(validation_month + 1)
-    family_by_sample = dict(zip(population.sample_ids, population.family, strict=True))
-    matched_challenges = _matched_benign_subtraction_challenges(
-        training,
-        encoder,
-        family_by_sample,
-        endpoint,
-        config.temporal.transition_interval_months,
+    earliest_valid_transition_endpoint = earliest_complete_transition_endpoint(
+        calendar_month(0), config.temporal.transition_interval_months
     )
+    family_by_sample = dict(zip(population.sample_ids, population.family, strict=True))
+    matched_challenges: tuple[SampleChallengeSet, ...] = ()
+    if endpoint >= earliest_valid_transition_endpoint:
+        matched_challenges = _matched_benign_subtraction_challenges(
+            training,
+            encoder,
+            family_by_sample,
+            endpoint,
+            config.temporal.transition_interval_months,
+        )
     if matched_challenges:
         matched_hardening = harden_detector_head(
             encoder,
@@ -797,7 +804,6 @@ def _score_cutoff_population(
         )
         matched_benign_subtraction_scores = tuple(score.probability for score in matched_scored)
 
-    projected_point_reconstruction_scores: tuple[ProbabilityValue, ...] | None = None
     training_month_min = min(obs.month_index for obs in training)
     earliest_endpoint = earliest_complete_transition_endpoint(
         calendar_month(training_month_min), config.temporal.transition_interval_months
@@ -805,15 +811,17 @@ def _score_cutoff_population(
     historical_endpoints = tuple(
         calendar_month(candidate) for candidate in range(int(earliest_endpoint), int(endpoint))
     )
-    projected_challenges = _projected_point_reconstruction_challenges(
-        application,
-        training,
-        encoder,
-        family_by_sample,
-        endpoint,
-        historical_endpoints,
-        config.temporal.transition_interval_months,
-    )
+    projected_challenges: tuple[SampleChallengeSet, ...] = ()
+    if endpoint >= earliest_valid_transition_endpoint:
+        projected_challenges = _projected_point_reconstruction_challenges(
+            application,
+            training,
+            encoder,
+            family_by_sample,
+            endpoint,
+            historical_endpoints,
+            config.temporal.transition_interval_months,
+        )
     if projected_challenges:
         projected_hardening = harden_detector_head(
             encoder,
@@ -836,16 +844,17 @@ def _score_cutoff_population(
             score.probability for score in projected_scored
         )
 
-    raw_future_transition_forecast_scores: tuple[ProbabilityValue, ...] | None = None
-    forecast_challenges = _raw_future_transition_forecast_challenges(
-        application,
-        training,
-        encoder,
-        family_by_sample,
-        endpoint,
-        historical_endpoints,
-        config.temporal.transition_interval_months,
-    )
+    forecast_challenges: tuple[SampleChallengeSet, ...] = ()
+    if endpoint >= earliest_valid_transition_endpoint:
+        forecast_challenges = _raw_future_transition_forecast_challenges(
+            application,
+            training,
+            encoder,
+            family_by_sample,
+            endpoint,
+            historical_endpoints,
+            config.temporal.transition_interval_months,
+        )
     if forecast_challenges:
         forecast_hardening = harden_detector_head(
             encoder,
