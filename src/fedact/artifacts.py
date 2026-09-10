@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from fedact.config.models import StrictModel, WorkspaceConfig
 from fedact.domain.types import (
     ContentChecksum,
+    CorrelationCoefficient,
     DegradationValue,
     DependencyFingerprint,
     ExecutableWorkflowName,
@@ -24,6 +25,7 @@ from fedact.domain.types import (
     RelativePosixPath,
     ScientificOutcome,
     SourceText,
+    ValidationFlag,
 )
 
 
@@ -153,6 +155,8 @@ class WorkflowResultRecord(StrictModel):
     static_chronological_false_negative_rate: MetricRate | None = None
     early_horizon_fnr_reduction_percentage_points: DegradationValue | None = None
     clean_fnr_degradation_percentage_points: DegradationValue | None = None
+    central_pattern_supported: ValidationFlag | None = None
+    rank_alignment_spearman_rho: CorrelationCoefficient | None = None
 
 
 def workflow_result_path(experiment_directory: Path) -> Path:

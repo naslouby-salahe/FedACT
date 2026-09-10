@@ -4,8 +4,11 @@ import logging
 import math
 from dataclasses import dataclass, replace
 from pathlib import Path
+from typing import Protocol, cast
 
+import numpy as np
 import torch
+from scipy import stats as scipy_stats
 
 from fedact.certification.actions import ActionInterval
 from fedact.certification.calibration import (
@@ -17,18 +20,27 @@ from fedact.certification.certificate import DomainValid, certify_action_interva
 from fedact.certification.uncertainty import NuisanceEstimate
 from fedact.config.models import CorruptedClientAllowanceParameters, StrictModel
 from fedact.domain.types import (
+    ActionCount,
     AngleDegrees,
     CertificationStatus,
+    CohortIdentifier,
+    CoordinateValue,
+    CorrelationCoefficient,
     CorruptedClientAttack,
     DegradationValue,
     DetailMessage,
     EmbeddingComponent,
     EvaluationCount,
+    HorizonStep,
     IntervalBound,
     MetricRate,
     NormValue,
+    PValue,
+    RandomMatchLevel,
     SampleIdentifier,
     ScientificOutcome,
+    SeedValue,
+    SplitCutoffIdentity,
     ThresholdValue,
     ValidationFlag,
 )
@@ -36,6 +48,11 @@ from fedact.experiments.registry import ExperimentRuntime
 from fedact.learning.hardening import SampleChallengeSet, write_challenge_sets
 
 LOGGER = logging.getLogger(__name__)
+
+
+class SpearmanResult(Protocol):
+    statistic: CorrelationCoefficient
+    pvalue: PValue
 
 
 def _experiment_directory(application: ExperimentRuntime, workflow: str) -> Path:
@@ -55,10 +72,30 @@ class _ActionObservation(StrictModel):
     historical_diameter_quantile: ThresholdValue
     leave_one_client_out_passed: ValidationFlag = True
     challenge_embeddings: list[list[EmbeddingComponent]] = []
+    cutoff_id: SplitCutoffIdentity
+    cohort: CohortIdentifier
+    horizon_step: HorizonStep
+    source_sample_id: SampleIdentifier
+    action_count: ActionCount
+    point_score: CoordinateValue
+    later_real_alignment_score: CoordinateValue
 
 
 class _ActionArtifact(StrictModel):
     actions: list[_ActionObservation]
+
+
+class _CentralPatternCutoffRecord(StrictModel):
+    cutoff_id: SplitCutoffIdentity
+    certified_precision: MetricRate | None
+    point_selected_precision: MetricRate | None
+    matched_random_precision: MetricRate | None
+    matched_random_match_quality_sufficient: ValidationFlag
+
+
+class _CentralPatternArtifact(StrictModel):
+    cutoffs: list[_CentralPatternCutoffRecord]
+    rank_alignment_spearman_rho: CorrelationCoefficient | None
 
 
 class _CertificateDecisionRecord(StrictModel):
@@ -108,7 +145,163 @@ class ActionCertificateReport:
     ambiguous_count: EvaluationCount
     abstention_count: EvaluationCount
     coverage_rate: MetricRate
+    central_pattern_supported: ValidationFlag
+    rank_alignment_spearman_rho: CorrelationCoefficient | None
     scientific_outcome: ScientificOutcome
+
+
+_RANDOM_MATCH_LEVEL_PRIORITY = (
+    RandomMatchLevel.EXACT,
+    RandomMatchLevel.SOURCE_SAMPLE,
+    RandomMatchLevel.COHORT_ONLY,
+)
+_RANDOM_MATCH_LEVELS_COUNTING_TOWARD_MINIMUM_FRACTION = (
+    RandomMatchLevel.EXACT,
+    RandomMatchLevel.SOURCE_SAMPLE,
+)
+
+
+def _match_key(action: _ActionObservation, level: RandomMatchLevel) -> tuple[object, ...]:
+    if level is RandomMatchLevel.EXACT:
+        return (
+            action.cutoff_id,
+            action.cohort,
+            action.horizon_step,
+            action.source_sample_id,
+            action.action_count,
+        )
+    if level is RandomMatchLevel.SOURCE_SAMPLE:
+        return (action.cutoff_id, action.cohort, action.horizon_step, action.source_sample_id)
+    return (action.cutoff_id, action.cohort, action.horizon_step)
+
+
+@dataclass(frozen=True)
+class _MatchedRandomDraw:
+    action: _ActionObservation
+    match_level: RandomMatchLevel
+
+
+def _sample_matched_random_valid(
+    certified_actions: tuple[_ActionObservation, ...],
+    valid_pool: tuple[_ActionObservation, ...],
+    seed: SeedValue,
+) -> tuple[_MatchedRandomDraw, ...]:
+    rng = np.random.default_rng(seed)
+    remaining = list(valid_pool)
+    draws: list[_MatchedRandomDraw] = []
+    for certified in certified_actions:
+        for level in _RANDOM_MATCH_LEVEL_PRIORITY:
+            key = _match_key(certified, level)
+            candidates = [action for action in remaining if _match_key(action, level) == key]
+            if candidates:
+                index = int(rng.integers(len(candidates)))
+                selected_candidate = candidates[index]
+                remaining.remove(selected_candidate)
+                draws.append(_MatchedRandomDraw(selected_candidate, level))
+                break
+    return tuple(draws)
+
+
+def _later_real_precision(
+    actions: tuple[_ActionObservation, ...], tau_align: ThresholdValue
+) -> MetricRate | None:
+    if not actions:
+        return None
+    return sum(action.later_real_alignment_score >= tau_align for action in actions) / len(actions)
+
+
+def _compute_central_pattern(
+    actions: tuple[_ActionObservation, ...],
+    statuses_by_sample: dict[SampleIdentifier, CertificationStatus],
+    selected: _SelectedCalibrationArtifact,
+    operator_seeds: tuple[SeedValue, ...],
+    minimum_exact_or_source_fraction: MetricRate,
+) -> _CentralPatternArtifact:
+    by_cutoff: dict[SplitCutoffIdentity, list[_ActionObservation]] = {}
+    for action in actions:
+        by_cutoff.setdefault(action.cutoff_id, []).append(action)
+    records: list[_CentralPatternCutoffRecord] = []
+    for cutoff_id in sorted(by_cutoff):
+        group = tuple(by_cutoff[cutoff_id])
+        certified_actions = tuple(
+            action
+            for action in group
+            if statuses_by_sample[action.sample_id] is CertificationStatus.CERTIFIED_POSITIVE
+        )
+        valid_pool = tuple(action for action in group if action.domain_valid)
+        certified_count = len(certified_actions)
+        certified_precision = _later_real_precision(certified_actions, selected.tau_align)
+        point_precision: MetricRate | None = None
+        if certified_count > 0:
+            ranked = sorted(valid_pool, key=lambda action: (-action.point_score, action.sample_id))
+            point_precision = _later_real_precision(
+                tuple(ranked[:certified_count]), selected.tau_align
+            )
+        random_precisions: list[MetricRate] = []
+        match_fractions: list[float] = []
+        for seed in operator_seeds:
+            draws = _sample_matched_random_valid(certified_actions, valid_pool, seed)
+            if not draws:
+                continue
+            precision = _later_real_precision(
+                tuple(draw.action for draw in draws), selected.tau_align
+            )
+            if precision is not None:
+                random_precisions.append(precision)
+            match_fractions.append(
+                sum(
+                    draw.match_level in _RANDOM_MATCH_LEVELS_COUNTING_TOWARD_MINIMUM_FRACTION
+                    for draw in draws
+                )
+                / len(draws)
+            )
+        match_quality_sufficient = (
+            bool(match_fractions)
+            and (sum(match_fractions) / len(match_fractions)) >= minimum_exact_or_source_fraction
+        )
+        records.append(
+            _CentralPatternCutoffRecord(
+                cutoff_id=cutoff_id,
+                certified_precision=certified_precision,
+                point_selected_precision=point_precision,
+                matched_random_precision=(
+                    sum(random_precisions) / len(random_precisions)
+                    if random_precisions and match_quality_sufficient
+                    else None
+                ),
+                matched_random_match_quality_sufficient=match_quality_sufficient,
+            )
+        )
+    valid_actions = tuple(action for action in actions if action.domain_valid)
+    rho: CorrelationCoefficient | None = None
+    if len(valid_actions) >= 2:
+        result = cast(
+            SpearmanResult,
+            scipy_stats.spearmanr(
+                [action.lower_bound for action in valid_actions],
+                [action.later_real_alignment_score for action in valid_actions],
+            ),
+        )
+        candidate_rho = float(result.statistic)
+        if math.isfinite(candidate_rho):
+            rho = candidate_rho
+    return _CentralPatternArtifact(cutoffs=records, rank_alignment_spearman_rho=rho)
+
+
+def _central_pattern_supported(artifact: _CentralPatternArtifact) -> ValidationFlag:
+    complete: list[tuple[MetricRate, MetricRate, MetricRate]] = []
+    for record in artifact.cutoffs:
+        certified = record.certified_precision
+        point_selected = record.point_selected_precision
+        matched_random = record.matched_random_precision
+        if certified is not None and point_selected is not None and matched_random is not None:
+            complete.append((certified, point_selected, matched_random))
+    if not complete:
+        return False
+    mean_certified = sum(row[0] for row in complete) / len(complete)
+    mean_point = sum(row[1] for row in complete) / len(complete)
+    mean_random = sum(row[2] for row in complete) / len(complete)
+    return mean_certified > mean_point > mean_random
 
 
 def run_action_certificate_validation(application: ExperimentRuntime) -> ActionCertificateReport:
@@ -120,17 +313,22 @@ def run_action_certificate_validation(application: ExperimentRuntime) -> ActionC
             "are required",
             source,
         )
-        return ActionCertificateReport(0, 0, 0, 0, 0.0, ScientificOutcome.INSUFFICIENT_EVIDENCE)
+        return ActionCertificateReport(
+            0, 0, 0, 0, 0.0, False, None, ScientificOutcome.INSUFFICIENT_EVIDENCE
+        )
     if not calibration_source.is_file():
         LOGGER.warning(
             "action validation requires selected nested calibration: %s", calibration_source
         )
-        return ActionCertificateReport(0, 0, 0, 0, 0.0, ScientificOutcome.INSUFFICIENT_EVIDENCE)
+        return ActionCertificateReport(
+            0, 0, 0, 0, 0.0, False, None, ScientificOutcome.INSUFFICIENT_EVIDENCE
+        )
     artifact = _ActionArtifact.model_validate_json(source.read_text(encoding="utf-8"))
     selected = _SelectedCalibrationArtifact.model_validate_json(
         calibration_source.read_text(encoding="utf-8")
     )
     statuses: list[CertificationStatus] = []
+    statuses_by_sample: dict[SampleIdentifier, CertificationStatus] = {}
     decisions: list[_CertificateDecisionRecord] = []
     challenges: list[SampleChallengeSet] = []
     for action in artifact.actions:
@@ -144,6 +342,7 @@ def run_action_certificate_validation(application: ExperimentRuntime) -> ActionC
             leave_one_client_out_passed=action.leave_one_client_out_passed,
         )
         statuses.append(decision.status)
+        statuses_by_sample[action.sample_id] = decision.status
         decisions.append(
             _CertificateDecisionRecord(sample_id=action.sample_id, status=decision.status)
         )
@@ -162,6 +361,26 @@ def run_action_certificate_validation(application: ExperimentRuntime) -> ActionC
         _CertificateDecisionArtifact(decisions=decisions).model_dump_json(indent=2),
         encoding="utf-8",
     )
+    config = application.configuration.values
+    central_pattern = _compute_central_pattern(
+        tuple(artifact.actions),
+        statuses_by_sample,
+        selected,
+        tuple(config.seeds.operator),
+        config.certification.random_matching.minimum_exact_or_source_fraction,
+    )
+    central_pattern_destination = source.with_name("central-pattern.json")
+    central_pattern_destination.write_text(
+        central_pattern.model_dump_json(indent=2), encoding="utf-8"
+    )
+    central_pattern_supported = _central_pattern_supported(central_pattern)
+    LOGGER.info(
+        "action-certificate central pattern computed cutoffs=%s central_pattern_supported=%s "
+        "rank_alignment_spearman_rho=%s",
+        len(central_pattern.cutoffs),
+        central_pattern_supported,
+        central_pattern.rank_alignment_spearman_rho,
+    )
     total = len(statuses)
     certified = sum(status is CertificationStatus.CERTIFIED_POSITIVE for status in statuses)
     ambiguous = sum(status is CertificationStatus.AMBIGUOUS for status in statuses)
@@ -172,7 +391,11 @@ def run_action_certificate_validation(application: ExperimentRuntime) -> ActionC
         ambiguous,
         abstentions,
         certified / total if total else 0.0,
-        ScientificOutcome.PASS if total else ScientificOutcome.INSUFFICIENT_EVIDENCE,
+        central_pattern_supported,
+        central_pattern.rank_alignment_spearman_rho,
+        ScientificOutcome.PASS
+        if central_pattern_supported
+        else ScientificOutcome.INSUFFICIENT_EVIDENCE,
     )
 
 

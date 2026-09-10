@@ -88,6 +88,12 @@ class FederationGeometry(StrEnum):
     COMPLEMENTARY = "complementary"
 
 
+class RandomMatchLevel(StrEnum):
+    EXACT = "exact_action_match"
+    SOURCE_SAMPLE = "source_sample_match"
+    COHORT_ONLY = "cohort_only_match"
+
+
 class ClientSelectionComparator(StrEnum):
     RANDOM = "random"
     LARGEST_SAMPLE_COUNT = "largest_sample_count"
@@ -236,6 +242,10 @@ UnitInterval = Annotated[
 OpenUnitInterval = Annotated[
     float,
     Field(gt=0.0, lt=1.0, allow_inf_nan=False),
+]
+CorrelationCoefficient = Annotated[
+    float,
+    Field(ge=-1.0, le=1.0, allow_inf_nan=False),
 ]
 
 NonEmptyString = Annotated[
@@ -511,6 +521,7 @@ __all__ = [
     "CoordinateValue",
     "CorrectionAppliedFlag",
     "CorrectnessFlag",
+    "CorrelationCoefficient",
     "CorruptedClientAttack",
     "CoverageLevel",
     "CutoffCount",
@@ -615,6 +626,7 @@ __all__ = [
     "ProducerIdentifier",
     "ProhibitionFlag",
     "Quantile",
+    "RandomMatchLevel",
     "RankBiserialEffectSize",
     "RankDimension",
     "RankIncrement",

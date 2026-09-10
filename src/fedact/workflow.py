@@ -639,7 +639,10 @@ def _dispatch_evaluation_workflow(
         _persist(
             application,
             WorkflowResultRecord(
-                workflow=workflow, scientific_outcome=act_report.scientific_outcome
+                workflow=workflow,
+                scientific_outcome=act_report.scientific_outcome,
+                central_pattern_supported=act_report.central_pattern_supported,
+                rank_alignment_spearman_rho=act_report.rank_alignment_spearman_rho,
             ),
         )
         typer.echo(f"action certificate validation completed: {act_report.scientific_outcome}")
