@@ -245,6 +245,11 @@ class CrossCorpusReport:
     ambiguous_false_negative_rate: MetricRate | None
     transfer_supported: ValidationFlag
     scientific_outcome: ScientificOutcome
+    true_positive_rate: MetricRate | None = None
+    false_positive_rate: MetricRate | None = None
+    abstention_rate: MetricRate | None = None
+    pr_auc: MetricRate | None = None
+    roc_auc: MetricRate | None = None
 
     @property
     def generalization_valid(self) -> ValidationFlag:
@@ -453,6 +458,11 @@ def run_cross_corpus_generalization(application: ExperimentRuntime) -> CrossCorp
         ambiguous_fnr,
         transfer_supported,
         ScientificOutcome.PASS if transfer_supported else ScientificOutcome.INSUFFICIENT_EVIDENCE,
+        true_positive_rate=metrics.true_positive_rate,
+        false_positive_rate=metrics.false_positive_rate,
+        abstention_rate=metrics.abstention_rate,
+        pr_auc=metrics.pr_auc,
+        roc_auc=metrics.roc_auc,
     )
 
 
