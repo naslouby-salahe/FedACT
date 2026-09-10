@@ -159,8 +159,18 @@ def workflow_result_path(experiment_directory: Path) -> Path:
     return experiment_directory / "result.json"
 
 
+def workflow_evidence_path(experiment_directory: Path) -> Path:
+    return experiment_directory / "evidence.json"
+
+
 def write_workflow_result(experiment_directory: Path, record: WorkflowResultRecord) -> Path:
     destination = workflow_result_path(experiment_directory)
+    write_text_atomically(destination, record.model_dump_json(indent=2))
+    return destination
+
+
+def write_workflow_evidence(experiment_directory: Path, record: WorkflowResultRecord) -> Path:
+    destination = workflow_evidence_path(experiment_directory)
     write_text_atomically(destination, record.model_dump_json(indent=2))
     return destination
 

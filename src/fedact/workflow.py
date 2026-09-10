@@ -13,6 +13,7 @@ from fedact.artifacts import (
     WorkflowResultRecord,
     WorkspaceLayout,
     read_workflow_result,
+    write_workflow_evidence,
     write_workflow_result,
 )
 from fedact.config.loading import LoadedConfiguration, load_production_configuration
@@ -267,6 +268,9 @@ class Application:
 
     def result_experiment_directory(self, workflow: ExecutableWorkflowName) -> Path:
         return self.workspace_layout().result_experiment_directory(ExperimentName(workflow))
+
+    def experiment_workspace(self, workflow: ExecutableWorkflowName) -> Path:
+        return self.workspace_layout().experiment_workspace(ExperimentName(workflow))
 
     def raw_data_root(self) -> Path:
         return self.repository_root / "data" / "raw"
@@ -558,6 +562,7 @@ _RUNNABLE_TO_EXECUTABLE: dict[RunnableWorkflowName, ExecutableWorkflowName] = {
 
 
 def _persist(application: Application, record: WorkflowResultRecord) -> None:
+    write_workflow_evidence(application.experiment_workspace(record.workflow), record)
     write_workflow_result(application.result_experiment_directory(record.workflow), record)
 
 

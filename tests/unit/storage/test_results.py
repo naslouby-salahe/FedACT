@@ -5,6 +5,8 @@ from pathlib import Path
 from fedact.artifacts import (
     WorkflowResultRecord,
     read_workflow_result,
+    workflow_evidence_path,
+    write_workflow_evidence,
     write_workflow_result,
 )
 from fedact.domain.types import ExecutableWorkflowName, ScientificOutcome
@@ -43,3 +45,16 @@ def test_workflow_result_with_metrics_round_trip(tmp_path: Path) -> None:
 
 def test_missing_result_returns_none(tmp_path: Path) -> None:
     assert read_workflow_result(tmp_path / "missing") is None
+
+
+def test_workflow_evidence_stays_in_the_experiment_workspace(tmp_path: Path) -> None:
+    directory = tmp_path / "outputs" / "experiments" / "math-verification"
+    written = write_workflow_evidence(
+        directory,
+        WorkflowResultRecord(
+            workflow=ExecutableWorkflowName.MATH_VERIFICATION,
+            scientific_outcome=ScientificOutcome.PASS,
+        ),
+    )
+    assert written == workflow_evidence_path(directory)
+    assert written.is_file()
