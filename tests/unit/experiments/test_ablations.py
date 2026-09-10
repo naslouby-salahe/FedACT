@@ -100,7 +100,7 @@ def test_point_vs_set_ablation_measures_real_precision_gap(
     assert result.degradation_percentage_points == pytest.approx(40.0)
 
 
-def test_no_controls_ablation_measures_real_beta_widening(
+def test_identification_derived_ablations_measure_real_beta_deltas(
     isolated_application: Application,
 ) -> None:
     destination = (
@@ -121,6 +121,10 @@ def test_no_controls_ablation_measures_real_beta_widening(
                         "fitted": True,
                         "beta": 0.2,
                         "no_controls_beta": 0.5,
+                        "one_matched_control_beta": 0.4,
+                        "zero_subspace_term_beta": 0.15,
+                        "zero_control_span_term_beta": 0.18,
+                        "zero_private_term_beta": 0.1,
                     },
                     {
                         "cutoff": 122,
@@ -128,6 +132,10 @@ def test_no_controls_ablation_measures_real_beta_widening(
                         "fitted": True,
                         "beta": 0.3,
                         "no_controls_beta": 0.6,
+                        "one_matched_control_beta": 0.5,
+                        "zero_subspace_term_beta": 0.25,
+                        "zero_control_span_term_beta": 0.28,
+                        "zero_private_term_beta": 0.2,
                     },
                 ],
             }
@@ -135,8 +143,17 @@ def test_no_controls_ablation_measures_real_beta_widening(
         encoding="utf-8",
     )
     report = run_novelty_critical_ablations(isolated_application)
-    assert report.evaluated_configurations == 1
+    assert report.evaluated_configurations == 5
     assert report.scientific_outcome is ScientificOutcome.PASS
-    result = report.results[0]
-    assert result.ablation_name == "no_controls"
-    assert result.degradation_percentage_points == pytest.approx(30.0)
+    by_name = {result.ablation_name: result for result in report.results}
+    assert by_name["no_controls"].degradation_percentage_points == pytest.approx(30.0)
+    assert by_name["one_matched_control"].degradation_percentage_points == pytest.approx(20.0)
+    assert by_name["zero_subspace_uncertainty_term"].degradation_percentage_points == pytest.approx(
+        -5.0
+    )
+    assert by_name[
+        "zero_control_span_allowance_term"
+    ].degradation_percentage_points == pytest.approx(-2.0)
+    assert by_name[
+        "zero_private_transition_allowance_term"
+    ].degradation_percentage_points == pytest.approx(-10.0)

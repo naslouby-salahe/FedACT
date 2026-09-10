@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -109,6 +110,10 @@ class _IdentificationCutoffRecord(StrictModel):
     eigengap_ratio: EigengapRatio | None = None
     beta: UncertaintyRadius | None = None
     no_controls_beta: UncertaintyRadius | None = None
+    one_matched_control_beta: UncertaintyRadius | None = None
+    zero_subspace_term_beta: UncertaintyRadius | None = None
+    zero_control_span_term_beta: UncertaintyRadius | None = None
+    zero_private_term_beta: UncertaintyRadius | None = None
 
 
 class _IdentificationDiagnosticsArtifact(StrictModel):
@@ -119,6 +124,10 @@ class _IdentificationDiagnosticsArtifact(StrictModel):
 HARDENING_OFF_ABLATION_NAME: AblationIdentifier = "hardening_off"
 POINT_VS_SET_ABLATION_NAME: AblationIdentifier = "point_vs_set"
 NO_CONTROLS_ABLATION_NAME: AblationIdentifier = "no_controls"
+ONE_MATCHED_CONTROL_ABLATION_NAME: AblationIdentifier = "one_matched_control"
+ZERO_SUBSPACE_TERM_ABLATION_NAME: AblationIdentifier = "zero_subspace_uncertainty_term"
+ZERO_CONTROL_SPAN_TERM_ABLATION_NAME: AblationIdentifier = "zero_control_span_allowance_term"
+ZERO_PRIVATE_TERM_ABLATION_NAME: AblationIdentifier = "zero_private_transition_allowance_term"
 
 
 @dataclass(frozen=True)
@@ -191,36 +200,96 @@ def _point_vs_set_ablation_result(application: ExperimentRuntime) -> AblationRes
     )
 
 
-def _no_controls_ablation_result(application: ExperimentRuntime) -> AblationResult | None:
+def _identification_diagnostics_artifact(
+    application: ExperimentRuntime,
+) -> _IdentificationDiagnosticsArtifact | None:
     source = (
         _experiment_directory(application, "prospective-evaluation")
         / "identification-diagnostics.json"
     )
     if not source.is_file():
         return None
-    artifact = _IdentificationDiagnosticsArtifact.model_validate_json(
+    return _IdentificationDiagnosticsArtifact.model_validate_json(
         source.read_text(encoding="utf-8")
     )
-    paired = [
-        (cutoff.beta, cutoff.no_controls_beta)
-        for cutoff in artifact.cutoffs
-        if cutoff.beta is not None and cutoff.no_controls_beta is not None
-    ]
+
+
+def _beta_widening_ablation_result(
+    application: ExperimentRuntime,
+    ablation_name: AblationIdentifier,
+    ablated_beta: Callable[[_IdentificationCutoffRecord], UncertaintyRadius | None],
+) -> AblationResult | None:
+    artifact = _identification_diagnostics_artifact(application)
+    if artifact is None:
+        return None
+    paired: list[tuple[UncertaintyRadius, UncertaintyRadius]] = []
+    for cutoff in artifact.cutoffs:
+        ablated_value = ablated_beta(cutoff)
+        if cutoff.beta is not None and ablated_value is not None:
+            paired.append((cutoff.beta, ablated_value))
     if not paired:
         return None
-    mean_beta = sum(beta for beta, _no_controls in paired) / len(paired)
-    mean_no_controls_beta = sum(no_controls for _beta, no_controls in paired) / len(paired)
+    mean_beta = sum(beta for beta, _ablated in paired) / len(paired)
+    mean_ablated_beta = sum(ablated for _beta, ablated in paired) / len(paired)
     return AblationResult(
-        ablation_name=NO_CONTROLS_ABLATION_NAME,
-        degradation_percentage_points=100.0 * (mean_no_controls_beta - mean_beta),
+        ablation_name=ablation_name,
+        degradation_percentage_points=100.0 * (mean_ablated_beta - mean_beta),
         measured=True,
+    )
+
+
+def _no_controls_ablation_result(application: ExperimentRuntime) -> AblationResult | None:
+    return _beta_widening_ablation_result(
+        application, NO_CONTROLS_ABLATION_NAME, lambda cutoff: cutoff.no_controls_beta
+    )
+
+
+def _one_matched_control_ablation_result(application: ExperimentRuntime) -> AblationResult | None:
+    return _beta_widening_ablation_result(
+        application,
+        ONE_MATCHED_CONTROL_ABLATION_NAME,
+        lambda cutoff: cutoff.one_matched_control_beta,
+    )
+
+
+def _zero_subspace_term_ablation_result(application: ExperimentRuntime) -> AblationResult | None:
+    return _beta_widening_ablation_result(
+        application,
+        ZERO_SUBSPACE_TERM_ABLATION_NAME,
+        lambda cutoff: cutoff.zero_subspace_term_beta,
+    )
+
+
+def _zero_control_span_term_ablation_result(
+    application: ExperimentRuntime,
+) -> AblationResult | None:
+    return _beta_widening_ablation_result(
+        application,
+        ZERO_CONTROL_SPAN_TERM_ABLATION_NAME,
+        lambda cutoff: cutoff.zero_control_span_term_beta,
+    )
+
+
+def _zero_private_term_ablation_result(application: ExperimentRuntime) -> AblationResult | None:
+    return _beta_widening_ablation_result(
+        application,
+        ZERO_PRIVATE_TERM_ABLATION_NAME,
+        lambda cutoff: cutoff.zero_private_term_beta,
     )
 
 
 def run_novelty_critical_ablations(application: ExperimentRuntime) -> AblationExperimentReport:
     results: list[AblationResult] = []
     real_ablation_names = frozenset(
-        {HARDENING_OFF_ABLATION_NAME, POINT_VS_SET_ABLATION_NAME, NO_CONTROLS_ABLATION_NAME}
+        {
+            HARDENING_OFF_ABLATION_NAME,
+            POINT_VS_SET_ABLATION_NAME,
+            NO_CONTROLS_ABLATION_NAME,
+            ONE_MATCHED_CONTROL_ABLATION_NAME,
+            ZERO_SUBSPACE_TERM_ABLATION_NAME,
+            ZERO_CONTROL_SPAN_TERM_ABLATION_NAME,
+            ZERO_PRIVATE_TERM_ABLATION_NAME,
+        }
     )
     hardening_off = _hardening_off_ablation_result(application)
     if hardening_off is not None:
@@ -231,6 +300,16 @@ def run_novelty_critical_ablations(application: ExperimentRuntime) -> AblationEx
     no_controls = _no_controls_ablation_result(application)
     if no_controls is not None:
         results.append(no_controls)
+    one_matched_control = _one_matched_control_ablation_result(application)
+    if one_matched_control is not None:
+        results.append(one_matched_control)
+    for descriptive_result in (
+        _zero_subspace_term_ablation_result(application),
+        _zero_control_span_term_ablation_result(application),
+        _zero_private_term_ablation_result(application),
+    ):
+        if descriptive_result is not None:
+            results.append(descriptive_result)
     source = _experiment_directory(application, "ablations") / "measurements.json"
     if source.is_file():
         artifact = _AblationArtifact.model_validate_json(source.read_text(encoding="utf-8"))
@@ -257,7 +336,9 @@ def run_novelty_critical_ablations(application: ExperimentRuntime) -> AblationEx
         )
         return AblationExperimentReport(0, (), ScientificOutcome.INSUFFICIENT_EVIDENCE)
     real_results = [
-        result for result in (hardening_off, point_vs_set, no_controls) if result is not None
+        result
+        for result in (hardening_off, point_vs_set, no_controls, one_matched_control)
+        if result is not None
     ]
     novelty_critical_claims_supported = bool(real_results) and all(
         result.degradation_percentage_points > 0.0 for result in real_results
