@@ -5678,3 +5678,18 @@ Every exported result references the exact complete scientific/analysis artifact
 Every manuscript number must trace through the evidence index to the full-precision verified scientific records and provenance retained under `outputs/` and to the compact reproducibility evidence under `results/project_summary/reproducibility/`.
 
 Reporting applies only the numerical presentation values in the `reporting` block; the fixed reporting semantics are defined in §35.2.
+
+---
+
+## TODO: Open Blockers
+
+Tracked here so they are not re-investigated from scratch. None of these are resolvable by further implementation alone; each requires new data, a public code release, or a defensible statistical design that does not currently exist.
+
+1. **§27/§29 action-certificate-dependent work (LAMDA + EMBER2024).** Both acquired dataset releases are feature-only; neither contains raw executable bytes. Action generation (problem-space mutation, action-certificate validation, Win32/Win64 identification-and-contrast work) cannot run without them.
+   - **APK path exists and is pending:** §14.2/§27.x's raw-APK requirement can be satisfied via AndroZoo-indexed acquisition (`docs/Roadmap.md:1708`), keyed by the sample hashes already present in the LAMDA release. This requires an AndroZoo API key issued to a named researcher. **Status: API key requested, awaiting response.** Once granted, re-open this item — it unblocks §27's action-dependent comparators and the LAMDA side of §29.
+   - **PE path does not exist.** The roadmap names no authorized acquisition route for raw PE bytes matching the EMBER2024 release (`docs/Roadmap.md:1726`); EMBER releases are feature-only by design. This blocker is permanent absent a new dataset decision, not a pending acquisition.
+   - Consequently the §14.1 baseline `generic-robust-no-certificate` also stays blocked (no action candidates to certify against).
+
+2. **TIF comparator (temporal-invariance-comparator, arXiv:2502.05098).** No public code release found under any discoverable name (real search performed, not assumed). Per §14.2's own fallback rule, confirmed `NOT_APPLICABLE`. Re-check only if the authors later publish an implementation.
+
+3. **§33.2 temporal-order-vs-shuffle confirmatory contrast.** The only real data available (`run_lamda_temporal_dynamics_ablation`'s two scalar quantiles: baseline vs. shuffled-history process error) has no natural per-cutoff or per-transition pairing structure to feed the existing paired-contrast machinery. Inventing a pairing scheme would be inventing missing statistical methodology, which is not permitted. Needs an explicit, human-specified pairing design before this can be implemented.
