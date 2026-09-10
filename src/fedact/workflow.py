@@ -67,6 +67,7 @@ from fedact.domain.types import (
     SplitCutoffIdentity,
 )
 from fedact.experiments.baselines import verify_subtraction_comparator_parity
+from fedact.experiments.ember2024_identification import run_ember2024_identification_diagnostics
 from fedact.experiments.generalization import (
     read_prospective_cutoff_aggregates,
     run_cross_corpus_generalization,
@@ -728,6 +729,11 @@ def _dispatch_evaluation_workflow(
             ),
         )
         typer.echo(f"cross corpus generalization completed: {cross_report.scientific_outcome}")
+        ember_identification_report = run_ember2024_identification_diagnostics(application)
+        typer.echo(
+            "ember2024 identification diagnostics completed: "
+            f"{ember_identification_report.scientific_outcome}"
+        )
         return True
 
     if workflow is ExecutableWorkflowName.CLIENT_SELECTION:
