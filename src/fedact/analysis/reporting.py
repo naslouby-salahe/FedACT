@@ -112,45 +112,55 @@ def export_verified_project_evidence(
             "certification rate, and clean-FNR degradation"
         )
 
-    table_file = results_directory / "tables" / "table_1_main.tex"
+    static_chronological_fnr = prospective.static_chronological_false_negative_rate
+    headers = (
+        "Method",
+        "Prospective FNR",
+        "Certification Rate",
+        "Clean FNR Degradation",
+    )
+    rows = [
+        (
+            "FedACT (Ours)",
+            f"{fnr:.{rate_significant_figures}f}",
+            f"{certification_rate:.{rate_significant_figures}f}",
+            f"{degradation:.{rate_significant_figures}f}%",
+        )
+    ]
+    if static_chronological_fnr is not None:
+        rows.append(
+            (
+                "Static chronological detector (no hardening)",
+                f"{static_chronological_fnr:.{rate_significant_figures}f}",
+                "n/a",
+                "n/a",
+            )
+        )
+    table_file = results_directory / "tables" / "main" / "table_1_main.tex"
     generate_latex_table(
         table_id="main_results",
-        headers=tuple(
-            LatexTableCell(header)
-            for header in (
-                "Method",
-                "Prospective FNR",
-                "Certification Rate",
-                "Clean FNR Degradation",
-            )
-        ),
-        rows=(
-            tuple(
-                LatexTableCell(cell)
-                for cell in (
-                    "FedACT (Ours)",
-                    f"{fnr:.{rate_significant_figures}f}",
-                    f"{certification_rate:.{rate_significant_figures}f}",
-                    f"{degradation:.{rate_significant_figures}f}%",
-                )
-            ),
-        ),
+        headers=tuple(LatexTableCell(header) for header in headers),
+        rows=tuple(tuple(LatexTableCell(cell) for cell in row) for row in rows),
         output_file=table_file,
     )
+    figure_file = results_directory / "figures" / "main" / "fig_1.png"
     generate_prospective_metrics_figure(
         "fig_1_prospective",
         fnr,
         certification_rate,
         rate_significant_figures,
-        results_directory / "figures" / "fig_1.png",
+        figure_file,
     )
-    summary_file = results_directory / "project_summary.json"
+    summary_file = results_directory / "metrics" / "summary" / "project_summary.json"
     generate_project_summary(
         project="FedACT",
         verdict=overall_outcome,
         prospective_fnr=fnr,
         certification_rate=certification_rate,
         output_file=summary_file,
+    )
+    evidence_index_file = (
+        results_directory / "reproducibility" / "execution" / "evidence_index.json"
     )
     package_artifact_status_index(
         [
@@ -159,11 +169,11 @@ def export_verified_project_evidence(
             ),
             ArtifactStatusRecord(
                 artifact="fig_1.png",
-                status=_verification_status(results_directory / "figures" / "fig_1.png"),
+                status=_verification_status(figure_file),
             ),
             ArtifactStatusRecord(
                 artifact="project_summary.json", status=_verification_status(summary_file)
             ),
         ],
-        results_directory / "evidence_index.json",
+        evidence_index_file,
     )

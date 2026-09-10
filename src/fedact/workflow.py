@@ -545,7 +545,7 @@ def run_report(
     export_verified_project_evidence(
         prospective,
         overall_outcome,
-        root / "results",
+        application.workspace_layout().output_directories().project_summary,
         application.configuration.values.reporting.significant_figures.percentages_and_rates,
     )
     typer.echo(f"manuscript evidence reporting completed: {overall_outcome}")

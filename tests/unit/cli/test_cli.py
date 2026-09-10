@@ -142,6 +142,13 @@ def test_report_forms_validate_workflow_names(repository_root: Path) -> None:
     )
     assert valid.exit_code == 0
     assert "manuscript evidence reporting completed: PASS" in valid.output
-    summary = (repository_root / "results" / "project_summary.json").read_text(encoding="utf-8")
+    summary = (
+        repository_root
+        / "results"
+        / "project_summary"
+        / "metrics"
+        / "summary"
+        / "project_summary.json"
+    ).read_text(encoding="utf-8")
     assert "0.08" in summary
     assert "0.82" in summary
