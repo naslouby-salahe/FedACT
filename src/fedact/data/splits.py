@@ -7,6 +7,7 @@ from typing import NewType
 import numpy as np
 
 from fedact.domain.types import (
+    CalendarMonthString,
     DatasetSelector,
     EligibilityFlag,
     EligibilityStatus,
@@ -30,12 +31,24 @@ from fedact.domain.types import (
 CalendarMonth = NewType("CalendarMonth", int)
 
 _TRANSITION_WINDOW_SPAN_MULTIPLIER = 2
+_MONTHS_PER_CALENDAR_YEAR = 12
 
 
 def calendar_month(value: MonthIndex) -> CalendarMonth:
     if value < 0:
         raise ChronologyError(f"calendar month must be nonnegative; got {value}")
     return CalendarMonth(value)
+
+
+def year_month_ordinal(
+    year_month: CalendarMonthString, epoch_year_month: CalendarMonthString
+) -> CalendarMonth:
+    year_text, month_text = year_month.split("-")
+    epoch_year_text, epoch_month_text = epoch_year_month.split("-")
+    ordinal = (int(year_text) - int(epoch_year_text)) * _MONTHS_PER_CALENDAR_YEAR + (
+        int(month_text) - int(epoch_month_text)
+    )
+    return calendar_month(ordinal)
 
 
 class ChronologyError(ValueError):

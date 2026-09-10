@@ -24,6 +24,7 @@ from fedact.data.splits import (
     calendar_month,
     transition_windows,
     windowed_mean,
+    year_month_ordinal,
 )
 from fedact.domain.types import (
     BinaryLabel,
@@ -107,8 +108,7 @@ def standardize_features(features: np.ndarray) -> np.ndarray:
     return (features - mean) / std
 
 
-_LAMDA_EPOCH_YEAR = 2013
-_CALENDAR_YEAR_LENGTH = 12
+_LAMDA_EPOCH_YEAR_MONTH: CalendarMonthString = "2013-01"
 
 
 @dataclass(frozen=True)
@@ -212,9 +212,7 @@ class OperatorEligibility:
 
 
 def year_month_to_calendar_month(year_month: CalendarMonthString) -> CalendarMonth:
-    year_text, month_text = year_month.split("-")
-    ordinal = (int(year_text) - _LAMDA_EPOCH_YEAR) * _CALENDAR_YEAR_LENGTH + (int(month_text) - 1)
-    return calendar_month(ordinal)
+    return year_month_ordinal(year_month, _LAMDA_EPOCH_YEAR_MONTH)
 
 
 def _labeled_months(

@@ -18,6 +18,14 @@ import numpy as np
 from sklearn.feature_extraction import FeatureHasher
 
 from fedact.data.records import ClientSemanticsAudit
+from fedact.data.splits import (
+    CalendarMonth,
+    ControlTransitionReplicate,
+    TransitionDisplacement,
+    transition_windows,
+    windowed_mean,
+    year_month_ordinal,
+)
 from fedact.domain.types import (
     BinaryLabel,
     CalendarMonthString,
@@ -35,6 +43,7 @@ from fedact.domain.types import (
     SampleIdentifier,
     SupportThreshold,
     ValidationFlag,
+    WindowSpanMonths,
     ZeroDisplacementFloor,
 )
 
@@ -682,6 +691,13 @@ def _year_month_from_epoch_seconds(epoch_seconds: EpochSeconds) -> CalendarMonth
     return f"{moment.year:04d}-{moment.month:02d}"
 
 
+_EMBER2024_EPOCH_YEAR_MONTH: CalendarMonthString = "2023-09"
+
+
+def year_month_to_calendar_month(year_month: CalendarMonthString) -> CalendarMonth:
+    return year_month_ordinal(year_month, _EMBER2024_EPOCH_YEAR_MONTH)
+
+
 def _parse_record(payload: EmberJsonObject) -> tuple[EmberRawRecord, np.ndarray]:
     sha256 = cast(str, payload["sha256"])
     raw_label = _scalar(payload["label"])
@@ -739,6 +755,110 @@ class EmberValidationError(ValueError):
 def validate_ember_dataset(dataset: LoadedEmberDataset) -> None:
     if len(dataset.records) != dataset.features.shape[0]:
         raise EmberValidationError("record count and feature rows must match")
+
+
+def _labeled_months(
+    records: Sequence[EmberRawRecord],
+    want_malicious: BinaryLabel,
+) -> tuple[np.ndarray, np.ndarray]:
+    months = np.fromiter(
+        (int(year_month_to_calendar_month(record.year_month)) for record in records),
+        dtype=np.int64,
+        count=len(records),
+    )
+    keep = np.fromiter(
+        (record.label is want_malicious for record in records),
+        dtype=bool,
+        count=len(records),
+    )
+    return months, keep
+
+
+def malicious_transition_displacement(
+    records: Sequence[EmberRawRecord],
+    features: np.ndarray,
+    endpoint_month: CalendarMonth,
+    transition_interval_months: WindowSpanMonths,
+) -> TransitionDisplacement | None:
+    windows = transition_windows(endpoint_month, transition_interval_months)
+    months, keep = _labeled_months(records, want_malicious=True)
+    features = features[keep]
+    kept_months = months[keep]
+    before_mean, before_support = windowed_mean(
+        features,
+        kept_months,
+        windows.before_window_start_inclusive,
+        windows.before_window_end_exclusive,
+    )
+    after_mean, after_support = windowed_mean(
+        features,
+        kept_months,
+        windows.after_window_start_inclusive,
+        windows.after_window_end_exclusive,
+    )
+    if before_support == 0 or after_support == 0:
+        return None
+    return TransitionDisplacement(
+        displacement=after_mean - before_mean,
+        support_before=before_support,
+        support_after=after_support,
+    )
+
+
+def windowed_malicious_features(
+    records: Sequence[EmberRawRecord],
+    features: np.ndarray,
+    endpoint_month: CalendarMonth,
+    transition_interval_months: WindowSpanMonths,
+) -> tuple[np.ndarray, np.ndarray]:
+    windows = transition_windows(endpoint_month, transition_interval_months)
+    months, keep = _labeled_months(records, want_malicious=True)
+    kept_features = features[keep].astype(np.float64)
+    kept_months = months[keep]
+    before_mask = (kept_months >= windows.before_window_start_inclusive) & (
+        kept_months < windows.before_window_end_exclusive
+    )
+    after_mask = (kept_months >= windows.after_window_start_inclusive) & (
+        kept_months < windows.after_window_end_exclusive
+    )
+    return kept_features[before_mask], kept_features[after_mask]
+
+
+def control_transition_replicates(
+    records: Sequence[EmberRawRecord],
+    features: np.ndarray,
+    candidate_endpoints: Sequence[CalendarMonth],
+    transition_interval_months: WindowSpanMonths,
+) -> tuple[ControlTransitionReplicate, ...]:
+    months, keep = _labeled_months(records, want_malicious=False)
+    features = features[keep]
+    kept_months = months[keep]
+    replicates: list[ControlTransitionReplicate] = []
+    for endpoint in candidate_endpoints:
+        windows = transition_windows(endpoint, transition_interval_months)
+        before_mean, before_support = windowed_mean(
+            features,
+            kept_months,
+            windows.before_window_start_inclusive,
+            windows.before_window_end_exclusive,
+        )
+        after_mean, after_support = windowed_mean(
+            features,
+            kept_months,
+            windows.after_window_start_inclusive,
+            windows.after_window_end_exclusive,
+        )
+        if before_support == 0 or after_support == 0:
+            continue
+        replicates.append(
+            ControlTransitionReplicate(
+                endpoint_month=endpoint,
+                displacement=after_mean - before_mean,
+                support_before=before_support,
+                support_after=after_support,
+            )
+        )
+    return tuple(replicates)
 
 
 def run_empty_ember_transform_audit() -> None:
