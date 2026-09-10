@@ -83,6 +83,7 @@ class _CutoffComparisonRecord(StrictModel):
     certified_false_negative_rate: MetricRate | None
     ambiguous_false_negative_rate: MetricRate | None
     static_chronological_false_negative_rate: MetricRate | None = None
+    hardened_false_negative_rate: MetricRate | None = None
 
 
 class _CutoffComparisonArtifact(StrictModel):
@@ -581,6 +582,7 @@ def run_prospective_fedact_evaluation(
                 static_chronological_false_negative_rate=_group_false_negative_rate(
                     cutoff_static_records
                 ),
+                hardened_false_negative_rate=_group_false_negative_rate(cutoff_records),
             )
         )
         LOGGER.info("prospective evaluated cutoff=%s rows=%s", cutoff_id, len(cutoff_records))

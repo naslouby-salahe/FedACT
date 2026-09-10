@@ -36,6 +36,7 @@ from fedact.domain.types import (
     SampleCount,
     SampleIdentifier,
     ScientificOutcome,
+    SplitCutoffIdentity,
     ValidationFlag,
 )
 from fedact.experiments.registry import ExperimentRuntime
@@ -69,6 +70,19 @@ class _AblationArtifact(StrictModel):
     measurements: list[_AblationMeasurement]
 
 
+class _ProspectiveCutoffComparisonRecord(StrictModel):
+    cutoff_id: SplitCutoffIdentity
+    hardened_false_negative_rate: MetricRate | None = None
+    static_chronological_false_negative_rate: MetricRate | None = None
+
+
+class _ProspectiveCutoffComparisonArtifact(StrictModel):
+    comparisons: list[_ProspectiveCutoffComparisonRecord]
+
+
+HARDENING_OFF_ABLATION_NAME: AblationIdentifier = "hardening_off"
+
+
 @dataclass(frozen=True)
 class AblationResult:
     ablation_name: AblationIdentifier
@@ -87,29 +101,79 @@ class AblationExperimentReport:
         return self.ablations_evaluated
 
 
-def run_novelty_critical_ablations(application: ExperimentRuntime) -> AblationExperimentReport:
-    source = _experiment_directory(application, "ablations") / "measurements.json"
+def _hardening_off_ablation_result(application: ExperimentRuntime) -> AblationResult | None:
+    source = (
+        _experiment_directory(application, "prospective-evaluation") / "cutoff-comparisons.json"
+    )
     if not source.is_file():
+        return None
+    artifact = _ProspectiveCutoffComparisonArtifact.model_validate_json(
+        source.read_text(encoding="utf-8")
+    )
+    paired = [
+        (
+            comparison.hardened_false_negative_rate,
+            comparison.static_chronological_false_negative_rate,
+        )
+        for comparison in artifact.comparisons
+        if comparison.hardened_false_negative_rate is not None
+        and comparison.static_chronological_false_negative_rate is not None
+    ]
+    if not paired:
+        return None
+    mean_hardened = sum(hardened for hardened, _unhardened in paired) / len(paired)
+    mean_unhardened = sum(unhardened for _hardened, unhardened in paired) / len(paired)
+    return AblationResult(
+        ablation_name=HARDENING_OFF_ABLATION_NAME,
+        degradation_percentage_points=100.0 * (mean_unhardened - mean_hardened),
+        measured=True,
+    )
+
+
+def run_novelty_critical_ablations(application: ExperimentRuntime) -> AblationExperimentReport:
+    results: list[AblationResult] = []
+    hardening_off = _hardening_off_ablation_result(application)
+    if hardening_off is not None:
+        results.append(hardening_off)
+    source = _experiment_directory(application, "ablations") / "measurements.json"
+    if source.is_file():
+        artifact = _AblationArtifact.model_validate_json(source.read_text(encoding="utf-8"))
+        results.extend(
+            AblationResult(
+                ablation_name=measurement.ablation_name,
+                degradation_percentage_points=100.0
+                * (
+                    measurement.ablated_false_negative_rate
+                    - measurement.baseline_false_negative_rate
+                ),
+                measured=True,
+            )
+            for measurement in artifact.measurements
+            if measurement.ablation_name != HARDENING_OFF_ABLATION_NAME or hardening_off is None
+        )
+    if not results:
         LOGGER.warning(
-            "ablation measurements are missing: %s; prospective evaluation must provide "
-            "measured FNR pairs",
+            "no ablation evidence is available: %s has no completed prospective-evaluation "
+            "cutoff comparisons and %s is missing",
+            _experiment_directory(application, "prospective-evaluation")
+            / "cutoff-comparisons.json",
             source,
         )
         return AblationExperimentReport(0, (), ScientificOutcome.INSUFFICIENT_EVIDENCE)
-    artifact = _AblationArtifact.model_validate_json(source.read_text(encoding="utf-8"))
-    results = tuple(
-        AblationResult(
-            ablation_name=measurement.ablation_name,
-            degradation_percentage_points=100.0
-            * (measurement.ablated_false_negative_rate - measurement.baseline_false_negative_rate),
-            measured=True,
-        )
-        for measurement in artifact.measurements
+    hardening_benefit_supported = (
+        hardening_off is not None and hardening_off.degradation_percentage_points > 0.0
+    )
+    LOGGER.info(
+        "novelty-critical ablations evaluated ablations=%s hardening_benefit_supported=%s",
+        len(results),
+        hardening_benefit_supported,
     )
     return AblationExperimentReport(
         len(results),
-        results,
-        ScientificOutcome.PASS if results else ScientificOutcome.INSUFFICIENT_EVIDENCE,
+        tuple(results),
+        ScientificOutcome.PASS
+        if hardening_benefit_supported
+        else ScientificOutcome.INSUFFICIENT_EVIDENCE,
     )
 
 
