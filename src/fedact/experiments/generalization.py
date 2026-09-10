@@ -66,6 +66,7 @@ class _TransferManifest(StrictModel):
     detector_checkpoint: RelativePosixPath
     feature_adapter: RelativePosixPath
     input_dimension: RankDimension = Field(gt=0)
+    certificate_decisions: RelativePosixPath | None = None
 
 
 class _CertificateDecisionRecord(StrictModel):
@@ -167,6 +168,8 @@ def read_prospective_cutoff_aggregates(
 class CrossCorpusReport:
     target_corpora_tested: EvaluationCount
     mean_transfer_fnr: MetricRate
+    certified_false_negative_rate: MetricRate | None
+    ambiguous_false_negative_rate: MetricRate | None
     transfer_supported: ValidationFlag
     scientific_outcome: ScientificOutcome
 
@@ -270,7 +273,7 @@ def run_cross_corpus_generalization(application: ExperimentRuntime) -> CrossCorp
             manifest_path.is_file(),
             target_root.is_dir(),
         )
-        return CrossCorpusReport(0, 0.0, False, ScientificOutcome.INSUFFICIENT_EVIDENCE)
+        return CrossCorpusReport(0, 0.0, None, None, False, ScientificOutcome.INSUFFICIENT_EVIDENCE)
     manifest = _TransferManifest.model_validate_json(manifest_path.read_text(encoding="utf-8"))
     encoder_path = _workspace_path(application, manifest.encoder_checkpoint)
     detector_path = _workspace_path(application, manifest.detector_checkpoint)
@@ -287,7 +290,7 @@ def run_cross_corpus_generalization(application: ExperimentRuntime) -> CrossCorp
         count=len(target.records),
     )
     if not labeled.any():
-        return CrossCorpusReport(0, 0.0, False, ScientificOutcome.INSUFFICIENT_EVIDENCE)
+        return CrossCorpusReport(0, 0.0, None, None, False, ScientificOutcome.INSUFFICIENT_EVIDENCE)
     target_features = apply_log1p_transforms(
         target.features[labeled], ember2024_count_feature_mask()
     )
@@ -310,6 +313,22 @@ def run_cross_corpus_generalization(application: ExperimentRuntime) -> CrossCorp
         tuple(record.sample_hash for record in selected_records),
         torch.tensor(adapted, dtype=torch.float32),
     )
+    if manifest.certificate_decisions is None:
+        LOGGER.warning(
+            "cross-corpus transfer manifest has no locked certificate decisions; a "
+            "detector-performance win alone is insufficient for a generalization claim"
+        )
+        certified_samples: frozenset[SampleIdentifier] = frozenset()
+    else:
+        decisions_path = _workspace_path(application, manifest.certificate_decisions)
+        decision_artifact = _CertificateDecisionArtifact.model_validate_json(
+            decisions_path.read_text(encoding="utf-8")
+        )
+        certified_samples = frozenset(
+            decision.sample_id
+            for decision in decision_artifact.decisions
+            if decision.status is CertificationStatus.CERTIFIED_POSITIVE
+        )
     evaluations = tuple(
         EvaluationRecord(
             dataset=DatasetSelector.EMBER2024,
@@ -318,18 +337,39 @@ def run_cross_corpus_generalization(application: ExperimentRuntime) -> CrossCorp
             horizon_step=1,
             true_label=_labeled_target_value(record.label),
             predicted_score=score.probability,
-            is_certified=False,
+            is_certified=record.sample_hash in certified_samples,
             clean_loss=0.0,
         )
         for record, score in zip(selected_records, scores, strict=True)
     )
     metrics = compute_evaluation_metrics(evaluations)
-    LOGGER.info("cross-corpus locked transfer scored target_rows=%s", len(evaluations))
+    certified_records = tuple(record for record in evaluations if record.is_certified)
+    ambiguous_records = tuple(
+        record
+        for record in evaluations
+        if not record.is_certified and record.sample_id not in certified_samples
+    )
+    certified_fnr = _group_false_negative_rate(certified_records)
+    ambiguous_fnr = _group_false_negative_rate(ambiguous_records)
+    transfer_supported = (
+        certified_samples != frozenset()
+        and certified_fnr is not None
+        and ambiguous_fnr is not None
+        and certified_fnr <= ambiguous_fnr
+    )
+    LOGGER.info(
+        "cross-corpus locked transfer scored target_rows=%s certified=%s transfer_supported=%s",
+        len(evaluations),
+        len(certified_records),
+        transfer_supported,
+    )
     return CrossCorpusReport(
         len(evaluations),
         metrics.false_negative_rate,
-        True,
-        ScientificOutcome.PASS,
+        certified_fnr,
+        ambiguous_fnr,
+        transfer_supported,
+        ScientificOutcome.PASS if transfer_supported else ScientificOutcome.INSUFFICIENT_EVIDENCE,
     )
 
 
