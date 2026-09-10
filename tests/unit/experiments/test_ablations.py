@@ -42,6 +42,7 @@ def test_hardening_off_ablation_measures_real_degradation(
                         "hardened_false_negative_rate": 0.1,
                         "static_chronological_false_negative_rate": 0.4,
                         "matched_benign_subtraction_false_negative_rate": 0.35,
+                        "projected_point_reconstruction_false_negative_rate": 0.38,
                     },
                     {
                         "cutoff_id": "lamda-2",
@@ -50,6 +51,7 @@ def test_hardening_off_ablation_measures_real_degradation(
                         "hardened_false_negative_rate": 0.2,
                         "static_chronological_false_negative_rate": 0.5,
                         "matched_benign_subtraction_false_negative_rate": 0.45,
+                        "projected_point_reconstruction_false_negative_rate": 0.48,
                     },
                 ]
             }
