@@ -26,6 +26,7 @@ from fedact.domain.types import (
     DatasetSelector,
     EligibilityFlag,
     FamilyName,
+    Fraction,
     Probability,
     SampleCount,
     SampleIdentifier,
@@ -307,6 +308,49 @@ def windowed_malicious_features(
     return kept_features[before_mask], kept_features[after_mask]
 
 
+def _retained_sample_mask(
+    sample_hashes: Sequence[SampleIdentifier],
+    cutoff: CalendarMonth,
+    retention_fraction: Fraction,
+) -> np.ndarray:
+    if not sample_hashes:
+        return np.zeros(0, dtype=bool)
+    digests = [
+        hashlib.sha256(f"{sample_hash}:{cutoff}:{retention_fraction}".encode()).hexdigest()
+        for sample_hash in sample_hashes
+    ]
+    retain_count = max(1, round(len(digests) * retention_fraction))
+    threshold = sorted(digests)[retain_count - 1]
+    return np.fromiter((digest <= threshold for digest in digests), dtype=bool, count=len(digests))
+
+
+def _sparse_windowed_mean(
+    features: np.ndarray,
+    months: np.ndarray,
+    sample_hashes: np.ndarray,
+    start_inclusive: CalendarMonth,
+    end_exclusive: CalendarMonth,
+    cutoff: CalendarMonth,
+    retention_fraction: Fraction,
+) -> tuple[np.ndarray, SampleCount]:
+    window_mask = (months >= start_inclusive) & (months < end_exclusive)
+    window_indices = np.flatnonzero(window_mask)
+    if window_indices.size == 0:
+        return np.zeros(features.shape[1], dtype=np.float64), 0
+    retained = _retained_sample_mask(
+        [SampleIdentifier(sample_hashes[index]) for index in window_indices],
+        cutoff,
+        retention_fraction,
+    )
+    retained_indices = window_indices[retained]
+    if retained_indices.size == 0:
+        return np.zeros(features.shape[1], dtype=np.float64), 0
+    return (
+        features[retained_indices].astype(np.float64).mean(axis=0),
+        int(retained_indices.size),
+    )
+
+
 def control_transition_replicates(
     records: Sequence[LamdaRawRecord],
     features: np.ndarray,
@@ -331,6 +375,53 @@ def control_transition_replicates(
             kept_months,
             windows.after_window_start_inclusive,
             windows.after_window_end_exclusive,
+        )
+        if before_support == 0 or after_support == 0:
+            continue
+        replicates.append(
+            ControlTransitionReplicate(
+                endpoint_month=endpoint,
+                displacement=after_mean - before_mean,
+                support_before=before_support,
+                support_after=after_support,
+            )
+        )
+    return tuple(replicates)
+
+
+def sparse_control_transition_replicates(
+    records: Sequence[LamdaRawRecord],
+    features: np.ndarray,
+    rule: LabelDerivationRule,
+    candidate_endpoints: Sequence[CalendarMonth],
+    transition_interval_months: WindowSpanMonths,
+    retention_fraction: Fraction,
+) -> tuple[ControlTransitionReplicate, ...]:
+    months, keep = _labeled_months(records, rule, want_malicious=False)
+    kept_records = [record for record, keep_flag in zip(records, keep, strict=True) if keep_flag]
+    kept_sample_hashes = np.array([record.sample_hash for record in kept_records])
+    kept_features = features[keep]
+    kept_months = months[keep]
+    replicates: list[ControlTransitionReplicate] = []
+    for endpoint in candidate_endpoints:
+        windows = transition_windows(endpoint, transition_interval_months)
+        before_mean, before_support = _sparse_windowed_mean(
+            kept_features,
+            kept_months,
+            kept_sample_hashes,
+            windows.before_window_start_inclusive,
+            windows.before_window_end_exclusive,
+            endpoint,
+            retention_fraction,
+        )
+        after_mean, after_support = _sparse_windowed_mean(
+            kept_features,
+            kept_months,
+            kept_sample_hashes,
+            windows.after_window_start_inclusive,
+            windows.after_window_end_exclusive,
+            endpoint,
+            retention_fraction,
         )
         if before_support == 0 or after_support == 0:
             continue

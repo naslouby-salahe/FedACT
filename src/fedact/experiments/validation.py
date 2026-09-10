@@ -44,7 +44,10 @@ from fedact.domain.types import (
     ThresholdValue,
     ValidationFlag,
 )
-from fedact.experiments.identification import run_lamda_weak_eigengap_stress
+from fedact.experiments.identification import (
+    run_lamda_sparse_control_stress,
+    run_lamda_weak_eigengap_stress,
+)
 from fedact.experiments.registry import ExperimentRuntime
 from fedact.learning.hardening import SampleChallengeSet, write_challenge_sets
 
@@ -510,14 +513,30 @@ def apply_corrupted_client_attack(
 
 def run_robustness_and_failure_boundaries(application: ExperimentRuntime) -> BoundaryStressReport:
     weak_eigengap = run_lamda_weak_eigengap_stress(application)
-    real_completed = len(weak_eigengap.results)
-    real_boundaries_reached = sum(result.rank_destabilized for result in weak_eigengap.results)
+    weak_eigengap_completed = len(weak_eigengap.results)
+    weak_eigengap_reached = sum(result.rank_destabilized for result in weak_eigengap.results)
     LOGGER.info(
         "weak-eigengap real stress endpoint=%s multipliers_tested=%s destabilized=%s",
         weak_eigengap.endpoint,
-        real_completed,
-        real_boundaries_reached,
+        weak_eigengap_completed,
+        weak_eigengap_reached,
     )
+
+    sparse_control = run_lamda_sparse_control_stress(application)
+    sparse_control_completed = len(sparse_control.results)
+    sparse_control_reached = sum(
+        (not result.fitted) or (result.perturbed_beta or 0.0) > result.baseline_beta
+        for result in sparse_control.results
+    )
+    LOGGER.info(
+        "sparse-control real stress endpoint=%s fractions_tested=%s widened_or_abstained=%s",
+        sparse_control.endpoint,
+        sparse_control_completed,
+        sparse_control_reached,
+    )
+
+    real_completed = weak_eigengap_completed + sparse_control_completed
+    real_boundaries_reached = weak_eigengap_reached + sparse_control_reached
 
     source = _experiment_directory(application, "failure-boundaries") / "stress-measurements.json"
     if not source.is_file():

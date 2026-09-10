@@ -38,6 +38,7 @@ from fedact.data.lamda import (
     label_derivation_rule,
     load_lamda_records,
     malicious_transition_displacement,
+    sparse_control_transition_replicates,
     validate_lamda_dataset,
     windowed_malicious_features,
     year_month_to_calendar_month,
@@ -52,6 +53,7 @@ from fedact.domain.types import (
     EigengapRatio,
     EvaluationCount,
     FamilyName,
+    Fraction,
     NormValue,
     RankDimension,
     ScientificOutcome,
@@ -102,6 +104,7 @@ def fit_lamda_client_constraint(
     endpoint: CalendarMonth,
     historical_endpoints: tuple[CalendarMonth, ...],
     earlier_malicious_endpoints: tuple[CalendarMonth, ...],
+    control_replicates_override: tuple[ControlTransitionReplicate, ...] | None = None,
 ) -> ClientConstraintFit | AbstentionReason:
     config = application.configuration.values
     transition_interval_months: WindowSpanMonths = config.temporal.transition_interval_months
@@ -117,8 +120,12 @@ def fit_lamda_client_constraint(
     ):
         return AbstentionReason.ABSTAIN_INSUFFICIENT_MALICIOUS_SUPPORT
 
-    replicates = control_transition_replicates(
-        all_records, all_features, rule, historical_endpoints, transition_interval_months
+    replicates = (
+        control_replicates_override
+        if control_replicates_override is not None
+        else control_transition_replicates(
+            all_records, all_features, rule, historical_endpoints, transition_interval_months
+        )
     )
     if len(replicates) < config.identification.minimum_control_transition_replicates:
         return AbstentionReason.ABSTAIN_NO_USABLE_CONTROL
@@ -990,6 +997,181 @@ def run_lamda_weak_eigengap_stress(application: ExperimentRuntime) -> WeakEigeng
         encoding="utf-8",
     )
     return WeakEigengapStressReport(
+        endpoint=endpoint,
+        results=tuple(results),
+        scientific_outcome=(
+            ScientificOutcome.PASS if results else ScientificOutcome.INSUFFICIENT_EVIDENCE
+        ),
+    )
+
+
+class _SparseControlStressRecord(StrictModel):
+    retention_fraction: Fraction
+    baseline_beta: UncertaintyRadius
+    baseline_selected_rank: RankDimension
+    fitted: ValidationFlag
+    perturbed_beta: UncertaintyRadius | None = None
+    perturbed_selected_rank: RankDimension | None = None
+    abstention_reason: AbstentionReason | None = None
+
+
+class _SparseControlStressArtifact(StrictModel):
+    endpoint: CalendarMonth
+    cohort: FamilyName
+    results: list[_SparseControlStressRecord]
+
+
+@dataclass(frozen=True)
+class SparseControlStressReport:
+    endpoint: CalendarMonth | None
+    results: tuple[_SparseControlStressRecord, ...]
+    scientific_outcome: ScientificOutcome
+
+
+def run_lamda_sparse_control_stress(application: ExperimentRuntime) -> SparseControlStressReport:
+    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline" / "2023"
+    if not raw_root.is_dir():
+        LOGGER.warning("sparse-control stress has no LAMDA release at %s", raw_root)
+        return SparseControlStressReport(None, (), ScientificOutcome.INSUFFICIENT_EVIDENCE)
+    config = application.configuration.values
+    loaded = _load_variance_filtered_lamda_dataset(
+        raw_root, config.datasets.lamda.preprocessing.raw_variance_threshold_when_required
+    )
+    rule = label_derivation_rule(config.datasets.lamda)
+    cohort = _dominant_malicious_family_cohort(loaded.records, rule)
+    if cohort is None:
+        LOGGER.warning("sparse-control stress found no family-labeled cohort")
+        return SparseControlStressReport(None, (), ScientificOutcome.INSUFFICIENT_EVIDENCE)
+    cohort_mask = np.fromiter(
+        (record.family == cohort for record in loaded.records),
+        dtype=bool,
+        count=len(loaded.records),
+    )
+    cohort_records = tuple(
+        record for record, keep in zip(loaded.records, cohort_mask, strict=True) if keep
+    )
+    all_months = np.fromiter(
+        (int(year_month_to_calendar_month(record.year_month)) for record in loaded.records),
+        dtype=np.int64,
+        count=len(loaded.records),
+    )
+    month_min, month_max = int(all_months.min()), int(all_months.max())
+    history = config.temporal.historical_training_window_months
+    transition_interval_months = config.temporal.transition_interval_months
+
+    encoder = _train_cutoff_representation_encoder(
+        application, loaded.records, loaded.features, rule, calendar_month(month_max + 1)
+    )
+    if encoder is None:
+        LOGGER.warning("sparse-control stress could not train a cutoff-fixed encoder")
+        return SparseControlStressReport(None, (), ScientificOutcome.INSUFFICIENT_EVIDENCE)
+    embedded_features = _embed_features(encoder, loaded.features)
+    embedded_cohort_features = embedded_features[cohort_mask]
+
+    baseline_fit: ClientConstraintFit | AbstentionReason | None = None
+    endpoint: CalendarMonth | None = None
+    historical_endpoints: tuple[CalendarMonth, ...] = ()
+    for endpoint_ordinal in range(month_max, month_min, -1):
+        candidate_endpoint = calendar_month(endpoint_ordinal)
+        candidate_historical_endpoints = tuple(
+            calendar_month(candidate)
+            for candidate in range(max(month_min, endpoint_ordinal - history), endpoint_ordinal)
+        )
+        candidate_earlier_malicious_endpoints = tuple(
+            calendar_month(candidate)
+            for candidate in range(max(month_min, endpoint_ordinal - history), endpoint_ordinal - 1)
+        )
+        candidate_fit = fit_lamda_client_constraint(
+            application,
+            cohort_records,
+            embedded_cohort_features,
+            loaded.records,
+            embedded_features,
+            rule,
+            candidate_endpoint,
+            candidate_historical_endpoints,
+            candidate_earlier_malicious_endpoints,
+        )
+        if isinstance(candidate_fit, ClientConstraintFit):
+            baseline_fit = candidate_fit
+            endpoint = candidate_endpoint
+            historical_endpoints = candidate_historical_endpoints
+            break
+    if baseline_fit is None or endpoint is None:
+        LOGGER.warning("sparse-control stress found no endpoint with a successful baseline fit")
+        return SparseControlStressReport(None, (), ScientificOutcome.INSUFFICIENT_EVIDENCE)
+    assert isinstance(baseline_fit, ClientConstraintFit)
+
+    earlier_malicious_endpoints = tuple(
+        calendar_month(candidate)
+        for candidate in range(max(month_min, int(endpoint) - history), int(endpoint) - 1)
+    )
+
+    results: list[_SparseControlStressRecord] = []
+    for fraction in config.robustness.real_stress.control_support_fractions:
+        sparse_replicates = sparse_control_transition_replicates(
+            loaded.records,
+            embedded_features,
+            rule,
+            historical_endpoints,
+            transition_interval_months,
+            fraction,
+        )
+        perturbed_fit = fit_lamda_client_constraint(
+            application,
+            cohort_records,
+            embedded_cohort_features,
+            loaded.records,
+            embedded_features,
+            rule,
+            endpoint,
+            historical_endpoints,
+            earlier_malicious_endpoints,
+            control_replicates_override=sparse_replicates,
+        )
+        if isinstance(perturbed_fit, ClientConstraintFit):
+            results.append(
+                _SparseControlStressRecord(
+                    retention_fraction=fraction,
+                    baseline_beta=baseline_fit.beta,
+                    baseline_selected_rank=baseline_fit.selected_rank,
+                    fitted=True,
+                    perturbed_beta=perturbed_fit.beta,
+                    perturbed_selected_rank=perturbed_fit.selected_rank,
+                )
+            )
+        else:
+            results.append(
+                _SparseControlStressRecord(
+                    retention_fraction=fraction,
+                    baseline_beta=baseline_fit.beta,
+                    baseline_selected_rank=baseline_fit.selected_rank,
+                    fitted=False,
+                    abstention_reason=perturbed_fit,
+                )
+            )
+        LOGGER.info(
+            "sparse-control stress endpoint=%s fraction=%s baseline_beta=%.6f fitted=%s",
+            endpoint,
+            fraction,
+            baseline_fit.beta,
+            results[-1].fitted,
+        )
+
+    destination = (
+        application.repository_root
+        / config.workspace.directories.experiments
+        / "failure-boundaries"
+        / "sparse-control-stress.json"
+    )
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(
+        _SparseControlStressArtifact(
+            endpoint=endpoint, cohort=cohort, results=results
+        ).model_dump_json(indent=_EVIDENCE_JSON_INDENT_SPACES),
+        encoding="utf-8",
+    )
+    return SparseControlStressReport(
         endpoint=endpoint,
         results=tuple(results),
         scientific_outcome=(
