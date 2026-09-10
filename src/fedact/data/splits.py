@@ -89,7 +89,7 @@ DATASET_SOURCE_CHRONOLOGY: dict[DatasetSelector, SourceChronology] = {
     ),
     DatasetSelector.EMBER2024: SourceChronology(
         first_observed_month=calendar_month(0),
-        last_observed_month=calendar_month(14),
+        last_observed_month=calendar_month(15),
     ),
 }
 
