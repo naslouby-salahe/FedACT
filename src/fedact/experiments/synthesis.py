@@ -120,11 +120,7 @@ def run_statistical_synthesis(
 ) -> StatisticalSynthesisReport:
     coverage_satisfied = coverage >= (1.0 - maximum_coverage_deficit)
     clean_cost_satisfied = clean_fnr_degradation <= maximum_clean_fnr_degradation
-    outcome = (
-        ScientificOutcome.PASS
-        if coverage_satisfied and clean_cost_satisfied
-        else ScientificOutcome.FAIL
-    )
+    outcome = ScientificOutcome.FAIL
     coordinates = enumerate_sensitivity_coordinates(
         control_span_alphas=control_span_alphas,
         private_contamination_alphas=private_contamination_alphas,
@@ -151,6 +147,10 @@ def run_statistical_synthesis(
             multiplicity_q=multiplicity_q,
             seed=statistics_seed,
         )
+    if contrast_outcome is None or not contrast_outcome.contrast_inputs.sufficient:
+        outcome = ScientificOutcome.INSUFFICIENT_EVIDENCE
+    elif coverage_satisfied and clean_cost_satisfied:
+        outcome = ScientificOutcome.PASS
     return StatisticalSynthesisReport(
         coverage_satisfied=coverage_satisfied,
         clean_cost_satisfied=clean_cost_satisfied,

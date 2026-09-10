@@ -8,7 +8,9 @@ import numpy as np
 import torch
 from pydantic import Field
 
+from fedact.analysis.comparisons import CutoffAggregate
 from fedact.analysis.metrics import EvaluationRecord, compute_evaluation_metrics
+from fedact.artifacts import write_text_atomically
 from fedact.config.models import StrictModel
 from fedact.data.ember2024 import (
     apply_log1p_transforms,
@@ -75,6 +77,16 @@ class _CertificateDecisionArtifact(StrictModel):
     decisions: list[_CertificateDecisionRecord]
 
 
+class _CutoffComparisonRecord(StrictModel):
+    cutoff_id: SplitCutoffIdentity
+    certified_false_negative_rate: MetricRate | None
+    ambiguous_false_negative_rate: MetricRate | None
+
+
+class _CutoffComparisonArtifact(StrictModel):
+    comparisons: list[_CutoffComparisonRecord]
+
+
 @dataclass(frozen=True)
 class _FeatureAdapter:
     mean: np.ndarray
@@ -118,6 +130,36 @@ def _labeled_target_value(value: BinaryLabel | None) -> BinaryLabel:
 def _binary_cross_entropy(label: BinaryLabel, probability: MetricRate) -> LossValue:
     bounded = np.clip(probability, np.finfo(np.float64).eps, 1.0 - np.finfo(np.float64).eps)
     return float(-np.log(bounded if label else 1.0 - bounded))
+
+
+def _group_false_negative_rate(records: tuple[EvaluationRecord, ...]) -> MetricRate | None:
+    malicious = tuple(record for record in records if record.true_label)
+    if not malicious:
+        return None
+    return sum(record.predicted_score < 0.5 for record in malicious) / len(malicious)
+
+
+def read_prospective_cutoff_aggregates(
+    application: ExperimentRuntime,
+) -> tuple[tuple[CutoffAggregate, ...], tuple[CutoffAggregate, ...]]:
+    source = (
+        application.repository_root
+        / application.configuration.values.workspace.directories.experiments
+        / "prospective-evaluation"
+        / "cutoff-comparisons.json"
+    )
+    if not source.is_file():
+        return (), ()
+    artifact = _CutoffComparisonArtifact.model_validate_json(source.read_text(encoding="utf-8"))
+    certified = tuple(
+        CutoffAggregate(comparison.cutoff_id, comparison.certified_false_negative_rate, None)
+        for comparison in artifact.comparisons
+    )
+    ambiguous = tuple(
+        CutoffAggregate(comparison.cutoff_id, comparison.ambiguous_false_negative_rate, None)
+        for comparison in artifact.comparisons
+    )
+    return certified, ambiguous
 
 
 @dataclass(frozen=True)
@@ -443,6 +485,24 @@ def run_prospective_fedact_evaluation(
         )
     )
     metrics = compute_evaluation_metrics(records)
+    certified_records = tuple(record for record in records if record.is_certified)
+    ambiguous_records = tuple(record for record in records if not record.is_certified)
+    comparison = _CutoffComparisonArtifact(
+        comparisons=[
+            _CutoffComparisonRecord(
+                cutoff_id=cutoff_id,
+                certified_false_negative_rate=_group_false_negative_rate(certified_records),
+                ambiguous_false_negative_rate=_group_false_negative_rate(ambiguous_records),
+            )
+        ]
+    )
+    write_text_atomically(
+        application.repository_root
+        / config.workspace.directories.experiments
+        / "prospective-evaluation"
+        / "cutoff-comparisons.json",
+        comparison.model_dump_json(indent=2),
+    )
     LOGGER.info("prospective baseline evaluated cutoff=%s rows=%s", cutoff_id, len(records))
     return ProspectiveEvaluationReport(
         total_evaluations=len(records),

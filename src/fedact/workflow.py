@@ -8,6 +8,7 @@ from pathlib import Path
 import numpy as np
 import typer
 
+from fedact.analysis.comparisons import CutoffAggregate
 from fedact.analysis.reporting import export_verified_project_evidence
 from fedact.artifacts import (
     WorkflowResultRecord,
@@ -68,6 +69,7 @@ from fedact.domain.types import (
 )
 from fedact.experiments.baselines import verify_subtraction_comparator_parity
 from fedact.experiments.generalization import (
+    read_prospective_cutoff_aggregates,
     run_cross_corpus_generalization,
     run_prospective_fedact_evaluation,
 )
@@ -578,7 +580,13 @@ def _dispatch_foundational_workflow(
 
 def _statistical_synthesis_inputs(
     application: Application,
-) -> tuple[MetricRate, DegradationValue, MetricRate]:
+) -> tuple[
+    MetricRate,
+    DegradationValue,
+    MetricRate,
+    tuple[CutoffAggregate, ...],
+    tuple[CutoffAggregate, ...],
+]:
     prospective = read_workflow_result(
         application.result_experiment_directory(ExecutableWorkflowName.PROSPECTIVE_EVALUATION)
     )
@@ -592,10 +600,13 @@ def _statistical_synthesis_inputs(
             "statistical synthesis requires a completed prospective evaluation result", err=True
         )
         raise typer.Exit(code=2)
+    certified_series, ambiguous_series = read_prospective_cutoff_aggregates(application)
     return (
         prospective.mean_false_negative_rate,
         prospective.clean_fnr_degradation_percentage_points,
         prospective.mean_certification_rate,
+        certified_series,
+        ambiguous_series,
     )
 
 
@@ -703,9 +714,13 @@ def _dispatch_evaluation_workflow(
         return True
 
     if workflow is ExecutableWorkflowName.STATISTICAL_SYNTHESIS:
-        prospective_fnr, clean_fnr_degradation, coverage = _statistical_synthesis_inputs(
-            application
-        )
+        (
+            prospective_fnr,
+            clean_fnr_degradation,
+            coverage,
+            certified_series,
+            ambiguous_series,
+        ) = _statistical_synthesis_inputs(application)
         verd_report = run_statistical_synthesis(
             prospective_fnr=prospective_fnr,
             clean_fnr_degradation=clean_fnr_degradation,
@@ -739,6 +754,8 @@ def _dispatch_evaluation_workflow(
             maximum_nonzero_pairs_for_exact=config.statistics.wilcoxon.maximum_nonzero_pairs_for_exact,
             multiplicity_q=config.statistics.multiplicity.q,
             statistics_seed=config.seeds.analysis[0],
+            certified_series=certified_series,
+            ambiguous_series=ambiguous_series,
         )
         _persist(
             application,
