@@ -18,7 +18,7 @@ from fedact.certification.client_procedure import (
     private_transition_term_single_client,
     select_stable_nuisance_rank,
 )
-from fedact.certification.dynamics import AbstentionReason
+from fedact.certification.dynamics import AbstentionReason, effective_support
 from fedact.certification.uncertainty import client_radius, regularized_covariance
 from fedact.config.models import StrictModel
 from fedact.data.ember2024 import (
@@ -31,7 +31,12 @@ from fedact.data.ember2024 import (
     windowed_malicious_features,
     year_month_to_calendar_month,
 )
-from fedact.data.splits import CalendarMonth, calendar_month, transition_windows
+from fedact.data.splits import (
+    CalendarMonth,
+    calendar_month,
+    earliest_complete_transition_endpoint,
+    transition_windows,
+)
 from fedact.domain.types import (
     EigengapRatio,
     EvaluationCount,
@@ -240,6 +245,245 @@ def fit_ember2024_client_constraint(
     )
 
 
+def fit_ember2024_client_constraint_no_controls(
+    application: ExperimentRuntime,
+    cohort_records: tuple[EmberRawRecord, ...],
+    cohort_features: FloatArray,
+    endpoint: CalendarMonth,
+    earlier_malicious_endpoints: tuple[CalendarMonth, ...],
+) -> ClientConstraintFit | AbstentionReason:
+    config = application.configuration.values
+    transition_interval_months: WindowSpanMonths = config.temporal.transition_interval_months
+
+    malicious = malicious_transition_displacement(
+        cohort_records, cohort_features, endpoint, transition_interval_months
+    )
+    if (
+        malicious is None
+        or malicious.support_before < config.identification.minimum_support_per_class
+        or malicious.support_after < config.identification.minimum_support_per_class
+    ):
+        return AbstentionReason.ABSTAIN_INSUFFICIENT_MALICIOUS_SUPPORT
+
+    dimension = cohort_features.shape[1]
+    identity_projector = np.eye(dimension)
+
+    window_minus, window_plus = windowed_malicious_features(
+        cohort_records, cohort_features, endpoint, transition_interval_months
+    )
+    malicious_covariance_raw = malicious_transition_covariance(window_minus, window_plus)
+    malicious_covariance = regularized_covariance(
+        malicious_covariance_raw,
+        coefficient=config.identification.covariance_regularization.primary_c,
+        floor=config.numerical.scale_standardization_floor,
+    )
+    smallest_malicious_eigenvalue = float(np.linalg.eigvalsh(malicious_covariance).min())
+
+    coverage = config.identification.target_coverage.primary
+    alpha = (1.0 - coverage) / (
+        _ALPHA_ALLOCATION_DENOMINATOR_FACTOR * _SINGLE_CORPUS_LEVEL_CLIENT_COUNT
+    )
+    sampling_term = bootstrap_malicious_sampling_term(
+        window_minus,
+        window_plus,
+        malicious.displacement,
+        identity_projector,
+        malicious_covariance,
+        alpha,
+        config.identification.uncertainty.bootstrap_resamples,
+        config.seeds.calibration[0],
+    )
+
+    earlier_transitions: list[FloatArray] = []
+    for earlier_endpoint in earlier_malicious_endpoints:
+        earlier = malicious_transition_displacement(
+            cohort_records, cohort_features, earlier_endpoint, transition_interval_months
+        )
+        if (
+            earlier is not None
+            and earlier.support_before >= config.identification.minimum_support_per_class
+            and earlier.support_after >= config.identification.minimum_support_per_class
+        ):
+            earlier_transitions.append(earlier.displacement)
+    if (
+        len(earlier_transitions)
+        < config.identification.private_contamination.minimum_history_residuals
+    ):
+        return AbstentionReason.ABSTAIN_INSUFFICIENT_PRIVATE_ALLOWANCE_HISTORY
+    private_term = private_transition_term_single_client(
+        earlier_transitions,
+        identity_projector,
+        config.identification.private_contamination.primary_alpha,
+        smallest_malicious_eigenvalue,
+        config.numerical.rank_clip_epsilon_relative,
+        config.identification.nuisance_rank.bootstrap_resamples,
+    )
+    if private_term is None:
+        return AbstentionReason.ABSTAIN_INSUFFICIENT_PRIVATE_ALLOWANCE_HISTORY
+
+    beta = client_radius(sampling_term, 0.0, 0.0, private_term)
+    constraint = ClientConstraint(
+        client_index=0,
+        uncertainty_radius=beta,
+        beta=beta,
+        subspace=None,
+        projector=identity_projector,
+        covariance=malicious_covariance,
+    )
+    LOGGER.info(
+        "ember2024 no-controls client constraint fitted endpoint=%s beta=%.6f "
+        "sampling=%.6f private=%.6f",
+        endpoint,
+        beta,
+        sampling_term,
+        private_term,
+    )
+    return ClientConstraintFit(
+        constraint=constraint,
+        selected_rank=dimension,
+        eigengap_ratio=1.0,
+        beta=beta,
+        sampling_term=sampling_term,
+        subspace_term=0.0,
+        control_span_term=0.0,
+        private_term=private_term,
+    )
+
+
+def fit_ember2024_client_constraint_one_matched_control(
+    application: ExperimentRuntime,
+    cohort_records: tuple[EmberRawRecord, ...],
+    cohort_features: FloatArray,
+    all_records: tuple[EmberRawRecord, ...],
+    all_features: FloatArray,
+    endpoint: CalendarMonth,
+    historical_endpoints: tuple[CalendarMonth, ...],
+    earlier_malicious_endpoints: tuple[CalendarMonth, ...],
+) -> ClientConstraintFit | AbstentionReason:
+    config = application.configuration.values
+    transition_interval_months: WindowSpanMonths = config.temporal.transition_interval_months
+
+    malicious = malicious_transition_displacement(
+        cohort_records, cohort_features, endpoint, transition_interval_months
+    )
+    if (
+        malicious is None
+        or malicious.support_before < config.identification.minimum_support_per_class
+        or malicious.support_after < config.identification.minimum_support_per_class
+    ):
+        return AbstentionReason.ABSTAIN_INSUFFICIENT_MALICIOUS_SUPPORT
+
+    replicates = control_transition_replicates(
+        all_records, all_features, historical_endpoints, transition_interval_months
+    )
+    if not replicates:
+        return AbstentionReason.ABSTAIN_NO_USABLE_CONTROL
+    best_replicate = max(
+        replicates,
+        key=lambda replicate: (
+            effective_support((replicate.support_before, replicate.support_after)),
+            -int(replicate.endpoint_month),
+        ),
+    )
+    direction = best_replicate.displacement
+    norm = float(np.linalg.norm(direction))
+    if norm <= 0.0:
+        return AbstentionReason.ABSTAIN_NO_USABLE_CONTROL
+    unit_direction = direction / norm
+    single_direction_projector = np.eye(cohort_features.shape[1]) - np.outer(
+        unit_direction, unit_direction
+    )
+
+    window_minus, window_plus = windowed_malicious_features(
+        cohort_records, cohort_features, endpoint, transition_interval_months
+    )
+    malicious_covariance_raw = malicious_transition_covariance(window_minus, window_plus)
+    malicious_covariance = regularized_covariance(
+        malicious_covariance_raw,
+        coefficient=config.identification.covariance_regularization.primary_c,
+        floor=config.numerical.scale_standardization_floor,
+    )
+    projected_malicious_covariance = (
+        single_direction_projector @ malicious_covariance @ single_direction_projector.T
+    )
+    projected_malicious_covariance = regularized_covariance(
+        projected_malicious_covariance,
+        coefficient=config.identification.covariance_regularization.primary_c,
+        floor=config.numerical.scale_standardization_floor,
+    )
+    smallest_malicious_eigenvalue = float(np.linalg.eigvalsh(projected_malicious_covariance).min())
+
+    coverage = config.identification.target_coverage.primary
+    alpha = (1.0 - coverage) / (
+        _ALPHA_ALLOCATION_DENOMINATOR_FACTOR * _SINGLE_CORPUS_LEVEL_CLIENT_COUNT
+    )
+    sampling_term = bootstrap_malicious_sampling_term(
+        window_minus,
+        window_plus,
+        malicious.displacement,
+        single_direction_projector,
+        projected_malicious_covariance,
+        alpha,
+        config.identification.uncertainty.bootstrap_resamples,
+        config.seeds.calibration[0],
+    )
+
+    earlier_transitions: list[FloatArray] = []
+    for earlier_endpoint in earlier_malicious_endpoints:
+        earlier = malicious_transition_displacement(
+            cohort_records, cohort_features, earlier_endpoint, transition_interval_months
+        )
+        if (
+            earlier is not None
+            and earlier.support_before >= config.identification.minimum_support_per_class
+            and earlier.support_after >= config.identification.minimum_support_per_class
+        ):
+            earlier_transitions.append(earlier.displacement)
+    if (
+        len(earlier_transitions)
+        < config.identification.private_contamination.minimum_history_residuals
+    ):
+        return AbstentionReason.ABSTAIN_INSUFFICIENT_PRIVATE_ALLOWANCE_HISTORY
+    private_term = private_transition_term_single_client(
+        earlier_transitions,
+        single_direction_projector,
+        config.identification.private_contamination.primary_alpha,
+        smallest_malicious_eigenvalue,
+        config.numerical.rank_clip_epsilon_relative,
+        config.identification.nuisance_rank.bootstrap_resamples,
+    )
+    if private_term is None:
+        return AbstentionReason.ABSTAIN_INSUFFICIENT_PRIVATE_ALLOWANCE_HISTORY
+
+    beta = client_radius(sampling_term, 0.0, 0.0, private_term)
+    constraint = ClientConstraint(
+        client_index=0,
+        uncertainty_radius=beta,
+        beta=beta,
+        subspace=unit_direction.reshape(-1, 1),
+        projector=single_direction_projector,
+        covariance=projected_malicious_covariance,
+    )
+    LOGGER.info(
+        "ember2024 one-matched-control client constraint fitted endpoint=%s beta=%.6f "
+        "sampling=%.6f private=%.6f",
+        endpoint,
+        beta,
+        sampling_term,
+        private_term,
+    )
+    return ClientConstraintFit(
+        constraint=constraint,
+        selected_rank=1,
+        eigengap_ratio=1.0,
+        beta=beta,
+        sampling_term=sampling_term,
+        subspace_term=0.0,
+        control_span_term=0.0,
+        private_term=private_term,
+    )
+
+
 def _dominant_malicious_family_cohort(
     records: tuple[EmberRawRecord, ...],
 ) -> FamilyName | None:
@@ -352,6 +596,8 @@ class _Ember2024IdentificationCutoffRecord(StrictModel):
     selected_rank: RankDimension | None = None
     eigengap_ratio: EigengapRatio | None = None
     beta: UncertaintyRadius | None = None
+    no_controls_beta: UncertaintyRadius | None = None
+    one_matched_control_beta: UncertaintyRadius | None = None
 
 
 class _Ember2024IdentificationDiagnosticsArtifact(StrictModel):
@@ -407,18 +653,29 @@ def run_ember2024_identification_diagnostics(
     step = config.temporal.cutoff_step_months
     horizon = config.temporal.primary_confirmatory_horizon_months
     month_min, month_max = int(months.min()), int(months.max())
+    earliest_valid_endpoint = int(
+        earliest_complete_transition_endpoint(
+            calendar_month(month_min), config.temporal.transition_interval_months
+        )
+    )
 
     records_list: list[_Ember2024IdentificationCutoffRecord] = []
     fitted = 0
-    for endpoint_ordinal in range(month_min + 1, month_max - horizon + 1, max(step, 1)):
+    for endpoint_ordinal in range(
+        max(earliest_valid_endpoint, month_min + 1), month_max - horizon + 1, max(step, 1)
+    ):
         endpoint = calendar_month(endpoint_ordinal)
         historical_endpoints = tuple(
             calendar_month(candidate)
-            for candidate in range(max(month_min, endpoint_ordinal - history), endpoint_ordinal)
+            for candidate in range(
+                max(earliest_valid_endpoint, endpoint_ordinal - history), endpoint_ordinal
+            )
         )
         earlier_malicious_endpoints = tuple(
             calendar_month(candidate)
-            for candidate in range(max(month_min, endpoint_ordinal - history), endpoint_ordinal - 1)
+            for candidate in range(
+                max(earliest_valid_endpoint, endpoint_ordinal - history), endpoint_ordinal - 1
+            )
         )
         if not _cohort_has_sufficient_malicious_support(
             cohort_records,
@@ -462,6 +719,23 @@ def run_ember2024_identification_diagnostics(
         )
         if isinstance(fit, ClientConstraintFit):
             fitted += 1
+            no_controls_fit = fit_ember2024_client_constraint_no_controls(
+                application,
+                cohort_records,
+                embedded_cohort_features,
+                endpoint,
+                earlier_malicious_endpoints,
+            )
+            one_matched_control_fit = fit_ember2024_client_constraint_one_matched_control(
+                application,
+                cohort_records,
+                embedded_cohort_features,
+                loaded.records,
+                embedded_features,
+                endpoint,
+                historical_endpoints,
+                earlier_malicious_endpoints,
+            )
             records_list.append(
                 _Ember2024IdentificationCutoffRecord(
                     cutoff=endpoint,
@@ -470,6 +744,16 @@ def run_ember2024_identification_diagnostics(
                     selected_rank=fit.selected_rank,
                     eigengap_ratio=fit.eigengap_ratio,
                     beta=fit.beta,
+                    no_controls_beta=(
+                        no_controls_fit.beta
+                        if isinstance(no_controls_fit, ClientConstraintFit)
+                        else None
+                    ),
+                    one_matched_control_beta=(
+                        one_matched_control_fit.beta
+                        if isinstance(one_matched_control_fit, ClientConstraintFit)
+                        else None
+                    ),
                 )
             )
         else:

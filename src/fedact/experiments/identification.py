@@ -716,18 +716,28 @@ def run_lamda_identification_diagnostics(
     step = config.temporal.cutoff_step_months
     horizon = config.temporal.primary_confirmatory_horizon_months
     month_min, month_max = int(months.min()), int(months.max())
+    transition_interval_months = config.temporal.transition_interval_months
+    earliest_valid_endpoint = int(
+        earliest_complete_transition_endpoint(calendar_month(month_min), transition_interval_months)
+    )
 
     records_list: list[_IdentificationCutoffRecord] = []
     fitted = 0
-    for endpoint_ordinal in range(month_min + 1, month_max - horizon + 1, max(step, 1)):
+    for endpoint_ordinal in range(
+        max(earliest_valid_endpoint, month_min + 1), month_max - horizon + 1, max(step, 1)
+    ):
         endpoint = calendar_month(endpoint_ordinal)
         historical_endpoints = tuple(
             calendar_month(candidate)
-            for candidate in range(max(month_min, endpoint_ordinal - history), endpoint_ordinal)
+            for candidate in range(
+                max(earliest_valid_endpoint, endpoint_ordinal - history), endpoint_ordinal
+            )
         )
         earlier_malicious_endpoints = tuple(
             calendar_month(candidate)
-            for candidate in range(max(month_min, endpoint_ordinal - history), endpoint_ordinal - 1)
+            for candidate in range(
+                max(earliest_valid_endpoint, endpoint_ordinal - history), endpoint_ordinal - 1
+            )
         )
         if not _cohort_has_sufficient_malicious_support(
             cohort_records,
@@ -899,14 +909,19 @@ def run_lamda_weak_eigengap_stress(application: ExperimentRuntime) -> WeakEigeng
         count=len(loaded.records),
     )
     month_min, month_max = int(months.min()), int(months.max())
+    earliest_valid_endpoint = int(
+        earliest_complete_transition_endpoint(calendar_month(month_min), transition_interval_months)
+    )
 
     replicates: tuple[ControlTransitionReplicate, ...] = ()
     endpoint: CalendarMonth | None = None
-    for endpoint_ordinal in range(month_max, month_min, -1):
+    for endpoint_ordinal in range(month_max, earliest_valid_endpoint - 1, -1):
         candidate_endpoint = calendar_month(endpoint_ordinal)
         historical_endpoints = tuple(
             calendar_month(candidate)
-            for candidate in range(max(month_min, endpoint_ordinal - history), endpoint_ordinal)
+            for candidate in range(
+                max(earliest_valid_endpoint, endpoint_ordinal - history), endpoint_ordinal
+            )
         )
         candidate_replicates = control_transition_replicates(
             loaded.records, loaded.features, rule, historical_endpoints, transition_interval_months
@@ -928,7 +943,7 @@ def run_lamda_weak_eigengap_stress(application: ExperimentRuntime) -> WeakEigeng
     embedded_features = _embed_features(encoder, loaded.features)
     historical_endpoints = tuple(
         calendar_month(candidate)
-        for candidate in range(max(month_min, int(endpoint) - history), int(endpoint))
+        for candidate in range(max(earliest_valid_endpoint, int(endpoint) - history), int(endpoint))
     )
     replicates = control_transition_replicates(
         loaded.records, embedded_features, rule, historical_endpoints, transition_interval_months
@@ -1075,6 +1090,11 @@ def _locate_baseline_identification_context(
     )
     month_min, month_max = int(all_months.min()), int(all_months.max())
     history = config.temporal.historical_training_window_months
+    earliest_valid_endpoint = int(
+        earliest_complete_transition_endpoint(
+            calendar_month(month_min), config.temporal.transition_interval_months
+        )
+    )
 
     encoder = _train_cutoff_representation_encoder(
         application, loaded.records, loaded.features, rule, calendar_month(month_max + 1)
@@ -1084,15 +1104,19 @@ def _locate_baseline_identification_context(
     embedded_features = _embed_features(encoder, loaded.features)
     embedded_cohort_features = embedded_features[cohort_mask]
 
-    for endpoint_ordinal in range(month_max, month_min, -1):
+    for endpoint_ordinal in range(month_max, earliest_valid_endpoint - 1, -1):
         candidate_endpoint = calendar_month(endpoint_ordinal)
         candidate_historical_endpoints = tuple(
             calendar_month(candidate)
-            for candidate in range(max(month_min, endpoint_ordinal - history), endpoint_ordinal)
+            for candidate in range(
+                max(earliest_valid_endpoint, endpoint_ordinal - history), endpoint_ordinal
+            )
         )
         candidate_earlier_malicious_endpoints = tuple(
             calendar_month(candidate)
-            for candidate in range(max(month_min, endpoint_ordinal - history), endpoint_ordinal - 1)
+            for candidate in range(
+                max(earliest_valid_endpoint, endpoint_ordinal - history), endpoint_ordinal - 1
+            )
         )
         candidate_fit = fit_lamda_client_constraint(
             application,
