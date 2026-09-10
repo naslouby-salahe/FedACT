@@ -876,6 +876,8 @@ class _WeakEigengapStressRecord(StrictModel):
     baseline_eigengap_ratio: EigengapRatio
     perturbed_eigengap_ratio: EigengapRatio
     rank_destabilized: ValidationFlag
+    baseline_beta: UncertaintyRadius | None = None
+    perturbed_beta: UncertaintyRadius | None = None
 
 
 class _WeakEigengapStressArtifact(StrictModel):
@@ -934,6 +936,16 @@ def run_lamda_weak_eigengap_stress(application: ExperimentRuntime) -> WeakEigeng
         LOGGER.warning("weak-eigengap stress found no window with usable control replicates")
         return WeakEigengapStressReport(None, (), ScientificOutcome.INSUFFICIENT_EVIDENCE)
 
+    cohort = _dominant_malicious_family_cohort(loaded.records, rule)
+    cohort_mask = np.fromiter(
+        (record.family == cohort for record in loaded.records),
+        dtype=bool,
+        count=len(loaded.records),
+    )
+    cohort_records = tuple(
+        record for record, keep in zip(loaded.records, cohort_mask, strict=True) if keep
+    )
+
     encoder = _train_cutoff_representation_encoder(
         application, loaded.records, loaded.features, rule, endpoint
     )
@@ -941,9 +953,16 @@ def run_lamda_weak_eigengap_stress(application: ExperimentRuntime) -> WeakEigeng
         LOGGER.warning("weak-eigengap stress could not train a cutoff-fixed encoder")
         return WeakEigengapStressReport(None, (), ScientificOutcome.INSUFFICIENT_EVIDENCE)
     embedded_features = _embed_features(encoder, loaded.features)
+    embedded_cohort_features = embedded_features[cohort_mask]
     historical_endpoints = tuple(
         calendar_month(candidate)
         for candidate in range(max(earliest_valid_endpoint, int(endpoint) - history), int(endpoint))
+    )
+    earlier_malicious_endpoints = tuple(
+        calendar_month(candidate)
+        for candidate in range(
+            max(earliest_valid_endpoint, int(endpoint) - history), int(endpoint) - 1
+        )
     )
     replicates = control_transition_replicates(
         loaded.records, embedded_features, rule, historical_endpoints, transition_interval_months
@@ -977,6 +996,23 @@ def run_lamda_weak_eigengap_stress(application: ExperimentRuntime) -> WeakEigeng
     finite_std = coordinate_std[np.isfinite(coordinate_std)]
     median_std = float(np.median(finite_std)) if finite_std.size else 0.0
 
+    baseline_beta: UncertaintyRadius | None = None
+    if cohort is not None:
+        baseline_fit = fit_lamda_client_constraint(
+            application,
+            cohort_records,
+            embedded_cohort_features,
+            loaded.records,
+            embedded_features,
+            rule,
+            endpoint,
+            historical_endpoints,
+            earlier_malicious_endpoints,
+            control_replicates_override=replicates,
+        )
+        if isinstance(baseline_fit, ClientConstraintFit):
+            baseline_beta = baseline_fit.beta
+
     results: list[_WeakEigengapStressRecord] = []
     analysis_seeds = config.seeds.analysis
     for index, multiplier in enumerate(
@@ -988,6 +1024,33 @@ def run_lamda_weak_eigengap_stress(application: ExperimentRuntime) -> WeakEigeng
             displacement + rng.normal(scale=noise_scale, size=dimension)
             for displacement in replicate_displacements
         ]
+        perturbed_beta: UncertaintyRadius | None = None
+        if cohort is not None:
+            perturbed_replicates = tuple(
+                ControlTransitionReplicate(
+                    endpoint_month=replicate.endpoint_month,
+                    displacement=perturbed_displacement,
+                    support_before=replicate.support_before,
+                    support_after=replicate.support_after,
+                )
+                for replicate, perturbed_displacement in zip(
+                    replicates, perturbed_displacements, strict=True
+                )
+            )
+            perturbed_fit = fit_lamda_client_constraint(
+                application,
+                cohort_records,
+                embedded_cohort_features,
+                loaded.records,
+                embedded_features,
+                rule,
+                endpoint,
+                historical_endpoints,
+                earlier_malicious_endpoints,
+                control_replicates_override=perturbed_replicates,
+            )
+            if isinstance(perturbed_fit, ClientConstraintFit):
+                perturbed_beta = perturbed_fit.beta
         perturbed = select_stable_nuisance_rank(
             replicate_displacements=perturbed_displacements,
             replicate_supports=replicate_supports,
@@ -1014,6 +1077,8 @@ def run_lamda_weak_eigengap_stress(application: ExperimentRuntime) -> WeakEigeng
                 rank_destabilized=(
                     perturbed.selected_rank != baseline.selected_rank or not perturbed.is_stable
                 ),
+                baseline_beta=baseline_beta,
+                perturbed_beta=perturbed_beta,
             )
         )
         LOGGER.info(
