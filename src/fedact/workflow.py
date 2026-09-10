@@ -69,6 +69,7 @@ from fedact.domain.types import (
 from fedact.experiments.baselines import verify_subtraction_comparator_parity
 from fedact.experiments.ember2024_identification import run_ember2024_identification_diagnostics
 from fedact.experiments.generalization import (
+    read_central_pattern_cutoff_aggregates,
     read_prospective_cutoff_aggregates,
     run_cross_corpus_generalization,
     run_prospective_fedact_evaluation,
@@ -597,6 +598,8 @@ def _statistical_synthesis_inputs(
     tuple[CutoffAggregate, ...],
     tuple[CutoffAggregate, ...],
     tuple[CutoffAggregate, ...],
+    tuple[CutoffAggregate, ...],
+    tuple[CutoffAggregate, ...],
 ]:
     prospective = read_workflow_result(
         application.result_experiment_directory(ExecutableWorkflowName.PROSPECTIVE_EVALUATION)
@@ -614,6 +617,9 @@ def _statistical_synthesis_inputs(
     certified_series, ambiguous_series, hardened_series, static_chronological_series = (
         read_prospective_cutoff_aggregates(application)
     )
+    central_pattern_certified_series, matched_random_series = (
+        read_central_pattern_cutoff_aggregates(application)
+    )
     return (
         prospective.mean_false_negative_rate,
         prospective.clean_fnr_degradation_percentage_points,
@@ -622,6 +628,8 @@ def _statistical_synthesis_inputs(
         ambiguous_series,
         hardened_series,
         static_chronological_series,
+        central_pattern_certified_series,
+        matched_random_series,
     )
 
 
@@ -762,6 +770,8 @@ def _dispatch_evaluation_workflow(
             ambiguous_series,
             hardened_series,
             static_chronological_series,
+            central_pattern_certified_series,
+            matched_random_series,
         ) = _statistical_synthesis_inputs(application)
         verd_report = run_statistical_synthesis(
             prospective_fnr=prospective_fnr,
@@ -769,6 +779,8 @@ def _dispatch_evaluation_workflow(
             coverage=coverage,
             hardened_series=hardened_series,
             static_chronological_series=static_chronological_series,
+            central_pattern_certified_series=central_pattern_certified_series,
+            matched_random_series=matched_random_series,
             maximum_coverage_deficit=(
                 config.statistics.minimum_material_effects.maximum_coverage_deficit_absolute
             ),
@@ -813,6 +825,14 @@ def _dispatch_evaluation_workflow(
             typer.echo(
                 "early-exposure contrast (FedACT vs static-chronological) sufficient: "
                 f"{verd_report.early_exposure_contrast_outcome.contrast_inputs.sufficient}"
+            )
+        if verd_report.matched_random_contrast_outcome is not None:
+            matched_random_sufficient = (
+                verd_report.matched_random_contrast_outcome.contrast_inputs.sufficient
+            )
+            typer.echo(
+                "matched-random contrast (certified vs matched-random action relevance) "
+                f"sufficient: {matched_random_sufficient}"
             )
         return True
 

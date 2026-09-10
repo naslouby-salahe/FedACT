@@ -48,6 +48,7 @@ class StatisticalSynthesisReport:
     sensitivity_coordinates: tuple[SensitivityCoordinate, ...]
     contrast_outcome: ConfirmatoryContrastOutcome | None
     early_exposure_contrast_outcome: ConfirmatoryContrastOutcome | None = None
+    matched_random_contrast_outcome: ConfirmatoryContrastOutcome | None = None
 
 
 def _evaluate_primary_contrast(
@@ -120,6 +121,8 @@ def run_statistical_synthesis(
     ambiguous_series: tuple[CutoffAggregate, ...] = (),
     hardened_series: tuple[CutoffAggregate, ...] = (),
     static_chronological_series: tuple[CutoffAggregate, ...] = (),
+    central_pattern_certified_series: tuple[CutoffAggregate, ...] = (),
+    matched_random_series: tuple[CutoffAggregate, ...] = (),
 ) -> StatisticalSynthesisReport:
     coverage_satisfied = coverage >= (1.0 - maximum_coverage_deficit)
     clean_cost_satisfied = clean_fnr_degradation <= maximum_clean_fnr_degradation
@@ -169,6 +172,20 @@ def run_statistical_synthesis(
             seed=statistics_seed,
         )
 
+    matched_random_contrast_outcome = None
+    if central_pattern_certified_series and matched_random_series:
+        matched_random_contrast_outcome = _evaluate_primary_contrast(
+            method_a=central_pattern_certified_series,
+            method_b=matched_random_series,
+            minimum_paired_cutoffs=minimum_paired_cutoffs,
+            maximum_missing_cutoff_fraction=maximum_missing_cutoff_fraction,
+            bootstrap_resamples=bootstrap_resamples,
+            confidence_level=confidence_level,
+            maximum_nonzero_pairs_for_exact=maximum_nonzero_pairs_for_exact,
+            multiplicity_q=multiplicity_q,
+            seed=statistics_seed,
+        )
+
     return StatisticalSynthesisReport(
         coverage_satisfied=coverage_satisfied,
         clean_cost_satisfied=clean_cost_satisfied,
@@ -176,4 +193,5 @@ def run_statistical_synthesis(
         sensitivity_coordinates=coordinates,
         contrast_outcome=contrast_outcome,
         early_exposure_contrast_outcome=early_exposure_contrast_outcome,
+        matched_random_contrast_outcome=matched_random_contrast_outcome,
     )

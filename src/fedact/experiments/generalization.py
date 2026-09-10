@@ -38,6 +38,7 @@ from fedact.data.splits import (
 from fedact.domain.types import (
     BinaryLabel,
     CertificationStatus,
+    CorrelationCoefficient,
     DatasetSelector,
     DegradationValue,
     DimensionValue,
@@ -106,6 +107,44 @@ class _CutoffComparisonRecord(StrictModel):
 
 class _CutoffComparisonArtifact(StrictModel):
     comparisons: list[_CutoffComparisonRecord]
+
+
+class _CentralPatternCutoffRecord(StrictModel):
+    cutoff_id: SplitCutoffIdentity
+    certified_precision: MetricRate | None = None
+    point_selected_precision: MetricRate | None = None
+    matched_random_precision: MetricRate | None = None
+    matched_random_match_quality_sufficient: ValidationFlag = False
+
+
+class _CentralPatternArtifact(StrictModel):
+    cutoffs: list[_CentralPatternCutoffRecord]
+    rank_alignment_spearman_rho: CorrelationCoefficient | None = None
+
+
+def read_central_pattern_cutoff_aggregates(
+    application: ExperimentRuntime,
+) -> tuple[tuple[CutoffAggregate, ...], tuple[CutoffAggregate, ...]]:
+    source = (
+        application.repository_root
+        / application.configuration.values.workspace.directories.experiments
+        / "action-certificate-validation"
+        / "central-pattern.json"
+    )
+    if not source.is_file():
+        return (), ()
+    artifact = _CentralPatternArtifact.model_validate_json(source.read_text(encoding="utf-8"))
+    certified = tuple(
+        CutoffAggregate(cutoff.cutoff_id, cutoff.certified_precision, None)
+        for cutoff in artifact.cutoffs
+        if cutoff.matched_random_match_quality_sufficient
+    )
+    matched_random = tuple(
+        CutoffAggregate(cutoff.cutoff_id, cutoff.matched_random_precision, None)
+        for cutoff in artifact.cutoffs
+        if cutoff.matched_random_match_quality_sufficient
+    )
+    return certified, matched_random
 
 
 @dataclass(frozen=True)
