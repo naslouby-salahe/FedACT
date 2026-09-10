@@ -22,6 +22,7 @@ from fedact.certification.uncertainty import (
     NuisanceEstimate,
     estimate_client_nuisance_subspace,
     solve_action_interval,
+    solve_support_bounds,
 )
 from fedact.data.synthetic import (
     SYNTHETIC_DIMENSION,
@@ -87,10 +88,13 @@ class MathVerificationReport:
     exact_set_verified: VerificationFlag
     functional_identifiability_verified: VerificationFlag
     width_bound_verified: VerificationFlag
+    temporal_model_verified: VerificationFlag
     monotonicity_verified: VerificationFlag
     degenerate_rejection_verified: VerificationFlag
     diameter_bound_verified: VerificationFlag
     synchronized_nuisance_verified: VerificationFlag
+    support_solver_verified: VerificationFlag
+    infeasible_set_handling_verified: VerificationFlag
     scientific_outcome: ScientificOutcome
 
     @property
@@ -99,10 +103,13 @@ class MathVerificationReport:
             self.exact_set_verified,
             self.functional_identifiability_verified,
             self.width_bound_verified,
+            self.temporal_model_verified,
             self.monotonicity_verified,
             self.degenerate_rejection_verified,
             self.diameter_bound_verified,
             self.synchronized_nuisance_verified,
+            self.support_solver_verified,
+            self.infeasible_set_handling_verified,
         )
         return all(flags)
 
@@ -236,10 +243,37 @@ def run_mathematical_verification() -> MathVerificationReport:
         nuisance_second,
     )
 
+    support_direction = np.array([3.0, 4.0])
+    support_limits = np.array([2.0])
+    support_bounds = solve_support_bounds(
+        support_direction, np.zeros((1, support_direction.shape[0])), support_limits
+    )
+    expected_support_extent = float(np.max(support_limits) * np.linalg.norm(support_direction))
+    support_solver_ok = (
+        abs(support_bounds.upper - expected_support_extent) < 1e-9
+        and abs(support_bounds.lower + expected_support_extent) < 1e-9
+    )
+
+    infeasible_decision = certify_action_interval(
+        action_interval=support_interval(
+            np.array([1.0]), (np.array([0.0]), np.array([1.0]))
+        ),
+        domain_validity=DomainValid(valid=False),
+        alignment_threshold=0.5,
+        ambiguity_width_threshold=0.5,
+        set_diameter=1.0,
+        historical_realized_diameter_quantile=1.0,
+    )
+    infeasible_set_handling_ok = (
+        infeasible_decision.status is CertificationStatus.ABSTAIN
+        and not infeasible_decision.diameter_gate_passed
+    )
+
     report = MathVerificationReport(
         exact_set_verified=bool(exact_set_ok),
         functional_identifiability_verified=bool(identifiability_ok),
         width_bound_verified=bool(width_ok),
+        temporal_model_verified=bool(temporal_ok),
         monotonicity_verified=bool(monotonicity_ok),
         degenerate_rejection_verified=is_degenerate_rejection_correct(1e-14, 1e-10),
         diameter_bound_verified=is_diameter_upper_bound_valid(
@@ -249,20 +283,25 @@ def run_mathematical_verification() -> MathVerificationReport:
             )
         ),
         synchronized_nuisance_verified=bool(synchronized_ok),
+        support_solver_verified=bool(support_solver_ok),
+        infeasible_set_handling_verified=bool(infeasible_set_handling_ok),
         scientific_outcome=ScientificOutcome.PASS,
     )
-    if temporal_ok and not report.is_passing:
-        report = MathVerificationReport(
-            exact_set_verified=report.exact_set_verified,
-            functional_identifiability_verified=report.functional_identifiability_verified,
-            width_bound_verified=report.width_bound_verified,
-            monotonicity_verified=report.monotonicity_verified,
-            degenerate_rejection_verified=report.degenerate_rejection_verified,
-            diameter_bound_verified=report.diameter_bound_verified,
-            synchronized_nuisance_verified=report.synchronized_nuisance_verified,
-            scientific_outcome=ScientificOutcome.FAIL,
-        )
-    return report
+    if report.is_passing:
+        return report
+    return MathVerificationReport(
+        exact_set_verified=report.exact_set_verified,
+        functional_identifiability_verified=report.functional_identifiability_verified,
+        width_bound_verified=report.width_bound_verified,
+        temporal_model_verified=report.temporal_model_verified,
+        monotonicity_verified=report.monotonicity_verified,
+        degenerate_rejection_verified=report.degenerate_rejection_verified,
+        diameter_bound_verified=report.diameter_bound_verified,
+        synchronized_nuisance_verified=report.synchronized_nuisance_verified,
+        support_solver_verified=report.support_solver_verified,
+        infeasible_set_handling_verified=report.infeasible_set_handling_verified,
+        scientific_outcome=ScientificOutcome.FAIL,
+    )
 
 
 _SYNTHETIC_TO_CORRUPTED_CLIENT_ATTACK = {

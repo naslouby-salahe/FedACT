@@ -329,12 +329,19 @@ def run_cross_corpus_generalization(application: ExperimentRuntime) -> CrossCorp
     )
 
 
+@dataclass(frozen=True)
+class _CutoffScoring:
+    sample_ids: tuple[SampleIdentifier, ...]
+    scores: tuple[float, ...]
+    clean_fnr_degradation_percentage_points: DegradationValue
+
+
 def _score_cutoff_population(
     application: ExperimentRuntime,
     population: _LamdaPopulation,
     historical: np.ndarray,
     later: np.ndarray,
-) -> tuple[tuple[SampleIdentifier, ...], tuple[float, ...]] | None:
+) -> _CutoffScoring | None:
     config = application.configuration.values
     observations = tuple(
         TrainingObservation(
@@ -390,10 +397,11 @@ def _score_cutoff_population(
         / "action-certificate-validation"
         / "challenges.json"
     )
+    clean_fnr_degradation: DegradationValue = 0.0
     if challenge_file.is_file():
         challenges = read_challenge_sets(challenge_file)
         if challenges:
-            detector = harden_detector_head(
+            hardening = harden_detector_head(
                 encoder,
                 detector,
                 training,
@@ -406,7 +414,9 @@ def _score_cutoff_population(
                 config.hardening.weight.maximum_clean_fnr_degradation_percentage_points,
                 config.numerical.projection_tie_tolerance,
                 config.hardening.weight.candidates[0],
-            ).detector
+            )
+            detector = hardening.detector
+            clean_fnr_degradation = hardening.clean_fnr_degradation_percentage_points
     sample_ids = tuple(np.asarray(population.sample_ids, dtype=object)[later])
     scored = score_samples(
         encoder,
@@ -414,7 +424,11 @@ def _score_cutoff_population(
         sample_ids,
         torch.tensor(population.features[later], dtype=torch.float32),
     )
-    return sample_ids, tuple(score.probability for score in scored)
+    return _CutoffScoring(
+        sample_ids=sample_ids,
+        scores=tuple(score.probability for score in scored),
+        clean_fnr_degradation_percentage_points=clean_fnr_degradation,
+    )
 
 
 def run_prospective_fedact_evaluation(
@@ -454,6 +468,7 @@ def run_prospective_fedact_evaluation(
     config = application.configuration.values
     records: list[EvaluationRecord] = []
     comparisons: list[_CutoffComparisonRecord] = []
+    clean_fnr_degradations: list[DegradationValue] = []
     for cutoff in cutoffs:
         historical = (
             population.months >= cutoff - config.temporal.historical_training_window_months
@@ -465,7 +480,6 @@ def run_prospective_fedact_evaluation(
         if scored_population is None:
             LOGGER.warning("cutoff has no disjoint chronological validation month: %s", cutoff)
             continue
-        sample_ids, scores = scored_population
         cutoff_id = SplitCutoffIdentity(f"lamda-{cutoff}")
         cutoff_records = tuple(
             EvaluationRecord(
@@ -479,20 +493,25 @@ def run_prospective_fedact_evaluation(
                 clean_loss=_binary_cross_entropy(label, score),
             )
             for sample_id, label, score in zip(
-                sample_ids,
+                scored_population.sample_ids,
                 population.labels[later],
-                scores,
+                scored_population.scores,
                 strict=True,
             )
         )
         records.extend(cutoff_records)
+        clean_fnr_degradations.append(scored_population.clean_fnr_degradation_percentage_points)
         certified_records = tuple(record for record in cutoff_records if record.is_certified)
-        ambiguous_records = tuple(record for record in cutoff_records if not record.is_certified)
+        point_ambiguous_records = tuple(
+            record
+            for record in cutoff_records
+            if not record.is_certified and record.sample_id not in certified_samples
+        )
         comparisons.append(
             _CutoffComparisonRecord(
                 cutoff_id=cutoff_id,
                 certified_false_negative_rate=_group_false_negative_rate(certified_records),
-                ambiguous_false_negative_rate=_group_false_negative_rate(ambiguous_records),
+                ambiguous_false_negative_rate=_group_false_negative_rate(point_ambiguous_records),
             )
         )
         LOGGER.info("prospective evaluated cutoff=%s rows=%s", cutoff_id, len(cutoff_records))
@@ -510,13 +529,38 @@ def run_prospective_fedact_evaluation(
     )
     comparison_destination.parent.mkdir(parents=True, exist_ok=True)
     comparison_destination.write_text(comparison.model_dump_json(indent=2), encoding="utf-8")
+    mean_clean_fnr_degradation = (
+        sum(clean_fnr_degradations) / len(clean_fnr_degradations) if clean_fnr_degradations else 0.0
+    )
+    certified_fnrs = [
+        comparison_record.certified_false_negative_rate
+        for comparison_record in comparisons
+        if comparison_record.certified_false_negative_rate is not None
+    ]
+    ambiguous_fnrs = [
+        comparison_record.ambiguous_false_negative_rate
+        for comparison_record in comparisons
+        if comparison_record.ambiguous_false_negative_rate is not None
+    ]
+    certification_mechanism_supported = (
+        bool(certified_fnrs)
+        and bool(ambiguous_fnrs)
+        and (sum(certified_fnrs) / len(certified_fnrs)) <= (sum(ambiguous_fnrs) / len(ambiguous_fnrs))
+    )
     LOGGER.info(
-        "prospective evaluation completed cutoffs=%s rows=%s", len(comparisons), len(records)
+        "prospective evaluation completed cutoffs=%s rows=%s mechanism_supported=%s",
+        len(comparisons),
+        len(records),
+        certification_mechanism_supported,
     )
     return ProspectiveEvaluationReport(
         total_evaluations=len(records),
         mean_false_negative_rate=metrics.false_negative_rate,
         mean_certification_rate=metrics.certification_rate,
-        clean_fnr_degradation_percentage_points=0.0,
-        scientific_outcome=ScientificOutcome.PASS,
+        clean_fnr_degradation_percentage_points=mean_clean_fnr_degradation,
+        scientific_outcome=(
+            ScientificOutcome.PASS
+            if certification_mechanism_supported
+            else ScientificOutcome.INSUFFICIENT_EVIDENCE
+        ),
     )
