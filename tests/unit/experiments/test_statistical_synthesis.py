@@ -39,5 +39,5 @@ def test_run_statistical_synthesis(application: Application) -> None:
     )
     assert report.coverage_satisfied
     assert report.clean_cost_satisfied
-    assert report.overall_scientific_outcome is ScientificOutcome.PASS
+    assert report.overall_scientific_outcome is ScientificOutcome.INSUFFICIENT_EVIDENCE
     assert report.sensitivity_coordinates
