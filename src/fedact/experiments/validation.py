@@ -9,7 +9,11 @@ import torch
 
 from fedact.artifacts import write_text_atomically
 from fedact.certification.actions import ActionInterval
-from fedact.certification.calibration import CalibrationCandidate
+from fedact.certification.calibration import (
+    CalibrationCandidate,
+    CalibrationSelectionError,
+    select_best_calibration_candidate,
+)
 from fedact.certification.certificate import DomainValid, certify_action_interval
 from fedact.certification.uncertainty import NuisanceEstimate
 from fedact.config.models import CorruptedClientAllowanceParameters, StrictModel
@@ -81,6 +85,13 @@ class _CalibrationArtifact(StrictModel):
     observations: list[_CalibrationObservation]
 
 
+class _SelectedCalibrationArtifact(StrictModel):
+    candidate_id: DetailMessage
+    tau_align: ThresholdValue
+    tau_amb: ThresholdValue
+    hardening_weight: ThresholdValue
+
+
 class _StressMeasurement(StrictModel):
     scenario: DetailMessage
     boundary_reached: ValidationFlag
@@ -103,6 +114,7 @@ class ActionCertificateReport:
 
 def run_action_certificate_validation(application: ExperimentRuntime) -> ActionCertificateReport:
     source = _experiment_directory(application, "action-certificate-validation") / "actions.json"
+    calibration_source = _experiment_directory(application, "nested-calibration") / "selected.json"
     if not source.is_file():
         LOGGER.warning(
             "action-validation input is missing: %s; executed semantically valid operators "
@@ -110,8 +122,15 @@ def run_action_certificate_validation(application: ExperimentRuntime) -> ActionC
             source,
         )
         return ActionCertificateReport(0, 0, 0, 0, 0.0, ScientificOutcome.INSUFFICIENT_EVIDENCE)
+    if not calibration_source.is_file():
+        LOGGER.warning(
+            "action validation requires selected nested calibration: %s", calibration_source
+        )
+        return ActionCertificateReport(0, 0, 0, 0, 0.0, ScientificOutcome.INSUFFICIENT_EVIDENCE)
     artifact = _ActionArtifact.model_validate_json(source.read_text(encoding="utf-8"))
-    config = application.configuration.values
+    selected = _SelectedCalibrationArtifact.model_validate_json(
+        calibration_source.read_text(encoding="utf-8")
+    )
     statuses: list[CertificationStatus] = []
     decisions: list[_CertificateDecisionRecord] = []
     challenges: list[SampleChallengeSet] = []
@@ -119,10 +138,8 @@ def run_action_certificate_validation(application: ExperimentRuntime) -> ActionC
         decision = certify_action_interval(
             action_interval=ActionInterval(action.lower_bound, action.upper_bound),
             domain_validity=DomainValid(action.domain_valid),
-            alignment_threshold=config.certification.alignment_threshold.percentile_candidates[0]
-            / 100.0,
-            ambiguity_width_threshold=config.certification.ambiguity_width.percentile_candidates[-1]
-            / 100.0,
+            alignment_threshold=selected.tau_align,
+            ambiguity_width_threshold=selected.tau_amb,
             set_diameter=action.set_diameter,
             historical_realized_diameter_quantile=action.historical_diameter_quantile,
             leave_one_client_out_passed=action.leave_one_client_out_passed,
@@ -179,7 +196,7 @@ def run_nested_calibration(application: ExperimentRuntime) -> tuple[CalibrationC
             ),
             [],
         ).append(observation)
-    return tuple(
+    candidates = tuple(
         CalibrationCandidate(
             candidate_id=candidate_id,
             tau_align=tau_align,
@@ -192,6 +209,28 @@ def run_nested_calibration(application: ExperimentRuntime) -> tuple[CalibrationC
         )
         for (candidate_id, tau_align, tau_amb, weight), rows in sorted(grouped.items())
     )
+    if not candidates:
+        return ()
+    config = application.configuration.values
+    try:
+        selected = select_best_calibration_candidate(
+            candidates,
+            config.identification.target_coverage.primary,
+            config.hardening.weight.maximum_clean_fnr_degradation_percentage_points,
+        ).selected_candidate
+    except CalibrationSelectionError:
+        LOGGER.warning("no nested calibration candidate meets configured validity requirements")
+        return candidates
+    write_text_atomically(
+        _experiment_directory(application, "nested-calibration") / "selected.json",
+        _SelectedCalibrationArtifact(
+            candidate_id=selected.candidate_id,
+            tau_align=selected.tau_align,
+            tau_amb=selected.tau_amb,
+            hardening_weight=selected.hardening_weight,
+        ).model_dump_json(indent=2),
+    )
+    return candidates
 
 
 @dataclass(frozen=True)
