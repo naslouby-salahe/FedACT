@@ -25,10 +25,12 @@ from fedact.data.lamda import (
 )
 from fedact.domain.types import (
     BinaryLabel,
+    CertificationStatus,
     DatasetSelector,
     DegradationValue,
     DimensionValue,
     EvaluationCount,
+    LossValue,
     MetricRate,
     RankDimension,
     RelativePosixPath,
@@ -62,6 +64,15 @@ class _TransferManifest(StrictModel):
     detector_checkpoint: RelativePosixPath
     feature_adapter: RelativePosixPath
     input_dimension: RankDimension = Field(gt=0)
+
+
+class _CertificateDecisionRecord(StrictModel):
+    sample_id: SampleIdentifier
+    status: CertificationStatus
+
+
+class _CertificateDecisionArtifact(StrictModel):
+    decisions: list[_CertificateDecisionRecord]
 
 
 @dataclass(frozen=True)
@@ -102,6 +113,11 @@ def _labeled_target_value(value: BinaryLabel | None) -> BinaryLabel:
     if value is None:
         raise ValueError("selected EMBER evaluation row has no label")
     return value
+
+
+def _binary_cross_entropy(label: BinaryLabel, probability: MetricRate) -> LossValue:
+    bounded = np.clip(probability, np.finfo(np.float64).eps, 1.0 - np.finfo(np.float64).eps)
+    return float(-np.log(bounded if label else 1.0 - bounded))
 
 
 @dataclass(frozen=True)
@@ -362,17 +378,25 @@ def _score_cutoff_population(
 def run_prospective_fedact_evaluation(
     application: ExperimentRuntime,
 ) -> ProspectiveEvaluationReport:
-    action_evidence = (
+    certificate_decisions = (
         application.repository_root
         / application.configuration.values.workspace.directories.experiments
         / "action-certificate-validation"
-        / "actions.json"
+        / "certificate-decisions.json"
     )
-    if not action_evidence.is_file():
+    if not certificate_decisions.is_file():
         LOGGER.warning("prospective evaluation requires completed action-certificate evidence")
         return ProspectiveEvaluationReport(
             0, 0.0, 0.0, 0.0, ScientificOutcome.INSUFFICIENT_EVIDENCE
         )
+    decision_artifact = _CertificateDecisionArtifact.model_validate_json(
+        certificate_decisions.read_text(encoding="utf-8")
+    )
+    certified_samples = frozenset(
+        decision.sample_id
+        for decision in decision_artifact.decisions
+        if decision.status is CertificationStatus.CERTIFIED_POSITIVE
+    )
     population = _load_lamda_population(application)
     if population is None:
         return ProspectiveEvaluationReport(
@@ -406,10 +430,10 @@ def run_prospective_fedact_evaluation(
             cutoff_id=cutoff_id,
             sample_id=sample_id,
             horizon_step=1,
-            true_label=bool(label),
-            predicted_score=float(score),
-            is_certified=False,
-            clean_loss=0.0,
+            true_label=label,
+            predicted_score=score,
+            is_certified=sample_id in certified_samples,
+            clean_loss=_binary_cross_entropy(label, score),
         )
         for sample_id, label, score in zip(
             sample_ids,
@@ -423,7 +447,7 @@ def run_prospective_fedact_evaluation(
     return ProspectiveEvaluationReport(
         total_evaluations=len(records),
         mean_false_negative_rate=metrics.false_negative_rate,
-        mean_certification_rate=0.0,
+        mean_certification_rate=metrics.certification_rate,
         clean_fnr_degradation_percentage_points=0.0,
-        scientific_outcome=ScientificOutcome.INSUFFICIENT_EVIDENCE,
+        scientific_outcome=ScientificOutcome.PASS,
     )

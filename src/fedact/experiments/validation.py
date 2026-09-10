@@ -7,6 +7,7 @@ from pathlib import Path
 
 import torch
 
+from fedact.artifacts import write_text_atomically
 from fedact.certification.actions import ActionInterval
 from fedact.certification.calibration import CalibrationCandidate
 from fedact.certification.certificate import DomainValid, certify_action_interval
@@ -57,6 +58,15 @@ class _ActionArtifact(StrictModel):
     actions: list[_ActionObservation]
 
 
+class _CertificateDecisionRecord(StrictModel):
+    sample_id: SampleIdentifier
+    status: CertificationStatus
+
+
+class _CertificateDecisionArtifact(StrictModel):
+    decisions: list[_CertificateDecisionRecord]
+
+
 class _CalibrationObservation(StrictModel):
     candidate_id: DetailMessage
     tau_align: ThresholdValue
@@ -103,6 +113,7 @@ def run_action_certificate_validation(application: ExperimentRuntime) -> ActionC
     artifact = _ActionArtifact.model_validate_json(source.read_text(encoding="utf-8"))
     config = application.configuration.values
     statuses: list[CertificationStatus] = []
+    decisions: list[_CertificateDecisionRecord] = []
     challenges: list[SampleChallengeSet] = []
     for action in artifact.actions:
         decision = certify_action_interval(
@@ -117,6 +128,9 @@ def run_action_certificate_validation(application: ExperimentRuntime) -> ActionC
             leave_one_client_out_passed=action.leave_one_client_out_passed,
         )
         statuses.append(decision.status)
+        decisions.append(
+            _CertificateDecisionRecord(sample_id=action.sample_id, status=decision.status)
+        )
         if action.challenge_embeddings:
             challenges.append(
                 SampleChallengeSet(
@@ -126,6 +140,10 @@ def run_action_certificate_validation(application: ExperimentRuntime) -> ActionC
             )
     if challenges:
         write_challenge_sets(tuple(challenges), source.with_name("challenges.json"))
+    write_text_atomically(
+        source.with_name("certificate-decisions.json"),
+        _CertificateDecisionArtifact(decisions=decisions).model_dump_json(indent=2),
+    )
     total = len(statuses)
     certified = sum(status is CertificationStatus.CERTIFIED_POSITIVE for status in statuses)
     ambiguous = sum(status is CertificationStatus.AMBIGUOUS for status in statuses)
