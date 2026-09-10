@@ -37,13 +37,19 @@ def test_hardening_off_ablation_measures_real_degradation(
                 "comparisons": [
                     {
                         "cutoff_id": "lamda-1",
+                        "certified_false_negative_rate": 0.05,
+                        "ambiguous_false_negative_rate": 0.3,
                         "hardened_false_negative_rate": 0.1,
                         "static_chronological_false_negative_rate": 0.4,
+                        "matched_benign_subtraction_false_negative_rate": 0.35,
                     },
                     {
                         "cutoff_id": "lamda-2",
+                        "certified_false_negative_rate": 0.08,
+                        "ambiguous_false_negative_rate": 0.32,
                         "hardened_false_negative_rate": 0.2,
                         "static_chronological_false_negative_rate": 0.5,
+                        "matched_benign_subtraction_false_negative_rate": 0.45,
                     },
                 ]
             }

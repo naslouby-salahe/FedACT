@@ -81,8 +81,11 @@ class _AblationArtifact(StrictModel):
 
 class _ProspectiveCutoffComparisonRecord(StrictModel):
     cutoff_id: SplitCutoffIdentity
+    certified_false_negative_rate: MetricRate | None = None
+    ambiguous_false_negative_rate: MetricRate | None = None
     hardened_false_negative_rate: MetricRate | None = None
     static_chronological_false_negative_rate: MetricRate | None = None
+    matched_benign_subtraction_false_negative_rate: MetricRate | None = None
 
 
 class _ProspectiveCutoffComparisonArtifact(StrictModel):

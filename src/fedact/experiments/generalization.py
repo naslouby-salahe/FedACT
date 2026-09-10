@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -24,6 +25,7 @@ from fedact.data.lamda import (
     validate_lamda_dataset,
     year_month_to_calendar_month,
 )
+from fedact.data.splits import CalendarMonth, calendar_month, transition_windows, windowed_mean
 from fedact.domain.types import (
     BinaryLabel,
     CertificationStatus,
@@ -31,6 +33,7 @@ from fedact.domain.types import (
     DegradationValue,
     DimensionValue,
     EvaluationCount,
+    FamilyName,
     LossValue,
     MetricRate,
     ProbabilityValue,
@@ -41,9 +44,11 @@ from fedact.domain.types import (
     SplitCutoffIdentity,
     ValidationFlag,
 )
+from fedact.experiments.baselines import matched_benign_subtraction
 from fedact.experiments.registry import ExperimentRuntime
 from fedact.learning.detector import load_trained_detector, train_base_detector
 from fedact.learning.hardening import (
+    SampleChallengeSet,
     clean_false_negative_rate,
     harden_detector_head,
     read_challenge_sets,
@@ -52,6 +57,7 @@ from fedact.learning.representation import (
     DEFAULT_ENCODER_HIDDEN_DIMENSIONS,
     EMBEDDING_DIMENSION,
     RepresentationDataset,
+    RepresentationEncoder,
     TrainingObservation,
     load_representation_encoder,
     train_representation_encoder,
@@ -84,6 +90,7 @@ class _CutoffComparisonRecord(StrictModel):
     ambiguous_false_negative_rate: MetricRate | None
     static_chronological_false_negative_rate: MetricRate | None = None
     hardened_false_negative_rate: MetricRate | None = None
+    matched_benign_subtraction_false_negative_rate: MetricRate | None = None
 
 
 class _CutoffComparisonArtifact(StrictModel):
@@ -188,6 +195,7 @@ class ProspectiveEvaluationReport:
     early_horizon_fnr_reduction_percentage_points: DegradationValue
     clean_fnr_degradation_percentage_points: DegradationValue
     scientific_outcome: ScientificOutcome
+    matched_benign_subtraction_false_negative_rate: MetricRate | None = None
 
 
 @dataclass(frozen=True)
@@ -196,6 +204,7 @@ class _LamdaPopulation:
     labels: np.ndarray
     months: np.ndarray
     sample_ids: tuple[SampleIdentifier, ...]
+    family: tuple[FamilyName | None, ...]
 
 
 def _load_lamda_population(application: ExperimentRuntime) -> _LamdaPopulation | None:
@@ -232,6 +241,7 @@ def _load_lamda_population(application: ExperimentRuntime) -> _LamdaPopulation |
         labels=labels,
         months=months,
         sample_ids=tuple(record.sample_hash for record in records),
+        family=tuple(record.family for record in records),
     )
 
 
@@ -380,6 +390,104 @@ class _CutoffScoring:
     scores: tuple[ProbabilityValue, ...]
     static_chronological_scores: tuple[ProbabilityValue, ...]
     clean_fnr_degradation_percentage_points: DegradationValue
+    matched_benign_subtraction_scores: tuple[ProbabilityValue, ...] | None = None
+
+
+def _dominant_malicious_family(
+    training: tuple[TrainingObservation, ...],
+    family_by_sample: dict[SampleIdentifier, FamilyName | None],
+) -> FamilyName | None:
+    counts = Counter(
+        family_by_sample[obs.sample_id]
+        for obs in training
+        if obs.label and family_by_sample[obs.sample_id]
+    )
+    if not counts:
+        return None
+    return counts.most_common(1)[0][0]
+
+
+def _embedded_transition_displacement(
+    embedded_features: np.ndarray,
+    months: np.ndarray,
+    class_mask: np.ndarray,
+    endpoint: CalendarMonth,
+    transition_interval_months: int,
+) -> np.ndarray | None:
+    windows = transition_windows(endpoint, transition_interval_months)
+    class_features = embedded_features[class_mask]
+    class_months = months[class_mask]
+    before_mean, before_support = windowed_mean(
+        class_features,
+        class_months,
+        windows.before_window_start_inclusive,
+        windows.before_window_end_exclusive,
+    )
+    after_mean, after_support = windowed_mean(
+        class_features,
+        class_months,
+        windows.after_window_start_inclusive,
+        windows.after_window_end_exclusive,
+    )
+    if before_support == 0 or after_support == 0:
+        return None
+    return after_mean - before_mean
+
+
+def _matched_benign_subtraction_challenges(
+    training: tuple[TrainingObservation, ...],
+    encoder: RepresentationEncoder,
+    family_by_sample: dict[SampleIdentifier, FamilyName | None],
+    endpoint: CalendarMonth,
+    transition_interval_months: int,
+) -> tuple[SampleChallengeSet, ...]:
+    cohort = _dominant_malicious_family(training, family_by_sample)
+    if cohort is None:
+        return ()
+    with torch.no_grad():
+        embedded = (
+            encoder(
+                torch.stack(
+                    [
+                        torch.tensor(obs.features, dtype=torch.float32)
+                        if isinstance(obs.features, tuple)
+                        else obs.features
+                        for obs in training
+                    ]
+                )
+            )
+            .numpy()
+            .astype(np.float64)
+        )
+    training_months = np.fromiter(
+        (obs.month_index for obs in training), dtype=np.int64, count=len(training)
+    )
+    training_labels = np.fromiter((obs.label for obs in training), dtype=bool, count=len(training))
+    cohort_malicious_mask = np.fromiter(
+        (obs.label and family_by_sample[obs.sample_id] == cohort for obs in training),
+        dtype=bool,
+        count=len(training),
+    )
+    control_mask = ~training_labels
+    malicious_displacement = _embedded_transition_displacement(
+        embedded, training_months, cohort_malicious_mask, endpoint, transition_interval_months
+    )
+    control_displacement = _embedded_transition_displacement(
+        embedded, training_months, control_mask, endpoint, transition_interval_months
+    )
+    if malicious_displacement is None or control_displacement is None:
+        return ()
+    estimate = matched_benign_subtraction(malicious_displacement, control_displacement)
+    return tuple(
+        SampleChallengeSet(
+            source_sample_id=obs.sample_id,
+            challenge_embeddings=(
+                tuple(float(value) for value in embedded[index] + estimate.estimated_displacement),
+            ),
+        )
+        for index, obs in enumerate(training)
+        if cohort_malicious_mask[index]
+    )
 
 
 def _score_cutoff_population(
@@ -437,6 +545,7 @@ def _score_cutoff_population(
         config.seeds.detector_training[0],
         config.numerical.projection_tie_tolerance,
     ).detector
+    pristine_detector = detector
     sample_ids = tuple(np.asarray(population.sample_ids, dtype=object)[later])
     later_features = torch.tensor(population.features[later], dtype=torch.float32)
     static_chronological_scored = score_samples(encoder, detector, sample_ids, later_features)
@@ -468,6 +577,37 @@ def _score_cutoff_population(
             detector = hardening.detector
             clean_fnr_degradation = hardening.clean_fnr_degradation_percentage_points
     scored = score_samples(encoder, detector, sample_ids, later_features)
+
+    matched_benign_subtraction_scores: tuple[ProbabilityValue, ...] | None = None
+    endpoint = calendar_month(validation_month + 1)
+    family_by_sample = dict(zip(population.sample_ids, population.family, strict=True))
+    matched_challenges = _matched_benign_subtraction_challenges(
+        training,
+        encoder,
+        family_by_sample,
+        endpoint,
+        config.temporal.transition_interval_months,
+    )
+    if matched_challenges:
+        matched_hardening = harden_detector_head(
+            encoder,
+            pristine_detector,
+            training,
+            validation,
+            matched_challenges,
+            clean_false_negative_rate(pristine_detector, encoder, validation),
+            config.training.initial_learning_rate,
+            config.training.final_learning_rate,
+            config.training.maximum_epochs,
+            config.hardening.weight.maximum_clean_fnr_degradation_percentage_points,
+            config.numerical.projection_tie_tolerance,
+            config.hardening.weight.candidates[0],
+        )
+        matched_scored = score_samples(
+            encoder, matched_hardening.detector, sample_ids, later_features
+        )
+        matched_benign_subtraction_scores = tuple(score.probability for score in matched_scored)
+
     return _CutoffScoring(
         sample_ids=sample_ids,
         scores=tuple(score.probability for score in scored),
@@ -475,6 +615,7 @@ def _score_cutoff_population(
             score.probability for score in static_chronological_scored
         ),
         clean_fnr_degradation_percentage_points=clean_fnr_degradation,
+        matched_benign_subtraction_scores=matched_benign_subtraction_scores,
     )
 
 
@@ -574,6 +715,27 @@ def run_prospective_fedact_evaluation(
             )
         )
         static_chronological_records.extend(cutoff_static_records)
+        matched_benign_subtraction_fnr: MetricRate | None = None
+        if scored_population.matched_benign_subtraction_scores is not None:
+            matched_records = tuple(
+                EvaluationRecord(
+                    dataset=DatasetSelector.LAMDA,
+                    cutoff_id=cutoff_id,
+                    sample_id=sample_id,
+                    horizon_step=1,
+                    true_label=label,
+                    predicted_score=score,
+                    is_certified=False,
+                    clean_loss=_binary_cross_entropy(label, score),
+                )
+                for sample_id, label, score in zip(
+                    scored_population.sample_ids,
+                    population.labels[later],
+                    scored_population.matched_benign_subtraction_scores,
+                    strict=True,
+                )
+            )
+            matched_benign_subtraction_fnr = _group_false_negative_rate(matched_records)
         comparisons.append(
             _CutoffComparisonRecord(
                 cutoff_id=cutoff_id,
@@ -583,6 +745,7 @@ def run_prospective_fedact_evaluation(
                     cutoff_static_records
                 ),
                 hardened_false_negative_rate=_group_false_negative_rate(cutoff_records),
+                matched_benign_subtraction_false_negative_rate=matched_benign_subtraction_fnr,
             )
         )
         LOGGER.info("prospective evaluated cutoff=%s rows=%s", cutoff_id, len(cutoff_records))
@@ -623,6 +786,16 @@ def run_prospective_fedact_evaluation(
         and (sum(certified_fnrs) / len(certified_fnrs))
         <= (sum(ambiguous_fnrs) / len(ambiguous_fnrs))
     )
+    matched_benign_subtraction_fnrs = [
+        comparison_record.matched_benign_subtraction_false_negative_rate
+        for comparison_record in comparisons
+        if comparison_record.matched_benign_subtraction_false_negative_rate is not None
+    ]
+    mean_matched_benign_subtraction_fnr = (
+        sum(matched_benign_subtraction_fnrs) / len(matched_benign_subtraction_fnrs)
+        if matched_benign_subtraction_fnrs
+        else None
+    )
     LOGGER.info(
         "prospective evaluation completed cutoffs=%s rows=%s mechanism_supported=%s",
         len(comparisons),
@@ -641,4 +814,5 @@ def run_prospective_fedact_evaluation(
             if certification_mechanism_supported
             else ScientificOutcome.INSUFFICIENT_EVIDENCE
         ),
+        matched_benign_subtraction_false_negative_rate=mean_matched_benign_subtraction_fnr,
     )
