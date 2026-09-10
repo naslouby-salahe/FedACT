@@ -545,22 +545,6 @@ def run_report(
     typer.echo(f"manuscript evidence reporting completed: {overall_outcome}")
 
 
-_RUNNABLE_TO_EXECUTABLE: dict[RunnableWorkflowName, ExecutableWorkflowName] = {
-    RunnableWorkflowName.MATH_VERIFICATION: ExecutableWorkflowName.MATH_VERIFICATION,
-    RunnableWorkflowName.SYNTHETIC_GEOMETRY: ExecutableWorkflowName.SYNTHETIC_GEOMETRY,
-    RunnableWorkflowName.ACTION_CERTIFICATE_VALIDATION: (
-        ExecutableWorkflowName.ACTION_CERTIFICATE_VALIDATION
-    ),
-    RunnableWorkflowName.PROSPECTIVE_EVALUATION: ExecutableWorkflowName.PROSPECTIVE_EVALUATION,
-    RunnableWorkflowName.ABLATIONS: ExecutableWorkflowName.ABLATIONS,
-    RunnableWorkflowName.FEDERATION: ExecutableWorkflowName.FEDERATION,
-    RunnableWorkflowName.FAILURE_BOUNDARIES: ExecutableWorkflowName.FAILURE_BOUNDARIES,
-    RunnableWorkflowName.CROSS_CORPUS: ExecutableWorkflowName.CROSS_CORPUS,
-    RunnableWorkflowName.CLIENT_SELECTION: ExecutableWorkflowName.CLIENT_SELECTION,
-    RunnableWorkflowName.STATISTICAL_SYNTHESIS: ExecutableWorkflowName.STATISTICAL_SYNTHESIS,
-}
-
-
 def _persist(application: Application, record: WorkflowResultRecord) -> None:
     write_workflow_evidence(application.experiment_workspace(record.workflow), record)
     write_workflow_result(application.result_experiment_directory(record.workflow), record)
@@ -804,7 +788,7 @@ def _materialize_dependencies(
 def run_experiment(
     workflow: RunnableWorkflowName, overwrite: OverwriteRequested, repository_root: Path
 ) -> None:
-    executable_workflow = _RUNNABLE_TO_EXECUTABLE[workflow]
+    executable_workflow = ExecutableWorkflowName(workflow)
     selected = registered_workflow(executable_workflow)
     application = Application.from_repository_root(discover_repository_root(repository_root))
     _materialize_dependencies(executable_workflow, application)
