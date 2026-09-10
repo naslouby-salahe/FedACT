@@ -87,6 +87,7 @@ class _ProspectiveCutoffComparisonRecord(StrictModel):
     static_chronological_false_negative_rate: MetricRate | None = None
     matched_benign_subtraction_false_negative_rate: MetricRate | None = None
     projected_point_reconstruction_false_negative_rate: MetricRate | None = None
+    raw_future_transition_forecast_false_negative_rate: MetricRate | None = None
 
 
 class _ProspectiveCutoffComparisonArtifact(StrictModel):

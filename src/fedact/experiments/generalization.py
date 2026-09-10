@@ -13,6 +13,7 @@ from pydantic import Field
 from fedact.analysis.comparisons import CutoffAggregate
 from fedact.analysis.metrics import EvaluationRecord, compute_evaluation_metrics
 from fedact.certification.client_procedure import select_stable_nuisance_rank
+from fedact.certification.dynamics import fit_scalar_model
 from fedact.config.models import StrictModel
 from fedact.data.ember2024 import (
     apply_log1p_transforms,
@@ -100,6 +101,7 @@ class _CutoffComparisonRecord(StrictModel):
     hardened_false_negative_rate: MetricRate | None = None
     matched_benign_subtraction_false_negative_rate: MetricRate | None = None
     projected_point_reconstruction_false_negative_rate: MetricRate | None = None
+    raw_future_transition_forecast_false_negative_rate: MetricRate | None = None
 
 
 class _CutoffComparisonArtifact(StrictModel):
@@ -206,6 +208,7 @@ class ProspectiveEvaluationReport:
     scientific_outcome: ScientificOutcome
     matched_benign_subtraction_false_negative_rate: MetricRate | None = None
     projected_point_reconstruction_false_negative_rate: MetricRate | None = None
+    raw_future_transition_forecast_false_negative_rate: MetricRate | None = None
 
 
 @dataclass(frozen=True)
@@ -402,6 +405,7 @@ class _CutoffScoring:
     clean_fnr_degradation_percentage_points: DegradationValue
     matched_benign_subtraction_scores: tuple[ProbabilityValue, ...] | None = None
     projected_point_reconstruction_scores: tuple[ProbabilityValue, ...] | None = None
+    raw_future_transition_forecast_scores: tuple[ProbabilityValue, ...] | None = None
 
 
 def _dominant_malicious_family(
@@ -613,6 +617,68 @@ def _projected_point_reconstruction_challenges(
     )
 
 
+def _raw_future_transition_forecast_challenges(
+    application: ExperimentRuntime,
+    training: tuple[TrainingObservation, ...],
+    encoder: RepresentationEncoder,
+    family_by_sample: dict[SampleIdentifier, FamilyName | None],
+    endpoint: CalendarMonth,
+    historical_endpoints: tuple[CalendarMonth, ...],
+    transition_interval_months: int,
+) -> tuple[SampleChallengeSet, ...]:
+    config = application.configuration.values
+    cohort = _dominant_malicious_family(training, family_by_sample)
+    if cohort is None:
+        return ()
+    with torch.no_grad():
+        embedded = (
+            encoder(
+                torch.stack(
+                    [
+                        torch.tensor(obs.features, dtype=torch.float32)
+                        if isinstance(obs.features, tuple)
+                        else obs.features
+                        for obs in training
+                    ]
+                )
+            )
+            .numpy()
+            .astype(np.float64)
+        )
+    training_months = np.fromiter(
+        (obs.month_index for obs in training), dtype=np.int64, count=len(training)
+    )
+    cohort_malicious_mask = np.fromiter(
+        (obs.label and family_by_sample[obs.sample_id] == cohort for obs in training),
+        dtype=bool,
+        count=len(training),
+    )
+    centers: list[np.ndarray] = []
+    for candidate_endpoint in (*historical_endpoints, endpoint):
+        displacement = _embedded_transition_displacement(
+            embedded,
+            training_months,
+            cohort_malicious_mask,
+            candidate_endpoint,
+            transition_interval_months,
+        )
+        if displacement is not None:
+            centers.append(displacement)
+    minimum_pairs = config.temporal.temporal_model.minimum_consecutive_pairs
+    if len(centers) < minimum_pairs + 1:
+        return ()
+    fit = fit_scalar_model(centers, config.temporal.temporal_model.maximum_scalar_coefficient)
+    forecast = fit.coefficient * centers[-1]
+    return tuple(
+        SampleChallengeSet(
+            source_sample_id=obs.sample_id,
+            challenge_embeddings=(tuple(float(value) for value in embedded[index] + forecast),),
+        )
+        for index, obs in enumerate(training)
+        if cohort_malicious_mask[index]
+    )
+
+
 def _score_cutoff_population(
     application: ExperimentRuntime,
     population: _LamdaPopulation,
@@ -770,6 +836,38 @@ def _score_cutoff_population(
             score.probability for score in projected_scored
         )
 
+    raw_future_transition_forecast_scores: tuple[ProbabilityValue, ...] | None = None
+    forecast_challenges = _raw_future_transition_forecast_challenges(
+        application,
+        training,
+        encoder,
+        family_by_sample,
+        endpoint,
+        historical_endpoints,
+        config.temporal.transition_interval_months,
+    )
+    if forecast_challenges:
+        forecast_hardening = harden_detector_head(
+            encoder,
+            pristine_detector,
+            training,
+            validation,
+            forecast_challenges,
+            clean_false_negative_rate(pristine_detector, encoder, validation),
+            config.training.initial_learning_rate,
+            config.training.final_learning_rate,
+            config.training.maximum_epochs,
+            config.hardening.weight.maximum_clean_fnr_degradation_percentage_points,
+            config.numerical.projection_tie_tolerance,
+            config.hardening.weight.candidates[0],
+        )
+        forecast_scored = score_samples(
+            encoder, forecast_hardening.detector, sample_ids, later_features
+        )
+        raw_future_transition_forecast_scores = tuple(
+            score.probability for score in forecast_scored
+        )
+
     return _CutoffScoring(
         sample_ids=sample_ids,
         scores=tuple(score.probability for score in scored),
@@ -779,6 +877,7 @@ def _score_cutoff_population(
         clean_fnr_degradation_percentage_points=clean_fnr_degradation,
         matched_benign_subtraction_scores=matched_benign_subtraction_scores,
         projected_point_reconstruction_scores=projected_point_reconstruction_scores,
+        raw_future_transition_forecast_scores=raw_future_transition_forecast_scores,
     )
 
 
@@ -920,6 +1019,27 @@ def run_prospective_fedact_evaluation(
                 )
             )
             projected_point_reconstruction_fnr = _group_false_negative_rate(projected_records)
+        raw_future_transition_forecast_fnr: MetricRate | None = None
+        if scored_population.raw_future_transition_forecast_scores is not None:
+            forecast_records = tuple(
+                EvaluationRecord(
+                    dataset=DatasetSelector.LAMDA,
+                    cutoff_id=cutoff_id,
+                    sample_id=sample_id,
+                    horizon_step=1,
+                    true_label=label,
+                    predicted_score=score,
+                    is_certified=False,
+                    clean_loss=_binary_cross_entropy(label, score),
+                )
+                for sample_id, label, score in zip(
+                    scored_population.sample_ids,
+                    population.labels[later],
+                    scored_population.raw_future_transition_forecast_scores,
+                    strict=True,
+                )
+            )
+            raw_future_transition_forecast_fnr = _group_false_negative_rate(forecast_records)
         comparisons.append(
             _CutoffComparisonRecord(
                 cutoff_id=cutoff_id,
@@ -931,6 +1051,7 @@ def run_prospective_fedact_evaluation(
                 hardened_false_negative_rate=_group_false_negative_rate(cutoff_records),
                 matched_benign_subtraction_false_negative_rate=matched_benign_subtraction_fnr,
                 projected_point_reconstruction_false_negative_rate=projected_point_reconstruction_fnr,
+                raw_future_transition_forecast_false_negative_rate=raw_future_transition_forecast_fnr,
             )
         )
         LOGGER.info("prospective evaluated cutoff=%s rows=%s", cutoff_id, len(cutoff_records))
@@ -991,6 +1112,16 @@ def run_prospective_fedact_evaluation(
         if projected_point_reconstruction_fnrs
         else None
     )
+    raw_future_transition_forecast_fnrs = [
+        comparison_record.raw_future_transition_forecast_false_negative_rate
+        for comparison_record in comparisons
+        if comparison_record.raw_future_transition_forecast_false_negative_rate is not None
+    ]
+    mean_raw_future_transition_forecast_fnr = (
+        sum(raw_future_transition_forecast_fnrs) / len(raw_future_transition_forecast_fnrs)
+        if raw_future_transition_forecast_fnrs
+        else None
+    )
     LOGGER.info(
         "prospective evaluation completed cutoffs=%s rows=%s mechanism_supported=%s",
         len(comparisons),
@@ -1011,4 +1142,5 @@ def run_prospective_fedact_evaluation(
         ),
         matched_benign_subtraction_false_negative_rate=mean_matched_benign_subtraction_fnr,
         projected_point_reconstruction_false_negative_rate=mean_projected_point_reconstruction_fnr,
+        raw_future_transition_forecast_false_negative_rate=mean_raw_future_transition_forecast_fnr,
     )
