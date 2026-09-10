@@ -36,7 +36,6 @@ from fedact.domain.types import (
     AmbiguityFlag,
     CertificationFlag,
     CoordinateValue,
-    DatasetName,
     DomainValidityFlag,
     FamilyName,
     HashDigest,
@@ -46,8 +45,6 @@ from fedact.domain.types import (
     NormValue,
     OperatorIdentifier,
     OrderIndex,
-    ProvenanceText,
-    RuleDescription,
     SampleCount,
     SampleIdentifier,
     ScientificAssumption,
@@ -58,7 +55,6 @@ from fedact.domain.types import (
     ThresholdValue,
     TimeoutSeconds,
     ToolchainIdentifier,
-    UsageCount,
     ValidationFlag,
 )
 
@@ -207,22 +203,6 @@ class OperatorFamily:
     domain: OperatorDomain
     listed_order: OrderIndex
     parameter_grid: tuple[NormalizedParameterString, ...]
-
-
-@dataclass(frozen=True)
-class OperatorRecord:
-    operator_name: OperatorName
-    dataset: DatasetName
-    domain: OperatorDomain
-    semantic_validity_contract: RuleDescription
-    construction_function: RuleDescription
-    parameter_domain: tuple[NormalizedParameterString, ...]
-    eligibility_rule: RuleDescription
-    rejection_rule: RuleDescription
-    representation_displacement_rule: RuleDescription
-    zero_displacement_rule: RuleDescription
-    maximum_uses_per_sample: UsageCount
-    provenance: ProvenanceText
 
 
 @dataclass(frozen=True)

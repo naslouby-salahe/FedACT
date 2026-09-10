@@ -228,7 +228,6 @@ workspace:
     shared_fitted: outputs/artifacts/fitted
     shared_baselines: outputs/artifacts/baselines
     shared_derived: outputs/artifacts/derived
-    shared_provenance: outputs/artifacts/provenance
     experiments: outputs/experiments
     cache: outputs/cache
     staging: outputs/cache/staging

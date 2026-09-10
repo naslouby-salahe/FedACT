@@ -260,7 +260,6 @@ def test_independently_transcribed_synthetic_and_artifact_values(
     assert directories.shared_fitted == "outputs/artifacts/fitted"
     assert directories.shared_baselines == "outputs/artifacts/baselines"
     assert directories.shared_derived == "outputs/artifacts/derived"
-    assert directories.shared_provenance == "outputs/artifacts/provenance"
     assert directories.experiments == "outputs/experiments"
     assert directories.cache == "outputs/cache"
     assert directories.staging == "outputs/cache/staging"

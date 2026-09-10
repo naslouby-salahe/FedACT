@@ -36,7 +36,6 @@ class WorkspaceOutputDirectories:
     shared_fitted: Path
     shared_baselines: Path
     shared_derived: Path
-    shared_provenance: Path
     experiments: Path
     cache: Path
     staging: Path
@@ -63,7 +62,6 @@ class WorkspaceLayout:
             shared_fitted=self.resolve(directories.shared_fitted),
             shared_baselines=self.resolve(directories.shared_baselines),
             shared_derived=self.resolve(directories.shared_derived),
-            shared_provenance=self.resolve(directories.shared_provenance),
             experiments=self.resolve(directories.experiments),
             cache=self.resolve(directories.cache),
             staging=self.resolve(directories.staging),

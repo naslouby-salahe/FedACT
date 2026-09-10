@@ -367,7 +367,6 @@ WorkflowDescription = NonEmptyString
 DetailMessage = NonEmptyString
 OperationalizationText = NonEmptyString
 RuleDescription = NonEmptyString
-ProvenanceText = NonEmptyString
 NormalizedOperatorFormText = NonEmptyString
 ArtifactName = NonEmptyString
 ToolchainIdentifier = NonEmptyString
@@ -620,7 +619,6 @@ __all__ = [
     "Probability",
     "ProducerIdentifier",
     "ProhibitionFlag",
-    "ProvenanceText",
     "Quantile",
     "RankBiserialEffectSize",
     "RankDimension",

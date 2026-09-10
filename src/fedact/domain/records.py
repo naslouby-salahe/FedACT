@@ -249,7 +249,7 @@ PLAUSIBILITY_SET_COVERAGE_CONSEQUENCE = AssumptionConsequence(
 HONEST_PRIMARY_FEDERATION_CONSEQUENCE = AssumptionConsequence(
     assumption=ScientificAssumption.HONEST_PRIMARY_FEDERATION,
     failure_outcome=ScientificOutcome.FAIL,
-    operationalization="provenance/authentication",
+    operationalization="authenticated-client-summaries",
     validation="outlier stress tests only",
 )
 

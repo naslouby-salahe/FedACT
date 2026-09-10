@@ -415,7 +415,6 @@ class WorkspaceDirectories(StrictModel):
     shared_fitted: RelativePosixPath
     shared_baselines: RelativePosixPath
     shared_derived: RelativePosixPath
-    shared_provenance: RelativePosixPath
     experiments: RelativePosixPath
     cache: RelativePosixPath
     staging: RelativePosixPath
@@ -561,7 +560,6 @@ def _validate_workspace_layout(config: FedActConfig) -> None:
         "shared_fitted": directories.shared_fitted,
         "shared_baselines": directories.shared_baselines,
         "shared_derived": directories.shared_derived,
-        "shared_provenance": directories.shared_provenance,
     }
     for label, path in shared_children.items():
         _require_relative_descendant(
