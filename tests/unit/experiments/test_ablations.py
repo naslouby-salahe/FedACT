@@ -157,3 +157,33 @@ def test_identification_derived_ablations_measure_real_beta_deltas(
     assert by_name[
         "zero_private_transition_allowance_term"
     ].degradation_percentage_points == pytest.approx(-10.0)
+
+
+def test_temporal_dynamics_ablations_measure_real_process_error_deltas(
+    isolated_application: Application,
+) -> None:
+    destination = (
+        isolated_application.repository_root
+        / isolated_application.configuration.values.workspace.directories.experiments
+        / "ablations"
+        / "temporal-dynamics.json"
+    )
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(
+        json.dumps(
+            {
+                "endpoints_used": 10,
+                "baseline_coefficient": 0.5,
+                "baseline_process_error": 0.2,
+                "shuffled_history_process_error": 0.5,
+                "no_change_dynamics_process_error": 0.35,
+            }
+        ),
+        encoding="utf-8",
+    )
+    report = run_novelty_critical_ablations(isolated_application)
+    assert report.evaluated_configurations == 2
+    assert report.scientific_outcome is ScientificOutcome.INSUFFICIENT_EVIDENCE
+    by_name = {result.ablation_name: result for result in report.results}
+    assert by_name["shuffled_history"].degradation_percentage_points == pytest.approx(30.0)
+    assert by_name["no_change_dynamics"].degradation_percentage_points == pytest.approx(15.0)

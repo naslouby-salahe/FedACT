@@ -121,6 +121,14 @@ class TransitionWindows:
     after_window_end_exclusive: CalendarMonth
 
 
+def earliest_complete_transition_endpoint(
+    origin_month: CalendarMonth, transition_interval_months: WindowSpanMonths
+) -> CalendarMonth:
+    return CalendarMonth(
+        origin_month + _TRANSITION_WINDOW_SPAN_MULTIPLIER * transition_interval_months
+    )
+
+
 def transition_windows(
     endpoint_month: CalendarMonth, transition_interval_months: WindowSpanMonths
 ) -> TransitionWindows:
@@ -158,10 +166,12 @@ def enumerate_historical_endpoints(
     history_start = cutoff_exclusive_month - historical_training_window_months
     endpoints: list[CalendarMonth] = []
     step = cutoff_step_months
-    earliest_complete = (
-        history_start + _TRANSITION_WINDOW_SPAN_MULTIPLIER * transition_interval_months
+    earliest_complete = earliest_complete_transition_endpoint(
+        CalendarMonth(history_start), transition_interval_months
     )
-    floor_from_origin = _TRANSITION_WINDOW_SPAN_MULTIPLIER * transition_interval_months
+    floor_from_origin = earliest_complete_transition_endpoint(
+        CalendarMonth(0), transition_interval_months
+    )
     candidate = max(earliest_complete, floor_from_origin)
     if step > 1:
         candidate = ((candidate + step - 1) // step) * step

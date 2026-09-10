@@ -19,7 +19,12 @@ from fedact.certification.client_procedure import (
     private_transition_term_single_client,
     select_stable_nuisance_rank,
 )
-from fedact.certification.dynamics import AbstentionReason, effective_support
+from fedact.certification.dynamics import (
+    AbstentionReason,
+    effective_support,
+    fit_scalar_model,
+    process_error_radius,
+)
 from fedact.certification.uncertainty import client_radius, regularized_covariance
 from fedact.config.models import StrictModel
 from fedact.data.lamda import (
@@ -37,14 +42,21 @@ from fedact.data.lamda import (
     windowed_malicious_features,
     year_month_to_calendar_month,
 )
-from fedact.data.splits import CalendarMonth, calendar_month, transition_windows
+from fedact.data.splits import (
+    CalendarMonth,
+    calendar_month,
+    earliest_complete_transition_endpoint,
+    transition_windows,
+)
 from fedact.domain.types import (
     EigengapRatio,
     EvaluationCount,
     FamilyName,
+    NormValue,
     RankDimension,
     ScientificOutcome,
     SensitivityMultiplier,
+    ThresholdValue,
     UncertaintyRadius,
     ValidationFlag,
     VarianceThreshold,
@@ -984,3 +996,147 @@ def run_lamda_weak_eigengap_stress(application: ExperimentRuntime) -> WeakEigeng
             ScientificOutcome.PASS if results else ScientificOutcome.INSUFFICIENT_EVIDENCE
         ),
     )
+
+
+class TemporalDynamicsAblationRecord(StrictModel):
+    endpoints_used: EvaluationCount
+    baseline_coefficient: ThresholdValue
+    baseline_process_error: NormValue
+    shuffled_history_process_error: NormValue | None = None
+    no_change_dynamics_process_error: NormValue | None = None
+
+
+@dataclass(frozen=True)
+class TemporalDynamicsAblationReport:
+    result: TemporalDynamicsAblationRecord | None
+    scientific_outcome: ScientificOutcome
+
+
+def run_lamda_temporal_dynamics_ablation(
+    application: ExperimentRuntime,
+) -> TemporalDynamicsAblationReport:
+    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline" / "2023"
+    if not raw_root.is_dir():
+        LOGGER.warning("temporal dynamics ablation has no LAMDA release at %s", raw_root)
+        return TemporalDynamicsAblationReport(None, ScientificOutcome.INSUFFICIENT_EVIDENCE)
+    config = application.configuration.values
+    loaded = _load_variance_filtered_lamda_dataset(
+        raw_root, config.datasets.lamda.preprocessing.raw_variance_threshold_when_required
+    )
+    rule = label_derivation_rule(config.datasets.lamda)
+    cohort = _dominant_malicious_family_cohort(loaded.records, rule)
+    if cohort is None:
+        return TemporalDynamicsAblationReport(None, ScientificOutcome.INSUFFICIENT_EVIDENCE)
+    cohort_mask = np.fromiter(
+        (record.family == cohort for record in loaded.records),
+        dtype=bool,
+        count=len(loaded.records),
+    )
+    cohort_records = tuple(
+        record for record, keep in zip(loaded.records, cohort_mask, strict=True) if keep
+    )
+    all_months = np.fromiter(
+        (int(year_month_to_calendar_month(record.year_month)) for record in loaded.records),
+        dtype=np.int64,
+        count=len(loaded.records),
+    )
+    month_min, month_max = int(all_months.min()), int(all_months.max())
+    transition_interval_months = config.temporal.transition_interval_months
+
+    encoder = _train_cutoff_representation_encoder(
+        application,
+        loaded.records,
+        loaded.features,
+        rule,
+        calendar_month(month_max + 1),
+    )
+    if encoder is None:
+        return TemporalDynamicsAblationReport(None, ScientificOutcome.INSUFFICIENT_EVIDENCE)
+    embedded_features = _embed_features(encoder, loaded.features)
+    embedded_cohort_features = embedded_features[cohort_mask]
+
+    centers: list[FloatArray] = []
+    earliest_eligible_endpoint = earliest_complete_transition_endpoint(
+        calendar_month(month_min), transition_interval_months
+    )
+    for endpoint_ordinal in range(int(earliest_eligible_endpoint), month_max + 1):
+        endpoint = calendar_month(endpoint_ordinal)
+        malicious = malicious_transition_displacement(
+            cohort_records,
+            embedded_cohort_features,
+            rule,
+            endpoint,
+            transition_interval_months,
+        )
+        if (
+            malicious is not None
+            and malicious.support_before >= config.identification.minimum_support_per_class
+            and malicious.support_after >= config.identification.minimum_support_per_class
+        ):
+            centers.append(malicious.displacement)
+
+    minimum_pairs = config.temporal.temporal_model.minimum_consecutive_pairs
+    if len(centers) < minimum_pairs + 1:
+        LOGGER.warning(
+            "temporal dynamics ablation has insufficient historical centers: %s < %s",
+            len(centers),
+            minimum_pairs + 1,
+        )
+        return TemporalDynamicsAblationReport(None, ScientificOutcome.INSUFFICIENT_EVIDENCE)
+
+    try:
+        baseline_fit = fit_scalar_model(
+            centers, config.temporal.temporal_model.maximum_scalar_coefficient
+        )
+    except ValueError:
+        return TemporalDynamicsAblationReport(None, ScientificOutcome.INSUFFICIENT_EVIDENCE)
+    baseline_process_error = process_error_radius(
+        baseline_fit.residuals, config.temporal.process_noise.quantile
+    )
+
+    rng = np.random.default_rng(config.seeds.analysis[0])
+    shuffled_indices: list[int] = rng.permutation(len(centers)).tolist()
+    shuffled_centers = [centers[index] for index in shuffled_indices]
+    try:
+        shuffled_fit = fit_scalar_model(
+            shuffled_centers, config.temporal.temporal_model.maximum_scalar_coefficient
+        )
+        shuffled_process_error = process_error_radius(
+            shuffled_fit.residuals, config.temporal.process_noise.quantile
+        )
+    except ValueError:
+        shuffled_process_error = None
+
+    stacked = np.stack(centers)
+    no_change_residuals = stacked[1:] - stacked[:-1]
+    no_change_process_error = process_error_radius(
+        no_change_residuals, config.temporal.process_noise.quantile
+    )
+
+    record = TemporalDynamicsAblationRecord(
+        endpoints_used=len(centers),
+        baseline_coefficient=baseline_fit.coefficient,
+        baseline_process_error=baseline_process_error,
+        shuffled_history_process_error=shuffled_process_error,
+        no_change_dynamics_process_error=no_change_process_error,
+    )
+    destination = (
+        application.repository_root
+        / config.workspace.directories.experiments
+        / "ablations"
+        / "temporal-dynamics.json"
+    )
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(
+        record.model_dump_json(indent=_EVIDENCE_JSON_INDENT_SPACES), encoding="utf-8"
+    )
+    LOGGER.info(
+        "temporal dynamics ablation completed endpoints=%s baseline_coefficient=%.4f "
+        "baseline_error=%.6f shuffled_error=%s no_change_error=%.6f",
+        len(centers),
+        baseline_fit.coefficient,
+        baseline_process_error,
+        shuffled_process_error,
+        no_change_process_error,
+    )
+    return TemporalDynamicsAblationReport(record, ScientificOutcome.PASS)

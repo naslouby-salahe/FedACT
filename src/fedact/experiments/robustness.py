@@ -44,6 +44,7 @@ from fedact.domain.types import (
     SampleIdentifier,
     ScientificOutcome,
     SplitCutoffIdentity,
+    ThresholdValue,
     UncertaintyRadius,
     ValidationFlag,
 )
@@ -128,6 +129,8 @@ ONE_MATCHED_CONTROL_ABLATION_NAME: AblationIdentifier = "one_matched_control"
 ZERO_SUBSPACE_TERM_ABLATION_NAME: AblationIdentifier = "zero_subspace_uncertainty_term"
 ZERO_CONTROL_SPAN_TERM_ABLATION_NAME: AblationIdentifier = "zero_control_span_allowance_term"
 ZERO_PRIVATE_TERM_ABLATION_NAME: AblationIdentifier = "zero_private_transition_allowance_term"
+SHUFFLED_HISTORY_ABLATION_NAME: AblationIdentifier = "shuffled_history"
+NO_CHANGE_DYNAMICS_ABLATION_NAME: AblationIdentifier = "no_change_dynamics"
 
 
 @dataclass(frozen=True)
@@ -278,6 +281,40 @@ def _zero_private_term_ablation_result(application: ExperimentRuntime) -> Ablati
     )
 
 
+class _TemporalDynamicsAblationRecord(StrictModel):
+    endpoints_used: EvaluationCount
+    baseline_coefficient: ThresholdValue
+    baseline_process_error: IntervalBound
+    shuffled_history_process_error: IntervalBound | None = None
+    no_change_dynamics_process_error: IntervalBound | None = None
+
+
+def _temporal_dynamics_ablation_results(
+    application: ExperimentRuntime,
+) -> tuple[AblationResult | None, AblationResult | None]:
+    source = _experiment_directory(application, "ablations") / "temporal-dynamics.json"
+    if not source.is_file():
+        return None, None
+    record = _TemporalDynamicsAblationRecord.model_validate_json(source.read_text(encoding="utf-8"))
+    shuffled = None
+    if record.shuffled_history_process_error is not None:
+        shuffled = AblationResult(
+            ablation_name=SHUFFLED_HISTORY_ABLATION_NAME,
+            degradation_percentage_points=100.0
+            * (record.shuffled_history_process_error - record.baseline_process_error),
+            measured=True,
+        )
+    no_change = None
+    if record.no_change_dynamics_process_error is not None:
+        no_change = AblationResult(
+            ablation_name=NO_CHANGE_DYNAMICS_ABLATION_NAME,
+            degradation_percentage_points=100.0
+            * (record.no_change_dynamics_process_error - record.baseline_process_error),
+            measured=True,
+        )
+    return shuffled, no_change
+
+
 def run_novelty_critical_ablations(application: ExperimentRuntime) -> AblationExperimentReport:
     results: list[AblationResult] = []
     real_ablation_names = frozenset(
@@ -289,6 +326,8 @@ def run_novelty_critical_ablations(application: ExperimentRuntime) -> AblationEx
             ZERO_SUBSPACE_TERM_ABLATION_NAME,
             ZERO_CONTROL_SPAN_TERM_ABLATION_NAME,
             ZERO_PRIVATE_TERM_ABLATION_NAME,
+            SHUFFLED_HISTORY_ABLATION_NAME,
+            NO_CHANGE_DYNAMICS_ABLATION_NAME,
         }
     )
     hardening_off = _hardening_off_ablation_result(application)
@@ -307,6 +346,7 @@ def run_novelty_critical_ablations(application: ExperimentRuntime) -> AblationEx
         _zero_subspace_term_ablation_result(application),
         _zero_control_span_term_ablation_result(application),
         _zero_private_term_ablation_result(application),
+        *_temporal_dynamics_ablation_results(application),
     ):
         if descriptive_result is not None:
             results.append(descriptive_result)
