@@ -6,7 +6,7 @@ from typing import Optional
 import typer
 
 from fedact import workflow
-from fedact.domain.types import DatasetSelector, ExecutableWorkflowName, RunnableWorkflowName
+from fedact.domain.types import DatasetSelector, ExecutableWorkflowName
 
 app = typer.Typer(
     name="fedact",
@@ -55,7 +55,7 @@ def smoke_entry(
 
 @app.command("run")
 def run_entry(
-    workflow_name: RunnableWorkflowName,
+    workflow_name: ExecutableWorkflowName,
     overwrite: bool = OverwriteOption,
     repository_root: Path = _REPOSITORY_ROOT_OPTION,
 ) -> None:

@@ -78,19 +78,6 @@ class ExecutableWorkflowName(StrEnum):
     STATISTICAL_SYNTHESIS = "statistical-synthesis"
 
 
-class RunnableWorkflowName(StrEnum):
-    MATH_VERIFICATION = "math-verification"
-    SYNTHETIC_GEOMETRY = "synthetic-geometry"
-    ACTION_CERTIFICATE_VALIDATION = "action-certificate-validation"
-    PROSPECTIVE_EVALUATION = "prospective-evaluation"
-    ABLATIONS = "ablations"
-    FEDERATION = "federation"
-    FAILURE_BOUNDARIES = "failure-boundaries"
-    CROSS_CORPUS = "cross-corpus"
-    CLIENT_SELECTION = "client-selection"
-    STATISTICAL_SYNTHESIS = "statistical-synthesis"
-
-
 class DatasetSelector(StrEnum):
     LAMDA = "lamda"
     EMBER2024 = "ember2024"
@@ -637,7 +624,6 @@ __all__ = [
     "RoundCount",
     "RuleDescription",
     "RunResultSummary",
-    "RunnableWorkflowName",
     "SampleCount",
     "SampleIdentifier",
     "SampleSize",

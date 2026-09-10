@@ -62,7 +62,6 @@ from fedact.domain.types import (
     MetricRate,
     OptionalFlag,
     OverwriteRequested,
-    RunnableWorkflowName,
     ScientificOutcome,
     SeedValue,
     SplitCutoffIdentity,
@@ -803,19 +802,24 @@ def _materialize_dependencies(
 
 
 def run_experiment(
-    workflow: RunnableWorkflowName, overwrite: OverwriteRequested, repository_root: Path
+    workflow: ExecutableWorkflowName, overwrite: OverwriteRequested, repository_root: Path
 ) -> None:
-    executable_workflow = ExecutableWorkflowName(workflow)
-    selected = registered_workflow(executable_workflow)
     application = Application.from_repository_root(discover_repository_root(repository_root))
-    _materialize_dependencies(executable_workflow, application)
+    if workflow is ExecutableWorkflowName.PREPROCESS:
+        run_preprocess(None, overwrite, application.repository_root)
+        return
+    if workflow is ExecutableWorkflowName.SMOKE:
+        run_smoke(overwrite, application.repository_root)
+        return
+    selected = registered_workflow(workflow)
+    _materialize_dependencies(workflow, application)
     typer.echo(f"workflow: {workflow}")
     typer.echo(f"roadmap section: {selected.section}")
     if overwrite:
         typer.echo("overwrite: scoped to this workflow's artifacts")
 
-    if _dispatch_foundational_workflow(executable_workflow, application):
+    if _dispatch_foundational_workflow(workflow, application):
         return
-    if _dispatch_evaluation_workflow(executable_workflow, application):
+    if _dispatch_evaluation_workflow(workflow, application):
         return
     raise RuntimeError(f"unhandled workflow {workflow}")

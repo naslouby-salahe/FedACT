@@ -3,7 +3,7 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-from fedact.domain.types import RunnableWorkflowName
+from fedact.domain.types import ExecutableWorkflowName
 from tests.architecture.architecture_rules import parse_source
 
 REQUIRED_COMMANDS = frozenset({"doctor", "preprocess", "plan", "smoke", "run", "status", "report"})
@@ -32,9 +32,9 @@ def cli_reachability_violations(repository_root: Path) -> list[str]:
         f"cli.py has unexpected command {name}" for name in sorted(commands - REQUIRED_COMMANDS)
     )
     workflow_source = workflow_path.read_text(encoding="utf-8")
-    for name in RunnableWorkflowName:
+    for name in ExecutableWorkflowName:
         if name.name not in workflow_source:
-            violations.append(f"workflow.py does not dispatch RunnableWorkflowName.{name.name}")
+            violations.append(f"workflow.py does not dispatch ExecutableWorkflowName.{name.name}")
     return violations
 
 
