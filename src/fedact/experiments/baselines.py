@@ -13,7 +13,6 @@ from fedact.domain.types import (
     DimensionValue,
     FamilyName,
     RidgeLambda,
-    SeedValue,
     ThresholdValue,
     ValidationFlag,
 )
@@ -61,8 +60,10 @@ def covariance_weighted_reconstruction(
     nuisance_covariance: FloatArray,
     ridge: RidgeLambda,
 ) -> BaselineIdentificationResult:
-    inv_cov = np.linalg.inv(nuisance_covariance + ridge * np.eye(nuisance_covariance.shape[0]))
-    estimate = inv_cov @ malicious_transition
+    estimate = np.linalg.solve(
+        nuisance_covariance + ridge * np.eye(nuisance_covariance.shape[0]),
+        malicious_transition,
+    )
     return BaselineIdentificationResult(
         estimated_displacement=estimate,
         method_name=BaselineIdentificationMethod.COVARIANCE_WEIGHTED_RECONSTRUCTION,
@@ -79,18 +80,6 @@ def static_security_baseline(dimension: DimensionValue) -> SecurityComparatorRes
     return SecurityComparatorResult(
         predicted_shift=np.zeros(dimension),
         comparator_family="static",
-    )
-
-
-def random_mutation_baseline(
-    dimension: DimensionValue, seed: SeedValue
-) -> SecurityComparatorResult:
-    rng = np.random.default_rng(seed)
-    shift = rng.standard_normal(dimension)
-    shift /= np.linalg.norm(shift)
-    return SecurityComparatorResult(
-        predicted_shift=shift,
-        comparator_family="random_mutation",
     )
 
 
