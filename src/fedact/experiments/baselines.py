@@ -1,19 +1,27 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 
 import numpy as np
 from numpy.typing import NDArray
 
+from fedact.certification.certificate import L2Ball
+from fedact.certification.dynamics import effective_support, geometric_median
 from fedact.domain.types import (
     BudgetAmount,
+    ClientIdentifier,
     ComparatorIdentifier,
     DetailMessage,
     DimensionValue,
     FamilyName,
+    IterationCount,
+    NormValue,
     RidgeLambda,
+    SampleCount,
     ThresholdValue,
+    UncertaintyRadius,
     ValidationFlag,
 )
 
@@ -24,6 +32,13 @@ class BaselineIdentificationMethod(StrEnum):
     MATCHED_BENIGN_SUBTRACTION = "matched_benign_subtraction"
     PROJECTED_POINT_RECONSTRUCTION = "projected_point_reconstruction"
     COVARIANCE_WEIGHTED_RECONSTRUCTION = "covariance_weighted_reconstruction"
+    RAW_MALICIOUS_TRANSITION_FORECAST = "raw_malicious_transition_forecast"
+    AVERAGE_PROJECTED_RESIDUAL = "average_projected_residual"
+    PSEUDOINVERSE_POINT_RECONSTRUCTION = "pseudoinverse_point_reconstruction"
+    REGULARIZED_POINT_RECONSTRUCTION = "regularized_point_reconstruction"
+    ROBUST_RAW_AGGREGATION = "robust_raw_aggregation"
+    NUISANCE_PROJECTION_WITHOUT_INTERSECTION = "nuisance_projection_without_intersection"
+    BEST_INDIVIDUAL_CLIENT = "best_individual_client"
 
 
 @dataclass(frozen=True)
@@ -68,6 +83,148 @@ def covariance_weighted_reconstruction(
         estimated_displacement=estimate,
         method_name=BaselineIdentificationMethod.COVARIANCE_WEIGHTED_RECONSTRUCTION,
     )
+
+
+def _effective_support_weighted_mean(
+    vectors: Sequence[FloatArray],
+    supports: Sequence[tuple[SampleCount, SampleCount]],
+) -> FloatArray:
+    weights = np.array([effective_support(support) for support in supports], dtype=np.float64)
+    if float(weights.sum()) <= 0.0:
+        raise ValueError("effective-support weighted mean requires positive effective support")
+    stacked: FloatArray = np.stack(vectors)
+    return np.average(stacked, axis=0, weights=weights)
+
+
+def raw_malicious_transition_forecast(
+    client_transitions: Sequence[FloatArray],
+    client_supports: Sequence[tuple[SampleCount, SampleCount]],
+) -> BaselineIdentificationResult:
+    return BaselineIdentificationResult(
+        estimated_displacement=_effective_support_weighted_mean(
+            client_transitions, client_supports
+        ),
+        method_name=BaselineIdentificationMethod.RAW_MALICIOUS_TRANSITION_FORECAST,
+    )
+
+
+def average_projected_residual(
+    client_projected_transitions: Sequence[FloatArray],
+    client_supports: Sequence[tuple[SampleCount, SampleCount]],
+) -> BaselineIdentificationResult:
+    return BaselineIdentificationResult(
+        estimated_displacement=_effective_support_weighted_mean(
+            client_projected_transitions, client_supports
+        ),
+        method_name=BaselineIdentificationMethod.AVERAGE_PROJECTED_RESIDUAL,
+    )
+
+
+def pseudoinverse_point_reconstruction(
+    stacked_system_matrix: FloatArray,
+    stacked_system_target: FloatArray,
+    rank_clip_epsilon_relative: ThresholdValue,
+) -> BaselineIdentificationResult:
+    estimate = (
+        np.linalg.pinv(stacked_system_matrix, rcond=rank_clip_epsilon_relative)
+        @ stacked_system_target
+    )
+    return BaselineIdentificationResult(
+        estimated_displacement=estimate,
+        method_name=BaselineIdentificationMethod.PSEUDOINVERSE_POINT_RECONSTRUCTION,
+    )
+
+
+def regularized_point_reconstruction(
+    stacked_system_matrix: FloatArray,
+    stacked_system_target: FloatArray,
+    ridge_relative: RidgeLambda,
+    scale_standardization_floor: ThresholdValue,
+) -> BaselineIdentificationResult:
+    information_matrix = stacked_system_matrix.T @ stacked_system_matrix
+    dimension = information_matrix.shape[0]
+    ridge = max(
+        scale_standardization_floor,
+        ridge_relative * float(np.trace(information_matrix)) / dimension,
+    )
+    estimate = np.linalg.solve(
+        information_matrix + ridge * np.eye(dimension),
+        stacked_system_matrix.T @ stacked_system_target,
+    )
+    return BaselineIdentificationResult(
+        estimated_displacement=estimate,
+        method_name=BaselineIdentificationMethod.REGULARIZED_POINT_RECONSTRUCTION,
+    )
+
+
+def robust_raw_aggregation(
+    client_transitions: Sequence[FloatArray],
+    geometric_median_tolerance: ThresholdValue,
+    geometric_median_maximum_iterations: IterationCount,
+) -> BaselineIdentificationResult:
+    estimate = geometric_median(
+        client_transitions, geometric_median_tolerance, geometric_median_maximum_iterations
+    )
+    return BaselineIdentificationResult(
+        estimated_displacement=estimate,
+        method_name=BaselineIdentificationMethod.ROBUST_RAW_AGGREGATION,
+    )
+
+
+def nuisance_projection_without_intersection(
+    client_projected_transitions: Sequence[FloatArray],
+    geometric_median_tolerance: ThresholdValue,
+    geometric_median_maximum_iterations: IterationCount,
+) -> BaselineIdentificationResult:
+    estimate = geometric_median(
+        client_projected_transitions,
+        geometric_median_tolerance,
+        geometric_median_maximum_iterations,
+    )
+    return BaselineIdentificationResult(
+        estimated_displacement=estimate,
+        method_name=BaselineIdentificationMethod.NUISANCE_PROJECTION_WITHOUT_INTERSECTION,
+    )
+
+
+@dataclass(frozen=True)
+class ClientPointCandidate:
+    client_id: ClientIdentifier
+    beta: UncertaintyRadius
+    malicious_effective_support: ThresholdValue
+    stacked_system_matrix: FloatArray
+    stacked_system_target: FloatArray
+
+
+def best_individual_client(
+    candidates: Sequence[ClientPointCandidate],
+    rank_clip_epsilon_relative: ThresholdValue,
+) -> BaselineIdentificationResult:
+    if not candidates:
+        raise ValueError("best individual client selection requires at least one candidate")
+    selected = min(
+        candidates,
+        key=lambda candidate: (
+            candidate.beta,
+            -candidate.malicious_effective_support,
+            candidate.client_id,
+        ),
+    )
+    estimate = (
+        np.linalg.pinv(selected.stacked_system_matrix, rcond=rank_clip_epsilon_relative)
+        @ selected.stacked_system_target
+    )
+    return BaselineIdentificationResult(
+        estimated_displacement=estimate,
+        method_name=BaselineIdentificationMethod.BEST_INDIVIDUAL_CLIENT,
+    )
+
+
+def point_estimate_with_matched_isotropic_uncertainty(
+    point_estimate: FloatArray,
+    matched_radius: NormValue,
+) -> L2Ball:
+    return L2Ball(center=point_estimate, radius=matched_radius)
 
 
 @dataclass(frozen=True)
