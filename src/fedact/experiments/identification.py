@@ -28,7 +28,6 @@ from fedact.certification.dynamics import (
 from fedact.certification.uncertainty import client_radius, regularized_covariance
 from fedact.config.models import StrictModel
 from fedact.data.lamda import (
-    ControlTransitionReplicate,
     LabelDerivationRule,
     LamdaRawRecord,
     LoadedLamdaDataset,
@@ -45,6 +44,7 @@ from fedact.data.lamda import (
 )
 from fedact.data.splits import (
     CalendarMonth,
+    ControlTransitionReplicate,
     calendar_month,
     earliest_complete_transition_endpoint,
     transition_windows,

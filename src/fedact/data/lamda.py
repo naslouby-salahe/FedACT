@@ -17,7 +17,14 @@ from fedact.data.records import (
     SchemaManifestField,
     corpus_level_client_audit,
 )
-from fedact.data.splits import CalendarMonth, calendar_month, transition_windows
+from fedact.data.splits import (
+    CalendarMonth,
+    ControlTransitionReplicate,
+    TransitionDisplacement,
+    calendar_month,
+    transition_windows,
+    windowed_mean,
+)
 from fedact.domain.types import (
     BinaryLabel,
     CalendarMonthString,
@@ -210,34 +217,6 @@ def year_month_to_calendar_month(year_month: CalendarMonthString) -> CalendarMon
     return calendar_month(ordinal)
 
 
-@dataclass(frozen=True)
-class TransitionDisplacement:
-    displacement: np.ndarray
-    support_before: SampleCount
-    support_after: SampleCount
-
-
-@dataclass(frozen=True)
-class ControlTransitionReplicate:
-    endpoint_month: CalendarMonth
-    displacement: np.ndarray
-    support_before: SampleCount
-    support_after: SampleCount
-
-
-def _windowed_mean(
-    features: np.ndarray,
-    months: np.ndarray,
-    start_inclusive: CalendarMonth,
-    end_exclusive: CalendarMonth,
-) -> tuple[np.ndarray, SampleCount]:
-    mask = (months >= start_inclusive) & (months < end_exclusive)
-    support = int(mask.sum())
-    if support == 0:
-        return np.zeros(features.shape[1], dtype=np.float64), 0
-    return features[mask].astype(np.float64).mean(axis=0), support
-
-
 def _labeled_months(
     records: Sequence[LamdaRawRecord],
     rule: LabelDerivationRule,
@@ -267,13 +246,13 @@ def malicious_transition_displacement(
     months, keep = _labeled_months(records, rule, want_malicious=True)
     features = features[keep]
     kept_months = months[keep]
-    before_mean, before_support = _windowed_mean(
+    before_mean, before_support = windowed_mean(
         features,
         kept_months,
         windows.before_window_start_inclusive,
         windows.before_window_end_exclusive,
     )
-    after_mean, after_support = _windowed_mean(
+    after_mean, after_support = windowed_mean(
         features,
         kept_months,
         windows.after_window_start_inclusive,
@@ -364,13 +343,13 @@ def control_transition_replicates(
     replicates: list[ControlTransitionReplicate] = []
     for endpoint in candidate_endpoints:
         windows = transition_windows(endpoint, transition_interval_months)
-        before_mean, before_support = _windowed_mean(
+        before_mean, before_support = windowed_mean(
             features,
             kept_months,
             windows.before_window_start_inclusive,
             windows.before_window_end_exclusive,
         )
-        after_mean, after_support = _windowed_mean(
+        after_mean, after_support = windowed_mean(
             features,
             kept_months,
             windows.after_window_start_inclusive,

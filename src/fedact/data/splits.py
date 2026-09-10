@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import NewType
 
+import numpy as np
+
 from fedact.domain.types import (
     DatasetSelector,
     EligibilityFlag,
@@ -110,6 +112,34 @@ def is_interval_overlapping_gap(
 
 def month_offset(base: CalendarMonth, months: WindowSpanMonths) -> CalendarMonth:
     return CalendarMonth(base + months)
+
+
+@dataclass(frozen=True)
+class TransitionDisplacement:
+    displacement: np.ndarray
+    support_before: SampleCount
+    support_after: SampleCount
+
+
+@dataclass(frozen=True)
+class ControlTransitionReplicate:
+    endpoint_month: CalendarMonth
+    displacement: np.ndarray
+    support_before: SampleCount
+    support_after: SampleCount
+
+
+def windowed_mean(
+    features: np.ndarray,
+    months: np.ndarray,
+    start_inclusive: CalendarMonth,
+    end_exclusive: CalendarMonth,
+) -> tuple[np.ndarray, SampleCount]:
+    mask = (months >= start_inclusive) & (months < end_exclusive)
+    support = int(mask.sum())
+    if support == 0:
+        return np.zeros(features.shape[1], dtype=np.float64), 0
+    return features[mask].astype(np.float64).mean(axis=0), support
 
 
 @dataclass(frozen=True)
