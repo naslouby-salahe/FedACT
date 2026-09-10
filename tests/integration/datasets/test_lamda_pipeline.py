@@ -20,7 +20,9 @@ from fedact.certification.uncertainty import (
 )
 from fedact.config.loading import LoadedConfiguration
 from fedact.data.lamda import (
+    LoadedLamdaDataset,
     control_transition_replicates,
+    filter_low_variance_features,
     label_derivation_rule,
     load_lamda_records,
     malicious_transition_displacement,
@@ -33,6 +35,8 @@ LAMDA_BASELINE_DIRECTORY = (
     Path(__file__).resolve().parents[3] / "data" / "raw" / "LAMDA" / "Baseline"
 )
 
+_FAST_TEST_ONLY_VARIANCE_THRESHOLD = 0.1
+
 pytestmark = pytest.mark.skipif(
     not LAMDA_BASELINE_DIRECTORY.is_dir(), reason="data/raw/LAMDA/Baseline is not available"
 )
@@ -42,7 +46,11 @@ def test_real_lamda_control_transitions_drive_a_genuine_nuisance_estimate(
     production_configuration: LoadedConfiguration,
 ) -> None:
     config = production_configuration.values
-    dataset = load_lamda_records(LAMDA_BASELINE_DIRECTORY / "2023")
+    loaded = load_lamda_records(LAMDA_BASELINE_DIRECTORY / "2023")
+    dataset = LoadedLamdaDataset(
+        records=loaded.records,
+        features=filter_low_variance_features(loaded.features, _FAST_TEST_ONLY_VARIANCE_THRESHOLD),
+    )
     assert len(dataset.records) > 0
     rule = label_derivation_rule(config.datasets.lamda)
 

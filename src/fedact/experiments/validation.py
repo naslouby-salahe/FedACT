@@ -44,6 +44,7 @@ from fedact.domain.types import (
     ThresholdValue,
     ValidationFlag,
 )
+from fedact.experiments.identification import run_lamda_weak_eigengap_stress
 from fedact.experiments.registry import ExperimentRuntime
 from fedact.learning.hardening import SampleChallengeSet, write_challenge_sets
 
@@ -508,6 +509,16 @@ def apply_corrupted_client_attack(
 
 
 def run_robustness_and_failure_boundaries(application: ExperimentRuntime) -> BoundaryStressReport:
+    weak_eigengap = run_lamda_weak_eigengap_stress(application)
+    real_completed = len(weak_eigengap.results)
+    real_boundaries_reached = sum(result.rank_destabilized for result in weak_eigengap.results)
+    LOGGER.info(
+        "weak-eigengap real stress endpoint=%s multipliers_tested=%s destabilized=%s",
+        weak_eigengap.endpoint,
+        real_completed,
+        real_boundaries_reached,
+    )
+
     source = _experiment_directory(application, "failure-boundaries") / "stress-measurements.json"
     if not source.is_file():
         LOGGER.warning(
@@ -515,13 +526,28 @@ def run_robustness_and_failure_boundaries(application: ExperimentRuntime) -> Bou
             "required",
             source,
         )
-        return BoundaryStressReport(0, False, ScientificOutcome.INSUFFICIENT_EVIDENCE)
+        if real_completed == 0:
+            return BoundaryStressReport(0, False, ScientificOutcome.INSUFFICIENT_EVIDENCE)
+        return BoundaryStressReport(
+            real_completed,
+            real_boundaries_reached == real_completed,
+            (
+                ScientificOutcome.PASS
+                if real_boundaries_reached == real_completed
+                else ScientificOutcome.INSUFFICIENT_EVIDENCE
+            ),
+            real_completed,
+        )
     artifact = _StressArtifact.model_validate_json(source.read_text(encoding="utf-8"))
-    completed = [measurement for measurement in artifact.measurements if measurement.completed]
-    boundaries = sum(measurement.boundary_reached for measurement in completed)
+    external_completed = [
+        measurement for measurement in artifact.measurements if measurement.completed
+    ]
+    external_boundaries = sum(measurement.boundary_reached for measurement in external_completed)
+    total_completed = len(external_completed) + real_completed
+    total_boundaries = external_boundaries + real_boundaries_reached
     return BoundaryStressReport(
-        len(completed),
-        bool(completed) and boundaries == len(completed),
-        ScientificOutcome.PASS if completed else ScientificOutcome.INSUFFICIENT_EVIDENCE,
-        boundaries,
+        total_completed,
+        total_completed > 0 and total_boundaries == total_completed,
+        ScientificOutcome.PASS if total_completed > 0 else ScientificOutcome.INSUFFICIENT_EVIDENCE,
+        total_boundaries,
     )
