@@ -10,7 +10,6 @@ from pydantic import Field
 
 from fedact.analysis.comparisons import CutoffAggregate
 from fedact.analysis.metrics import EvaluationRecord, compute_evaluation_metrics
-from fedact.artifacts import write_text_atomically
 from fedact.config.models import StrictModel
 from fedact.data.ember2024 import (
     apply_log1p_transforms,
@@ -503,13 +502,14 @@ def run_prospective_fedact_evaluation(
         )
     metrics = compute_evaluation_metrics(tuple(records))
     comparison = _CutoffComparisonArtifact(comparisons=comparisons)
-    write_text_atomically(
+    comparison_destination = (
         application.repository_root
         / config.workspace.directories.experiments
         / "prospective-evaluation"
-        / "cutoff-comparisons.json",
-        comparison.model_dump_json(indent=2),
+        / "cutoff-comparisons.json"
     )
+    comparison_destination.parent.mkdir(parents=True, exist_ok=True)
+    comparison_destination.write_text(comparison.model_dump_json(indent=2), encoding="utf-8")
     LOGGER.info(
         "prospective evaluation completed cutoffs=%s rows=%s", len(comparisons), len(records)
     )

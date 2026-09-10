@@ -51,10 +51,11 @@ def test_unknown_workflow_is_rejected(repository_root: Path) -> None:
     assert result.exit_code == 2
 
 
-def test_run_materializes_missing_internal_prerequisites(repository_root: Path) -> None:
+def test_run_stops_when_internal_prerequisite_evidence_is_missing(repository_root: Path) -> None:
     result = invoke("run", "ablations", "--repository-root", str(repository_root))
-    assert result.exit_code == 0
-    assert "novelty-critical ablations completed" in result.output
+    assert result.exit_code != 0
+    assert isinstance(result.exception, RuntimeError)
+    assert "nested-calibration did not complete" in str(result.exception)
 
 
 def test_executable_workflow_runs_when_producer_is_registered(

@@ -7,6 +7,7 @@ import numpy as np
 import torch
 from numpy.typing import NDArray
 
+from fedact.analysis.comparisons import SensitivityAxis
 from fedact.certification.actions import NumericalFailureError, box_diameter_bound, support_interval
 from fedact.certification.certificate import (
     DomainValid,
@@ -39,10 +40,12 @@ from fedact.domain.types import (
     BoundValidityFlag,
     CertificationStatus,
     CertificationStatusFlag,
+    ClientCount,
     ClientIndex,
     CorrectnessFlag,
     CorruptedClientAttack,
     Epsilon,
+    ExecutableWorkflowName,
     FederationGeometry,
     IdentifiabilityFlag,
     IntersectionDimension,
@@ -272,6 +275,9 @@ _SYNTHETIC_TO_CORRUPTED_CLIENT_ATTACK = {
     ),
 }
 
+CONTROL_SPAN_AXIS: ParameterName = SensitivityAxis.CONTROL_SPAN_VIOLATION
+FEDERATION_AXIS: ParameterName = ExecutableWorkflowName.FEDERATION
+
 
 @dataclass(frozen=True)
 class SweepCellResult:
@@ -301,6 +307,7 @@ def _synthetic_sweep_cell(
     geometry: FederationGeometry | None = None,
     private_sparsity: PrivateTransitionSparsityMode | None = None,
     synthetic_attack: SyntheticCorruptionAttack | None = None,
+    corrupt_client_count: ClientCount = 0,
 ) -> SweepCellResult:
     config = application.configuration.values
     defaults = config.synthetic.defaults
@@ -327,7 +334,7 @@ def _synthetic_sweep_cell(
         control_size = cast(SampleSize, axis_value)
     elif axis_name == "malicious_sample_size":
         amplitude *= axis_value / defaults.malicious_sample_size
-    elif axis_name == "control_span_violation":
+    elif axis_name == CONTROL_SPAN_AXIS:
         control_span = axis_value
     elif axis_name == "synchronized_nuisance":
         synchronized = axis_value
@@ -335,7 +342,7 @@ def _synthetic_sweep_cell(
         amplitude *= axis_value / defaults.spectral_conditioning_ratio
     elif axis_name == "action_rotation":
         action_angle = axis_value
-    elif axis_name == "federation":
+    elif axis_name == FEDERATION_AXIS:
         client_count = cast(ClientIndex, axis_value)
     elif axis_name == "private_transition":
         private_norm = axis_value
@@ -388,9 +395,9 @@ def _synthetic_sweep_cell(
                 config.numerical.scale_standardization_floor,
             )
         )
-    if synthetic_attack is not None and float(axis_value) > 0.0:
+    if synthetic_attack is not None and corrupt_client_count > 0:
         mapped_attack = _SYNTHETIC_TO_CORRUPTED_CLIENT_ATTACK[synthetic_attack]
-        corrupt_limit = min(int(axis_value), len(estimates))
+        corrupt_limit = min(corrupt_client_count, len(estimates))
         estimates = [
             apply_corrupted_client_attack(
                 estimate, mapped_attack, config.robustness.corrupted_client_allowance.parameters
@@ -441,7 +448,7 @@ def run_synthetic_geometry_sweeps(application: ExperimentRuntime) -> SyntheticSw
         ("common_intersection", config.synthetic.sweeps.common_intersection_dimension),
         ("control_sample_size", config.synthetic.sweeps.control_sample_size),
         ("malicious_sample_size", config.synthetic.sweeps.malicious_sample_size),
-        ("control_span_violation", config.synthetic.sweeps.control_span_violation_over_sigma),
+        (CONTROL_SPAN_AXIS, config.synthetic.sweeps.control_span_violation_over_sigma),
         ("synchronized_nuisance", config.synthetic.sweeps.synchronized_nuisance_over_sigma),
         ("spectral_conditioning", config.synthetic.sweeps.spectral_conditioning_ratio),
         ("action_rotation", config.synthetic.sweeps.action_rotation_angle_degrees),
@@ -452,7 +459,9 @@ def run_synthetic_geometry_sweeps(application: ExperimentRuntime) -> SyntheticSw
     for client_count in config.synthetic.sweeps.federation.client_counts:
         for geometry in config.synthetic.sweeps.federation.geometries:
             cells.append(
-                _synthetic_sweep_cell(application, "federation", client_count, len(cells), geometry)
+                _synthetic_sweep_cell(
+                    application, FEDERATION_AXIS, client_count, len(cells), geometry
+                )
             )
     for magnitude in config.synthetic.sweeps.private_transition.norm_over_sigma:
         for sparsity in config.synthetic.sweeps.private_transition.sparsity_modes:
@@ -474,6 +483,7 @@ def run_synthetic_geometry_sweeps(application: ExperimentRuntime) -> SyntheticSw
                     corrupted_count,
                     len(cells),
                     synthetic_attack=attack,
+                    corrupt_client_count=corrupted_count,
                 )
             )
     passed = sum(cell.is_certified or cell.is_ambiguous for cell in cells)

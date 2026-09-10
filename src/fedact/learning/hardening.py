@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import copy
-import json
 import math
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
 import torch
+from pydantic import BaseModel, ConfigDict
 from torch.nn import functional as torch_functional
 
 from fedact.domain.types import (
@@ -41,39 +41,42 @@ class SampleChallengeSet:
     challenge_embeddings: tuple[tuple[EmbeddingComponent, ...], ...]
 
 
+class _ChallengeArtifactEntry(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    source_sample_id: SampleIdentifier
+    challenge_embeddings: list[list[EmbeddingComponent]]
+
+
+class _ChallengeArtifact(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    challenges: list[_ChallengeArtifactEntry]
+
+
 def write_challenge_sets(challenge_sets: tuple[SampleChallengeSet, ...], destination: Path) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
-    payload = [
-        {
-            "source_sample_id": challenge.source_sample_id,
-            "challenge_embeddings": challenge.challenge_embeddings,
-        }
-        for challenge in challenge_sets
-    ]
-    destination.write_text(json.dumps(payload), encoding="utf-8")
+    artifact = _ChallengeArtifact(
+        challenges=[
+            _ChallengeArtifactEntry(
+                source_sample_id=challenge.source_sample_id,
+                challenge_embeddings=[list(row) for row in challenge.challenge_embeddings],
+            )
+            for challenge in challenge_sets
+        ]
+    )
+    destination.write_text(artifact.model_dump_json(), encoding="utf-8")
 
 
 def read_challenge_sets(source: Path) -> tuple[SampleChallengeSet, ...]:
-    payload = json.loads(source.read_text(encoding="utf-8"))
-    if not isinstance(payload, list):
-        raise ValueError("challenge artifact must contain a list")
-    challenges: list[SampleChallengeSet] = []
-    for entry in payload:
-        if not isinstance(entry, dict):
-            raise ValueError("challenge artifact contains a non-object entry")
-        sample_id = entry.get("source_sample_id")
-        embeddings = entry.get("challenge_embeddings")
-        if not isinstance(sample_id, str) or not isinstance(embeddings, list):
-            raise ValueError("challenge artifact is missing typed fields")
-        challenges.append(
-            SampleChallengeSet(
-                source_sample_id=SampleIdentifier(sample_id),
-                challenge_embeddings=tuple(
-                    tuple(float(value) for value in row) for row in embeddings
-                ),
-            )
+    artifact = _ChallengeArtifact.model_validate_json(source.read_text(encoding="utf-8"))
+    return tuple(
+        SampleChallengeSet(
+            source_sample_id=entry.source_sample_id,
+            challenge_embeddings=tuple(tuple(row) for row in entry.challenge_embeddings),
         )
-    return tuple(challenges)
+        for entry in artifact.challenges
+    )
 
 
 @dataclass(frozen=True)

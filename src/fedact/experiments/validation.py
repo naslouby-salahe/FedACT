@@ -7,7 +7,6 @@ from pathlib import Path
 
 import torch
 
-from fedact.artifacts import write_text_atomically
 from fedact.certification.actions import ActionInterval
 from fedact.certification.calibration import (
     CalibrationCandidate,
@@ -157,9 +156,11 @@ def run_action_certificate_validation(application: ExperimentRuntime) -> ActionC
             )
     if challenges:
         write_challenge_sets(tuple(challenges), source.with_name("challenges.json"))
-    write_text_atomically(
-        source.with_name("certificate-decisions.json"),
+    decision_destination = source.with_name("certificate-decisions.json")
+    decision_destination.parent.mkdir(parents=True, exist_ok=True)
+    decision_destination.write_text(
         _CertificateDecisionArtifact(decisions=decisions).model_dump_json(indent=2),
+        encoding="utf-8",
     )
     total = len(statuses)
     certified = sum(status is CertificationStatus.CERTIFIED_POSITIVE for status in statuses)
@@ -221,14 +222,18 @@ def run_nested_calibration(application: ExperimentRuntime) -> tuple[CalibrationC
     except CalibrationSelectionError:
         LOGGER.warning("no nested calibration candidate meets configured validity requirements")
         return candidates
-    write_text_atomically(
-        _experiment_directory(application, "nested-calibration") / "selected.json",
+    selected_destination = (
+        _experiment_directory(application, "nested-calibration") / "selected.json"
+    )
+    selected_destination.parent.mkdir(parents=True, exist_ok=True)
+    selected_destination.write_text(
         _SelectedCalibrationArtifact(
             candidate_id=selected.candidate_id,
             tau_align=selected.tau_align,
             tau_amb=selected.tau_amb,
             hardening_weight=selected.hardening_weight,
         ).model_dump_json(indent=2),
+        encoding="utf-8",
     )
     return candidates
 
