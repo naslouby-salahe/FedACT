@@ -38,6 +38,7 @@ from fedact.domain.types import (
     IntervalBound,
     MetricRate,
     MonthIndex,
+    NormValue,
     RankDimension,
     RidgeLambda,
     SampleCount,
@@ -100,6 +101,7 @@ class _CentralPatternCutoffRecord(StrictModel):
     point_selected_precision: MetricRate | None = None
     matched_random_precision: MetricRate | None = None
     matched_random_match_quality_sufficient: ValidationFlag = False
+    mean_certified_action_width: NormValue | None = None
 
 
 class _CentralPatternArtifact(StrictModel):

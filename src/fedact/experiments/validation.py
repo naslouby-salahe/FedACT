@@ -96,6 +96,7 @@ class _CentralPatternCutoffRecord(StrictModel):
     point_selected_precision: MetricRate | None
     matched_random_precision: MetricRate | None
     matched_random_match_quality_sufficient: ValidationFlag
+    mean_certified_action_width: NormValue | None = None
 
 
 class _CentralPatternArtifact(StrictModel):
@@ -264,6 +265,7 @@ def _compute_central_pattern(
             bool(match_fractions)
             and (sum(match_fractions) / len(match_fractions)) >= minimum_exact_or_source_fraction
         )
+        certified_widths = [action.upper_bound - action.lower_bound for action in certified_actions]
         records.append(
             _CentralPatternCutoffRecord(
                 cutoff_id=cutoff_id,
@@ -275,6 +277,9 @@ def _compute_central_pattern(
                     else None
                 ),
                 matched_random_match_quality_sufficient=match_quality_sufficient,
+                mean_certified_action_width=(
+                    sum(certified_widths) / len(certified_widths) if certified_widths else None
+                ),
             )
         )
     valid_actions = tuple(action for action in actions if action.domain_valid)
