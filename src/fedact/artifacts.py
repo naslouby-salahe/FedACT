@@ -150,6 +150,8 @@ class WorkflowResultRecord(StrictModel):
     scientific_outcome: ScientificOutcome
     mean_false_negative_rate: MetricRate | None = None
     mean_certification_rate: MetricRate | None = None
+    static_chronological_false_negative_rate: MetricRate | None = None
+    early_horizon_fnr_reduction_percentage_points: DegradationValue | None = None
     clean_fnr_degradation_percentage_points: DegradationValue | None = None
 
 

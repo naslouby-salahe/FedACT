@@ -81,6 +81,7 @@ class _CutoffComparisonRecord(StrictModel):
     cutoff_id: SplitCutoffIdentity
     certified_false_negative_rate: MetricRate | None
     ambiguous_false_negative_rate: MetricRate | None
+    static_chronological_false_negative_rate: MetricRate | None = None
 
 
 class _CutoffComparisonArtifact(StrictModel):
@@ -179,6 +180,8 @@ class ProspectiveEvaluationReport:
     total_evaluations: EvaluationCount
     mean_false_negative_rate: MetricRate
     mean_certification_rate: MetricRate
+    static_chronological_false_negative_rate: MetricRate
+    early_horizon_fnr_reduction_percentage_points: DegradationValue
     clean_fnr_degradation_percentage_points: DegradationValue
     scientific_outcome: ScientificOutcome
 
@@ -334,6 +337,7 @@ def run_cross_corpus_generalization(application: ExperimentRuntime) -> CrossCorp
 class _CutoffScoring:
     sample_ids: tuple[SampleIdentifier, ...]
     scores: tuple[ProbabilityValue, ...]
+    static_chronological_scores: tuple[ProbabilityValue, ...]
     clean_fnr_degradation_percentage_points: DegradationValue
 
 
@@ -392,6 +396,10 @@ def _score_cutoff_population(
         config.seeds.detector_training[0],
         config.numerical.projection_tie_tolerance,
     ).detector
+    sample_ids = tuple(np.asarray(population.sample_ids, dtype=object)[later])
+    later_features = torch.tensor(population.features[later], dtype=torch.float32)
+    static_chronological_scored = score_samples(encoder, detector, sample_ids, later_features)
+
     challenge_file = (
         application.repository_root
         / config.workspace.directories.experiments
@@ -418,16 +426,13 @@ def _score_cutoff_population(
             )
             detector = hardening.detector
             clean_fnr_degradation = hardening.clean_fnr_degradation_percentage_points
-    sample_ids = tuple(np.asarray(population.sample_ids, dtype=object)[later])
-    scored = score_samples(
-        encoder,
-        detector,
-        sample_ids,
-        torch.tensor(population.features[later], dtype=torch.float32),
-    )
+    scored = score_samples(encoder, detector, sample_ids, later_features)
     return _CutoffScoring(
         sample_ids=sample_ids,
         scores=tuple(score.probability for score in scored),
+        static_chronological_scores=tuple(
+            score.probability for score in static_chronological_scored
+        ),
         clean_fnr_degradation_percentage_points=clean_fnr_degradation,
     )
 
@@ -444,7 +449,7 @@ def run_prospective_fedact_evaluation(
     if not certificate_decisions.is_file():
         LOGGER.warning("prospective evaluation requires completed action-certificate evidence")
         return ProspectiveEvaluationReport(
-            0, 0.0, 0.0, 0.0, ScientificOutcome.INSUFFICIENT_EVIDENCE
+            0, 0.0, 0.0, 0.0, 0.0, 0.0, ScientificOutcome.INSUFFICIENT_EVIDENCE
         )
     decision_artifact = _CertificateDecisionArtifact.model_validate_json(
         certificate_decisions.read_text(encoding="utf-8")
@@ -457,19 +462,20 @@ def run_prospective_fedact_evaluation(
     population = _load_lamda_population(application)
     if population is None:
         return ProspectiveEvaluationReport(
-            0, 0.0, 0.0, 0.0, ScientificOutcome.INSUFFICIENT_EVIDENCE
+            0, 0.0, 0.0, 0.0, 0.0, 0.0, ScientificOutcome.INSUFFICIENT_EVIDENCE
         )
     cutoffs = _eligible_cutoffs(application, population)
     if not cutoffs:
         LOGGER.warning("no LAMDA cutoff satisfies configured history/support/horizon requirements")
         return ProspectiveEvaluationReport(
-            0, 0.0, 0.0, 0.0, ScientificOutcome.INSUFFICIENT_EVIDENCE
+            0, 0.0, 0.0, 0.0, 0.0, 0.0, ScientificOutcome.INSUFFICIENT_EVIDENCE
         )
 
     config = application.configuration.values
     records: list[EvaluationRecord] = []
     comparisons: list[_CutoffComparisonRecord] = []
     clean_fnr_degradations: list[DegradationValue] = []
+    static_chronological_records: list[EvaluationRecord] = []
     for cutoff in cutoffs:
         historical = (
             population.months >= cutoff - config.temporal.historical_training_window_months
@@ -508,19 +514,45 @@ def run_prospective_fedact_evaluation(
             for record in cutoff_records
             if not record.is_certified and record.sample_id not in certified_samples
         )
+        cutoff_static_records = tuple(
+            EvaluationRecord(
+                dataset=DatasetSelector.LAMDA,
+                cutoff_id=cutoff_id,
+                sample_id=sample_id,
+                horizon_step=1,
+                true_label=label,
+                predicted_score=score,
+                is_certified=False,
+                clean_loss=_binary_cross_entropy(label, score),
+            )
+            for sample_id, label, score in zip(
+                scored_population.sample_ids,
+                population.labels[later],
+                scored_population.static_chronological_scores,
+                strict=True,
+            )
+        )
+        static_chronological_records.extend(cutoff_static_records)
         comparisons.append(
             _CutoffComparisonRecord(
                 cutoff_id=cutoff_id,
                 certified_false_negative_rate=_group_false_negative_rate(certified_records),
                 ambiguous_false_negative_rate=_group_false_negative_rate(point_ambiguous_records),
+                static_chronological_false_negative_rate=_group_false_negative_rate(
+                    cutoff_static_records
+                ),
             )
         )
         LOGGER.info("prospective evaluated cutoff=%s rows=%s", cutoff_id, len(cutoff_records))
     if not records:
         return ProspectiveEvaluationReport(
-            0, 0.0, 0.0, 0.0, ScientificOutcome.INSUFFICIENT_EVIDENCE
+            0, 0.0, 0.0, 0.0, 0.0, 0.0, ScientificOutcome.INSUFFICIENT_EVIDENCE
         )
     metrics = compute_evaluation_metrics(tuple(records))
+    static_chronological_metrics = compute_evaluation_metrics(tuple(static_chronological_records))
+    early_horizon_fnr_reduction = (
+        static_chronological_metrics.false_negative_rate - metrics.false_negative_rate
+    ) * 100.0
     comparison = _CutoffComparisonArtifact(comparisons=comparisons)
     comparison_destination = (
         application.repository_root
@@ -559,6 +591,8 @@ def run_prospective_fedact_evaluation(
         total_evaluations=len(records),
         mean_false_negative_rate=metrics.false_negative_rate,
         mean_certification_rate=metrics.certification_rate,
+        static_chronological_false_negative_rate=static_chronological_metrics.false_negative_rate,
+        early_horizon_fnr_reduction_percentage_points=early_horizon_fnr_reduction,
         clean_fnr_degradation_percentage_points=mean_clean_fnr_degradation,
         scientific_outcome=(
             ScientificOutcome.PASS

@@ -654,6 +654,12 @@ def _dispatch_evaluation_workflow(
                 scientific_outcome=pro_report.scientific_outcome,
                 mean_false_negative_rate=pro_report.mean_false_negative_rate,
                 mean_certification_rate=pro_report.mean_certification_rate,
+                static_chronological_false_negative_rate=(
+                    pro_report.static_chronological_false_negative_rate
+                ),
+                early_horizon_fnr_reduction_percentage_points=(
+                    pro_report.early_horizon_fnr_reduction_percentage_points
+                ),
                 clean_fnr_degradation_percentage_points=(
                     pro_report.clean_fnr_degradation_percentage_points
                 ),
