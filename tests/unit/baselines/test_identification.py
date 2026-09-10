@@ -17,6 +17,7 @@ from fedact.experiments.baselines import (
     raw_malicious_transition_forecast,
     regularized_point_reconstruction,
     robust_raw_aggregation,
+    single_pooled_nuisance_subspace_reconstruction,
 )
 
 
@@ -139,3 +140,44 @@ def test_point_estimate_with_matched_isotropic_uncertainty_centers_ball_on_point
     assert ball.radius == 0.5
     assert ball.is_containing(np.array([1.0, -1.6]), tolerance=0.0)
     assert not ball.is_containing(np.array([1.0, -1.0]), tolerance=0.0)
+
+
+def _synthetic_client_replicates(
+    rng: np.random.Generator, count: int, dimension: int, nuisance_direction: np.ndarray
+) -> tuple[list[np.ndarray], list[tuple[int, int]]]:
+    displacements = [
+        nuisance_direction * rng.normal() + 0.01 * rng.normal(size=dimension) for _ in range(count)
+    ]
+    supports = [(200, 200) for _ in range(count)]
+    return displacements, supports
+
+
+def test_single_pooled_nuisance_subspace_reconstruction_projects_out_pooled_direction() -> None:
+    rng = np.random.default_rng(3)
+    dimension = 6
+    nuisance_direction = np.zeros(dimension)
+    nuisance_direction[0] = 1.0
+    client_a_displacements, client_a_supports = _synthetic_client_replicates(
+        rng, 20, dimension, nuisance_direction
+    )
+    client_b_displacements, client_b_supports = _synthetic_client_replicates(
+        rng, 20, dimension, nuisance_direction
+    )
+    malicious_transition = np.zeros(dimension)
+    malicious_transition[0] = 5.0
+    malicious_transition[1] = 2.0
+    result = single_pooled_nuisance_subspace_reconstruction(
+        client_replicate_displacements=[client_a_displacements, client_b_displacements],
+        client_replicate_supports=[client_a_supports, client_b_supports],
+        malicious_transition=malicious_transition,
+        dimension=dimension,
+        configured_maximum_rank=3,
+        eigengap_requirement=2.0,
+        rank_clip_epsilon_relative=1e-6,
+        scale_standardization_floor=1e-8,
+        bootstrap_resamples=50,
+        minimum_bootstrap_stability_fraction=0.6,
+        seed=42,
+    )
+    assert result.estimated_displacement[0] == pytest.approx(0.0, abs=0.05)
+    assert result.estimated_displacement[1] == pytest.approx(2.0, abs=0.05)

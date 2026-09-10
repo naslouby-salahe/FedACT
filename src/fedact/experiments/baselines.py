@@ -8,6 +8,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from fedact.certification.certificate import L2Ball
+from fedact.certification.client_procedure import select_stable_nuisance_rank
 from fedact.certification.dynamics import effective_support, geometric_median
 from fedact.domain.types import (
     BudgetAmount,
@@ -18,8 +19,11 @@ from fedact.domain.types import (
     FamilyName,
     IterationCount,
     NormValue,
+    RankDimension,
+    ResampleCount,
     RidgeLambda,
     SampleCount,
+    SeedValue,
     ThresholdValue,
     UncertaintyRadius,
     ValidationFlag,
@@ -39,6 +43,7 @@ class BaselineIdentificationMethod(StrEnum):
     ROBUST_RAW_AGGREGATION = "robust_raw_aggregation"
     NUISANCE_PROJECTION_WITHOUT_INTERSECTION = "nuisance_projection_without_intersection"
     BEST_INDIVIDUAL_CLIENT = "best_individual_client"
+    SINGLE_POOLED_NUISANCE_SUBSPACE = "single_pooled_nuisance_subspace"
 
 
 @dataclass(frozen=True)
@@ -67,6 +72,46 @@ def projected_point_reconstruction(
     return BaselineIdentificationResult(
         estimated_displacement=estimate,
         method_name=BaselineIdentificationMethod.PROJECTED_POINT_RECONSTRUCTION,
+    )
+
+
+def single_pooled_nuisance_subspace_reconstruction(
+    client_replicate_displacements: Sequence[Sequence[FloatArray]],
+    client_replicate_supports: Sequence[Sequence[tuple[SampleCount, SampleCount]]],
+    malicious_transition: FloatArray,
+    dimension: RankDimension,
+    configured_maximum_rank: RankDimension,
+    eigengap_requirement: ThresholdValue,
+    rank_clip_epsilon_relative: ThresholdValue,
+    scale_standardization_floor: ThresholdValue,
+    bootstrap_resamples: ResampleCount,
+    minimum_bootstrap_stability_fraction: ThresholdValue,
+    seed: SeedValue,
+) -> BaselineIdentificationResult:
+    pooled_displacements = [
+        displacement
+        for client_displacements in client_replicate_displacements
+        for displacement in client_displacements
+    ]
+    pooled_supports = [
+        support for client_supports in client_replicate_supports for support in client_supports
+    ]
+    rank_selection = select_stable_nuisance_rank(
+        replicate_displacements=pooled_displacements,
+        replicate_supports=pooled_supports,
+        dimension=dimension,
+        configured_maximum_rank=configured_maximum_rank,
+        eigengap_requirement=eigengap_requirement,
+        rank_clip_epsilon_relative=rank_clip_epsilon_relative,
+        scale_standardization_floor=scale_standardization_floor,
+        bootstrap_resamples=bootstrap_resamples,
+        minimum_bootstrap_stability_fraction=minimum_bootstrap_stability_fraction,
+        seed=seed,
+    )
+    reconstruction = projected_point_reconstruction(malicious_transition, rank_selection.subspace)
+    return BaselineIdentificationResult(
+        estimated_displacement=reconstruction.estimated_displacement,
+        method_name=BaselineIdentificationMethod.SINGLE_POOLED_NUISANCE_SUBSPACE,
     )
 
 
