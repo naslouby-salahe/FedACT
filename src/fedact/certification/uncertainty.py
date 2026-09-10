@@ -25,8 +25,6 @@ from fedact.domain.types import (
     UncertaintyRadius,
 )
 
-_PLACEHOLDER_UNCERTAINTY_RADIUS = 0.1
-
 
 @dataclass(frozen=True)
 class NuisanceEstimate:
@@ -196,9 +194,14 @@ def estimate_client_nuisance_subspace(
             support_after=n,
         ),
     )
+    projected_controls = (centered @ subspace) @ subspace.T
+    residual_controls = centered - projected_controls
+    residual_array = np.asarray(residual_controls.detach().cpu().numpy(), dtype=np.float64)
+    residual_scale = float(np.linalg.norm(residual_array, ord=2)) / np.sqrt(n)
+    finite_sample_radius = residual_scale / (np.sqrt(n) * max(ratio, 1.0))
     return NuisanceEstimate(
         subspace=subspace,
-        uncertainty_radius=_PLACEHOLDER_UNCERTAINTY_RADIUS,
+        uncertainty_radius=max(float(finite_sample_radius), scale_standardization_floor),
         selected_rank=k,
         eigengap_ratio=ratio,
         replicates=replicates,
