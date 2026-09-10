@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -15,6 +16,8 @@ from fedact.learning.representation import (
     RepresentationEncoder,
     select_checkpoint_epoch,
 )
+
+LOGGER = logging.getLogger(__name__)
 
 
 class DetectorHead(nn.Module):
@@ -66,6 +69,15 @@ def train_base_detector(
     criterion = torch.nn.BCEWithLogitsLoss()
     dataset = TensorDataset(train_h, training_labels.float())
     loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0)
+    LOGGER.info(
+        "detector training started rows=%s validation_rows=%s epochs=%s "
+        "representation_seed=%s detector_seed=%s",
+        training_features.shape[0],
+        validation_features.shape[0],
+        epochs,
+        representation_seed,
+        detector_seed,
+    )
     val_losses: list[float] = []
     detector_states: list[dict[str, torch.Tensor]] = []
     for _unused in range(epochs):
@@ -84,6 +96,11 @@ def train_base_detector(
         detector_states.append({k: v.cpu().clone() for k, v in detector.state_dict().items()})
     selection = select_checkpoint_epoch(tuple(val_losses), tie_tolerance, epochs)
     detector.load_state_dict(detector_states[selection.selected_epoch])
+    LOGGER.info(
+        "detector training completed selected_epoch=%s validation_loss=%s",
+        selection.selected_epoch,
+        selection.selected_validation_loss,
+    )
     return BaseDetectorTrainingRun(
         detector=detector,
         selection=selection,

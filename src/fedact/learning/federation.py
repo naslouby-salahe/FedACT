@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import logging
 import math
 from dataclasses import dataclass
 
@@ -20,6 +21,8 @@ from fedact.learning.representation import (
     RepresentationEncoder,
     TrainingObservation,
 )
+
+LOGGER = logging.getLogger(__name__)
 
 _MINIMUM_LOCAL_BATCH_SIZE = 2
 _COSINE_ANNEALING_HALF_RANGE = 0.5
@@ -108,6 +111,12 @@ def train_federated_detector(
         for population in client_populations
         if len(population.observations) >= _MINIMUM_LOCAL_BATCH_SIZE
     )
+    LOGGER.info(
+        "federated training started clients=%s eligible_clients=%s rounds=%s",
+        len(client_populations),
+        len(eligible_populations),
+        maximum_rounds,
+    )
     total_rounds = maximum_rounds
     encoder_state = {key: value.clone() for key, value in encoder.state_dict().items()}
     head_state = {key: value.clone() for key, value in head.state_dict().items()}
@@ -139,9 +148,22 @@ def train_federated_detector(
         head_state = _weighted_average_state(weighted_head_states, total_samples)
         final_loss = sum(round_losses) / len(round_losses)
         completed_rounds += 1
+        if round_index == 0 or completed_rounds == total_rounds:
+            LOGGER.info(
+                "federated training round=%s/%s active_samples=%s loss=%s",
+                completed_rounds,
+                total_rounds,
+                total_samples,
+                final_loss,
+            )
 
     encoder.load_state_dict(encoder_state)
     head.load_state_dict(head_state)
+    LOGGER.info(
+        "federated training completed rounds=%s final_loss=%s",
+        completed_rounds,
+        final_loss,
+    )
     return FederatedTrainingResult(
         global_rounds_completed=completed_rounds,
         final_loss=final_loss,

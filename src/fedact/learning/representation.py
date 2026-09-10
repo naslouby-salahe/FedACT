@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from collections import defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -23,6 +24,8 @@ from fedact.domain.types import (
     SeedValue,
     ThresholdValue,
 )
+
+LOGGER = logging.getLogger(__name__)
 
 EMBEDDING_DIMENSION = 64
 DETECTOR_THRESHOLD = 0.5
@@ -209,6 +212,13 @@ def train_representation_encoder(
     val_labels = validation_dataset.label_tensor().float()
     dataset = TensorDataset(train_features, train_labels)
     loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0)
+    LOGGER.info(
+        "representation training started rows=%s validation_rows=%s epochs=%s seed=%s",
+        len(training_dataset.observations),
+        len(validation_dataset.observations),
+        epochs,
+        random_seed,
+    )
     val_losses: list[float] = []
     saved_states: list[dict[str, torch.Tensor]] = []
     for _unused in range(epochs):
@@ -230,6 +240,11 @@ def train_representation_encoder(
     selection = select_checkpoint_epoch(tuple(val_losses), tie_tolerance, epochs)
     encoder.load_state_dict(saved_states[selection.selected_epoch])
     encoder.eval()
+    LOGGER.info(
+        "representation training completed selected_epoch=%s validation_loss=%s",
+        selection.selected_epoch,
+        selection.selected_validation_loss,
+    )
     return encoder, selection
 
 
