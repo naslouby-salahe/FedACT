@@ -228,14 +228,15 @@ def _load_lamda_population(application: ExperimentRuntime) -> _LamdaPopulation |
     )
 
 
-def _latest_eligible_cutoff(
+def _eligible_cutoffs(
     application: ExperimentRuntime, population: _LamdaPopulation
-) -> int | None:
+) -> tuple[int, ...]:
     config = application.configuration.values
     horizon = config.temporal.primary_confirmatory_horizon_months
     history = config.temporal.historical_training_window_months
     minimum = config.identification.minimum_support_per_class
-    for cutoff in range(int(population.months.max()) - horizon, int(population.months.min()), -1):
+    eligible: list[int] = []
+    for cutoff in range(int(population.months.min()), int(population.months.max()) - horizon + 1):
         historical = (population.months >= cutoff - history) & (population.months < cutoff)
         later = (population.months >= cutoff) & (population.months < cutoff + horizon)
         if not historical.any() or not later.any():
@@ -248,8 +249,8 @@ def _latest_eligible_cutoff(
             and np.count_nonzero(later_labels) > 0
             and np.count_nonzero(~later_labels) > 0
         ):
-            return cutoff
-    return None
+            eligible.append(cutoff)
+    return tuple(eligible)
 
 
 def run_cross_corpus_generalization(application: ExperimentRuntime) -> CrossCorpusReport:
@@ -444,58 +445,64 @@ def run_prospective_fedact_evaluation(
         return ProspectiveEvaluationReport(
             0, 0.0, 0.0, 0.0, ScientificOutcome.INSUFFICIENT_EVIDENCE
         )
-    cutoff = _latest_eligible_cutoff(application, population)
-    if cutoff is None:
+    cutoffs = _eligible_cutoffs(application, population)
+    if not cutoffs:
         LOGGER.warning("no LAMDA cutoff satisfies configured history/support/horizon requirements")
         return ProspectiveEvaluationReport(
             0, 0.0, 0.0, 0.0, ScientificOutcome.INSUFFICIENT_EVIDENCE
         )
 
     config = application.configuration.values
-    historical = (
-        population.months >= cutoff - config.temporal.historical_training_window_months
-    ) & (population.months < cutoff)
-    later = (population.months >= cutoff) & (
-        population.months < cutoff + config.temporal.primary_confirmatory_horizon_months
-    )
-    scored_population = _score_cutoff_population(application, population, historical, later)
-    if scored_population is None:
-        LOGGER.warning("cutoff has no disjoint chronological validation month")
-        return ProspectiveEvaluationReport(
-            0, 0.0, 0.0, 0.0, ScientificOutcome.INSUFFICIENT_EVIDENCE
+    records: list[EvaluationRecord] = []
+    comparisons: list[_CutoffComparisonRecord] = []
+    for cutoff in cutoffs:
+        historical = (
+            population.months >= cutoff - config.temporal.historical_training_window_months
+        ) & (population.months < cutoff)
+        later = (population.months >= cutoff) & (
+            population.months < cutoff + config.temporal.primary_confirmatory_horizon_months
         )
-    sample_ids, scores = scored_population
-    cutoff_id = SplitCutoffIdentity(f"lamda-{cutoff}")
-    records = tuple(
-        EvaluationRecord(
-            dataset=DatasetSelector.LAMDA,
-            cutoff_id=cutoff_id,
-            sample_id=sample_id,
-            horizon_step=1,
-            true_label=label,
-            predicted_score=score,
-            is_certified=sample_id in certified_samples,
-            clean_loss=_binary_cross_entropy(label, score),
+        scored_population = _score_cutoff_population(application, population, historical, later)
+        if scored_population is None:
+            LOGGER.warning("cutoff has no disjoint chronological validation month: %s", cutoff)
+            continue
+        sample_ids, scores = scored_population
+        cutoff_id = SplitCutoffIdentity(f"lamda-{cutoff}")
+        cutoff_records = tuple(
+            EvaluationRecord(
+                dataset=DatasetSelector.LAMDA,
+                cutoff_id=cutoff_id,
+                sample_id=sample_id,
+                horizon_step=1,
+                true_label=label,
+                predicted_score=score,
+                is_certified=sample_id in certified_samples,
+                clean_loss=_binary_cross_entropy(label, score),
+            )
+            for sample_id, label, score in zip(
+                sample_ids,
+                population.labels[later],
+                scores,
+                strict=True,
+            )
         )
-        for sample_id, label, score in zip(
-            sample_ids,
-            population.labels[later],
-            scores,
-            strict=True,
-        )
-    )
-    metrics = compute_evaluation_metrics(records)
-    certified_records = tuple(record for record in records if record.is_certified)
-    ambiguous_records = tuple(record for record in records if not record.is_certified)
-    comparison = _CutoffComparisonArtifact(
-        comparisons=[
+        records.extend(cutoff_records)
+        certified_records = tuple(record for record in cutoff_records if record.is_certified)
+        ambiguous_records = tuple(record for record in cutoff_records if not record.is_certified)
+        comparisons.append(
             _CutoffComparisonRecord(
                 cutoff_id=cutoff_id,
                 certified_false_negative_rate=_group_false_negative_rate(certified_records),
                 ambiguous_false_negative_rate=_group_false_negative_rate(ambiguous_records),
             )
-        ]
-    )
+        )
+        LOGGER.info("prospective evaluated cutoff=%s rows=%s", cutoff_id, len(cutoff_records))
+    if not records:
+        return ProspectiveEvaluationReport(
+            0, 0.0, 0.0, 0.0, ScientificOutcome.INSUFFICIENT_EVIDENCE
+        )
+    metrics = compute_evaluation_metrics(tuple(records))
+    comparison = _CutoffComparisonArtifact(comparisons=comparisons)
     write_text_atomically(
         application.repository_root
         / config.workspace.directories.experiments
@@ -503,7 +510,9 @@ def run_prospective_fedact_evaluation(
         / "cutoff-comparisons.json",
         comparison.model_dump_json(indent=2),
     )
-    LOGGER.info("prospective baseline evaluated cutoff=%s rows=%s", cutoff_id, len(records))
+    LOGGER.info(
+        "prospective evaluation completed cutoffs=%s rows=%s", len(comparisons), len(records)
+    )
     return ProspectiveEvaluationReport(
         total_evaluations=len(records),
         mean_false_negative_rate=metrics.false_negative_rate,
