@@ -33,6 +33,7 @@ from fedact.domain.types import (
     EvaluationCount,
     LossValue,
     MetricRate,
+    ProbabilityValue,
     RankDimension,
     RelativePosixPath,
     SampleIdentifier,
@@ -332,7 +333,7 @@ def run_cross_corpus_generalization(application: ExperimentRuntime) -> CrossCorp
 @dataclass(frozen=True)
 class _CutoffScoring:
     sample_ids: tuple[SampleIdentifier, ...]
-    scores: tuple[float, ...]
+    scores: tuple[ProbabilityValue, ...]
     clean_fnr_degradation_percentage_points: DegradationValue
 
 
@@ -545,7 +546,8 @@ def run_prospective_fedact_evaluation(
     certification_mechanism_supported = (
         bool(certified_fnrs)
         and bool(ambiguous_fnrs)
-        and (sum(certified_fnrs) / len(certified_fnrs)) <= (sum(ambiguous_fnrs) / len(ambiguous_fnrs))
+        and (sum(certified_fnrs) / len(certified_fnrs))
+        <= (sum(ambiguous_fnrs) / len(ambiguous_fnrs))
     )
     LOGGER.info(
         "prospective evaluation completed cutoffs=%s rows=%s mechanism_supported=%s",

@@ -4,6 +4,7 @@ import math
 from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
+from typing import Final
 
 import numpy as np
 import torch
@@ -32,6 +33,8 @@ from fedact.domain.types import (
     ThresholdValue,
     ValidationFlag,
 )
+
+_DIAMETER_DOUBLING_FACTOR: Final = 2.0
 
 
 @dataclass(frozen=True)
@@ -253,9 +256,9 @@ def intersect_constraints(
         for c in constraints_list
     ]
     rads = [c.uncertainty_radius for c in constraints_list]
-    uncertainty_diameter = 2.0 * sum(rads)
+    uncertainty_diameter = _DIAMETER_DOUBLING_FACTOR * sum(rads)
     diameter = (
-        min(uncertainty_diameter, 2.0 * plausibility_ball.radius)
+        min(uncertainty_diameter, _DIAMETER_DOUBLING_FACTOR * plausibility_ball.radius)
         if plausibility_ball is not None
         else uncertainty_diameter
     )
@@ -299,7 +302,9 @@ def chebyshev_center(
         else:
             dimension = target.nuisance_subspaces[0].shape[0] if target.nuisance_subspaces else 0
             center = np.zeros(dimension)
-        return ChebyshevCenterResult(center=center, radius=target.diameter / 2.0)
+        return ChebyshevCenterResult(
+            center=center, radius=target.diameter / _DIAMETER_DOUBLING_FACTOR
+        )
     if not target:
         raise ValueError("Chebyshev center requires at least one constraint")
     dimension = next(
@@ -351,7 +356,7 @@ def build_nuisance_spaces(
     return FeasibleSet(
         nuisance_subspaces=tuple(nuisance_subspaces),
         uncertainty_radii=tuple(uncertainty_radii),
-        diameter=2.0 * sum(uncertainty_radii),
+        diameter=_DIAMETER_DOUBLING_FACTOR * sum(uncertainty_radii),
     )
 
 

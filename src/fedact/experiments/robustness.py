@@ -5,17 +5,27 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
+import torch
 
+from fedact.certification.certificate import ClientConstraint, L2Ball
 from fedact.certification.selection import (
     ClientInformationMatrix,
+    MaliciousSupportCount,
     SelectionBudget,
+    greedy_action_interval_contraction_selection,
     greedy_d_optimal,
+    largest_sample_count_selection,
+    random_selection,
+    uniform_action_weights,
+    weighted_action_width,
 )
 from fedact.config.models import StrictModel
 from fedact.domain.types import (
     AblationIdentifier,
     BinaryLabel,
     ClientIdentifier,
+    ClientIndex,
+    ClientSelectionComparator,
     DegradationValue,
     EmbeddingComponent,
     EvaluationCount,
@@ -23,6 +33,7 @@ from fedact.domain.types import (
     MetricRate,
     MonthIndex,
     RidgeLambda,
+    SampleCount,
     SampleIdentifier,
     ScientificOutcome,
     ValidationFlag,
@@ -108,12 +119,16 @@ class _ClientObservations(StrictModel):
     features: list[list[EmbeddingComponent]]
     month_indices: list[MonthIndex]
     labels: list[BinaryLabel]
+    historical_malicious_count: SampleCount = 0
+    later_malicious_count: SampleCount = 0
 
 
 class _FederationArtifact(StrictModel):
     clients: list[_ClientObservations]
     redundant_widths: list[IntervalBound] = []
     complementary_widths: list[IntervalBound] = []
+    candidate_action_directions: list[list[EmbeddingComponent]] = []
+    historical_plausibility_radius: IntervalBound | None = None
 
 
 def _client_populations(artifact: _FederationArtifact) -> tuple[ClientTrainingPopulation, ...]:
@@ -160,17 +175,49 @@ def _information_matrices(
     )
 
 
-def _log_determinant(matrices: tuple[ClientInformationMatrix, ...], ridge: RidgeLambda) -> float:
-    total = sum((matrix.matrix for matrix in matrices), start=np.zeros_like(matrices[0].matrix))
-    sign, determinant = np.linalg.slogdet(total + ridge * np.eye(total.shape[0]))
-    return float(determinant) if sign > 0 else float("-inf")
+def _information_matrix_radius(matrix: np.ndarray, ridge: RidgeLambda) -> float:
+    eigenvalues = np.linalg.eigvalsh(matrix + ridge * np.eye(matrix.shape[0]))
+    smallest = float(np.min(eigenvalues))
+    if smallest <= 0.0:
+        return float("inf")
+    return 1.0 / float(np.sqrt(smallest))
+
+
+@dataclass(frozen=True)
+class ComparatorWidthReduction:
+    comparator: ClientSelectionComparator
+    total_reduction: IntervalBound
+    mean_reduction_per_client: IntervalBound
 
 
 @dataclass(frozen=True)
 class SelectionExperimentReport:
     budget_fractions_tested: EvaluationCount
     d_optimal_superiority_verified: ValidationFlag
+    comparator_reductions: tuple[ComparatorWidthReduction, ...]
     scientific_outcome: ScientificOutcome
+
+
+def _weighted_width_reduction(
+    action_directions: tuple[torch.Tensor, ...],
+    action_weights: tuple[float, ...],
+    plausibility_ball: L2Ball,
+    constraints: tuple[ClientConstraint, ...],
+    selected: tuple[ClientIndex, ...],
+    vertices: SampleCount,
+) -> IntervalBound:
+    by_client = {constraint.client_index: constraint for constraint in constraints}
+    empty_width = weighted_action_width(
+        action_directions, action_weights, plausibility_ball, (), vertices
+    )
+    selected_width = weighted_action_width(
+        action_directions,
+        action_weights,
+        plausibility_ball,
+        tuple(by_client[client] for client in selected),
+        vertices,
+    )
+    return empty_width - selected_width
 
 
 def run_communication_limited_client_selection(
@@ -182,26 +229,157 @@ def run_communication_limited_client_selection(
             "client-selection input is missing: %s; natural client observations are required",
             source,
         )
-        return SelectionExperimentReport(0, False, ScientificOutcome.INSUFFICIENT_EVIDENCE)
-    populations = _client_populations(
-        _FederationArtifact.model_validate_json(source.read_text(encoding="utf-8"))
-    )
+        return SelectionExperimentReport(0, False, (), ScientificOutcome.INSUFFICIENT_EVIDENCE)
+    artifact = _FederationArtifact.model_validate_json(source.read_text(encoding="utf-8"))
+    populations = _client_populations(artifact)
     matrices = _information_matrices(populations)
     if len(matrices) < 2:
-        return SelectionExperimentReport(0, False, ScientificOutcome.INSUFFICIENT_EVIDENCE)
+        LOGGER.warning("client-selection requires at least two eligible clients")
+        return SelectionExperimentReport(0, False, (), ScientificOutcome.INSUFFICIENT_EVIDENCE)
+    if not artifact.candidate_action_directions or artifact.historical_plausibility_radius is None:
+        LOGGER.warning(
+            "client-selection requires candidate action directions and a historical "
+            "plausibility radius; workflow is ABSTENTION_EXPECTED without them"
+        )
+        return SelectionExperimentReport(0, False, (), ScientificOutcome.INSUFFICIENT_EVIDENCE)
     config = application.configuration.values.client_selection
+    seeds = application.configuration.values.seeds.client_selection
+
+    ordered_clients = tuple(matrix.client for matrix in matrices)
+    client_index_by_identifier: dict[ClientIdentifier, ClientIndex] = {
+        identifier: position for position, identifier in enumerate(ordered_clients)
+    }
+    by_client_matrix = {matrix.client: matrix.matrix for matrix in matrices}
+    constraints = tuple(
+        ClientConstraint(
+            client_index=client_index_by_identifier[identifier],
+            uncertainty_radius=_information_matrix_radius(
+                by_client_matrix[identifier], config.d_optimal_ridge
+            ),
+            beta=0.0,
+        )
+        for identifier in ordered_clients
+    )
+    action_directions = tuple(
+        torch.tensor(direction, dtype=torch.float32)
+        for direction in artifact.candidate_action_directions
+    )
+    action_weights = uniform_action_weights(len(action_directions))
+    dimension = action_directions[0].shape[0]
+    plausibility_ball = L2Ball(
+        center=np.zeros(dimension), radius=artifact.historical_plausibility_radius
+    )
+    malicious_supports = tuple(
+        MaliciousSupportCount(
+            client=population.client,
+            historical_malicious_count=next(
+                client.historical_malicious_count
+                for client in artifact.clients
+                if client.client_id == population.client
+            ),
+            later_malicious_count=next(
+                client.later_malicious_count
+                for client in artifact.clients
+                if client.client_id == population.client
+            ),
+        )
+        for population in populations
+    )
+
+    episodes_by_comparator: dict[ClientSelectionComparator, list[tuple[float, int]]] = {
+        comparator: [] for comparator in ClientSelectionComparator
+    }
     verified: list[bool] = []
-    by_client = {matrix.client: matrix for matrix in matrices}
     for fraction in config.budget_fractions:
         budget = SelectionBudget(fraction, len(matrices))
-        selected = greedy_d_optimal(matrices, config.d_optimal_ridge, budget)
-        selected_matrices = tuple(by_client[client] for client in selected)
-        prefix = tuple(sorted(matrices, key=lambda item: item.client)[: budget.selected_count])
-        verified.append(
-            _log_determinant(selected_matrices, config.d_optimal_ridge)
-            >= _log_determinant(prefix, config.d_optimal_ridge)
+        vertices = len(matrices)
+
+        d_optimal_selected = greedy_d_optimal(matrices, config.d_optimal_ridge, budget)
+        d_optimal_indices = tuple(
+            client_index_by_identifier[client] for client in d_optimal_selected
         )
-    return SelectionExperimentReport(len(verified), all(verified), ScientificOutcome.PASS)
+        d_optimal_width_reduction = _weighted_width_reduction(
+            action_directions,
+            action_weights,
+            plausibility_ball,
+            constraints,
+            d_optimal_indices,
+            vertices,
+        )
+        episodes_by_comparator[ClientSelectionComparator.GLOBAL_INFORMATION].append(
+            (d_optimal_width_reduction, len(d_optimal_indices))
+        )
+
+        largest_selected = largest_sample_count_selection(malicious_supports, budget)
+        largest_indices = tuple(client_index_by_identifier[client] for client in largest_selected)
+        largest_width_reduction = _weighted_width_reduction(
+            action_directions,
+            action_weights,
+            plausibility_ball,
+            constraints,
+            largest_indices,
+            vertices,
+        )
+        episodes_by_comparator[ClientSelectionComparator.LARGEST_SAMPLE_COUNT].append(
+            (largest_width_reduction, len(largest_indices))
+        )
+
+        contraction_indices = greedy_action_interval_contraction_selection(
+            action_directions, action_weights, constraints, plausibility_ball, budget, vertices
+        )
+        contraction_width_reduction = _weighted_width_reduction(
+            action_directions,
+            action_weights,
+            plausibility_ball,
+            constraints,
+            contraction_indices,
+            vertices,
+        )
+        episodes_by_comparator[ClientSelectionComparator.ACTION_INTERVAL_CONTRACTION].append(
+            (contraction_width_reduction, len(contraction_indices))
+        )
+
+        random_reductions: list[float] = []
+        for seed in seeds:
+            random_selected = random_selection(ordered_clients, seed, budget)
+            random_indices = tuple(client_index_by_identifier[client] for client in random_selected)
+            random_reductions.append(
+                _weighted_width_reduction(
+                    action_directions,
+                    action_weights,
+                    plausibility_ball,
+                    constraints,
+                    random_indices,
+                    vertices,
+                )
+            )
+        mean_random_reduction = sum(random_reductions) / len(random_reductions)
+        episodes_by_comparator[ClientSelectionComparator.RANDOM].append(
+            (mean_random_reduction, budget.selected_count)
+        )
+
+        verified.append(
+            d_optimal_width_reduction >= largest_width_reduction
+            and d_optimal_width_reduction >= mean_random_reduction
+        )
+    comparator_reductions = tuple(
+        ComparatorWidthReduction(
+            comparator=comparator,
+            total_reduction=sum(reduction for reduction, _count in episodes),
+            mean_reduction_per_client=(
+                sum(reduction / count for reduction, count in episodes) / len(episodes)
+                if episodes
+                else 0.0
+            ),
+        )
+        for comparator, episodes in episodes_by_comparator.items()
+    )
+    return SelectionExperimentReport(
+        len(verified),
+        all(verified),
+        comparator_reductions,
+        ScientificOutcome.PASS if verified else ScientificOutcome.INSUFFICIENT_EVIDENCE,
+    )
 
 
 @dataclass(frozen=True)

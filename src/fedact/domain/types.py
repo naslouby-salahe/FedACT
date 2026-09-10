@@ -88,6 +88,13 @@ class FederationGeometry(StrEnum):
     COMPLEMENTARY = "complementary"
 
 
+class ClientSelectionComparator(StrEnum):
+    RANDOM = "random"
+    LARGEST_SAMPLE_COUNT = "largest_sample_count"
+    GLOBAL_INFORMATION = "global_information"
+    ACTION_INTERVAL_CONTRACTION = "action_interval_contraction"
+
+
 class RankSelectionMethod(StrEnum):
     FIXED_RANK = "FIXED_RANK"
     EIGENGAP = "EIGENGAP"
@@ -490,6 +497,7 @@ __all__ = [
     "ClientCount",
     "ClientIdentifier",
     "ClientIndex",
+    "ClientSelectionComparator",
     "ClientSemanticsClass",
     "CohortDefinition",
     "CohortIdentifier",

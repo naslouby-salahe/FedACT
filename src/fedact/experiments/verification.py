@@ -81,6 +81,9 @@ _AUTOREGRESSIVE_EXAMPLE_UPPER_BOUND = 0.99
 _DIAMETER_EXAMPLE_DIMENSION = 3
 _SHARED_COMPONENT_DIMENSION = 3
 _DIAMETER_EXAMPLE_HALF_WIDTH = 1.5
+_SUPPORT_SOLVER_EXAMPLE_LIMIT = 2.0
+_INFEASIBLE_EXAMPLE_ALIGNMENT_THRESHOLD = 0.5
+_INFEASIBLE_EXAMPLE_AMBIGUITY_WIDTH_THRESHOLD = 0.5
 
 
 @dataclass(frozen=True)
@@ -244,7 +247,7 @@ def run_mathematical_verification() -> MathVerificationReport:
     )
 
     support_direction = np.array([3.0, 4.0])
-    support_limits = np.array([2.0])
+    support_limits = np.array([_SUPPORT_SOLVER_EXAMPLE_LIMIT])
     support_bounds = solve_support_bounds(
         support_direction, np.zeros((1, support_direction.shape[0])), support_limits
     )
@@ -255,12 +258,10 @@ def run_mathematical_verification() -> MathVerificationReport:
     )
 
     infeasible_decision = certify_action_interval(
-        action_interval=support_interval(
-            np.array([1.0]), (np.array([0.0]), np.array([1.0]))
-        ),
+        action_interval=support_interval(np.array([1.0]), (np.array([0.0]), np.array([1.0]))),
         domain_validity=DomainValid(valid=False),
-        alignment_threshold=0.5,
-        ambiguity_width_threshold=0.5,
+        alignment_threshold=_INFEASIBLE_EXAMPLE_ALIGNMENT_THRESHOLD,
+        ambiguity_width_threshold=_INFEASIBLE_EXAMPLE_AMBIGUITY_WIDTH_THRESHOLD,
         set_diameter=1.0,
         historical_realized_diameter_quantile=1.0,
     )
