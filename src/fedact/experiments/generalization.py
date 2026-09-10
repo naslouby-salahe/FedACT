@@ -10,6 +10,8 @@ import numpy as np
 import torch
 from pydantic import Field
 
+from fedact._vendor.transcendent.scores import compute_p_values_cred_and_conf
+from fedact._vendor.transcendent.thresholding import apply_threshold, get_performance_with_rejection
 from fedact.analysis.comparisons import CutoffAggregate
 from fedact.analysis.metrics import EvaluationRecord, compute_evaluation_metrics
 from fedact.certification.client_procedure import select_stable_nuisance_rank
@@ -39,6 +41,7 @@ from fedact.domain.types import (
     BinaryLabel,
     CertificationStatus,
     CorrelationCoefficient,
+    CoverageLevel,
     DatasetSelector,
     DegradationValue,
     DimensionValue,
@@ -56,7 +59,7 @@ from fedact.domain.types import (
 )
 from fedact.experiments.baselines import matched_benign_subtraction, projected_point_reconstruction
 from fedact.experiments.registry import ExperimentRuntime
-from fedact.learning.detector import load_trained_detector, train_base_detector
+from fedact.learning.detector import DetectorHead, load_trained_detector, train_base_detector
 from fedact.learning.hardening import (
     SampleChallengeSet,
     clean_false_negative_rate,
@@ -103,6 +106,7 @@ class _CutoffComparisonRecord(StrictModel):
     matched_benign_subtraction_false_negative_rate: MetricRate | None = None
     projected_point_reconstruction_false_negative_rate: MetricRate | None = None
     raw_future_transition_forecast_false_negative_rate: MetricRate | None = None
+    reactive_drift_adaptation_false_negative_rate: MetricRate | None = None
 
 
 class _CutoffComparisonArtifact(StrictModel):
@@ -268,6 +272,7 @@ class ProspectiveEvaluationReport:
     matched_benign_subtraction_false_negative_rate: MetricRate | None = None
     projected_point_reconstruction_false_negative_rate: MetricRate | None = None
     raw_future_transition_forecast_false_negative_rate: MetricRate | None = None
+    reactive_drift_adaptation_false_negative_rate: MetricRate | None = None
     mean_true_positive_rate: MetricRate | None = None
     mean_false_positive_rate: MetricRate | None = None
     mean_abstention_rate: MetricRate | None = None
@@ -475,6 +480,7 @@ class _CutoffScoring:
     matched_benign_subtraction_scores: tuple[ProbabilityValue, ...] | None = None
     projected_point_reconstruction_scores: tuple[ProbabilityValue, ...] | None = None
     raw_future_transition_forecast_scores: tuple[ProbabilityValue, ...] | None = None
+    reactive_drift_adaptation_false_negative_rate: MetricRate | None = None
 
 
 def _dominant_malicious_family(
@@ -748,6 +754,153 @@ def _raw_future_transition_forecast_challenges(
     )
 
 
+def _reactive_drift_adaptation_ncm(probability: ProbabilityValue, label: bool) -> float:
+    decision = 2.0 * probability - 1.0
+    return -decision if label else decision
+
+
+def _reactive_drift_adaptation_quartile_candidates(
+    p_values: dict[str, list[float]],
+    predicted_labels: np.ndarray,
+    groundtruth_labels: np.ndarray,
+) -> dict[str, dict[str, dict[str, float]]]:
+    candidates: dict[str, dict[str, dict[str, float]]] = {}
+    correct = predicted_labels == groundtruth_labels
+    for key in ("cred", "conf"):
+        scores = np.asarray(p_values[key], dtype=np.float64)
+        scores_malicious = scores[(predicted_labels == 1) & correct]
+        scores_benign = scores[(predicted_labels == 0) & correct]
+        if scores_malicious.size == 0 or scores_benign.size == 0:
+            return {}
+        for quartile_key, percentile in (("q1", 25.0), ("q2", 50.0), ("q3", 75.0), ("mean", None)):
+            malicious_threshold = (
+                float(np.percentile(scores_malicious, percentile))
+                if percentile is not None
+                else float(np.mean(scores_malicious))
+            )
+            benign_threshold = (
+                float(np.percentile(scores_benign, percentile))
+                if percentile is not None
+                else float(np.mean(scores_benign))
+            )
+            candidates.setdefault(quartile_key, {})[key] = {
+                "mw": malicious_threshold,
+                "gw": benign_threshold,
+            }
+    return candidates
+
+
+def _select_reactive_drift_adaptation_threshold(
+    candidates: dict[str, dict[str, dict[str, float]]],
+    validation_p_values: dict[str, list[float]],
+    validation_groundtruth: np.ndarray,
+    target_coverage: CoverageLevel,
+    max_clean_degradation_points: DegradationValue,
+) -> dict[str, dict[str, float]] | None:
+    best_threshold: dict[str, dict[str, float]] | None = None
+    best_certification_rate = -1.0
+    best_clean_degradation = float("inf")
+    for quartile_key in sorted(candidates):
+        threshold = candidates[quartile_key]
+        keep_mask = apply_threshold(threshold, validation_p_values, validation_groundtruth)
+        performance = get_performance_with_rejection(
+            validation_groundtruth, validation_groundtruth, keep_mask, full=False
+        )
+        coverage = performance["kept_pos_perc"]
+        certification_rate = performance["kept_total_perc"]
+        clean_degradation = performance["reject_neg_perc"] * 100.0
+        if coverage < target_coverage or clean_degradation > max_clean_degradation_points:
+            continue
+        if certification_rate > best_certification_rate or (
+            certification_rate == best_certification_rate
+            and clean_degradation < best_clean_degradation
+        ):
+            best_threshold = threshold
+            best_certification_rate = certification_rate
+            best_clean_degradation = clean_degradation
+    return best_threshold
+
+
+def _reactive_drift_adaptation_false_negative_rate(
+    application: ExperimentRuntime,
+    validation: tuple[TrainingObservation, ...],
+    encoder: RepresentationEncoder,
+    detector: DetectorHead,
+    later_scores: tuple[ProbabilityValue, ...],
+    later_labels: np.ndarray,
+) -> MetricRate | None:
+    config = application.configuration.values
+    if not validation:
+        return None
+    validation_groundtruth = np.fromiter(
+        (int(obs.label) for obs in validation), dtype=np.int_, count=len(validation)
+    )
+    if (
+        np.count_nonzero(validation_groundtruth) == 0
+        or np.count_nonzero(validation_groundtruth == 0) == 0
+    ):
+        return None
+    validation_features = torch.stack(
+        [
+            torch.tensor(obs.features, dtype=torch.float32)
+            if isinstance(obs.features, tuple)
+            else obs.features
+            for obs in validation
+        ]
+    )
+    validation_scored = score_samples(
+        encoder,
+        detector,
+        tuple(obs.sample_id for obs in validation),
+        validation_features,
+    )
+    validation_ncms = [
+        _reactive_drift_adaptation_ncm(score.probability, bool(label))
+        for score, label in zip(validation_scored, validation_groundtruth, strict=True)
+    ]
+    validation_groundtruth_list = [int(value) for value in validation_groundtruth]
+    validation_p_values = compute_p_values_cred_and_conf(
+        validation_ncms,
+        validation_groundtruth_list,
+        validation_ncms,
+        validation_groundtruth_list,
+    )
+    candidates = _reactive_drift_adaptation_quartile_candidates(
+        validation_p_values, validation_groundtruth, validation_groundtruth
+    )
+    if not candidates:
+        return None
+    threshold = _select_reactive_drift_adaptation_threshold(
+        candidates,
+        validation_p_values,
+        validation_groundtruth,
+        config.identification.target_coverage.primary,
+        config.hardening.weight.maximum_clean_fnr_degradation_percentage_points,
+    )
+    if threshold is None:
+        return None
+    later_predicted = np.fromiter(
+        (int(score >= 0.5) for score in later_scores), dtype=np.int_, count=len(later_scores)
+    )
+    later_ncms = [
+        _reactive_drift_adaptation_ncm(score, bool(label))
+        for score, label in zip(later_scores, later_predicted, strict=True)
+    ]
+    later_p_values = compute_p_values_cred_and_conf(
+        validation_ncms,
+        validation_groundtruth_list,
+        later_ncms,
+        [int(value) for value in later_predicted],
+    )
+    keep_mask = apply_threshold(threshold, later_p_values, later_predicted)
+    malicious_mask = later_labels.astype(bool)
+    if not malicious_mask.any():
+        return None
+    later_scores_array = np.asarray(later_scores, dtype=np.float64)
+    undetected_and_unflagged = malicious_mask & keep_mask & (later_scores_array < 0.5)
+    return float(np.count_nonzero(undetected_and_unflagged) / np.count_nonzero(malicious_mask))
+
+
 def _score_cutoff_population(
     application: ExperimentRuntime,
     population: _LamdaPopulation,
@@ -835,6 +988,15 @@ def _score_cutoff_population(
             detector = hardening.detector
             clean_fnr_degradation = hardening.clean_fnr_degradation_percentage_points
     scored = score_samples(encoder, detector, sample_ids, later_features)
+    later_labels = population.labels[later]
+    reactive_drift_adaptation_fnr = _reactive_drift_adaptation_false_negative_rate(
+        application,
+        validation,
+        encoder,
+        detector,
+        tuple(score.probability for score in scored),
+        later_labels,
+    )
 
     matched_benign_subtraction_scores: tuple[ProbabilityValue, ...] | None = None
     projected_point_reconstruction_scores: tuple[ProbabilityValue, ...] | None = None
@@ -956,6 +1118,7 @@ def _score_cutoff_population(
         matched_benign_subtraction_scores=matched_benign_subtraction_scores,
         projected_point_reconstruction_scores=projected_point_reconstruction_scores,
         raw_future_transition_forecast_scores=raw_future_transition_forecast_scores,
+        reactive_drift_adaptation_false_negative_rate=reactive_drift_adaptation_fnr,
     )
 
 
@@ -1130,6 +1293,9 @@ def run_prospective_fedact_evaluation(
                 matched_benign_subtraction_false_negative_rate=matched_benign_subtraction_fnr,
                 projected_point_reconstruction_false_negative_rate=projected_point_reconstruction_fnr,
                 raw_future_transition_forecast_false_negative_rate=raw_future_transition_forecast_fnr,
+                reactive_drift_adaptation_false_negative_rate=(
+                    scored_population.reactive_drift_adaptation_false_negative_rate
+                ),
             )
         )
         LOGGER.info("prospective evaluated cutoff=%s rows=%s", cutoff_id, len(cutoff_records))
@@ -1200,6 +1366,16 @@ def run_prospective_fedact_evaluation(
         if raw_future_transition_forecast_fnrs
         else None
     )
+    reactive_drift_adaptation_fnrs = [
+        comparison_record.reactive_drift_adaptation_false_negative_rate
+        for comparison_record in comparisons
+        if comparison_record.reactive_drift_adaptation_false_negative_rate is not None
+    ]
+    mean_reactive_drift_adaptation_fnr = (
+        sum(reactive_drift_adaptation_fnrs) / len(reactive_drift_adaptation_fnrs)
+        if reactive_drift_adaptation_fnrs
+        else None
+    )
     LOGGER.info(
         "prospective evaluation completed cutoffs=%s rows=%s mechanism_supported=%s",
         len(comparisons),
@@ -1221,6 +1397,7 @@ def run_prospective_fedact_evaluation(
         matched_benign_subtraction_false_negative_rate=mean_matched_benign_subtraction_fnr,
         projected_point_reconstruction_false_negative_rate=mean_projected_point_reconstruction_fnr,
         raw_future_transition_forecast_false_negative_rate=mean_raw_future_transition_forecast_fnr,
+        reactive_drift_adaptation_false_negative_rate=mean_reactive_drift_adaptation_fnr,
         mean_true_positive_rate=metrics.true_positive_rate,
         mean_false_positive_rate=metrics.false_positive_rate,
         mean_abstention_rate=metrics.abstention_rate,
