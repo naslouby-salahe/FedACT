@@ -263,6 +263,11 @@ class ProspectiveEvaluationReport:
     matched_benign_subtraction_false_negative_rate: MetricRate | None = None
     projected_point_reconstruction_false_negative_rate: MetricRate | None = None
     raw_future_transition_forecast_false_negative_rate: MetricRate | None = None
+    mean_true_positive_rate: MetricRate | None = None
+    mean_false_positive_rate: MetricRate | None = None
+    mean_abstention_rate: MetricRate | None = None
+    pr_auc: MetricRate | None = None
+    roc_auc: MetricRate | None = None
 
 
 @dataclass(frozen=True)
@@ -1206,4 +1211,9 @@ def run_prospective_fedact_evaluation(
         matched_benign_subtraction_false_negative_rate=mean_matched_benign_subtraction_fnr,
         projected_point_reconstruction_false_negative_rate=mean_projected_point_reconstruction_fnr,
         raw_future_transition_forecast_false_negative_rate=mean_raw_future_transition_forecast_fnr,
+        mean_true_positive_rate=metrics.true_positive_rate,
+        mean_false_positive_rate=metrics.false_positive_rate,
+        mean_abstention_rate=metrics.abstention_rate,
+        pr_auc=metrics.pr_auc,
+        roc_auc=metrics.roc_auc,
     )
