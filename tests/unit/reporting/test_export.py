@@ -2,20 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fedact.analysis.reporting import (
-    LatexMacroName,
-    LatexMacroValue,
-    generate_project_summary,
-    synthesize_latex_macros,
-)
+from fedact.analysis.reporting import generate_project_summary
 from fedact.domain.types import ScientificOutcome
-
-
-def test_synthesize_latex_macros(tmp_path: Path) -> None:
-    out = tmp_path / "macros.tex"
-    synthesize_latex_macros(((LatexMacroName("testMacro"), LatexMacroValue("123")),), out)
-    assert out.exists()
-    assert "newcommand{" in out.read_text(encoding="utf-8")
 
 
 def test_generate_project_summary(tmp_path: Path) -> None:

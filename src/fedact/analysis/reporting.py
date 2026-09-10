@@ -5,10 +5,14 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import NewType
 
+import pandas as pd
+from matplotlib import pyplot as plt
+
 from fedact.artifacts import WorkflowResultRecord
 from fedact.domain.types import (
     ArtifactName,
     ArtifactVerificationStatus,
+    EpochCount,
     FigureIdentifier,
     MetricRate,
     ScientificOutcome,
@@ -16,7 +20,6 @@ from fedact.domain.types import (
 )
 
 LatexTableCell = NewType("LatexTableCell", str)
-BACKSLASH = chr(92)
 
 
 def generate_latex_table(
@@ -25,62 +28,42 @@ def generate_latex_table(
     rows: tuple[tuple[LatexTableCell, ...], ...],
     output_file: Path,
 ) -> None:
-    align = "l" * len(headers)
-    lines = [
-        BACKSLASH + "begin{table}[h]",
-        BACKSLASH + "centering",
-        BACKSLASH + "label{tab:" + table_id + "}",
-        BACKSLASH + "begin{tabular}{" + align + "}",
-        BACKSLASH + "hline",
-        " & ".join(headers) + " " + BACKSLASH + BACKSLASH,
-        BACKSLASH + "hline",
-    ]
-    for row in rows:
-        lines.append(" & ".join(row) + " " + BACKSLASH + BACKSLASH)
-    lines.extend([BACKSLASH + "hline", BACKSLASH + "end{tabular}", BACKSLASH + "end{table}"])
     output_file.parent.mkdir(parents=True, exist_ok=True)
-    output_file.write_text(chr(10).join(lines) + chr(10), encoding="utf-8")
+    table = pd.DataFrame(rows, columns=headers)
+    output_file.write_text(
+        table.to_latex(index=False, label=f"tab:{table_id}", position="h"), encoding="utf-8"
+    )
 
 
 def generate_prospective_metrics_figure(
     figure_name: FigureIdentifier,
     mean_false_negative_rate: MetricRate,
     mean_certification_rate: MetricRate,
+    rate_significant_figures: EpochCount,
     output_file: Path,
 ) -> None:
-    lines = [
-        BACKSLASH + "begin{tikzpicture}",
-        BACKSLASH + "begin{axis}[ybar, ymin=0, ymax=1, symbolic x coords={FNR,Certification},"
-        "xtick=data, ylabel={Rate}]",
-        BACKSLASH + "addplot coordinates {"
-        f"(FNR,{mean_false_negative_rate}) (Certification,{mean_certification_rate})"
-        "};",
-        BACKSLASH + "end{axis}",
-        BACKSLASH + "end{tikzpicture}",
-        f"% {figure_name}",
-    ]
     output_file.parent.mkdir(parents=True, exist_ok=True)
-    output_file.write_text(chr(10).join(lines) + chr(10), encoding="utf-8")
-
-
-LatexMacroName = NewType("LatexMacroName", str)
-LatexMacroValue = NewType("LatexMacroValue", str)
+    labels = ("Prospective FNR", "Certification rate")
+    values = (mean_false_negative_rate, mean_certification_rate)
+    figure, axis = plt.subplots(figsize=(6.4, 4.0))
+    bars = axis.bar(labels, values, color=("#b54708", "#027a48"))
+    axis.set_ylim(0.0, 1.0)
+    axis.set_ylabel("Rate")
+    axis.set_title(figure_name)
+    axis.bar_label(
+        bars,
+        labels=[f"{value:.{rate_significant_figures}f}" for value in values],
+        padding=0,
+    )
+    figure.tight_layout()
+    figure.savefig(output_file, dpi=300)
+    plt.close(figure)
 
 
 @dataclass(frozen=True)
 class ArtifactStatusRecord:
     artifact: ArtifactName
     status: ArtifactVerificationStatus
-
-
-def synthesize_latex_macros(
-    macros: tuple[tuple[LatexMacroName, LatexMacroValue], ...], output_file: Path
-) -> None:
-    lines = [
-        BACKSLASH + "newcommand{" + BACKSLASH + name + "}{" + value + "}" for name, value in macros
-    ]
-    output_file.parent.mkdir(parents=True, exist_ok=True)
-    output_file.write_text(chr(10).join(lines) + chr(10), encoding="utf-8")
 
 
 def generate_project_summary(
@@ -118,6 +101,7 @@ def export_verified_project_evidence(
     prospective: WorkflowResultRecord,
     overall_outcome: ScientificOutcome,
     results_directory: Path,
+    rate_significant_figures: EpochCount,
 ) -> None:
     fnr = prospective.mean_false_negative_rate
     certification_rate = prospective.mean_certification_rate
@@ -145,9 +129,9 @@ def export_verified_project_evidence(
                 LatexTableCell(cell)
                 for cell in (
                     "FedACT (Ours)",
-                    f"{fnr:.2f}",
-                    f"{certification_rate:.2f}",
-                    f"{degradation:.1f}%",
+                    f"{fnr:.{rate_significant_figures}f}",
+                    f"{certification_rate:.{rate_significant_figures}f}",
+                    f"{degradation:.{rate_significant_figures}f}%",
                 )
             ),
         ),
@@ -157,18 +141,8 @@ def export_verified_project_evidence(
         "fig_1_prospective",
         fnr,
         certification_rate,
-        results_directory / "figures" / "fig_1.tex",
-    )
-    synthesize_latex_macros(
-        (
-            (LatexMacroName("fedactFNR"), LatexMacroValue(f"{fnr:.2f}")),
-            (LatexMacroName("fedactCertRate"), LatexMacroValue(f"{certification_rate:.2f}")),
-            (
-                LatexMacroName("fedactCleanDegradation"),
-                LatexMacroValue(f"{degradation:.1f}%"),
-            ),
-        ),
-        results_directory / "latex" / "macros.tex",
+        rate_significant_figures,
+        results_directory / "figures" / "fig_1.png",
     )
     summary_file = results_directory / "project_summary.json"
     generate_project_summary(
@@ -182,6 +156,10 @@ def export_verified_project_evidence(
         [
             ArtifactStatusRecord(
                 artifact="table_1_main.tex", status=_verification_status(table_file)
+            ),
+            ArtifactStatusRecord(
+                artifact="fig_1.png",
+                status=_verification_status(results_directory / "figures" / "fig_1.png"),
             ),
             ArtifactStatusRecord(
                 artifact="project_summary.json", status=_verification_status(summary_file)

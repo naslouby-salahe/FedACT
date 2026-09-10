@@ -542,7 +542,12 @@ def run_report(
         synthesis.scientific_outcome if synthesis is not None else prospective.scientific_outcome
     )
 
-    export_verified_project_evidence(prospective, overall_outcome, root / "results")
+    export_verified_project_evidence(
+        prospective,
+        overall_outcome,
+        root / "results",
+        application.configuration.values.reporting.significant_figures.percentages_and_rates,
+    )
     typer.echo(f"manuscript evidence reporting completed: {overall_outcome}")
 
 
