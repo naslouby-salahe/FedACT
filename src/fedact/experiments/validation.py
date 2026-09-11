@@ -68,7 +68,7 @@ def _experiment_directory(application: ExperimentRuntime, workflow: str) -> Path
     )
 
 
-class _ActionObservation(StrictModel):
+class ActionObservation(StrictModel):
     sample_id: SampleIdentifier
     lower_bound: IntervalBound
     upper_bound: IntervalBound
@@ -86,8 +86,8 @@ class _ActionObservation(StrictModel):
     later_real_alignment_score: CoordinateValue
 
 
-class _ActionArtifact(StrictModel):
-    actions: list[_ActionObservation]
+class ActionArtifact(StrictModel):
+    actions: list[ActionObservation]
 
 
 class _CentralPatternCutoffRecord(StrictModel):
@@ -167,7 +167,7 @@ _RANDOM_MATCH_LEVELS_COUNTING_TOWARD_MINIMUM_FRACTION = (
 )
 
 
-def _match_key(action: _ActionObservation, level: RandomMatchLevel) -> tuple[object, ...]:
+def _match_key(action: ActionObservation, level: RandomMatchLevel) -> tuple[object, ...]:
     if level is RandomMatchLevel.EXACT:
         return (
             action.cutoff_id,
@@ -183,13 +183,13 @@ def _match_key(action: _ActionObservation, level: RandomMatchLevel) -> tuple[obj
 
 @dataclass(frozen=True)
 class _MatchedRandomDraw:
-    action: _ActionObservation
+    action: ActionObservation
     match_level: RandomMatchLevel
 
 
 def _sample_matched_random_valid(
-    certified_actions: tuple[_ActionObservation, ...],
-    valid_pool: tuple[_ActionObservation, ...],
+    certified_actions: tuple[ActionObservation, ...],
+    valid_pool: tuple[ActionObservation, ...],
     seed: SeedValue,
 ) -> tuple[_MatchedRandomDraw, ...]:
     rng = np.random.default_rng(seed)
@@ -209,7 +209,7 @@ def _sample_matched_random_valid(
 
 
 def _later_real_precision(
-    actions: tuple[_ActionObservation, ...], tau_align: ThresholdValue
+    actions: tuple[ActionObservation, ...], tau_align: ThresholdValue
 ) -> MetricRate | None:
     if not actions:
         return None
@@ -217,13 +217,13 @@ def _later_real_precision(
 
 
 def _compute_central_pattern(
-    actions: tuple[_ActionObservation, ...],
+    actions: tuple[ActionObservation, ...],
     statuses_by_sample: dict[SampleIdentifier, CertificationStatus],
     selected: _SelectedCalibrationArtifact,
     operator_seeds: tuple[SeedValue, ...],
     minimum_exact_or_source_fraction: MetricRate,
 ) -> _CentralPatternArtifact:
-    by_cutoff: dict[SplitCutoffIdentity, list[_ActionObservation]] = {}
+    by_cutoff: dict[SplitCutoffIdentity, list[ActionObservation]] = {}
     for action in actions:
         by_cutoff.setdefault(action.cutoff_id, []).append(action)
     records: list[_CentralPatternCutoffRecord] = []
@@ -333,7 +333,7 @@ def run_action_certificate_validation(application: ExperimentRuntime) -> ActionC
         return ActionCertificateReport(
             0, 0, 0, 0, 0.0, False, None, ScientificOutcome.INSUFFICIENT_EVIDENCE
         )
-    artifact = _ActionArtifact.model_validate_json(source.read_text(encoding="utf-8"))
+    artifact = ActionArtifact.model_validate_json(source.read_text(encoding="utf-8"))
     selected = _SelectedCalibrationArtifact.model_validate_json(
         calibration_source.read_text(encoding="utf-8")
     )

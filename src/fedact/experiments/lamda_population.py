@@ -63,3 +63,28 @@ def load_lamda_population(application: ExperimentRuntime) -> LamdaPopulation | N
         sample_ids=tuple(record.sample_hash for record in records),
         family=tuple(record.family for record in records),
     )
+
+
+def eligible_cutoffs(
+    application: ExperimentRuntime, population: LamdaPopulation
+) -> tuple[int, ...]:
+    config = application.configuration.values
+    horizon = config.temporal.primary_confirmatory_horizon_months
+    history = config.temporal.historical_training_window_months
+    minimum = config.identification.minimum_support_per_class
+    eligible: list[int] = []
+    for cutoff in range(int(population.months.min()), int(population.months.max()) - horizon + 1):
+        historical = (population.months >= cutoff - history) & (population.months < cutoff)
+        later = (population.months >= cutoff) & (population.months < cutoff + horizon)
+        if not historical.any() or not later.any():
+            continue
+        historical_labels = population.labels[historical]
+        later_labels = population.labels[later]
+        if (
+            np.count_nonzero(historical_labels) >= minimum
+            and np.count_nonzero(~historical_labels) >= minimum
+            and np.count_nonzero(later_labels) > 0
+            and np.count_nonzero(~later_labels) > 0
+        ):
+            eligible.append(cutoff)
+    return tuple(eligible)

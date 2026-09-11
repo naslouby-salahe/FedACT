@@ -565,7 +565,7 @@ class IdentificationDiagnosticsReport:
     scientific_outcome: ScientificOutcome
 
 
-def _load_variance_filtered_lamda_dataset(
+def load_variance_filtered_lamda_dataset(
     raw_root: Path, variance_threshold: VarianceThreshold
 ) -> LoadedLamdaDataset:
     loaded = load_lamda_records(raw_root)
@@ -574,7 +574,7 @@ def _load_variance_filtered_lamda_dataset(
     return LoadedLamdaDataset(records=loaded.records, features=filtered_features)
 
 
-def _train_cutoff_representation_encoder(
+def train_cutoff_representation_encoder(
     application: ExperimentRuntime,
     records: tuple[LamdaRawRecord, ...],
     features: FloatArray,
@@ -642,13 +642,13 @@ def _train_cutoff_representation_encoder(
     return encoder
 
 
-def _embed_features(encoder: RepresentationEncoder, features: FloatArray) -> FloatArray:
+def embed_features(encoder: RepresentationEncoder, features: FloatArray) -> FloatArray:
     with torch.no_grad():
         embedded = encoder(torch.tensor(features, dtype=torch.float32))
     return embedded.detach().cpu().numpy().astype(np.float64)
 
 
-def _cohort_has_sufficient_malicious_support(
+def cohort_has_sufficient_malicious_support(
     cohort_records: tuple[LamdaRawRecord, ...],
     rule: LabelDerivationRule,
     endpoint: CalendarMonth,
@@ -669,7 +669,7 @@ def _cohort_has_sufficient_malicious_support(
     return before_count >= minimum_support_per_class and after_count >= minimum_support_per_class
 
 
-def _dominant_malicious_family_cohort(
+def dominant_malicious_family_cohort(
     records: tuple[LamdaRawRecord, ...], rule: LabelDerivationRule
 ) -> FamilyName | None:
     counts = Counter(
@@ -690,12 +690,12 @@ def run_lamda_identification_diagnostics(
         LOGGER.warning("lamda identification diagnostics has no LAMDA release at %s", raw_root)
         return IdentificationDiagnosticsReport(None, 0, 0, ScientificOutcome.INSUFFICIENT_EVIDENCE)
     config = application.configuration.values
-    loaded = _load_variance_filtered_lamda_dataset(
+    loaded = load_variance_filtered_lamda_dataset(
         raw_root, config.datasets.lamda.preprocessing.raw_variance_threshold_when_required
     )
     rule = label_derivation_rule(config.datasets.lamda)
 
-    cohort = _dominant_malicious_family_cohort(loaded.records, rule)
+    cohort = dominant_malicious_family_cohort(loaded.records, rule)
     if cohort is None:
         LOGGER.warning("lamda identification diagnostics found no family-labeled cohort")
         return IdentificationDiagnosticsReport(None, 0, 0, ScientificOutcome.INSUFFICIENT_EVIDENCE)
@@ -739,7 +739,7 @@ def run_lamda_identification_diagnostics(
                 max(earliest_valid_endpoint, endpoint_ordinal - history), endpoint_ordinal - 1
             )
         )
-        if not _cohort_has_sufficient_malicious_support(
+        if not cohort_has_sufficient_malicious_support(
             cohort_records,
             rule,
             endpoint,
@@ -755,7 +755,7 @@ def run_lamda_identification_diagnostics(
                 )
             )
             continue
-        encoder = _train_cutoff_representation_encoder(
+        encoder = train_cutoff_representation_encoder(
             application, loaded.records, loaded.features, rule, endpoint
         )
         if encoder is None:
@@ -768,7 +768,7 @@ def run_lamda_identification_diagnostics(
                 )
             )
             continue
-        embedded_features = _embed_features(encoder, loaded.features)
+        embedded_features = embed_features(encoder, loaded.features)
         embedded_cohort_features = embedded_features[cohort_mask]
         result = fit_lamda_client_constraint(
             application,
@@ -898,7 +898,7 @@ def run_lamda_weak_eigengap_stress(application: ExperimentRuntime) -> WeakEigeng
         LOGGER.warning("weak-eigengap stress has no LAMDA release at %s", raw_root)
         return WeakEigengapStressReport(None, (), ScientificOutcome.INSUFFICIENT_EVIDENCE)
     config = application.configuration.values
-    loaded = _load_variance_filtered_lamda_dataset(
+    loaded = load_variance_filtered_lamda_dataset(
         raw_root, config.datasets.lamda.preprocessing.raw_variance_threshold_when_required
     )
     rule = label_derivation_rule(config.datasets.lamda)
@@ -936,7 +936,7 @@ def run_lamda_weak_eigengap_stress(application: ExperimentRuntime) -> WeakEigeng
         LOGGER.warning("weak-eigengap stress found no window with usable control replicates")
         return WeakEigengapStressReport(None, (), ScientificOutcome.INSUFFICIENT_EVIDENCE)
 
-    cohort = _dominant_malicious_family_cohort(loaded.records, rule)
+    cohort = dominant_malicious_family_cohort(loaded.records, rule)
     cohort_mask = np.fromiter(
         (record.family == cohort for record in loaded.records),
         dtype=bool,
@@ -946,13 +946,13 @@ def run_lamda_weak_eigengap_stress(application: ExperimentRuntime) -> WeakEigeng
         record for record, keep in zip(loaded.records, cohort_mask, strict=True) if keep
     )
 
-    encoder = _train_cutoff_representation_encoder(
+    encoder = train_cutoff_representation_encoder(
         application, loaded.records, loaded.features, rule, endpoint
     )
     if encoder is None:
         LOGGER.warning("weak-eigengap stress could not train a cutoff-fixed encoder")
         return WeakEigengapStressReport(None, (), ScientificOutcome.INSUFFICIENT_EVIDENCE)
-    embedded_features = _embed_features(encoder, loaded.features)
+    embedded_features = embed_features(encoder, loaded.features)
     embedded_cohort_features = embedded_features[cohort_mask]
     historical_endpoints = tuple(
         calendar_month(candidate)
@@ -1133,11 +1133,11 @@ def _locate_baseline_identification_context(
     if not raw_root.is_dir():
         return None
     config = application.configuration.values
-    loaded = _load_variance_filtered_lamda_dataset(
+    loaded = load_variance_filtered_lamda_dataset(
         raw_root, config.datasets.lamda.preprocessing.raw_variance_threshold_when_required
     )
     rule = label_derivation_rule(config.datasets.lamda)
-    cohort = _dominant_malicious_family_cohort(loaded.records, rule)
+    cohort = dominant_malicious_family_cohort(loaded.records, rule)
     if cohort is None:
         return None
     cohort_mask = np.fromiter(
@@ -1161,12 +1161,12 @@ def _locate_baseline_identification_context(
         )
     )
 
-    encoder = _train_cutoff_representation_encoder(
+    encoder = train_cutoff_representation_encoder(
         application, loaded.records, loaded.features, rule, calendar_month(month_max + 1)
     )
     if encoder is None:
         return None
-    embedded_features = _embed_features(encoder, loaded.features)
+    embedded_features = embed_features(encoder, loaded.features)
     embedded_cohort_features = embedded_features[cohort_mask]
 
     for endpoint_ordinal in range(month_max, earliest_valid_endpoint - 1, -1):
@@ -1458,11 +1458,11 @@ def run_lamda_temporal_dynamics_ablation(
         LOGGER.warning("temporal dynamics ablation has no LAMDA release at %s", raw_root)
         return TemporalDynamicsAblationReport(None, ScientificOutcome.INSUFFICIENT_EVIDENCE)
     config = application.configuration.values
-    loaded = _load_variance_filtered_lamda_dataset(
+    loaded = load_variance_filtered_lamda_dataset(
         raw_root, config.datasets.lamda.preprocessing.raw_variance_threshold_when_required
     )
     rule = label_derivation_rule(config.datasets.lamda)
-    cohort = _dominant_malicious_family_cohort(loaded.records, rule)
+    cohort = dominant_malicious_family_cohort(loaded.records, rule)
     if cohort is None:
         return TemporalDynamicsAblationReport(None, ScientificOutcome.INSUFFICIENT_EVIDENCE)
     cohort_mask = np.fromiter(
@@ -1481,7 +1481,7 @@ def run_lamda_temporal_dynamics_ablation(
     month_min, month_max = int(all_months.min()), int(all_months.max())
     transition_interval_months = config.temporal.transition_interval_months
 
-    encoder = _train_cutoff_representation_encoder(
+    encoder = train_cutoff_representation_encoder(
         application,
         loaded.records,
         loaded.features,
@@ -1490,7 +1490,7 @@ def run_lamda_temporal_dynamics_ablation(
     )
     if encoder is None:
         return TemporalDynamicsAblationReport(None, ScientificOutcome.INSUFFICIENT_EVIDENCE)
-    embedded_features = _embed_features(encoder, loaded.features)
+    embedded_features = embed_features(encoder, loaded.features)
     embedded_cohort_features = embedded_features[cohort_mask]
 
     centers: list[FloatArray] = []

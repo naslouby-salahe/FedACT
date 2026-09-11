@@ -51,7 +51,11 @@ from fedact.domain.types import (
     ValidationFlag,
 )
 from fedact.experiments.baselines import matched_benign_subtraction, projected_point_reconstruction
-from fedact.experiments.lamda_population import LamdaPopulation, load_lamda_population
+from fedact.experiments.lamda_population import (
+    LamdaPopulation,
+    eligible_cutoffs,
+    load_lamda_population,
+)
 from fedact.experiments.registry import ExperimentRuntime
 from fedact.learning.detector import DetectorHead, load_trained_detector, train_base_detector
 from fedact.learning.hardening import (
@@ -272,31 +276,6 @@ class ProspectiveEvaluationReport:
     mean_abstention_rate: MetricRate | None = None
     pr_auc: MetricRate | None = None
     roc_auc: MetricRate | None = None
-
-
-def _eligible_cutoffs(
-    application: ExperimentRuntime, population: LamdaPopulation
-) -> tuple[int, ...]:
-    config = application.configuration.values
-    horizon = config.temporal.primary_confirmatory_horizon_months
-    history = config.temporal.historical_training_window_months
-    minimum = config.identification.minimum_support_per_class
-    eligible: list[int] = []
-    for cutoff in range(int(population.months.min()), int(population.months.max()) - horizon + 1):
-        historical = (population.months >= cutoff - history) & (population.months < cutoff)
-        later = (population.months >= cutoff) & (population.months < cutoff + horizon)
-        if not historical.any() or not later.any():
-            continue
-        historical_labels = population.labels[historical]
-        later_labels = population.labels[later]
-        if (
-            np.count_nonzero(historical_labels) >= minimum
-            and np.count_nonzero(~historical_labels) >= minimum
-            and np.count_nonzero(later_labels) > 0
-            and np.count_nonzero(~later_labels) > 0
-        ):
-            eligible.append(cutoff)
-    return tuple(eligible)
 
 
 def run_cross_corpus_generalization(application: ExperimentRuntime) -> CrossCorpusReport:
@@ -1096,7 +1075,7 @@ def run_prospective_fedact_evaluation(
         return ProspectiveEvaluationReport(
             0, 0.0, 0.0, 0.0, 0.0, 0.0, ScientificOutcome.INSUFFICIENT_EVIDENCE
         )
-    cutoffs = _eligible_cutoffs(application, population)
+    cutoffs = eligible_cutoffs(application, population)
     if not cutoffs:
         LOGGER.warning("no LAMDA cutoff satisfies configured history/support/horizon requirements")
         return ProspectiveEvaluationReport(
