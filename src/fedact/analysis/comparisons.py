@@ -149,14 +149,14 @@ def enumerate_sensitivity_coordinates(
     coverage_levels: tuple[ThresholdValue, ...],
 ) -> tuple[SensitivityCoordinate, ...]:
     axes = (
-        (SensitivityAxis.CONTROL_SPAN_VIOLATION, "rho", control_span_alphas),
-        (SensitivityAxis.PRIVATE_CONTAMINATION, "xi", private_contamination_alphas),
-        (SensitivityAxis.HISTORICAL_PLAUSIBILITY_RADIUS, "R", radius_multipliers),
-        (SensitivityAxis.ALIGNMENT_THRESHOLD, "tau_align", alignment_percentiles),
-        (SensitivityAxis.AMBIGUITY_WIDTH, "tau_amb", ambiguity_percentiles),
-        (SensitivityAxis.FORECAST_HORIZON, "horizon", forecast_horizons),
-        (SensitivityAxis.NUISANCE_RANK, "nuisance_rank", nuisance_ranks),
-        (SensitivityAxis.TARGET_COVERAGE, "coverage_level", coverage_levels),
+        (SensitivityAxis.CONTROL_SPAN_VIOLATION, "rho", control_span_alphas), #TODO: should be enum, not hardcoded string
+        (SensitivityAxis.PRIVATE_CONTAMINATION, "xi", private_contamination_alphas), #TODO: should be enum, not hardcoded string
+        (SensitivityAxis.HISTORICAL_PLAUSIBILITY_RADIUS, "R", radius_multipliers), #TODO: should be enum, not hardcoded string
+        (SensitivityAxis.ALIGNMENT_THRESHOLD, "tau_align", alignment_percentiles), #TODO: should be enum, not hardcoded string
+        (SensitivityAxis.AMBIGUITY_WIDTH, "tau_amb", ambiguity_percentiles), #TODO: should be enum, not hardcoded string
+        (SensitivityAxis.FORECAST_HORIZON, "horizon", forecast_horizons), #TODO: should be enum, not hardcoded string
+        (SensitivityAxis.NUISANCE_RANK, "nuisance_rank", nuisance_ranks), #TODO: should be enum, not hardcoded string
+        (SensitivityAxis.TARGET_COVERAGE, "coverage_level", coverage_levels), #TODO: should be enum, not hardcoded string
     )
     return tuple(
         SensitivityCoordinate(axis=axis, parameter_name=parameter_name, value=value)

@@ -365,7 +365,7 @@ def run_lamda_action_generation(
     cached_rejections = _load_endpoint_fit_cache(fit_cache_path, cohort, len(loaded.records))
     rejections = dict(cached_rejections)
 
-    def _reject(endpoint_ordinal: int, endpoint: CalendarMonth, stage: str) -> None:
+    def _reject(endpoint_ordinal: int, endpoint: CalendarMonth, stage: str) -> None: #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
         LOGGER.info("action generation endpoint=%s rejected stage=%s", endpoint, stage)
         rejections[endpoint_ordinal] = stage
         _persist_endpoint_fit_cache(fit_cache_path, cohort, len(loaded.records), rejections)

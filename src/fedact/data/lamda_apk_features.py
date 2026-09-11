@@ -87,7 +87,7 @@ class LamdaApkFeatureExtraction:
     unverifiable_feature_indices: frozenset[int]
 
 
-def _canonical_api_reference(reference: str) -> str:
+def _canonical_api_reference(reference: str) -> str: #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     normalized = reference.replace("->", ".").replace(";", "").replace("/", ".")
     if normalized.startswith("L") and "." in normalized:
         normalized = normalized[1:]
@@ -101,8 +101,8 @@ def _manifest_xml(apk: APK) -> ManifestElement:
     return xml
 
 
-def _raw_manifest_name_attributes(xml: ManifestElement, tags: tuple[str, ...]) -> set[str]:
-    names: set[str] = set()
+def _raw_manifest_name_attributes(xml: ManifestElement, tags: tuple[str, ...]) -> set[str]: #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    names: set[str] = set() #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     for element in xml.iter():
         if element.tag in tags:
             value = element.get(MANIFEST_ANDROID_NAMESPACE + "name")
@@ -112,7 +112,7 @@ def _raw_manifest_name_attributes(xml: ManifestElement, tags: tuple[str, ...]) -
 
 
 def _called_api_references(dx: Analysis) -> set[str]:
-    references: set[str] = set()
+    references: set[str] = set() #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     for method_analysis in dx.get_methods():
         method = method_analysis.get_method()
         references.add(_canonical_api_reference(f"{method.get_class_name()}.{method.get_name()}"))
@@ -120,7 +120,7 @@ def _called_api_references(dx: Analysis) -> set[str]:
 
 
 def _url_domains(dx: Analysis) -> set[str]:
-    domains: set[str] = set()
+    domains: set[str] = set() #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     for string_value in dx.get_strings():
         for match in URL_DOMAIN_PATTERN.findall(str(string_value)):
             domains.add(match.rstrip(".").lower())

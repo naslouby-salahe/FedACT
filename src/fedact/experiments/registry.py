@@ -18,7 +18,7 @@ class ExperimentRuntime(Protocol):
         return cast(LoadedConfiguration, None)
 
 
-def experiment_directory(application: ExperimentRuntime, workflow: str) -> Path:
+def experiment_directory(application: ExperimentRuntime, workflow: str) -> Path: #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     return (
         application.repository_root
         / application.configuration.values.workspace.directories.experiments

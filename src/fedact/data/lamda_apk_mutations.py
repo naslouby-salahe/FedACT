@@ -66,7 +66,7 @@ class ApkSigningIdentity:
     store_password: str #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
 
 
-def _is_signature_entry(entry_name: str) -> bool:
+def _is_signature_entry(entry_name: str) -> bool: #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     lowered = entry_name.lower()
     if not lowered.startswith("meta-inf/"):
         return False

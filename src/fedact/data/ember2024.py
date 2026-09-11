@@ -930,7 +930,7 @@ def match_ember_controls(
     level: ControlMatchingLevel,
 ) -> tuple[EmberControlMatch, ...]:
     key = _matching_key(level)
-    controls_by_cell: dict[str, list[EmberControlRecord]] = {}
+    controls_by_cell: dict[str, list[EmberControlRecord]] = {} #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     for control in controls:
         controls_by_cell.setdefault(str(key(control)), []).append(control)
     matches: list[EmberControlMatch] = []

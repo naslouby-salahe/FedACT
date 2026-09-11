@@ -195,8 +195,8 @@ def _read_logcat(handle: EmulatorHandle) -> str:
     return result.stdout.decode(errors="replace")
 
 
-def _observable_event_set(logcat_text: str) -> frozenset[str]:
-    events: set[str] = set()
+def _observable_event_set(logcat_text: str) -> frozenset[str]: #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    events: set[str] = set() #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     for match in _ACTIVITY_START_PATTERN.finditer(logcat_text):
         events.add(f"start:{match.group(1)}")
     for match in _DISPLAYED_PATTERN.finditer(logcat_text):
@@ -204,7 +204,7 @@ def _observable_event_set(logcat_text: str) -> frozenset[str]:
     return frozenset(events)
 
 
-def _has_crash_or_anr(logcat_text: str) -> bool:
+def _has_crash_or_anr(logcat_text: str) -> bool: #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     return _CRASH_OR_ANR_PATTERN.search(logcat_text) is not None
 
 
@@ -212,7 +212,7 @@ def _has_crash_or_anr(logcat_text: str) -> bool:
 class DynamicRunResult:
     launched: bool
     crashed_or_anr: bool
-    observable_events: frozenset[str]
+    observable_events: frozenset[str] #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
 
 
 def run_dynamic_smoke(
@@ -240,7 +240,7 @@ def run_dynamic_smoke(
     return result
 
 
-def jaccard_similarity(source_events: frozenset[str], transformed_events: frozenset[str]) -> float:
+def jaccard_similarity(source_events: frozenset[str], transformed_events: frozenset[str]) -> float: #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     union = source_events | transformed_events
     if not union:
         return 0.0
