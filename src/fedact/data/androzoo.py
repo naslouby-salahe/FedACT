@@ -92,6 +92,29 @@ def acquire_lamda_apk(
     return AndroZooAcquisitionRecord(sample_id, destination, len(payload), False)
 
 
+def acquire_lamda_apks_within_budget(
+    sample_ids: tuple[SampleIdentifier, ...],
+    raw_data_root: Path,
+    api_key: str,
+    max_total_bytes: int,
+    timeout_seconds: float = 120.0,
+) -> tuple[AndroZooAcquisitionRecord, ...]:
+    acquired: list[AndroZooAcquisitionRecord] = []
+    total_new_bytes = 0
+    for sample_id in sample_ids:
+        destination = androzoo_apk_destination(raw_data_root, sample_id)
+        cached = _verified_local_apk(destination, sample_id)
+        if cached is not None:
+            acquired.append(cached)
+            continue
+        if total_new_bytes >= max_total_bytes:
+            break
+        record = acquire_lamda_apk(sample_id, raw_data_root, api_key, timeout_seconds)
+        acquired.append(record)
+        total_new_bytes += record.byte_size
+    return tuple(acquired)
+
+
 def acquired_lamda_apk_sample_ids(raw_data_root: Path) -> frozenset[SampleIdentifier]:
     directory = raw_data_root / "LAMDA" / "AndroZoo"
     if not directory.is_dir():
