@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import logging
+import subprocess
 import tempfile
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
@@ -121,6 +123,26 @@ def _historical_diameter_pool(
     return diameters
 
 
+def _tool_version(command: list[str]) -> str:
+    try:
+        result = subprocess.run(command, capture_output=True, check=False, timeout=15)
+    except (OSError, subprocess.TimeoutExpired):
+        return "unavailable"
+    output = (result.stdout or result.stderr).decode(errors="replace").strip().splitlines()
+    return output[0] if output else "unavailable"
+
+
+@lru_cache(maxsize=1)
+def _real_toolchain_identity() -> str:
+    components = {
+        "apktool": _tool_version(["apktool", "--version"]),
+        "apksigner": _tool_version(["apksigner", "--version"]),
+        "aapt2": _tool_version(["aapt2", "version"]),
+        "clamscan": _tool_version(["clamscan", "--version"]),
+    }
+    return "; ".join(f"{name}={version}" for name, version in components.items())
+
+
 def _apk_package_name(apk_bytes: bytes) -> str | None:
     try:
         apk, _dex, _analysis = AnalyzeAPK(apk_bytes, raw=True)
@@ -174,7 +196,7 @@ def _candidate_validity(
         smoke=smoke,
         maliciousness=maliciousness,
         behavior=behavior,
-        toolchain_identity="apktool+apksigner+zipalign+aapt2+clamscan+android-emulator",
+        toolchain_identity=_real_toolchain_identity(),
         source_hash=original_apk_path.stem,
     )
 
