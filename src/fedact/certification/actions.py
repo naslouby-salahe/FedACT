@@ -411,6 +411,7 @@ class OperatorCoverageAudit:
 class ValidityStatus(StrEnum):
     VALID = "VALID"
     INVALID = "INVALID"
+    MALICIOUSNESS_VALIDATION_UNAVAILABLE = "MALICIOUSNESS_VALIDATION_UNAVAILABLE"
 
 
 class ValidityLayerError(ValueError):
@@ -482,6 +483,8 @@ class CandidateValidityRecord:
 
     @property
     def status(self) -> ValidityStatus:
+        if not self.maliciousness.source_detected:
+            return ValidityStatus.MALICIOUSNESS_VALIDATION_UNAVAILABLE
         all_valid = (
             self.structural.is_valid
             and self.smoke.is_valid
