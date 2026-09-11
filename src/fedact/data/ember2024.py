@@ -278,9 +278,9 @@ _DATA_DIRECTORY_NAMES = (
 _FEATURE_HASHER_TRANSFORM_ATTRIBUTE = "transform"
 _SPARSE_MATRIX_TO_ARRAY_ATTRIBUTE = "toarray"
 
-EmberJsonObject = NewType("EmberJsonObject", dict[str, JsonEncodableValue])
+EmberJsonObject = NewType("EmberJsonObject", dict[str, JsonEncodableValue]) #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
 EmberJsonObjectList = NewType("EmberJsonObjectList", list[EmberJsonObject])
-EmberJsonStringList = NewType("EmberJsonStringList", list[str])
+EmberJsonStringList = NewType("EmberJsonStringList", list[str]) #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
 EmberJsonIntegerList = NewType("EmberJsonIntegerList", list[int])
 
 

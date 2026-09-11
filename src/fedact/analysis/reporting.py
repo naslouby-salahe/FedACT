@@ -130,22 +130,22 @@ def export_verified_project_evidence(
     if static_chronological_fnr is not None:
         rows.append(
             (
-                "Static chronological detector (no hardening)",
+                "Static chronological detector (no hardening)", #TODO: should be enum, not hardcoded string
                 f"{static_chronological_fnr:.{rate_significant_figures}f}",
-                "n/a",
-                "n/a",
+                "n/a", #TODO: should be enum, not hardcoded string
+                "n/a", #TODO: should be enum, not hardcoded string
             )
         )
     table_file = results_directory / "tables" / "main" / "table_1_main.tex" #TODO: should be enums not hardcoded strings
     generate_latex_table(
-        table_id="main_results",
+        table_id="main_results", #TODO: should be enums not hardcoded strings
         headers=tuple(LatexTableCell(header) for header in headers),
         rows=tuple(tuple(LatexTableCell(cell) for cell in row) for row in rows),
         output_file=table_file,
     )
     figure_file = results_directory / "figures" / "main" / "fig_1.png" #TODO: should be enums not hardcoded strings
     generate_prospective_metrics_figure(
-        "fig_1_prospective",
+        "fig_1_prospective", #TODO: should be enums not hardcoded strings
         fnr,
         certification_rate,
         rate_significant_figures,
@@ -153,7 +153,7 @@ def export_verified_project_evidence(
     )
     summary_file = results_directory / "metrics" / "summary" / "project_summary.json" #TODO: should be enums not hardcoded strings
     generate_project_summary(
-        project="FedACT",
+        project="FedACT", #TODO: should be enums not hardcoded strings
         verdict=overall_outcome,
         prospective_fnr=fnr,
         certification_rate=certification_rate,
@@ -165,14 +165,14 @@ def export_verified_project_evidence(
     package_artifact_status_index(
         [
             ArtifactStatusRecord(
-                artifact="table_1_main.tex", status=_verification_status(table_file)
+                artifact="table_1_main.tex", status=_verification_status(table_file) #TODO: should be enums not hardcoded strings
             ),
             ArtifactStatusRecord(
-                artifact="fig_1.png",
+                artifact="fig_1.png", #TODO: should be enums not hardcoded strings
                 status=_verification_status(figure_file),
             ),
             ArtifactStatusRecord(
-                artifact="project_summary.json", status=_verification_status(summary_file)
+                artifact="project_summary.json", status=_verification_status(summary_file) #TODO: should be enums not hardcoded strings
             ),
         ],
         evidence_index_file,
