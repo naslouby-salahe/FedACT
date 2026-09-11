@@ -24,6 +24,7 @@ from fedact.certification.actions import (
     lamda_families,
     maliciousness_validity_of,
 )
+from fedact.config.models import StrictModel
 from fedact.data.androzoo import acquired_lamda_apk_sample_ids, androzoo_apk_destination
 from fedact.data.clamav_signatures import acquire_supplementary_signatures
 from fedact.data.lamda import (
@@ -53,6 +54,7 @@ from fedact.data.splits import (
 )
 from fedact.domain.types import (
     EvaluationCount,
+    FamilyName,
     SampleCount,
     ScientificOutcome,
     SplitCutoffIdentity,
@@ -73,6 +75,45 @@ LOGGER = logging.getLogger(__name__)
 _KEYSTORE_ALIAS = "fedact-operator"
 _DEBUG_KEYSTORE_STORE_PASSWORD = "changeit"
 _MONKEY_SEED = 42
+
+_REJECTION_MALICIOUS_SUPPORT = "malicious_support"
+_REJECTION_ENCODER = "encoder"
+_REJECTION_POINT_ESTIMATE = "point_estimate"
+_REJECTION_TRANSITION_SUPPORT = "transition_support"
+_REJECTION_HISTORICAL_DIAMETER_POOL = "historical_diameter_pool"
+
+
+class EndpointFitCache(StrictModel):
+    cohort: FamilyName
+    record_count: SampleCount
+    rejections: dict[str, str] = {}
+
+
+def _load_endpoint_fit_cache(
+    cache_path: Path, cohort: FamilyName, record_count: SampleCount
+) -> dict[int, str]:
+    if not cache_path.is_file():
+        return {}
+    try:
+        cache = EndpointFitCache.model_validate_json(cache_path.read_text(encoding="utf-8"))
+    except ValueError:
+        return {}
+    if cache.cohort != cohort or cache.record_count != record_count:
+        return {}
+    return {int(endpoint): reason for endpoint, reason in cache.rejections.items()}
+
+
+def _persist_endpoint_fit_cache(
+    cache_path: Path, cohort: FamilyName, record_count: SampleCount, rejections: dict[int, str]
+) -> None:
+    cache = EndpointFitCache(
+        cohort=cohort,
+        record_count=record_count,
+        rejections={str(endpoint): reason for endpoint, reason in rejections.items()},
+    )
+    temporary_destination = cache_path.with_suffix(".json.partial")
+    temporary_destination.write_text(cache.model_dump_json(indent=2), encoding="utf-8")
+    temporary_destination.replace(cache_path)
 
 
 @dataclass(frozen=True)
@@ -215,12 +256,12 @@ def run_lamda_action_generation(
     emulator_handle: EmulatorHandle,
 ) -> ActionGenerationReport:
     config = application.configuration.values
-    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline" #TODO: should be retrieved from yml and accessed through config. Identify any similar issues and fix it
+    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline"
     if not raw_root.is_dir():
         LOGGER.warning("lamda action generation has no LAMDA release at %s", raw_root)
         return ActionGenerationReport(0, 0, 0, 0, ScientificOutcome.INSUFFICIENT_EVIDENCE)
 
-    acquired = acquired_lamda_apk_sample_ids(application.repository_root / "data" / "raw") #TODO: should be enums not hardcoded strings
+    acquired = acquired_lamda_apk_sample_ids(application.repository_root / "data" / "raw")
     if not acquired:
         LOGGER.warning("lamda action generation has no AndroZoo-acquired APKs on disk")
         return ActionGenerationReport(0, 0, 0, 0, ScientificOutcome.INSUFFICIENT_EVIDENCE)
@@ -244,7 +285,7 @@ def run_lamda_action_generation(
     cohort_index_by_sample = {
         record.sample_hash: index for index, record in enumerate(cohort_records)
     }
-    raw_root_all = application.repository_root / "data" / "raw" #TODO: should be enums not hardcoded strings
+    raw_root_all = application.repository_root / "data" / "raw"
     package_name_by_sample: dict[str, str] = {}
     for record in cohort_records:
         if (
@@ -282,18 +323,18 @@ def run_lamda_action_generation(
     )
 
     vocabulary = load_lamda_feature_vocabulary(
-        application.repository_root / "data" / "raw" / "LAMDA" / "Baseline" / "feature_mapping.csv" #TODO: should be retrieved from yml and accessed through config. Identify any similar issues and fix it
+        application.repository_root / "data" / "raw" / "LAMDA" / "Baseline" / "feature_mapping.csv"
     )
     signing_identity = ApkSigningIdentity(
-        keystore_path=experiment_directory(application, "action-certificate-validation") #TODO: should be enums not hardcoded strings
-        / "signing" #TODO: should be enums not hardcoded strings
-        / "debug-keystore.jks", #TODO: should be enums not hardcoded strings
+        keystore_path=experiment_directory(application, "action-certificate-validation")
+        / "signing"
+        / "debug-keystore.jks",
         key_alias=_KEYSTORE_ALIAS,
         store_password=_DEBUG_KEYSTORE_STORE_PASSWORD,
     )
     generate_deterministic_debug_keystore(signing_identity)
     supplementary_signatures = acquire_supplementary_signatures(
-        application.repository_root / "data" / "raw" #TODO: should be enums not hardcoded strings
+        application.repository_root / "data" / "raw"
     ).directory
 
     families = lamda_families()
@@ -303,9 +344,13 @@ def run_lamda_action_generation(
     )
 
     destination = (
-        experiment_directory(application, "action-certificate-validation") / "actions.json" #TODO: should be enums not hardcoded strings
+        experiment_directory(application, "action-certificate-validation") / "actions.json"
     )
     destination.parent.mkdir(parents=True, exist_ok=True)
+    fit_cache_path = (
+        experiment_directory(application, "action-certificate-validation")
+        / "endpoint_fit_cache.json"
+    )
 
     def _persist_written(actions: list[ActionObservation]) -> None:
         temporary_destination = destination.with_suffix(".json.partial")
@@ -317,11 +362,25 @@ def run_lamda_action_generation(
     written: list[ActionObservation] = []
     candidates_considered = 0
     maliciousness_validation_unavailable_count = 0
+    cached_rejections = _load_endpoint_fit_cache(fit_cache_path, cohort, len(loaded.records))
+    rejections = dict(cached_rejections)
+
+    def _reject(endpoint_ordinal: int, endpoint: CalendarMonth, stage: str) -> None:
+        LOGGER.info("action generation endpoint=%s rejected stage=%s", endpoint, stage)
+        rejections[endpoint_ordinal] = stage
+        _persist_endpoint_fit_cache(fit_cache_path, cohort, len(loaded.records), rejections)
 
     for endpoint_ordinal in range(
         max(earliest_valid_endpoint, month_min + 1), month_max - horizon + 1
     ):
         endpoint = calendar_month(endpoint_ordinal)
+        if endpoint_ordinal in cached_rejections:
+            LOGGER.info(
+                "action generation endpoint=%s cached_rejection stage=%s",
+                endpoint,
+                cached_rejections[endpoint_ordinal],
+            )
+            continue
         if not cohort_has_sufficient_malicious_support(
             cohort_records,
             rule,
@@ -329,7 +388,7 @@ def run_lamda_action_generation(
             transition_interval_months,
             config.identification.minimum_support_per_class,
         ):
-            LOGGER.info("action generation endpoint=%s rejected stage=malicious_support", endpoint)
+            _reject(endpoint_ordinal, endpoint, _REJECTION_MALICIOUS_SUPPORT)
             continue
         historical_endpoints = tuple(
             calendar_month(candidate)
@@ -347,7 +406,7 @@ def run_lamda_action_generation(
             application, loaded.records, loaded.features, rule, endpoint
         )
         if encoder is None:
-            LOGGER.info("action generation endpoint=%s rejected stage=encoder", endpoint)
+            _reject(endpoint_ordinal, endpoint, _REJECTION_ENCODER)
             continue
         embedded_features = embed_features(encoder, loaded.features)
         embedded_cohort_features = embedded_features[cohort_mask]
@@ -364,11 +423,7 @@ def run_lamda_action_generation(
             earlier_malicious_endpoints,
         )
         if not isinstance(fit, ClientConstraintFit):
-            LOGGER.info(
-                "action generation endpoint=%s rejected stage=client_constraint_fit reason=%s",
-                endpoint,
-                fit,
-            )
+            _reject(endpoint_ordinal, endpoint, f"client_constraint_fit:{fit.value}")
             continue
         beta = float(fit.beta)
 
@@ -376,7 +431,7 @@ def run_lamda_action_generation(
             cohort_records, embedded_cohort_features, rule, endpoint, transition_interval_months
         )
         if point_estimate is None:
-            LOGGER.info("action generation endpoint=%s rejected stage=point_estimate", endpoint)
+            _reject(endpoint_ordinal, endpoint, _REJECTION_POINT_ESTIMATE)
             continue
         ghat = point_estimate.displacement
 
@@ -390,6 +445,7 @@ def run_lamda_action_generation(
             embedded_cohort_features, months, endpoint, after_end
         )
         if before_support == 0 or after_support == 0:
+            _reject(endpoint_ordinal, endpoint, _REJECTION_TRANSITION_SUPPORT)
             continue
         ghat_real = after_mean - before_mean
 
@@ -405,6 +461,7 @@ def run_lamda_action_generation(
             earliest_valid_endpoint,
         )
         if not historical_diameters:
+            _reject(endpoint_ordinal, endpoint, _REJECTION_HISTORICAL_DIAMETER_POOL)
             continue
         historical_diameter_quantile = float(
             np.percentile(historical_diameters, diameter_quantile_fraction * 100.0, method="linear")
@@ -417,7 +474,7 @@ def run_lamda_action_generation(
             if int(months[cohort_index]) >= endpoint_ordinal:
                 continue
             apk_path = androzoo_apk_destination(
-                application.repository_root / "data" / "raw", source_record.sample_hash #TODO: should be enums not hardcoded strings
+                application.repository_root / "data" / "raw", source_record.sample_hash
             )
             if not apk_path.is_file():
                 continue

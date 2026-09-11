@@ -130,8 +130,8 @@ def read_central_pattern_cutoff_aggregates(
     source = (
         application.repository_root
         / application.configuration.values.workspace.directories.experiments
-        / "action-certificate-validation" #TODO: should be enums not hardcoded strings
-        / "central-pattern.json" #TODO: should be enums not hardcoded strings
+        / "action-certificate-validation"
+        / "central-pattern.json"
     )
     if not source.is_file():
         return (), ()
@@ -212,8 +212,8 @@ def read_prospective_cutoff_aggregates(
     source = (
         application.repository_root
         / application.configuration.values.workspace.directories.experiments
-        / "prospective-evaluation" #TODO: should be enums not hardcoded strings
-        / "cutoff-comparisons.json" #TODO: should be enums not hardcoded strings
+        / "prospective-evaluation"
+        / "cutoff-comparisons.json"
     )
     if not source.is_file():
         return (), (), (), ()
@@ -282,10 +282,10 @@ def run_cross_corpus_generalization(application: ExperimentRuntime) -> CrossCorp
     manifest_path = (
         application.repository_root
         / application.configuration.values.workspace.directories.experiments
-        / "cross-corpus" #TODO: should be enums not hardcoded strings
-        / "transfer.json" #TODO: should be enums not hardcoded strings
+        / "cross-corpus"
+        / "transfer.json"
     )
-    target_root = application.repository_root / "data" / "raw" / "EMBER2024" #TODO: should be enums not hardcoded strings
+    target_root = application.repository_root / "data" / "raw" / "EMBER2024"
     if not manifest_path.is_file() or not target_root.is_dir():
         LOGGER.warning(
             "cross-corpus transfer requires a locked transfer manifest=%s target=%s",
@@ -890,8 +890,8 @@ def _score_cutoff_population(
     challenge_file = (
         application.repository_root
         / config.workspace.directories.experiments
-        / "action-certificate-validation" #TODO: should be enums not hardcoded strings
-        / "challenges.json" #TODO: should be enums not hardcoded strings
+        / "action-certificate-validation"
+        / "challenges.json"
     )
     clean_fnr_degradation: DegradationValue = 0.0
     if challenge_file.is_file():
@@ -1054,8 +1054,8 @@ def run_prospective_fedact_evaluation(
     certificate_decisions = (
         application.repository_root
         / application.configuration.values.workspace.directories.experiments
-        / "action-certificate-validation" #TODO: should be enums not hardcoded strings
-        / "certificate-decisions.json" #TODO: should be enums not hardcoded strings
+        / "action-certificate-validation"
+        / "certificate-decisions.json"
     )
     if not certificate_decisions.is_file():
         LOGGER.warning("prospective evaluation requires completed action-certificate evidence")
@@ -1238,8 +1238,8 @@ def run_prospective_fedact_evaluation(
     comparison_destination = (
         application.repository_root
         / config.workspace.directories.experiments
-        / "prospective-evaluation" #TODO: should be enums not hardcoded strings
-        / "cutoff-comparisons.json" #TODO: should be enums not hardcoded strings
+        / "prospective-evaluation"
+        / "cutoff-comparisons.json"
     )
     comparison_destination.parent.mkdir(parents=True, exist_ok=True)
     comparison_destination.write_text(comparison.model_dump_json(indent=2), encoding="utf-8")

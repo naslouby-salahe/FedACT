@@ -535,9 +535,9 @@ def _train_cutoff_representation_encoder(
     cutoff_safe = auditable & (months < endpoint)
     if not np.any(cutoff_safe):
         return None
-    safe_months = months[cutoff_safe]
-    safe_records = tuple(record for record, keep in zip(records, cutoff_safe, strict=True) if keep)
-    safe_features = features[cutoff_safe]
+    safe_indices = np.flatnonzero(cutoff_safe)
+    safe_months = months[safe_indices]
+    safe_records = tuple(records[index] for index in safe_indices)
     validation_month = int(safe_months.max())
     training_indices = safe_months < validation_month
     validation_indices = safe_months == validation_month
@@ -548,12 +548,12 @@ def _train_cutoff_representation_encoder(
         return tuple(
             TrainingObservation(
                 sample_id=record.sample_hash,
-                features=torch.from_numpy(feature),
+                features=torch.from_numpy(features[row_index]),
                 month_index=int(month),
                 label=bool(record.label),
             )
-            for record, feature, month, keep in zip(
-                safe_records, safe_features, safe_months, mask, strict=True
+            for record, row_index, month, keep in zip(
+                safe_records, safe_indices, safe_months, mask, strict=True
             )
             if keep
         )
@@ -616,7 +616,7 @@ class Ember2024IdentificationDiagnosticsReport:
 def run_ember2024_identification_diagnostics(
     application: ExperimentRuntime,
 ) -> Ember2024IdentificationDiagnosticsReport:
-    raw_root = application.repository_root / "data" / "raw" / "EMBER2024" #TODO: should be enums not hardcoded strings
+    raw_root = application.repository_root / "data" / "raw" / "EMBER2024"
     if not raw_root.is_dir():
         LOGGER.warning("ember2024 identification diagnostics has no release at %s", raw_root)
         return Ember2024IdentificationDiagnosticsReport(
@@ -769,8 +769,8 @@ def run_ember2024_identification_diagnostics(
     destination = (
         application.repository_root
         / config.workspace.directories.experiments
-        / "prospective-evaluation" #TODO: should be enums not hardcoded strings
-        / "ember2024-identification-diagnostics.json" #TODO: should be enums not hardcoded strings
+        / "prospective-evaluation"
+        / "ember2024-identification-diagnostics.json"
     )
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(
