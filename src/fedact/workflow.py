@@ -18,6 +18,7 @@ from fedact.artifacts import (
     write_workflow_result,
 )
 from fedact.config.loading import LoadedConfiguration, load_production_configuration
+from fedact.data.androzoo import acquired_lamda_apk_sample_ids
 from fedact.data.ember2024 import run_empty_ember_transform_audit
 from fedact.data.lamda import (
     lamda_client_semantics,
@@ -423,7 +424,7 @@ def run_preprocess(
                     training_indices=frozenset(training_indices),
                     validation_indices=frozenset(validation_indices),
                     test_indices=frozenset(test_indices),
-                    operator_eligible=frozenset(),
+                    operator_eligible=acquired_lamda_apk_sample_ids(application.raw_data_root()),
                 )
                 partition_counts = cutoff_split.partition_counts()
                 training_count = partition_counts.for_partition(SplitPartition.TRAINING)
