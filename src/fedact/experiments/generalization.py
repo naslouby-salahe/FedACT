@@ -23,13 +23,6 @@ from fedact.data.ember2024 import (
     load_ember2024_records,
     validate_ember_dataset,
 )
-from fedact.data.lamda import (
-    audited_label,
-    label_derivation_rule,
-    load_lamda_records,
-    validate_lamda_dataset,
-    year_month_to_calendar_month,
-)
 from fedact.data.splits import (
     CalendarMonth,
     calendar_month,
@@ -58,6 +51,7 @@ from fedact.domain.types import (
     ValidationFlag,
 )
 from fedact.experiments.baselines import matched_benign_subtraction, projected_point_reconstruction
+from fedact.experiments.lamda_population import LamdaPopulation, load_lamda_population
 from fedact.experiments.registry import ExperimentRuntime
 from fedact.learning.detector import DetectorHead, load_trained_detector, train_base_detector
 from fedact.learning.hardening import (
@@ -280,55 +274,8 @@ class ProspectiveEvaluationReport:
     roc_auc: MetricRate | None = None
 
 
-@dataclass(frozen=True)
-class _LamdaPopulation:
-    features: np.ndarray
-    labels: np.ndarray
-    months: np.ndarray
-    sample_ids: tuple[SampleIdentifier, ...]
-    family: tuple[FamilyName | None, ...]
-
-
-def _load_lamda_population(application: ExperimentRuntime) -> _LamdaPopulation | None:
-    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline" / "2023"
-    if not raw_root.is_dir():
-        LOGGER.warning("prospective evaluation has no LAMDA release at %s", raw_root)
-        return None
-    loaded = load_lamda_records(raw_root)
-    validate_lamda_dataset(loaded)
-    rule = label_derivation_rule(application.configuration.values.datasets.lamda)
-    keep = np.fromiter(
-        (audited_label(rule, record).binary_label is not None for record in loaded.records),
-        dtype=bool,
-        count=len(loaded.records),
-    )
-    if not np.any(keep):
-        LOGGER.warning("LAMDA contains no rows with an auditable binary label")
-        return None
-    records = tuple(
-        record for record, retained in zip(loaded.records, keep, strict=True) if retained
-    )
-    labels = np.fromiter(
-        (bool(audited_label(rule, record).binary_label) for record in records),
-        dtype=bool,
-        count=len(records),
-    )
-    months = np.fromiter(
-        (int(year_month_to_calendar_month(record.year_month)) for record in records),
-        dtype=np.int64,
-        count=len(records),
-    )
-    return _LamdaPopulation(
-        features=np.ascontiguousarray(loaded.features[keep], dtype=np.float64),
-        labels=labels,
-        months=months,
-        sample_ids=tuple(record.sample_hash for record in records),
-        family=tuple(record.family for record in records),
-    )
-
-
 def _eligible_cutoffs(
-    application: ExperimentRuntime, population: _LamdaPopulation
+    application: ExperimentRuntime, population: LamdaPopulation
 ) -> tuple[int, ...]:
     config = application.configuration.values
     horizon = config.temporal.primary_confirmatory_horizon_months
@@ -903,7 +850,7 @@ def _reactive_drift_adaptation_false_negative_rate(
 
 def _score_cutoff_population(
     application: ExperimentRuntime,
-    population: _LamdaPopulation,
+    population: LamdaPopulation,
     historical: np.ndarray,
     later: np.ndarray,
 ) -> _CutoffScoring | None:
@@ -1144,7 +1091,7 @@ def run_prospective_fedact_evaluation(
         for decision in decision_artifact.decisions
         if decision.status is CertificationStatus.CERTIFIED_POSITIVE
     )
-    population = _load_lamda_population(application)
+    population = load_lamda_population(application)
     if population is None:
         return ProspectiveEvaluationReport(
             0, 0.0, 0.0, 0.0, 0.0, 0.0, ScientificOutcome.INSUFFICIENT_EVIDENCE
