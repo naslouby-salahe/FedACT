@@ -538,9 +538,6 @@ def gadget_library_identity() -> GadgetLibraryIdentity:
     return GadgetLibraryIdentity(BENIGN_GADGET_LIBRARY)
 
 
-_ = PayloadBytes
-
-
 def pe_mutation_families() -> tuple[OperatorFamily, ...]:
     return (
         OperatorFamily(
