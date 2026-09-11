@@ -11,9 +11,9 @@ import yaml
 from fedact.config.models import FedActConfig, validate_configuration_constraints
 from fedact.domain.types import JsonEncodableValue
 
-ConfigurationHash = NewType("ConfigurationHash", str)
-ConfigurationPayloadText = NewType("ConfigurationPayloadText", str)
-ConfigurationRawMapping = NewType("ConfigurationRawMapping", dict[str, JsonEncodableValue])
+ConfigurationHash = NewType("ConfigurationHash", str) #TODO: convert to enum
+ConfigurationPayloadText = NewType("ConfigurationPayloadText", str) #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+ConfigurationRawMapping = NewType("ConfigurationRawMapping", dict[str, JsonEncodableValue]) #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
 
 
 class DuplicateYamlKeyError(ValueError):
@@ -27,7 +27,7 @@ class _DuplicateKeyRejectingLoader(yaml.SafeLoader):
 def _construct_mapping(loader: yaml.Loader, node: yaml.Node) -> ConfigurationRawMapping:
     if not isinstance(node, yaml.MappingNode):
         raise TypeError("configuration mappings must deserialize from YAML mapping nodes")
-    seen: set[str] = set()
+    seen: set[str] = set() #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     for key_node, _unused in node.value:
         key = cast(str, loader.construct_object(key_node))
         if key in seen:
@@ -56,8 +56,8 @@ def deterministic_configuration_payload(config: FedActConfig) -> ConfigurationPa
 
 
 def compute_configuration_hash(config: FedActConfig) -> ConfigurationHash:
-    digest = hashlib.sha256(deterministic_configuration_payload(config).encode("utf-8"))
-    return ConfigurationHash(f"sha256:{digest.hexdigest()}")
+    digest = hashlib.sha256(deterministic_configuration_payload(config).encode("utf-8")) #TODO: should be enum not hardcoded string
+    return ConfigurationHash(f"sha256:{digest.hexdigest()}") #TODO: should be enums not hardcoded strings
 
 
 def parse_configuration_payload(payload: ConfigurationPayloadText) -> FedActConfig:

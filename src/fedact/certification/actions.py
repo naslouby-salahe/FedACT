@@ -201,8 +201,8 @@ def box_diameter_bound(
     return float(np.sqrt(sum(d * d for d in diffs)))
 
 
-OperatorName = NewType("OperatorName", str)
-NormalizedParameterString = NewType("NormalizedParameterString", str)
+OperatorName = NewType("OperatorName", str) #TODO: convert to enum
+NormalizedParameterString = NewType("NormalizedParameterString", str) #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
 OutputHash = NewType("OutputHash", str)
 CoverageRatio = NewType("CoverageRatio", float)
 CompositionLengthLimit = NewType("CompositionLengthLimit", int)
@@ -527,7 +527,7 @@ def lamda_families() -> tuple[OperatorFamily, ...]:
     )
 
 
-GadgetLibraryIdentity = NewType("GadgetLibraryIdentity", str)
+GadgetLibraryIdentity = NewType("GadgetLibraryIdentity", str) #TODO: convert to enum
 
 
 def pe_operator_enumerations() -> tuple[

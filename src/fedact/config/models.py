@@ -410,27 +410,27 @@ class ReportingConfig(StrictModel):
 
 
 class WorkspaceDirectories(StrictModel):
-    preprocessing: RelativePosixPath
-    shared_artifacts: RelativePosixPath
-    shared_models: RelativePosixPath
-    shared_scores: RelativePosixPath
-    shared_fitted: RelativePosixPath
-    shared_baselines: RelativePosixPath
-    shared_derived: RelativePosixPath
-    experiments: RelativePosixPath
-    cache: RelativePosixPath
-    staging: RelativePosixPath
-    result_experiments: RelativePosixPath
-    project_summary: RelativePosixPath
-    reproducibility: RelativePosixPath
+    preprocessing: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    shared_artifacts: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    shared_models: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    shared_scores: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    shared_fitted: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    shared_baselines: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    shared_derived: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    experiments: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    cache: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    staging: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    result_experiments: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    project_summary: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    reproducibility: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
 
 
 class WorkspaceConfig(StrictModel):
-    configuration_file: RelativePosixPath
-    outputs_root: RelativePosixPath
-    results_root: RelativePosixPath
+    configuration_file: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    outputs_root: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    results_root: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     directories: WorkspaceDirectories
-    experiment_directories: list[ExperimentDirectoryName]
+    experiment_directories: list[ExperimentDirectoryName] #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
 
 
 class FedActConfig(StrictModel):

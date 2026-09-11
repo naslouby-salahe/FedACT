@@ -34,7 +34,7 @@ def supplementary_signature_directory(raw_data_root: Path) -> Path:
 
 
 def _manifest_path(directory: Path) -> Path:
-    return directory / "manifest.json"
+    return directory / "manifest.json" #TODO: should be enums not hardcoded strings
 
 
 def acquire_supplementary_signatures(raw_data_root: Path) -> SupplementarySignatureManifest:
