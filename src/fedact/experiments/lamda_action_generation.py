@@ -24,6 +24,7 @@ from fedact.certification.actions import (
     maliciousness_validity_of,
 )
 from fedact.data.androzoo import acquired_lamda_apk_sample_ids, androzoo_apk_destination
+from fedact.data.clamav_signatures import acquire_supplementary_signatures
 from fedact.data.lamda import (
     LamdaRawRecord,
     audited_label,
@@ -176,10 +177,14 @@ def _candidate_validity(
     execution_timeout_seconds: float,
     minimum_behavior_jaccard: float,
     android_system_image: str,
+    supplementary_signature_directory: Path,
 ) -> CandidateValidityRecord:
     structural = apk_structural_validity_of(transformed_apk_bytes)
     maliciousness = maliciousness_validity_of(
-        original_apk_path.read_bytes(), bytes(transformed_apk_bytes), ".apk"
+        original_apk_path.read_bytes(),
+        bytes(transformed_apk_bytes),
+        ".apk",
+        supplementary_signature_directory,
     )
     with tempfile.TemporaryDirectory(prefix="fedact-action-dynamic-") as scratch_directory:
         transformed_path = Path(scratch_directory) / "transformed.apk"
@@ -286,6 +291,9 @@ def run_lamda_action_generation(
         store_password=_DEBUG_KEYSTORE_STORE_PASSWORD,
     )
     generate_deterministic_debug_keystore(signing_identity)
+    supplementary_signatures = acquire_supplementary_signatures(
+        application.repository_root / "data" / "raw"
+    ).directory
 
     families = lamda_families()
     max_composed = CompositionLengthLimit(config.operators.maximum_composed_atomic_actions)
@@ -423,6 +431,7 @@ def run_lamda_action_generation(
                     config.operators.validation.execution_timeout_seconds,
                     config.operators.validation.minimum_behavior_jaccard,
                     config.operators.validation.android_system_image,
+                    supplementary_signatures,
                 )
                 if validity.status is ValidityStatus.MALICIOUSNESS_VALIDATION_UNAVAILABLE:
                     maliciousness_validation_unavailable_count += 1

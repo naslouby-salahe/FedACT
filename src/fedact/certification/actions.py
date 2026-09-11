@@ -780,12 +780,14 @@ def apply_and_verify_apk_operator_family(
 _CLAMSCAN_INFECTED_EXIT_CODE = 1
 
 
-def _clamscan_detected(file_path: Path) -> ValidationFlag:
-    result = subprocess.run(
-        ["clamscan", "--no-summary", str(file_path)],
-        capture_output=True,
-        check=False,
-    )
+def _clamscan_detected(
+    file_path: Path, supplementary_signature_directory: Path | None
+) -> ValidationFlag:
+    command = ["clamscan", "--no-summary"]
+    if supplementary_signature_directory is not None:
+        command.extend(["-d", "/var/lib/clamav", "-d", str(supplementary_signature_directory)])
+    command.append(str(file_path))
+    result = subprocess.run(command, capture_output=True, check=False)
     if result.returncode not in (0, _CLAMSCAN_INFECTED_EXIT_CODE):
         raise RuntimeError(
             f"clamscan failed on {file_path}: {result.stderr.decode(errors='replace')}"
@@ -794,15 +796,20 @@ def _clamscan_detected(file_path: Path) -> ValidationFlag:
 
 
 def maliciousness_validity_of(
-    source_bytes: bytes, transformed_bytes: bytes, file_suffix: str
+    source_bytes: bytes,
+    transformed_bytes: bytes,
+    file_suffix: str,
+    supplementary_signature_directory: Path | None = None,
 ) -> MaliciousnessValidity:
     with tempfile.TemporaryDirectory(prefix="fedact-maliciousness-") as scratch_directory:
         source_path = Path(scratch_directory) / f"source{file_suffix}"
         transformed_path = Path(scratch_directory) / f"transformed{file_suffix}"
         source_path.write_bytes(source_bytes)
         transformed_path.write_bytes(transformed_bytes)
-        source_detected = _clamscan_detected(source_path)
-        transformed_detected = _clamscan_detected(transformed_path)
+        source_detected = _clamscan_detected(source_path, supplementary_signature_directory)
+        transformed_detected = _clamscan_detected(
+            transformed_path, supplementary_signature_directory
+        )
     return MaliciousnessValidity(
         source_detected=source_detected,
         transformed_detected=transformed_detected,
