@@ -1,15 +1,21 @@
 from __future__ import annotations
 
+import re
+import subprocess
+import tempfile
 from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from itertools import combinations
+from pathlib import Path
 from typing import NewType, Protocol, cast
 
 import lief
 import numpy as np
 import pefile
 import torch
+from androguard.core.apk import APK
+from androguard.misc import AnalyzeAPK
 
 from fedact.data.ember2024 import (
     APK_PAYLOAD_SIZES,
@@ -29,6 +35,11 @@ from fedact.data.ember2024 import (
     remove_debug_directory,
     rename_section,
     zero_pe_checksum,
+)
+from fedact.data.lamda_apk_mutations import (
+    ApkFileBytes,
+    ApkSigningIdentity,
+    apply_apk_operator_family,
 )
 from fedact.domain.records import AssumptionConsequence
 from fedact.domain.types import (
@@ -404,11 +415,11 @@ class ValidityLayerError(ValueError):
 class StructuralValidity:
     parser_primary_ok: ValidationFlag
     parser_secondary_ok: ValidationFlag
-    expected_machine_type: ValidationFlag
+    expected_format_identity: ValidationFlag
 
     @property
     def is_valid(self) -> DomainValidityFlag:
-        return self.parser_primary_ok and self.parser_secondary_ok and self.expected_machine_type
+        return self.parser_primary_ok and self.parser_secondary_ok and self.expected_format_identity
 
 
 @dataclass(frozen=True)
@@ -676,7 +687,7 @@ def structural_validity_of(pe_bytes: PeFileBytes) -> StructuralValidity:
     return StructuralValidity(
         parser_primary_ok=parser_primary_ok,
         parser_secondary_ok=parser_secondary_ok,
-        expected_machine_type=expected_machine_type,
+        expected_format_identity=expected_machine_type,
     )
 
 
@@ -695,3 +706,97 @@ def apply_and_verify_pe_operator_family(
             f"mutation family {family.name!r} produced a structurally invalid PE file"
         )
     return mutated
+
+
+def apk_structural_validity_of(apk_bytes: ApkFileBytes) -> StructuralValidity:
+    try:
+        apk, _dex, _analysis = cast(
+            "tuple[APK, list[object], object]",
+            AnalyzeAPK(bytes(apk_bytes), raw=True),
+        )
+        primary_package = apk.get_package()
+        parser_primary_ok = bool(primary_package)
+    except Exception:
+        parser_primary_ok = False
+        primary_package = None
+
+    with tempfile.TemporaryDirectory(prefix="fedact-apk-structural-") as scratch_directory:
+        source_path = Path(scratch_directory) / "source.apk"
+        source_path.write_bytes(bytes(apk_bytes))
+        try:
+            result = subprocess.run(
+                ["aapt2", "dump", "badging", str(source_path)],
+                check=True,
+                capture_output=True,
+            )
+            badging_text = result.stdout.decode("utf-8", errors="replace")
+            package_match = re.search(r"package: name='([^']+)'", badging_text)
+            parser_secondary_ok = package_match is not None
+            secondary_package = package_match.group(1) if package_match else None
+        except subprocess.CalledProcessError:
+            parser_secondary_ok = False
+            secondary_package = None
+
+    expected_format_identity = (
+        parser_primary_ok
+        and parser_secondary_ok
+        and primary_package is not None
+        and primary_package == secondary_package
+    )
+    return StructuralValidity(
+        parser_primary_ok=parser_primary_ok,
+        parser_secondary_ok=parser_secondary_ok,
+        expected_format_identity=expected_format_identity,
+    )
+
+
+def apk_structural_validity_status(apk_bytes: ApkFileBytes) -> ValidityStatus:
+    if apk_structural_validity_of(apk_bytes).is_valid:
+        return ValidityStatus.VALID
+    return ValidityStatus.INVALID
+
+
+def apply_and_verify_apk_operator_family(
+    family_name: str,
+    parameter: str,
+    apk_bytes: ApkFileBytes,
+    signing_identity: ApkSigningIdentity,
+) -> ApkFileBytes:
+    mutated = apply_apk_operator_family(family_name, parameter, apk_bytes, signing_identity)
+    if apk_structural_validity_status(mutated) is ValidityStatus.INVALID:
+        raise MutationStructuralIntegrityError(
+            f"mutation family {family_name!r} produced a structurally invalid APK file"
+        )
+    return mutated
+
+
+_CLAMSCAN_INFECTED_EXIT_CODE = 1
+
+
+def _clamscan_detected(file_path: Path) -> ValidationFlag:
+    result = subprocess.run(
+        ["clamscan", "--no-summary", str(file_path)],
+        capture_output=True,
+        check=False,
+    )
+    if result.returncode not in (0, _CLAMSCAN_INFECTED_EXIT_CODE):
+        raise RuntimeError(
+            f"clamscan failed on {file_path}: {result.stderr.decode(errors='replace')}"
+        )
+    return result.returncode == _CLAMSCAN_INFECTED_EXIT_CODE
+
+
+def maliciousness_validity_of(
+    source_bytes: bytes, transformed_bytes: bytes, file_suffix: str
+) -> MaliciousnessValidity:
+    with tempfile.TemporaryDirectory(prefix="fedact-maliciousness-") as scratch_directory:
+        source_path = Path(scratch_directory) / f"source{file_suffix}"
+        transformed_path = Path(scratch_directory) / f"transformed{file_suffix}"
+        source_path.write_bytes(source_bytes)
+        transformed_path.write_bytes(transformed_bytes)
+        source_detected = _clamscan_detected(source_path)
+        transformed_detected = _clamscan_detected(transformed_path)
+    return MaliciousnessValidity(
+        source_detected=source_detected,
+        transformed_detected=transformed_detected,
+    )
