@@ -86,7 +86,7 @@ _REJECTION_HISTORICAL_DIAMETER_POOL = "historical_diameter_pool"
 class EndpointFitCache(StrictModel):
     cohort: FamilyName
     record_count: SampleCount
-    rejections: dict[str, str] = {}
+    rejections: dict[str, str] = {} #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
 
 
 def _load_endpoint_fit_cache(
@@ -167,7 +167,7 @@ def _historical_diameter_pool(
     return diameters
 
 
-def _tool_version(command: list[str]) -> str:
+def _tool_version(command: list[str]) -> str: #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     try:
         result = subprocess.run(command, capture_output=True, check=False, timeout=15)
     except (OSError, subprocess.TimeoutExpired):
@@ -177,13 +177,13 @@ def _tool_version(command: list[str]) -> str:
 
 
 @lru_cache(maxsize=1)
-def _real_toolchain_identity(android_system_image: str) -> str:
+def _real_toolchain_identity(android_system_image: str) -> str: #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     components = {
-        "apktool": _tool_version(["apktool", "--version"]),
-        "apksigner": _tool_version(["apksigner", "--version"]),
-        "aapt2": _tool_version(["aapt2", "version"]),
-        "clamscan": _tool_version(["clamscan", "--version"]),
-        "android_system_image": android_system_image,
+        "apktool": _tool_version(["apktool", "--version"]), #TODO: should be enums not hardcoded strings
+        "apksigner": _tool_version(["apksigner", "--version"]), #TODO: should be enums not hardcoded strings
+        "aapt2": _tool_version(["aapt2", "version"]), #TODO: should be enums not hardcoded strings
+        "clamscan": _tool_version(["clamscan", "--version"]), #TODO: should be enums not hardcoded strings
+        "android_system_image": android_system_image, #TODO: should be enums not hardcoded strings
     }
     return "; ".join(f"{name}={version}" for name, version in components.items())
 
@@ -213,12 +213,12 @@ def _apply_composition(
 def _candidate_validity(
     original_apk_path: Path,
     transformed_apk_bytes: ApkFileBytes,
-    package_name: str,
+    package_name: str, #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     emulator_handle: EmulatorHandle,
     monkey_event_count: int,
     execution_timeout_seconds: float,
     minimum_behavior_jaccard: float,
-    android_system_image: str,
+    android_system_image: str, #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     supplementary_signature_directory: Path,
 ) -> CandidateValidityRecord:
     structural = apk_structural_validity_of(transformed_apk_bytes)
@@ -256,12 +256,12 @@ def run_lamda_action_generation(
     emulator_handle: EmulatorHandle,
 ) -> ActionGenerationReport:
     config = application.configuration.values
-    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline"
+    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline" #TODO: should be enums not hardcoded strings
     if not raw_root.is_dir():
         LOGGER.warning("lamda action generation has no LAMDA release at %s", raw_root)
         return ActionGenerationReport(0, 0, 0, 0, ScientificOutcome.INSUFFICIENT_EVIDENCE)
 
-    acquired = acquired_lamda_apk_sample_ids(application.repository_root / "data" / "raw")
+    acquired = acquired_lamda_apk_sample_ids(application.repository_root / "data" / "raw") #TODO: should be enums not hardcoded strings
     if not acquired:
         LOGGER.warning("lamda action generation has no AndroZoo-acquired APKs on disk")
         return ActionGenerationReport(0, 0, 0, 0, ScientificOutcome.INSUFFICIENT_EVIDENCE)
@@ -285,8 +285,8 @@ def run_lamda_action_generation(
     cohort_index_by_sample = {
         record.sample_hash: index for index, record in enumerate(cohort_records)
     }
-    raw_root_all = application.repository_root / "data" / "raw"
-    package_name_by_sample: dict[str, str] = {}
+    raw_root_all = application.repository_root / "data" / "raw" #TODO: should be enums not hardcoded strings
+    package_name_by_sample: dict[str, str] = {} #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     for record in cohort_records:
         if (
             audited_label(rule, record).binary_label is not True
@@ -323,18 +323,18 @@ def run_lamda_action_generation(
     )
 
     vocabulary = load_lamda_feature_vocabulary(
-        application.repository_root / "data" / "raw" / "LAMDA" / "Baseline" / "feature_mapping.csv"
+        application.repository_root / "data" / "raw" / "LAMDA" / "Baseline" / "feature_mapping.csv" #TODO: should be enums not hardcoded strings
     )
     signing_identity = ApkSigningIdentity(
-        keystore_path=experiment_directory(application, "action-certificate-validation")
-        / "signing"
-        / "debug-keystore.jks",
+        keystore_path=experiment_directory(application, "action-certificate-validation") #TODO: should be enums not hardcoded strings
+        / "signing" #TODO: should be enums not hardcoded strings
+        / "debug-keystore.jks", #TODO: should be enums not hardcoded strings
         key_alias=_KEYSTORE_ALIAS,
         store_password=_DEBUG_KEYSTORE_STORE_PASSWORD,
     )
     generate_deterministic_debug_keystore(signing_identity)
     supplementary_signatures = acquire_supplementary_signatures(
-        application.repository_root / "data" / "raw"
+        application.repository_root / "data" / "raw" #TODO: should be enums not hardcoded strings
     ).directory
 
     families = lamda_families()
@@ -344,12 +344,12 @@ def run_lamda_action_generation(
     )
 
     destination = (
-        experiment_directory(application, "action-certificate-validation") / "actions.json"
+        experiment_directory(application, "action-certificate-validation") / "actions.json" #TODO: should be enums not hardcoded strings
     )
     destination.parent.mkdir(parents=True, exist_ok=True)
     fit_cache_path = (
-        experiment_directory(application, "action-certificate-validation")
-        / "endpoint_fit_cache.json"
+        experiment_directory(application, "action-certificate-validation") #TODO: should be enums not hardcoded strings
+        / "endpoint_fit_cache.json" #TODO: should be enums not hardcoded strings
     )
 
     def _persist_written(actions: list[ActionObservation]) -> None:
@@ -474,7 +474,7 @@ def run_lamda_action_generation(
             if int(months[cohort_index]) >= endpoint_ordinal:
                 continue
             apk_path = androzoo_apk_destination(
-                application.repository_root / "data" / "raw", source_record.sample_hash
+                application.repository_root / "data" / "raw", source_record.sample_hash #TODO: should be enums not hardcoded strings
             )
             if not apk_path.is_file():
                 continue

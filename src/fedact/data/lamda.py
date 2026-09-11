@@ -43,7 +43,7 @@ from fedact.domain.types import (
     WindowSpanMonths,
 )
 
-_FEATURE_COLUMN_PREFIX = "feat_"
+_FEATURE_COLUMN_PREFIX = "feat_" #TODO: should be retrieved from yml and accessed through config. Identify any similar issues and fix it
 
 
 @dataclass(frozen=True)
@@ -52,7 +52,7 @@ class LoadedLamdaDataset:
     features: np.ndarray
 
 
-def _feature_columns(columns: list[str]) -> list[str]:
+def _feature_columns(columns: list[str]) -> list[str]: #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     return sorted(
         (column for column in columns if column.startswith(_FEATURE_COLUMN_PREFIX)),
         key=lambda column: int(column.removeprefix(_FEATURE_COLUMN_PREFIX)),
@@ -176,7 +176,7 @@ def match_controls_by_calendar_month(
     controls: tuple[LamdaRawRecord, ...],
     budget: MatchBudget,
 ) -> tuple[LamdaControlMatch, ...]:
-    controls_by_month: dict[str, list[LamdaRawRecord]] = {}
+    controls_by_month: dict[str, list[LamdaRawRecord]] = {} #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     for control in controls:
         controls_by_month.setdefault(control.year_month, []).append(control)
     matches: list[LamdaControlMatch] = []
@@ -431,7 +431,7 @@ def lamda_schema_manifest(
     records: Sequence[LamdaRawRecord], features: np.ndarray
 ) -> SchemaChronologyManifest:
     sorted_hashes = sorted(record.sample_hash for record in records)
-    digest = hashlib.sha256(",".join(sorted_hashes).encode("utf-8")).hexdigest()
+    digest = hashlib.sha256(",".join(sorted_hashes).encode("utf-8")).hexdigest() #TODO: should be enum not hardcoded string
     observed_months = sorted({record.year_month for record in records})
     if observed_months:
         first_month = year_month_to_calendar_month(observed_months[0])
@@ -441,7 +441,7 @@ def lamda_schema_manifest(
         last_month = calendar_month(0)
     return SchemaChronologyManifest(
         dataset=DatasetIdentity(DatasetSelector.LAMDA),
-        acquisition_checksum=f"sha256:{digest}",
+        acquisition_checksum=f"sha256:{digest}", #TODO: should be enums not hardcoded strings
         fields=(
             SchemaManifestField(name="hash", observed=len(records) > 0),
             SchemaManifestField(

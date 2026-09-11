@@ -19,7 +19,7 @@ from fedact.domain.types import (
     TableIdentifier,
 )
 
-LatexTableCell = NewType("LatexTableCell", str)
+LatexTableCell = NewType("LatexTableCell", str) #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
 
 
 def generate_latex_table(
@@ -75,10 +75,10 @@ def generate_project_summary(
 ) -> None:
     output_file.parent.mkdir(parents=True, exist_ok=True)
     payload = {
-        "project": project,
-        "verdict": verdict,
-        "prospective_fnr": prospective_fnr,
-        "certification_rate": certification_rate,
+        "project": project, #TODO: should be enums not hardcoded strings
+        "verdict": verdict, #TODO: should be enums not hardcoded strings
+        "prospective_fnr": prospective_fnr, #TODO: should be enums not hardcoded strings
+        "certification_rate": certification_rate, #TODO: should be enums not hardcoded strings
     }
     output_file.write_text(json.dumps(payload, indent=2) + chr(10), encoding="utf-8")
 
@@ -136,14 +136,14 @@ def export_verified_project_evidence(
                 "n/a",
             )
         )
-    table_file = results_directory / "tables" / "main" / "table_1_main.tex"
+    table_file = results_directory / "tables" / "main" / "table_1_main.tex" #TODO: should be enums not hardcoded strings
     generate_latex_table(
         table_id="main_results",
         headers=tuple(LatexTableCell(header) for header in headers),
         rows=tuple(tuple(LatexTableCell(cell) for cell in row) for row in rows),
         output_file=table_file,
     )
-    figure_file = results_directory / "figures" / "main" / "fig_1.png"
+    figure_file = results_directory / "figures" / "main" / "fig_1.png" #TODO: should be enums not hardcoded strings
     generate_prospective_metrics_figure(
         "fig_1_prospective",
         fnr,
@@ -151,7 +151,7 @@ def export_verified_project_evidence(
         rate_significant_figures,
         figure_file,
     )
-    summary_file = results_directory / "metrics" / "summary" / "project_summary.json"
+    summary_file = results_directory / "metrics" / "summary" / "project_summary.json" #TODO: should be enums not hardcoded strings
     generate_project_summary(
         project="FedACT",
         verdict=overall_outcome,
@@ -160,7 +160,7 @@ def export_verified_project_evidence(
         output_file=summary_file,
     )
     evidence_index_file = (
-        results_directory / "reproducibility" / "execution" / "evidence_index.json"
+        results_directory / "reproducibility" / "execution" / "evidence_index.json" #TODO: should be enums not hardcoded strings
     )
     package_artifact_status_index(
         [

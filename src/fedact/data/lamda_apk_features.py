@@ -18,11 +18,11 @@ URL_DOMAIN_PATTERN = re.compile(r"[a-zA-Z][a-zA-Z0-9+.-]*://([a-zA-Z0-9.-]+)")
 
 
 class ManifestElement(Protocol):
-    tag: str
+    tag: str #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
 
     def iter(self) -> Iterator[ManifestElement]: ...
 
-    def get(self, key: str) -> str | None: ...
+    def get(self, key: str) -> str | None: ... #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
 
 
 REPRODUCIBLE_FEATURE_CATEGORIES = (
@@ -46,8 +46,8 @@ class LamdaFeatureVocabularyError(ValueError):
 @dataclass(frozen=True)
 class LamdaFeatureVocabulary:
     dimension: int
-    category_by_index: tuple[str, ...]
-    name_by_index: tuple[str, ...]
+    category_by_index: tuple[str, ...] #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    name_by_index: tuple[str, ...] #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     unverifiable_indices: frozenset[int]
 
 
@@ -57,8 +57,8 @@ def load_lamda_feature_vocabulary(mapping_path: Path) -> LamdaFeatureVocabulary:
     feature_index = cast(pd.Series, mapping["mapped_name"].str.removeprefix("feat_")).astype(int)
     ordered = mapping.assign(feature_index=feature_index).sort_values(by="feature_index")
     feature_names = cast(list[str], ordered["feature_name"].tolist())
-    categories: list[str] = []
-    names: list[str] = []
+    categories: list[str] = [] #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    names: list[str] = [] #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     unverifiable_indices: set[int] = set()
     for index, feature_name in enumerate(feature_names):
         matched_category = next(
@@ -133,15 +133,15 @@ def extract_lamda_apk_features(
     apk, _, dx = cast("tuple[APK, list[object], Analysis]", AnalyzeAPK(str(apk_path)))
     xml = _manifest_xml(apk)
     observed_by_category: dict[str, set[str]] = {
-        "ActivityList": _raw_manifest_name_attributes(xml, ("activity",)),
-        "BroadcastReceiverList": _raw_manifest_name_attributes(xml, ("receiver",)),
-        "ServiceList": _raw_manifest_name_attributes(xml, ("service",)),
-        "RequestedPermissionList": set(apk.get_permissions()),
-        "IntentFilterList": _raw_manifest_name_attributes(xml, ("action", "category")),
-        "HardwareComponentsList": set(apk.get_features()),
-        "RestrictedApiList": _called_api_references(dx),
-        "SuspiciousApiList": _called_api_references(dx),
-        "URLDomainList": _url_domains(dx),
+        "ActivityList": _raw_manifest_name_attributes(xml, ("activity",)), #TODO: should be enums not hardcoded strings
+        "BroadcastReceiverList": _raw_manifest_name_attributes(xml, ("receiver",)), #TODO: should be enums not hardcoded strings
+        "ServiceList": _raw_manifest_name_attributes(xml, ("service",)), #TODO: should be enums not hardcoded strings
+        "RequestedPermissionList": set(apk.get_permissions()), #TODO: should be enums not hardcoded strings
+        "IntentFilterList": _raw_manifest_name_attributes(xml, ("action", "category")), #TODO: should be enums not hardcoded strings
+        "HardwareComponentsList": set(apk.get_features()), #TODO: should be enums not hardcoded strings
+        "RestrictedApiList": _called_api_references(dx), #TODO: should be enums not hardcoded strings
+        "SuspiciousApiList": _called_api_references(dx), #TODO: should be enums not hardcoded strings
+        "URLDomainList": _url_domains(dx), #TODO: should be enums not hardcoded strings
     }
     feature_vector = np.zeros(vocabulary.dimension, dtype=np.float64)
     for index, (category, name) in enumerate(

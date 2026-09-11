@@ -58,8 +58,8 @@ def _cosine_annealed_learning_rate(
 def _local_epoch(
     encoder_template: RepresentationEncoder,
     head_template: DetectorHead,
-    encoder_state: dict[str, torch.Tensor],
-    head_state: dict[str, torch.Tensor],
+    encoder_state: dict[str, torch.Tensor], #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    head_state: dict[str, torch.Tensor], #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     population: ClientTrainingPopulation,
     learning_rate: LearningRate,
 ) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor], LossValue]:
@@ -89,7 +89,7 @@ def _weighted_average_state(
     weighted_states: list[tuple[SampleCount, dict[str, torch.Tensor]]], total_samples: SampleCount
 ) -> dict[str, torch.Tensor]:
     keys = weighted_states[0][1].keys()
-    averaged: dict[str, torch.Tensor] = {}
+    averaged: dict[str, torch.Tensor] = {} #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     for key in keys:
         accumulator = torch.zeros_like(weighted_states[0][1][key], dtype=torch.float32)
         for weight, state in weighted_states:

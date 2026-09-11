@@ -40,7 +40,7 @@ def _cmdline_tools_environment() -> dict[str, str]:
 @dataclass(frozen=True)
 class EmulatorHandle:
     sdk_root: Path
-    serial: str
+    serial: str #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     process: subprocess.Popen[bytes]
 
 
@@ -49,8 +49,8 @@ _DEFAULT_ADB_TIMEOUT_SECONDS = 60.0
 
 def _adb(
     sdk_root: Path,
-    serial: str,
-    *args: str,
+    serial: str, #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    *args: str, #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     timeout_seconds: float = _DEFAULT_ADB_TIMEOUT_SECONDS,
 ) -> subprocess.CompletedProcess[bytes]:
     adb_path = sdk_root / "platform-tools" / "adb"
@@ -66,7 +66,7 @@ def _adb(
         raise AndroidEmulatorError(f"adb command timed out: {args}") from error
 
 
-def ensure_avd(sdk_root: Path, avd_name: str, system_image: str) -> None:
+def ensure_avd(sdk_root: Path, avd_name: str, system_image: str) -> None: #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     avdmanager_path = sdk_root / "cmdline-tools" / "latest" / "bin" / "avdmanager"
     list_result = subprocess.run(
         [str(avdmanager_path), "list", "avd"],
@@ -100,7 +100,7 @@ def ensure_avd(sdk_root: Path, avd_name: str, system_image: str) -> None:
 
 
 def boot_emulator(
-    sdk_root: Path, avd_name: str, port: int, boot_timeout_seconds: float
+    sdk_root: Path, avd_name: str, port: int, boot_timeout_seconds: float #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
 ) -> EmulatorHandle:
     emulator_path = sdk_root / "emulator" / "emulator"
     serial = f"emulator-{port}"
@@ -149,7 +149,7 @@ def _install(handle: EmulatorHandle, apk_path: Path) -> bool:
     return b"Success" in result.stdout
 
 
-def _uninstall(handle: EmulatorHandle, package_name: str) -> None:
+def _uninstall(handle: EmulatorHandle, package_name: str) -> None: #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     _adb(handle.sdk_root, handle.serial, "uninstall", package_name)
 
 
@@ -157,7 +157,7 @@ def _clear_logcat(handle: EmulatorHandle) -> None:
     _adb(handle.sdk_root, handle.serial, "logcat", "-c")
 
 
-def _launch(handle: EmulatorHandle, package_name: str) -> bool:
+def _launch(handle: EmulatorHandle, package_name: str) -> bool: #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     result = _adb(
         handle.sdk_root,
         handle.serial,
@@ -173,7 +173,7 @@ def _launch(handle: EmulatorHandle, package_name: str) -> bool:
 
 
 def _run_monkey_events(
-    handle: EmulatorHandle, package_name: str, event_count: int, seed: int
+    handle: EmulatorHandle, package_name: str, event_count: int, seed: int #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
 ) -> None:
     _adb(
         handle.sdk_root,
@@ -218,7 +218,7 @@ class DynamicRunResult:
 def run_dynamic_smoke(
     handle: EmulatorHandle,
     apk_path: Path,
-    package_name: str,
+    package_name: str, #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     monkey_event_count: int,
     monkey_seed: int,
 ) -> DynamicRunResult:

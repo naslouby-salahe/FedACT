@@ -79,11 +79,11 @@ LOGGER = logging.getLogger(__name__)
 
 
 class _TransferManifest(StrictModel):
-    encoder_checkpoint: RelativePosixPath
-    detector_checkpoint: RelativePosixPath
-    feature_adapter: RelativePosixPath
+    encoder_checkpoint: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    detector_checkpoint: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    feature_adapter: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     input_dimension: RankDimension = Field(gt=0)
-    certificate_decisions: RelativePosixPath | None = None
+    certificate_decisions: RelativePosixPath | None = None #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
 
 
 class _CertificateDecisionRecord(StrictModel):
@@ -130,8 +130,8 @@ def read_central_pattern_cutoff_aggregates(
     source = (
         application.repository_root
         / application.configuration.values.workspace.directories.experiments
-        / "action-certificate-validation"
-        / "central-pattern.json"
+        / "action-certificate-validation" #TODO: should be enums not hardcoded strings
+        / "central-pattern.json" #TODO: should be enums not hardcoded strings
     )
     if not source.is_file():
         return (), ()
@@ -156,7 +156,7 @@ class _FeatureAdapter:
     projection: np.ndarray
 
 
-def _workspace_path(application: ExperimentRuntime, relative_path: RelativePosixPath) -> Path:
+def _workspace_path(application: ExperimentRuntime, relative_path: RelativePosixPath) -> Path: #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     resolved = (application.repository_root / relative_path).resolve()
     if not resolved.is_relative_to(application.repository_root.resolve()):
         raise ValueError(f"transfer artifact escapes repository root: {relative_path}")
@@ -212,8 +212,8 @@ def read_prospective_cutoff_aggregates(
     source = (
         application.repository_root
         / application.configuration.values.workspace.directories.experiments
-        / "prospective-evaluation"
-        / "cutoff-comparisons.json"
+        / "prospective-evaluation" #TODO: should be enums not hardcoded strings
+        / "cutoff-comparisons.json" #TODO: should be enums not hardcoded strings
     )
     if not source.is_file():
         return (), (), (), ()
@@ -282,10 +282,10 @@ def run_cross_corpus_generalization(application: ExperimentRuntime) -> CrossCorp
     manifest_path = (
         application.repository_root
         / application.configuration.values.workspace.directories.experiments
-        / "cross-corpus"
-        / "transfer.json"
+        / "cross-corpus" #TODO: should be enums not hardcoded strings
+        / "transfer.json" #TODO: should be enums not hardcoded strings
     )
-    target_root = application.repository_root / "data" / "raw" / "EMBER2024"
+    target_root = application.repository_root / "data" / "raw" / "EMBER2024" #TODO: should be enums not hardcoded strings
     if not manifest_path.is_file() or not target_root.is_dir():
         LOGGER.warning(
             "cross-corpus transfer requires a locked transfer manifest=%s target=%s",
@@ -686,11 +686,11 @@ def _reactive_drift_adaptation_ncm(probability: ProbabilityValue, label: bool) -
 
 
 def _reactive_drift_adaptation_quartile_candidates(
-    p_values: dict[str, list[float]],
+    p_values: dict[str, list[float]], #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     predicted_labels: np.ndarray,
     groundtruth_labels: np.ndarray,
 ) -> dict[str, dict[str, dict[str, float]]]:
-    candidates: dict[str, dict[str, dict[str, float]]] = {}
+    candidates: dict[str, dict[str, dict[str, float]]] = {} #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     correct = predicted_labels == groundtruth_labels
     for key in ("cred", "conf"):
         scores = np.asarray(p_values[key], dtype=np.float64)
@@ -710,20 +710,20 @@ def _reactive_drift_adaptation_quartile_candidates(
                 else float(np.mean(scores_benign))
             )
             candidates.setdefault(quartile_key, {})[key] = {
-                "mw": malicious_threshold,
-                "gw": benign_threshold,
+                "mw": malicious_threshold, #TODO: should be enums not hardcoded strings
+                "gw": benign_threshold, #TODO: should be enums not hardcoded strings
             }
     return candidates
 
 
 def _select_reactive_drift_adaptation_threshold(
-    candidates: dict[str, dict[str, dict[str, float]]],
-    validation_p_values: dict[str, list[float]],
+    candidates: dict[str, dict[str, dict[str, float]]], #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    validation_p_values: dict[str, list[float]], #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     validation_groundtruth: np.ndarray,
     target_coverage: CoverageLevel,
     max_clean_degradation_points: DegradationValue,
 ) -> dict[str, dict[str, float]] | None:
-    best_threshold: dict[str, dict[str, float]] | None = None
+    best_threshold: dict[str, dict[str, float]] | None = None #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     best_certification_rate = -1.0
     best_clean_degradation = float("inf")
     for quartile_key in sorted(candidates):
@@ -890,8 +890,8 @@ def _score_cutoff_population(
     challenge_file = (
         application.repository_root
         / config.workspace.directories.experiments
-        / "action-certificate-validation"
-        / "challenges.json"
+        / "action-certificate-validation" #TODO: should be enums not hardcoded strings
+        / "challenges.json" #TODO: should be enums not hardcoded strings
     )
     clean_fnr_degradation: DegradationValue = 0.0
     if challenge_file.is_file():
@@ -1054,8 +1054,8 @@ def run_prospective_fedact_evaluation(
     certificate_decisions = (
         application.repository_root
         / application.configuration.values.workspace.directories.experiments
-        / "action-certificate-validation"
-        / "certificate-decisions.json"
+        / "action-certificate-validation" #TODO: should be enums not hardcoded strings
+        / "certificate-decisions.json" #TODO: should be enums not hardcoded strings
     )
     if not certificate_decisions.is_file():
         LOGGER.warning("prospective evaluation requires completed action-certificate evidence")
@@ -1238,8 +1238,8 @@ def run_prospective_fedact_evaluation(
     comparison_destination = (
         application.repository_root
         / config.workspace.directories.experiments
-        / "prospective-evaluation"
-        / "cutoff-comparisons.json"
+        / "prospective-evaluation" #TODO: should be enums not hardcoded strings
+        / "cutoff-comparisons.json" #TODO: should be enums not hardcoded strings
     )
     comparison_destination.parent.mkdir(parents=True, exist_ok=True)
     comparison_destination.write_text(comparison.model_dump_json(indent=2), encoding="utf-8")

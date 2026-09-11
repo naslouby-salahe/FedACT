@@ -51,7 +51,7 @@ class WorkspaceLayout:
     repository_root: Path
     workspace: WorkspaceConfig
 
-    def resolve(self, relative_path: RelativePosixPath | ExperimentName) -> Path:
+    def resolve(self, relative_path: RelativePosixPath | ExperimentName) -> Path: #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
         return self.repository_root / relative_path
 
     def output_directories(self) -> WorkspaceOutputDirectories:
@@ -83,9 +83,9 @@ class WorkspaceLayout:
         return self.resolve(self.workspace.directories.staging)
 
 
-DeterministicJsonPayload = NewType("DeterministicJsonPayload", str)
-HexDigest = NewType("HexDigest", str)
-ArtifactIdentity = NewType("ArtifactIdentity", str)
+DeterministicJsonPayload = NewType("DeterministicJsonPayload", str) #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+HexDigest = NewType("HexDigest", str) #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+ArtifactIdentity = NewType("ArtifactIdentity", str) #TODO: convert to enum
 
 
 def deterministic_json(value: JsonEncodableValue) -> DeterministicJsonPayload:
@@ -101,11 +101,11 @@ def deterministic_json(value: JsonEncodableValue) -> DeterministicJsonPayload:
 
 
 def sha256_digest(payload: DeterministicJsonPayload) -> HexDigest:
-    return HexDigest(f"sha256:{hashlib.sha256(payload.encode('utf-8')).hexdigest()}")
+    return HexDigest(f"sha256:{hashlib.sha256(payload.encode('utf-8')).hexdigest()}") #TODO: should be enums not hardcoded strings
 
 
 def content_checksum(content: RawPayloadBytes) -> ContentChecksum:
-    return ContentChecksum(f"sha256:{hashlib.sha256(content).hexdigest()}")
+    return ContentChecksum(f"sha256:{hashlib.sha256(content).hexdigest()}") #TODO: should be enums not hardcoded strings
 
 
 @dataclass(frozen=True)
@@ -138,7 +138,7 @@ def write_bytes_atomically(destination: Path, payload: RawPayloadBytes) -> Conte
 
 
 def write_text_atomically(destination: Path, payload: SourceText) -> ContentChecksum:
-    return write_bytes_atomically(destination, payload.encode("utf-8"))
+    return write_bytes_atomically(destination, payload.encode("utf-8")) #TODO: should be enum not hardcoded string
 
 
 def read_bytes(source: Path) -> RawPayloadBytes:
@@ -160,11 +160,11 @@ class WorkflowResultRecord(StrictModel):
 
 
 def workflow_result_path(experiment_directory: Path) -> Path:
-    return experiment_directory / "result.json"
+    return experiment_directory / "result.json" #TODO: should be enums not hardcoded strings
 
 
 def workflow_evidence_path(experiment_directory: Path) -> Path:
-    return experiment_directory / "evidence.json"
+    return experiment_directory / "evidence.json" #TODO: should be enums not hardcoded strings
 
 
 def write_workflow_result(experiment_directory: Path, record: WorkflowResultRecord) -> Path:

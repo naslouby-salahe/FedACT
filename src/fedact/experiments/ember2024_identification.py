@@ -616,7 +616,7 @@ class Ember2024IdentificationDiagnosticsReport:
 def run_ember2024_identification_diagnostics(
     application: ExperimentRuntime,
 ) -> Ember2024IdentificationDiagnosticsReport:
-    raw_root = application.repository_root / "data" / "raw" / "EMBER2024"
+    raw_root = application.repository_root / "data" / "raw" / "EMBER2024" #TODO: should be enums not hardcoded strings
     if not raw_root.is_dir():
         LOGGER.warning("ember2024 identification diagnostics has no release at %s", raw_root)
         return Ember2024IdentificationDiagnosticsReport(
@@ -769,8 +769,8 @@ def run_ember2024_identification_diagnostics(
     destination = (
         application.repository_root
         / config.workspace.directories.experiments
-        / "prospective-evaluation"
-        / "ember2024-identification-diagnostics.json"
+        / "prospective-evaluation" #TODO: should be enums not hardcoded strings
+        / "ember2024-identification-diagnostics.json" #TODO: should be enums not hardcoded strings
     )
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(

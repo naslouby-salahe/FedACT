@@ -201,9 +201,9 @@ def box_diameter_bound(
     return float(np.sqrt(sum(d * d for d in diffs)))
 
 
-OperatorName = NewType("OperatorName", str)
-NormalizedParameterString = NewType("NormalizedParameterString", str)
-OutputHash = NewType("OutputHash", str)
+OperatorName = NewType("OperatorName", str) #TODO: convert to enum
+NormalizedParameterString = NewType("NormalizedParameterString", str) #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+OutputHash = NewType("OutputHash", str) #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
 CoverageRatio = NewType("CoverageRatio", float)
 CompositionLengthLimit = NewType("CompositionLengthLimit", int)
 
@@ -317,7 +317,7 @@ def enumerate_candidates(
             selections.append((family, parameter))
 
     candidates: list[OperatorCandidate] = []
-    seen: set[str] = set()
+    seen: set[str] = set() #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     for length in range(1, maximum_composed_atomic_actions + 1):
         for composition in _compositions_of_length(tuple(selections), length):
             normalized_form = _normalized_form(composition.families, composition.parameters)
@@ -527,7 +527,7 @@ def lamda_families() -> tuple[OperatorFamily, ...]:
     )
 
 
-GadgetLibraryIdentity = NewType("GadgetLibraryIdentity", str)
+GadgetLibraryIdentity = NewType("GadgetLibraryIdentity", str) #TODO: convert to enum
 
 
 def pe_operator_enumerations() -> tuple[
@@ -760,8 +760,8 @@ def apk_structural_validity_status(apk_bytes: ApkFileBytes) -> ValidityStatus:
 
 
 def apply_and_verify_apk_operator_family(
-    family_name: str,
-    parameter: str,
+    family_name: str, #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    parameter: str, #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     apk_bytes: ApkFileBytes,
     signing_identity: ApkSigningIdentity,
 ) -> ApkFileBytes:
@@ -794,7 +794,7 @@ def _clamscan_detected(
 def maliciousness_validity_of(
     source_bytes: bytes,
     transformed_bytes: bytes,
-    file_suffix: str,
+    file_suffix: str, #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     supplementary_signature_directory: Path | None = None,
 ) -> MaliciousnessValidity:
     with tempfile.TemporaryDirectory(prefix="fedact-maliciousness-") as scratch_directory:
@@ -816,7 +816,7 @@ def apk_dynamic_validity_of(
     handle: EmulatorHandle,
     source_apk_path: Path,
     transformed_apk_path: Path,
-    package_name: str,
+    package_name: str, #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     monkey_event_count: int,
     monkey_seed: int,
     execution_timeout_seconds: TimeoutSeconds,

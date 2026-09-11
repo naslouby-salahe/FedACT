@@ -40,7 +40,7 @@ class AndroZooAcquisitionRecord:
 
 
 def androzoo_apk_destination(raw_data_root: Path, sample_id: SampleIdentifier) -> Path:
-    return raw_data_root / "LAMDA" / "AndroZoo" / f"{sample_id}.apk"
+    return raw_data_root / "LAMDA" / "AndroZoo" / f"{sample_id}.apk" #TODO: should be retrieved from yml and accessed through config. Identify any similar issues and fix it
 
 
 def _verified_local_apk(
@@ -60,7 +60,7 @@ def _verified_local_apk(
 def acquire_lamda_apk(
     sample_id: SampleIdentifier,
     raw_data_root: Path,
-    api_key: str,
+    api_key: str, #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     timeout_seconds: float = 120.0,
 ) -> AndroZooAcquisitionRecord:
     destination = androzoo_apk_destination(raw_data_root, sample_id)
@@ -95,7 +95,7 @@ def acquire_lamda_apk(
 def acquire_lamda_apks_within_budget(
     sample_ids: tuple[SampleIdentifier, ...],
     raw_data_root: Path,
-    api_key: str,
+    api_key: str, #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     max_total_bytes: int,
     timeout_seconds: float = 120.0,
 ) -> tuple[AndroZooAcquisitionRecord, ...]:
@@ -116,7 +116,7 @@ def acquire_lamda_apks_within_budget(
 
 
 def acquired_lamda_apk_sample_ids(raw_data_root: Path) -> frozenset[SampleIdentifier]:
-    directory = raw_data_root / "LAMDA" / "AndroZoo"
+    directory = raw_data_root / "LAMDA" / "AndroZoo" #TODO: should be retrieved from yml and accessed through config. Identify any similar issues and fix it
     if not directory.is_dir():
         return frozenset()
     verified: set[SampleIdentifier] = set()

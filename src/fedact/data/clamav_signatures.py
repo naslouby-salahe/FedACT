@@ -24,9 +24,9 @@ class ClamavSignatureAcquisitionError(RuntimeError):
 @dataclass(frozen=True)
 class SupplementarySignatureManifest:
     directory: Path
-    file_sha256: dict[str, str]
-    fetched_at: str
-    source: str
+    file_sha256: dict[str, str] #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    fetched_at: str #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    source: str #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
 
 
 def supplementary_signature_directory(raw_data_root: Path) -> Path:
@@ -34,7 +34,7 @@ def supplementary_signature_directory(raw_data_root: Path) -> Path:
 
 
 def _manifest_path(directory: Path) -> Path:
-    return directory / "manifest.json"
+    return directory / "manifest.json" #TODO: should be enums not hardcoded strings
 
 
 def acquire_supplementary_signatures(raw_data_root: Path) -> SupplementarySignatureManifest:
@@ -50,7 +50,7 @@ def acquire_supplementary_signatures(raw_data_root: Path) -> SupplementarySignat
         )
 
     directory.mkdir(parents=True, exist_ok=True)
-    file_sha256: dict[str, str] = {}
+    file_sha256: dict[str, str] = {} #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     for filename in SUPPLEMENTARY_SIGNATURE_FILES:
         url = f"{SANESECURITY_MIRROR}/{filename}"
         try:
@@ -73,9 +73,9 @@ def acquire_supplementary_signatures(raw_data_root: Path) -> SupplementarySignat
     manifest_path.write_text(
         json.dumps(
             {
-                "file_sha256": manifest.file_sha256,
-                "fetched_at": manifest.fetched_at,
-                "source": manifest.source,
+                "file_sha256": manifest.file_sha256, #TODO: should be enums not hardcoded strings
+                "fetched_at": manifest.fetched_at, #TODO: should be enums not hardcoded strings
+                "source": manifest.source, #TODO: should be enums not hardcoded strings
             },
             indent=2,
         ),

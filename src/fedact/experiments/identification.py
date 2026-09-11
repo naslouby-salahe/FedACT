@@ -685,7 +685,7 @@ def dominant_malicious_family_cohort(
 def run_lamda_identification_diagnostics(
     application: ExperimentRuntime,
 ) -> IdentificationDiagnosticsReport:
-    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline"
+    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline" #TODO: should be enums not hardcoded strings
     if not raw_root.is_dir():
         LOGGER.warning("lamda identification diagnostics has no LAMDA release at %s", raw_root)
         return IdentificationDiagnosticsReport(None, 0, 0, ScientificOutcome.INSUFFICIENT_EVIDENCE)
@@ -843,8 +843,8 @@ def run_lamda_identification_diagnostics(
     destination = (
         application.repository_root
         / config.workspace.directories.experiments
-        / "prospective-evaluation"
-        / "identification-diagnostics.json"
+        / "prospective-evaluation" #TODO: should be enums not hardcoded strings
+        / "identification-diagnostics.json" #TODO: should be enums not hardcoded strings
     )
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(
@@ -893,7 +893,7 @@ class WeakEigengapStressReport:
 
 
 def run_lamda_weak_eigengap_stress(application: ExperimentRuntime) -> WeakEigengapStressReport:
-    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline"
+    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline" #TODO: should be enums not hardcoded strings
     if not raw_root.is_dir():
         LOGGER.warning("weak-eigengap stress has no LAMDA release at %s", raw_root)
         return WeakEigengapStressReport(None, (), ScientificOutcome.INSUFFICIENT_EVIDENCE)
@@ -1094,8 +1094,8 @@ def run_lamda_weak_eigengap_stress(application: ExperimentRuntime) -> WeakEigeng
     destination = (
         application.repository_root
         / config.workspace.directories.experiments
-        / "failure-boundaries"
-        / "weak-eigengap-stress.json"
+        / "failure-boundaries" #TODO: should be enums not hardcoded strings
+        / "weak-eigengap-stress.json" #TODO: should be enums not hardcoded strings
     )
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(
@@ -1129,7 +1129,7 @@ class _BaselineIdentificationContext:
 def _locate_baseline_identification_context(
     application: ExperimentRuntime,
 ) -> _BaselineIdentificationContext | None:
-    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline"
+    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline" #TODO: should be enums not hardcoded strings
     if not raw_root.is_dir():
         return None
     config = application.configuration.values
@@ -1301,8 +1301,8 @@ def run_lamda_sparse_control_stress(application: ExperimentRuntime) -> SparseCon
     destination = (
         application.repository_root
         / config.workspace.directories.experiments
-        / "failure-boundaries"
-        / "sparse-control-stress.json"
+        / "failure-boundaries" #TODO: should be enums not hardcoded strings
+        / "sparse-control-stress.json" #TODO: should be enums not hardcoded strings
     )
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(
@@ -1411,8 +1411,8 @@ def run_lamda_allowance_sensitivity_stress(
     destination = (
         application.repository_root
         / config.workspace.directories.experiments
-        / "failure-boundaries"
-        / "allowance-sensitivity-stress.json"
+        / "failure-boundaries" #TODO: should be enums not hardcoded strings
+        / "allowance-sensitivity-stress.json" #TODO: should be enums not hardcoded strings
     )
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(
@@ -1453,7 +1453,7 @@ class TemporalDynamicsAblationReport:
 def run_lamda_temporal_dynamics_ablation(
     application: ExperimentRuntime,
 ) -> TemporalDynamicsAblationReport:
-    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline"
+    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline" #TODO: should be enums not hardcoded strings
     if not raw_root.is_dir():
         LOGGER.warning("temporal dynamics ablation has no LAMDA release at %s", raw_root)
         return TemporalDynamicsAblationReport(None, ScientificOutcome.INSUFFICIENT_EVIDENCE)
@@ -1561,8 +1561,8 @@ def run_lamda_temporal_dynamics_ablation(
     destination = (
         application.repository_root
         / config.workspace.directories.experiments
-        / "ablations"
-        / "temporal-dynamics.json"
+        / "ablations" #TODO: should be enums not hardcoded strings
+        / "temporal-dynamics.json" #TODO: should be enums not hardcoded strings
     )
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(

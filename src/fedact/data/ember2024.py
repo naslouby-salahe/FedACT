@@ -870,8 +870,8 @@ def run_empty_ember_transform_audit() -> None:
         raise EmberValidationError("EMBER standardization produced an impossible shape")
 
 
-WeekIdentifier = NewType("WeekIdentifier", str)
-CalendarMonthCell = NewType("CalendarMonthCell", str)
+WeekIdentifier = NewType("WeekIdentifier", str) #TODO: convert to enum
+CalendarMonthCell = NewType("CalendarMonthCell", str) #TODO: convert to enum
 
 
 @dataclass(frozen=True)

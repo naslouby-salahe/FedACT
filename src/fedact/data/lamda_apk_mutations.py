@@ -62,8 +62,8 @@ class ApkSigningError(RuntimeError):
 @dataclass(frozen=True)
 class ApkSigningIdentity:
     keystore_path: Path
-    key_alias: str
-    store_password: str
+    key_alias: str #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    store_password: str #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
 
 
 def _is_signature_entry(entry_name: str) -> bool:
@@ -210,12 +210,12 @@ def unreachable_benign_gadget_injection(
             f"apktool gadget injection failed: {error.stderr.decode(errors='replace')}"
         ) from error
     rebuilt_bytes = ApkFileBytes(rebuilt_path.read_bytes())
-    return sign_and_align_apk(rebuilt_bytes, signing_identity, working_directory / "signing")
+    return sign_and_align_apk(rebuilt_bytes, signing_identity, working_directory / "signing") #TODO: should be enums not hardcoded strings
 
 
 def apply_apk_operator_family(
-    family_name: str,
-    parameter: str,
+    family_name: str, #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    parameter: str, #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     apk_bytes: ApkFileBytes,
     signing_identity: ApkSigningIdentity,
 ) -> ApkFileBytes:
@@ -228,5 +228,5 @@ def apply_apk_operator_family(
         if family_name == "permission-neutral-resource-injection":
             payload_size = PayloadBytes(int(parameter.split("=", 1)[1]))
             mutated = permission_neutral_resource_injection(apk_bytes, payload_size)
-            return sign_and_align_apk(mutated, signing_identity, working_directory / "signing")
+            return sign_and_align_apk(mutated, signing_identity, working_directory / "signing") #TODO: should be enums not hardcoded strings
     raise ApkMutationError(f"unsupported APK operator family: {family_name!r}")
