@@ -78,6 +78,7 @@ class ActionGenerationReport:
     operator_eligible_source_samples: SampleCount
     candidates_considered: EvaluationCount
     valid_actions_written: EvaluationCount
+    maliciousness_validation_unavailable_count: EvaluationCount
     scientific_outcome: ScientificOutcome
 
 
@@ -211,12 +212,12 @@ def run_lamda_action_generation(
     raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline" / "2023"
     if not raw_root.is_dir():
         LOGGER.warning("lamda action generation has no LAMDA release at %s", raw_root)
-        return ActionGenerationReport(0, 0, 0, ScientificOutcome.INSUFFICIENT_EVIDENCE)
+        return ActionGenerationReport(0, 0, 0, 0, ScientificOutcome.INSUFFICIENT_EVIDENCE)
 
     acquired = acquired_lamda_apk_sample_ids(application.repository_root / "data" / "raw")
     if not acquired:
         LOGGER.warning("lamda action generation has no AndroZoo-acquired APKs on disk")
-        return ActionGenerationReport(0, 0, 0, ScientificOutcome.INSUFFICIENT_EVIDENCE)
+        return ActionGenerationReport(0, 0, 0, 0, ScientificOutcome.INSUFFICIENT_EVIDENCE)
 
     loaded = load_lamda_records(raw_root)
     validate_lamda_dataset(loaded)
@@ -225,7 +226,7 @@ def run_lamda_action_generation(
 
     cohort = dominant_malicious_family_cohort(loaded.records, rule)
     if cohort is None:
-        return ActionGenerationReport(0, 0, 0, ScientificOutcome.INSUFFICIENT_EVIDENCE)
+        return ActionGenerationReport(0, 0, 0, 0, ScientificOutcome.INSUFFICIENT_EVIDENCE)
     cohort_mask = np.fromiter(
         (record.family == cohort for record in loaded.records),
         dtype=bool,
@@ -259,7 +260,7 @@ def run_lamda_action_generation(
     )
     if not eligible_source_records:
         LOGGER.warning("no acquired, package-identified APK belongs to cohort %s", cohort)
-        return ActionGenerationReport(0, 0, 0, ScientificOutcome.INSUFFICIENT_EVIDENCE)
+        return ActionGenerationReport(0, 0, 0, 0, ScientificOutcome.INSUFFICIENT_EVIDENCE)
 
     months = np.fromiter(
         (int(year_month_to_calendar_month(record.year_month)) for record in cohort_records),
@@ -294,6 +295,7 @@ def run_lamda_action_generation(
 
     written: list[ActionObservation] = []
     candidates_considered = 0
+    maliciousness_validation_unavailable_count = 0
 
     for endpoint_ordinal in range(
         max(earliest_valid_endpoint, month_min + 1), month_max - horizon + 1
@@ -422,6 +424,9 @@ def run_lamda_action_generation(
                     config.operators.validation.minimum_behavior_jaccard,
                     config.operators.validation.android_system_image,
                 )
+                if validity.status is ValidityStatus.MALICIOUSNESS_VALIDATION_UNAVAILABLE:
+                    maliciousness_validation_unavailable_count += 1
+                    continue
                 if validity.status is not ValidityStatus.VALID:
                     continue
                 with tempfile.TemporaryDirectory(prefix="fedact-action-features-") as scratch:
@@ -472,6 +477,7 @@ def run_lamda_action_generation(
         operator_eligible_source_samples=len(eligible_source_records),
         candidates_considered=candidates_considered,
         valid_actions_written=len(written),
+        maliciousness_validation_unavailable_count=maliciousness_validation_unavailable_count,
         scientific_outcome=(
             ScientificOutcome.PASS if written else ScientificOutcome.INSUFFICIENT_EVIDENCE
         ),

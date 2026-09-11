@@ -665,7 +665,8 @@ def _run_lamda_action_generation_if_acquired(application: Application) -> None:
             f"lamda action generation completed: "
             f"eligible={report.operator_eligible_source_samples} "
             f"considered={report.candidates_considered} "
-            f"written={report.valid_actions_written}"
+            f"written={report.valid_actions_written} "
+            f"maliciousness_unavailable={report.maliciousness_validation_unavailable_count}"
         )
     finally:
         shutdown_emulator(handle)
