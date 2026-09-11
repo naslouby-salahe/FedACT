@@ -301,6 +301,18 @@ def run_lamda_action_generation(
         config.certification.forecast_set_diameter_abstention.historical_realized_diameter_quantile
     )
 
+    destination = (
+        experiment_directory(application, "action-certificate-validation") / "actions.json"
+    )
+    destination.parent.mkdir(parents=True, exist_ok=True)
+
+    def _persist_written(actions: list[ActionObservation]) -> None:
+        temporary_destination = destination.with_suffix(".json.partial")
+        temporary_destination.write_text(
+            ActionArtifact(actions=actions).model_dump_json(indent=2), encoding="utf-8"
+        )
+        temporary_destination.replace(destination)
+
     written: list[ActionObservation] = []
     candidates_considered = 0
     maliciousness_validation_unavailable_count = 0
@@ -474,14 +486,9 @@ def run_lamda_action_generation(
                         later_real_alignment_score=later_real_alignment_score,
                     )
                 )
+                _persist_written(written)
 
-    destination = (
-        experiment_directory(application, "action-certificate-validation") / "actions.json"
-    )
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(
-        ActionArtifact(actions=written).model_dump_json(indent=2), encoding="utf-8"
-    )
+    _persist_written(written)
     return ActionGenerationReport(
         operator_eligible_source_samples=len(eligible_source_records),
         candidates_considered=candidates_considered,
