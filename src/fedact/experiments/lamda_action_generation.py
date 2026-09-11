@@ -61,7 +61,7 @@ from fedact.experiments.identification import (
     fit_lamda_client_constraint,
     train_cutoff_representation_encoder,
 )
-from fedact.experiments.registry import ExperimentRuntime
+from fedact.experiments.registry import ExperimentRuntime, experiment_directory
 from fedact.experiments.validation import ActionArtifact, ActionObservation
 
 LOGGER = logging.getLogger(__name__)
@@ -77,14 +77,6 @@ class ActionGenerationReport:
     candidates_considered: EvaluationCount
     valid_actions_written: EvaluationCount
     scientific_outcome: ScientificOutcome
-
-
-def _experiment_directory(application: ExperimentRuntime, workflow: str) -> Path:
-    return (
-        application.repository_root
-        / application.configuration.values.workspace.directories.experiments
-        / workflow
-    )
 
 
 def _historical_diameter_pool(
@@ -262,7 +254,7 @@ def run_lamda_action_generation(
         application.repository_root / "data" / "raw" / "LAMDA" / "Baseline" / "feature_mapping.csv"
     )
     signing_identity = ApkSigningIdentity(
-        keystore_path=_experiment_directory(application, "action-certificate-validation")
+        keystore_path=experiment_directory(application, "action-certificate-validation")
         / "signing"
         / "debug-keystore.jks",
         key_alias=_KEYSTORE_ALIAS,
@@ -445,7 +437,7 @@ def run_lamda_action_generation(
                 )
 
     destination = (
-        _experiment_directory(application, "action-certificate-validation") / "actions.json"
+        experiment_directory(application, "action-certificate-validation") / "actions.json"
     )
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(

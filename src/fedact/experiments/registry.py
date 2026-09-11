@@ -18,6 +18,14 @@ class ExperimentRuntime(Protocol):
         return cast(LoadedConfiguration, None)
 
 
+def experiment_directory(application: ExperimentRuntime, workflow: str) -> Path:
+    return (
+        application.repository_root
+        / application.configuration.values.workspace.directories.experiments
+        / workflow
+    )
+
+
 @dataclass(frozen=True)
 class RegisteredWorkflow:
     name: ExecutableWorkflowName

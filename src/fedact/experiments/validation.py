@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 import math
 from dataclasses import dataclass, replace
-from pathlib import Path
 from typing import Protocol, cast
 
 import numpy as np
@@ -49,7 +48,7 @@ from fedact.experiments.identification import (
     run_lamda_sparse_control_stress,
     run_lamda_weak_eigengap_stress,
 )
-from fedact.experiments.registry import ExperimentRuntime
+from fedact.experiments.registry import ExperimentRuntime, experiment_directory
 from fedact.learning.hardening import SampleChallengeSet, write_challenge_sets
 
 LOGGER = logging.getLogger(__name__)
@@ -58,14 +57,6 @@ LOGGER = logging.getLogger(__name__)
 class SpearmanResult(Protocol):
     statistic: CorrelationCoefficient
     pvalue: PValue
-
-
-def _experiment_directory(application: ExperimentRuntime, workflow: str) -> Path:
-    return (
-        application.repository_root
-        / application.configuration.values.workspace.directories.experiments
-        / workflow
-    )
 
 
 class ActionObservation(StrictModel):
@@ -315,8 +306,8 @@ def _central_pattern_supported(artifact: _CentralPatternArtifact) -> ValidationF
 
 
 def run_action_certificate_validation(application: ExperimentRuntime) -> ActionCertificateReport:
-    source = _experiment_directory(application, "action-certificate-validation") / "actions.json"
-    calibration_source = _experiment_directory(application, "nested-calibration") / "selected.json"
+    source = experiment_directory(application, "action-certificate-validation") / "actions.json"
+    calibration_source = experiment_directory(application, "nested-calibration") / "selected.json"
     if not source.is_file():
         LOGGER.warning(
             "action-validation input is missing: %s; executed semantically valid operators "
@@ -410,7 +401,7 @@ def run_action_certificate_validation(application: ExperimentRuntime) -> ActionC
 
 
 def run_nested_calibration(application: ExperimentRuntime) -> tuple[CalibrationCandidate, ...]:
-    source = _experiment_directory(application, "nested-calibration") / "observations.json"
+    source = experiment_directory(application, "nested-calibration") / "observations.json"
     if not source.is_file():
         LOGGER.warning(
             "nested-calibration input is missing: %s; pre-cutoff pseudo-future observations "
@@ -455,9 +446,7 @@ def run_nested_calibration(application: ExperimentRuntime) -> tuple[CalibrationC
     except CalibrationSelectionError:
         LOGGER.warning("no nested calibration candidate meets configured validity requirements")
         return candidates
-    selected_destination = (
-        _experiment_directory(application, "nested-calibration") / "selected.json"
-    )
+    selected_destination = experiment_directory(application, "nested-calibration") / "selected.json"
     selected_destination.parent.mkdir(parents=True, exist_ok=True)
     selected_destination.write_text(
         _SelectedCalibrationArtifact(
@@ -553,7 +542,7 @@ def run_robustness_and_failure_boundaries(application: ExperimentRuntime) -> Bou
     real_completed = weak_eigengap_completed + sparse_control_completed
     real_boundaries_reached = weak_eigengap_reached + sparse_control_reached
 
-    source = _experiment_directory(application, "failure-boundaries") / "stress-measurements.json"
+    source = experiment_directory(application, "failure-boundaries") / "stress-measurements.json"
     if not source.is_file():
         LOGGER.warning(
             "failure-boundary input is missing: %s; completed real stress measurements are "
