@@ -130,49 +130,49 @@ def export_verified_project_evidence(
     if static_chronological_fnr is not None:
         rows.append(
             (
-                "Static chronological detector (no hardening)", #TODO: should be enum, not hardcoded string
+                "Static chronological detector (no hardening)",
                 f"{static_chronological_fnr:.{rate_significant_figures}f}",
-                "n/a", #TODO: should be enum, not hardcoded string
-                "n/a", #TODO: should be enum, not hardcoded string
+                "n/a",
+                "n/a",
             )
         )
-    table_file = results_directory / "tables" / "main" / "table_1_main.tex" #TODO: should be enums not hardcoded strings
+    table_file = results_directory / "tables" / "main" / "table_1_main.tex"
     generate_latex_table(
-        table_id="main_results", #TODO: should be enums not hardcoded strings
+        table_id="main_results",
         headers=tuple(LatexTableCell(header) for header in headers),
         rows=tuple(tuple(LatexTableCell(cell) for cell in row) for row in rows),
         output_file=table_file,
     )
-    figure_file = results_directory / "figures" / "main" / "fig_1.png" #TODO: should be enums not hardcoded strings
+    figure_file = results_directory / "figures" / "main" / "fig_1.png"
     generate_prospective_metrics_figure(
-        "fig_1_prospective", #TODO: should be enums not hardcoded strings
+        "fig_1_prospective",
         fnr,
         certification_rate,
         rate_significant_figures,
         figure_file,
     )
-    summary_file = results_directory / "metrics" / "summary" / "project_summary.json" #TODO: should be enums not hardcoded strings
+    summary_file = results_directory / "metrics" / "summary" / "project_summary.json"
     generate_project_summary(
-        project="FedACT", #TODO: should be enums not hardcoded strings
+        project="FedACT",
         verdict=overall_outcome,
         prospective_fnr=fnr,
         certification_rate=certification_rate,
         output_file=summary_file,
     )
     evidence_index_file = (
-        results_directory / "reproducibility" / "execution" / "evidence_index.json" #TODO: should be enums not hardcoded strings
+        results_directory / "reproducibility" / "execution" / "evidence_index.json"
     )
     package_artifact_status_index(
         [
             ArtifactStatusRecord(
-                artifact="table_1_main.tex", status=_verification_status(table_file) #TODO: should be enums not hardcoded strings
+                artifact="table_1_main.tex", status=_verification_status(table_file)
             ),
             ArtifactStatusRecord(
-                artifact="fig_1.png", #TODO: should be enums not hardcoded strings
+                artifact="fig_1.png",
                 status=_verification_status(figure_file),
             ),
             ArtifactStatusRecord(
-                artifact="project_summary.json", status=_verification_status(summary_file) #TODO: should be enums not hardcoded strings
+                artifact="project_summary.json", status=_verification_status(summary_file)
             ),
         ],
         evidence_index_file,

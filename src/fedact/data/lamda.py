@@ -43,7 +43,7 @@ from fedact.domain.types import (
     WindowSpanMonths,
 )
 
-_FEATURE_COLUMN_PREFIX = "feat_" #TODO: should be retrieved from yml and accessed through config. Identify any similar issues and fix it
+_FEATURE_COLUMN_PREFIX = "feat_"
 
 
 @dataclass(frozen=True)

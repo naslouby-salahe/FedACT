@@ -306,8 +306,8 @@ def _central_pattern_supported(artifact: _CentralPatternArtifact) -> ValidationF
 
 
 def run_action_certificate_validation(application: ExperimentRuntime) -> ActionCertificateReport:
-    source = experiment_directory(application, "action-certificate-validation") / "actions.json" #TODO: should be enums not hardcoded strings
-    calibration_source = experiment_directory(application, "nested-calibration") / "selected.json" #TODO: should be enums not hardcoded strings
+    source = experiment_directory(application, "action-certificate-validation") / "actions.json"
+    calibration_source = experiment_directory(application, "nested-calibration") / "selected.json"
     if not source.is_file():
         LOGGER.warning(
             "action-validation input is missing: %s; executed semantically valid operators "
@@ -355,8 +355,8 @@ def run_action_certificate_validation(application: ExperimentRuntime) -> ActionC
                 )
             )
     if challenges:
-        write_challenge_sets(tuple(challenges), source.with_name("challenges.json")) #TODO: should be enums not hardcoded strings
-    decision_destination = source.with_name("certificate-decisions.json") #TODO: should be enums not hardcoded strings
+        write_challenge_sets(tuple(challenges), source.with_name("challenges.json"))
+    decision_destination = source.with_name("certificate-decisions.json")
     decision_destination.parent.mkdir(parents=True, exist_ok=True)
     decision_destination.write_text(
         _CertificateDecisionArtifact(decisions=decisions).model_dump_json(indent=2),
@@ -370,7 +370,7 @@ def run_action_certificate_validation(application: ExperimentRuntime) -> ActionC
         tuple(config.seeds.operator),
         config.certification.random_matching.minimum_exact_or_source_fraction,
     )
-    central_pattern_destination = source.with_name("central-pattern.json") #TODO: should be enums not hardcoded strings
+    central_pattern_destination = source.with_name("central-pattern.json")
     central_pattern_destination.write_text(
         central_pattern.model_dump_json(indent=2), encoding="utf-8"
     )
@@ -401,7 +401,7 @@ def run_action_certificate_validation(application: ExperimentRuntime) -> ActionC
 
 
 def run_nested_calibration(application: ExperimentRuntime) -> tuple[CalibrationCandidate, ...]:
-    source = experiment_directory(application, "nested-calibration") / "observations.json" #TODO: should be enums not hardcoded strings
+    source = experiment_directory(application, "nested-calibration") / "observations.json"
     if not source.is_file():
         LOGGER.warning(
             "nested-calibration input is missing: %s; pre-cutoff pseudo-future observations "
@@ -446,7 +446,7 @@ def run_nested_calibration(application: ExperimentRuntime) -> tuple[CalibrationC
     except CalibrationSelectionError:
         LOGGER.warning("no nested calibration candidate meets configured validity requirements")
         return candidates
-    selected_destination = experiment_directory(application, "nested-calibration") / "selected.json" #TODO: should be enums not hardcoded strings
+    selected_destination = experiment_directory(application, "nested-calibration") / "selected.json"
     selected_destination.parent.mkdir(parents=True, exist_ok=True)
     selected_destination.write_text(
         _SelectedCalibrationArtifact(
@@ -542,7 +542,7 @@ def run_robustness_and_failure_boundaries(application: ExperimentRuntime) -> Bou
     real_completed = weak_eigengap_completed + sparse_control_completed
     real_boundaries_reached = weak_eigengap_reached + sparse_control_reached
 
-    source = experiment_directory(application, "failure-boundaries") / "stress-measurements.json" #TODO: should be enums not hardcoded strings
+    source = experiment_directory(application, "failure-boundaries") / "stress-measurements.json"
     if not source.is_file():
         LOGGER.warning(
             "failure-boundary input is missing: %s; completed real stress measurements are "

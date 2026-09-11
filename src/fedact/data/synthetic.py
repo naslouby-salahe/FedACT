@@ -34,9 +34,9 @@ from fedact.domain.types import (
 )
 
 type FloatArray = NDArray[np.float64]
-GridCellIdentity = NewType("GridCellIdentity", str) #TODO: convert to enum
-StructuralSeedIdentity = NewType("StructuralSeedIdentity", str) #TODO: convert to enum
-NoiseSeedIdentity = NewType("NoiseSeedIdentity", str) #TODO: convert to enum
+GridCellIdentity = NewType("GridCellIdentity", str)
+StructuralSeedIdentity = NewType("StructuralSeedIdentity", str)
+NoiseSeedIdentity = NewType("NoiseSeedIdentity", str)
 
 SYNTHETIC_DIMENSION = 64
 _NEAREST_INTEGER_ROUNDING_OFFSET = 0.5

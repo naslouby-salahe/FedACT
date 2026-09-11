@@ -28,7 +28,7 @@ class LamdaPopulation:
 
 
 def load_lamda_population(application: ExperimentRuntime) -> LamdaPopulation | None:
-    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline" #TODO: should be enums not hardcoded strings
+    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline"
     if not raw_root.is_dir():
         LOGGER.warning("LAMDA population load has no release at %s", raw_root)
         return None

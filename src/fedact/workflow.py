@@ -274,7 +274,7 @@ class Application:
 
     @classmethod
     def from_repository_root(cls, repository_root: Path) -> Application:
-        configuration = load_production_configuration(repository_root / "configs" / "fedact.yaml") #TODO: use enums instead of hardcoded strings
+        configuration = load_production_configuration(repository_root / "configs" / "fedact.yaml")
         return cls(repository_root=repository_root.resolve(), configuration=configuration)
 
     def workspace_layout(self) -> WorkspaceLayout:
@@ -290,7 +290,7 @@ class Application:
         return self.workspace_layout().experiment_workspace(ExperimentName(workflow))
 
     def raw_data_root(self) -> Path:
-        return self.repository_root / "data" / "raw" #TODO: should be enums not hardcoded strings
+        return self.repository_root / "data" / "raw"
 
     def is_raw_data_available(self) -> DataAvailabilityFlag:
         raw_root = self.raw_data_root()
@@ -311,8 +311,8 @@ class Application:
 def discover_repository_root(start: Path) -> Path:
     candidate = start.resolve()
     for current in (candidate, *candidate.parents):
-        if (current / "pyproject.toml").is_file() and ( #TODO: use enums instead of hardcoded strings
-            current / "configs" / "fedact.yaml" #TODO: use enums instead of hardcoded strings
+        if (current / "pyproject.toml").is_file() and (
+            current / "configs" / "fedact.yaml"
         ).is_file():
             return current
     raise FileNotFoundError(f"FedACT repository root not found above {start}")
@@ -371,7 +371,7 @@ def run_preprocess(
             history_start_month=source.first_observed_month,
             cutoff_exclusive_end_month=calendar_month(source.last_observed_month + 1),
         )
-        typer.echo(f"{selected}: chronology_audit={'PASS' if chronology.is_passing else 'FAIL'}") #TODO: should be enum not hardcoded string
+        typer.echo(f"{selected}: chronology_audit={'PASS' if chronology.is_passing else 'FAIL'}")
         typer.echo(f"{selected}: first_cutoff={first_identity} last_cutoff={last_identity}")
 
         if selected is DatasetSelector.LAMDA:
@@ -644,7 +644,7 @@ def _statistical_synthesis_inputs(
 
 
 def _run_lamda_action_generation_if_acquired(application: Application) -> None:
-    if not acquired_lamda_apk_sample_ids(application.repository_root / "data" / "raw"): #TODO: should be enums not hardcoded strings
+    if not acquired_lamda_apk_sample_ids(application.repository_root / "data" / "raw"):
         typer.echo("action certificate validation: no AndroZoo-acquired APKs, skipping generation")
         return
     try:
