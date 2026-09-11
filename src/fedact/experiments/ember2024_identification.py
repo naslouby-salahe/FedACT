@@ -588,7 +588,7 @@ def _embed_features(encoder: RepresentationEncoder, features: FloatArray) -> Flo
     return embedded.numpy().astype(np.float64)
 
 
-class _Ember2024IdentificationCutoffRecord(StrictModel):
+class Ember2024IdentificationCutoffRecord(StrictModel):
     cutoff: CalendarMonth
     cohort: FamilyName
     fitted: ValidationFlag
@@ -600,9 +600,9 @@ class _Ember2024IdentificationCutoffRecord(StrictModel):
     one_matched_control_beta: UncertaintyRadius | None = None
 
 
-class _Ember2024IdentificationDiagnosticsArtifact(StrictModel):
+class Ember2024IdentificationDiagnosticsArtifact(StrictModel):
     cohort: FamilyName
-    cutoffs: list[_Ember2024IdentificationCutoffRecord]
+    cutoffs: list[Ember2024IdentificationCutoffRecord]
 
 
 @dataclass(frozen=True)
@@ -616,7 +616,9 @@ class Ember2024IdentificationDiagnosticsReport:
 def run_ember2024_identification_diagnostics(
     application: ExperimentRuntime,
 ) -> Ember2024IdentificationDiagnosticsReport:
-    raw_root = application.repository_root / "data" / "raw" / "EMBER2024" #TODO: should be enums not hardcoded strings
+    raw_root = (
+        application.repository_root / "data" / "raw" / "EMBER2024"
+    )  # TODO: should be enums not hardcoded strings
     if not raw_root.is_dir():
         LOGGER.warning("ember2024 identification diagnostics has no release at %s", raw_root)
         return Ember2024IdentificationDiagnosticsReport(
@@ -659,7 +661,7 @@ def run_ember2024_identification_diagnostics(
         )
     )
 
-    records_list: list[_Ember2024IdentificationCutoffRecord] = []
+    records_list: list[Ember2024IdentificationCutoffRecord] = []
     fitted = 0
     for endpoint_ordinal in range(
         max(earliest_valid_endpoint, month_min + 1), month_max - horizon + 1, max(step, 1)
@@ -684,7 +686,7 @@ def run_ember2024_identification_diagnostics(
             config.identification.minimum_support_per_class,
         ):
             records_list.append(
-                _Ember2024IdentificationCutoffRecord(
+                Ember2024IdentificationCutoffRecord(
                     cutoff=endpoint,
                     cohort=cohort,
                     fitted=False,
@@ -697,7 +699,7 @@ def run_ember2024_identification_diagnostics(
         )
         if encoder is None:
             records_list.append(
-                _Ember2024IdentificationCutoffRecord(
+                Ember2024IdentificationCutoffRecord(
                     cutoff=endpoint,
                     cohort=cohort,
                     fitted=False,
@@ -737,7 +739,7 @@ def run_ember2024_identification_diagnostics(
                 earlier_malicious_endpoints,
             )
             records_list.append(
-                _Ember2024IdentificationCutoffRecord(
+                Ember2024IdentificationCutoffRecord(
                     cutoff=endpoint,
                     cohort=cohort,
                     fitted=True,
@@ -758,7 +760,7 @@ def run_ember2024_identification_diagnostics(
             )
         else:
             records_list.append(
-                _Ember2024IdentificationCutoffRecord(
+                Ember2024IdentificationCutoffRecord(
                     cutoff=endpoint,
                     cohort=cohort,
                     fitted=False,
@@ -769,12 +771,12 @@ def run_ember2024_identification_diagnostics(
     destination = (
         application.repository_root
         / config.workspace.directories.experiments
-        / "prospective-evaluation" #TODO: should be enums not hardcoded strings
-        / "ember2024-identification-diagnostics.json" #TODO: should be enums not hardcoded strings
+        / "prospective-evaluation"  # TODO: should be enums not hardcoded strings
+        / "ember2024-identification-diagnostics.json"  # TODO: should be enums not hardcoded strings
     )
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(
-        _Ember2024IdentificationDiagnosticsArtifact(
+        Ember2024IdentificationDiagnosticsArtifact(
             cohort=cohort, cutoffs=records_list
         ).model_dump_json(indent=_EVIDENCE_JSON_INDENT_SPACES),
         encoding="utf-8",

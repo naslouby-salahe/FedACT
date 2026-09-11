@@ -537,7 +537,7 @@ def fit_lamda_client_constraint_one_matched_control(
     )
 
 
-class _IdentificationCutoffRecord(StrictModel):
+class IdentificationCutoffRecord(StrictModel):
     cutoff: CalendarMonth
     cohort: FamilyName
     fitted: ValidationFlag
@@ -552,9 +552,9 @@ class _IdentificationCutoffRecord(StrictModel):
     zero_private_term_beta: UncertaintyRadius | None = None
 
 
-class _IdentificationDiagnosticsArtifact(StrictModel):
+class IdentificationDiagnosticsArtifact(StrictModel):
     cohort: FamilyName
-    cutoffs: list[_IdentificationCutoffRecord]
+    cutoffs: list[IdentificationCutoffRecord]
 
 
 @dataclass(frozen=True)
@@ -685,7 +685,9 @@ def dominant_malicious_family_cohort(
 def run_lamda_identification_diagnostics(
     application: ExperimentRuntime,
 ) -> IdentificationDiagnosticsReport:
-    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline" #TODO: should be enums not hardcoded strings
+    raw_root = (
+        application.repository_root / "data" / "raw" / "LAMDA" / "Baseline"
+    )  # TODO: should be enums not hardcoded strings
     if not raw_root.is_dir():
         LOGGER.warning("lamda identification diagnostics has no LAMDA release at %s", raw_root)
         return IdentificationDiagnosticsReport(None, 0, 0, ScientificOutcome.INSUFFICIENT_EVIDENCE)
@@ -721,7 +723,7 @@ def run_lamda_identification_diagnostics(
         earliest_complete_transition_endpoint(calendar_month(month_min), transition_interval_months)
     )
 
-    records_list: list[_IdentificationCutoffRecord] = []
+    records_list: list[IdentificationCutoffRecord] = []
     fitted = 0
     for endpoint_ordinal in range(
         max(earliest_valid_endpoint, month_min + 1), month_max - horizon + 1, max(step, 1)
@@ -747,7 +749,7 @@ def run_lamda_identification_diagnostics(
             config.identification.minimum_support_per_class,
         ):
             records_list.append(
-                _IdentificationCutoffRecord(
+                IdentificationCutoffRecord(
                     cutoff=endpoint,
                     cohort=cohort,
                     fitted=False,
@@ -760,7 +762,7 @@ def run_lamda_identification_diagnostics(
         )
         if encoder is None:
             records_list.append(
-                _IdentificationCutoffRecord(
+                IdentificationCutoffRecord(
                     cutoff=endpoint,
                     cohort=cohort,
                     fitted=False,
@@ -813,7 +815,7 @@ def run_lamda_identification_diagnostics(
                 else None
             )
             records_list.append(
-                _IdentificationCutoffRecord(
+                IdentificationCutoffRecord(
                     cutoff=endpoint,
                     cohort=cohort,
                     fitted=True,
@@ -835,7 +837,7 @@ def run_lamda_identification_diagnostics(
             )
         else:
             records_list.append(
-                _IdentificationCutoffRecord(
+                IdentificationCutoffRecord(
                     cutoff=endpoint, cohort=cohort, fitted=False, abstention_reason=result
                 )
             )
@@ -843,12 +845,12 @@ def run_lamda_identification_diagnostics(
     destination = (
         application.repository_root
         / config.workspace.directories.experiments
-        / "prospective-evaluation" #TODO: should be enums not hardcoded strings
-        / "identification-diagnostics.json" #TODO: should be enums not hardcoded strings
+        / "prospective-evaluation"  # TODO: should be enums not hardcoded strings
+        / "identification-diagnostics.json"  # TODO: should be enums not hardcoded strings
     )
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(
-        _IdentificationDiagnosticsArtifact(cohort=cohort, cutoffs=records_list).model_dump_json(
+        IdentificationDiagnosticsArtifact(cohort=cohort, cutoffs=records_list).model_dump_json(
             indent=_EVIDENCE_JSON_INDENT_SPACES
         ),
         encoding="utf-8",
@@ -893,7 +895,9 @@ class WeakEigengapStressReport:
 
 
 def run_lamda_weak_eigengap_stress(application: ExperimentRuntime) -> WeakEigengapStressReport:
-    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline" #TODO: should be enums not hardcoded strings
+    raw_root = (
+        application.repository_root / "data" / "raw" / "LAMDA" / "Baseline"
+    )  # TODO: should be enums not hardcoded strings
     if not raw_root.is_dir():
         LOGGER.warning("weak-eigengap stress has no LAMDA release at %s", raw_root)
         return WeakEigengapStressReport(None, (), ScientificOutcome.INSUFFICIENT_EVIDENCE)
@@ -1094,8 +1098,8 @@ def run_lamda_weak_eigengap_stress(application: ExperimentRuntime) -> WeakEigeng
     destination = (
         application.repository_root
         / config.workspace.directories.experiments
-        / "failure-boundaries" #TODO: should be enums not hardcoded strings
-        / "weak-eigengap-stress.json" #TODO: should be enums not hardcoded strings
+        / "failure-boundaries"  # TODO: should be enums not hardcoded strings
+        / "weak-eigengap-stress.json"  # TODO: should be enums not hardcoded strings
     )
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(
@@ -1129,7 +1133,9 @@ class _BaselineIdentificationContext:
 def _locate_baseline_identification_context(
     application: ExperimentRuntime,
 ) -> _BaselineIdentificationContext | None:
-    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline" #TODO: should be enums not hardcoded strings
+    raw_root = (
+        application.repository_root / "data" / "raw" / "LAMDA" / "Baseline"
+    )  # TODO: should be enums not hardcoded strings
     if not raw_root.is_dir():
         return None
     config = application.configuration.values
@@ -1301,8 +1307,8 @@ def run_lamda_sparse_control_stress(application: ExperimentRuntime) -> SparseCon
     destination = (
         application.repository_root
         / config.workspace.directories.experiments
-        / "failure-boundaries" #TODO: should be enums not hardcoded strings
-        / "sparse-control-stress.json" #TODO: should be enums not hardcoded strings
+        / "failure-boundaries"  # TODO: should be enums not hardcoded strings
+        / "sparse-control-stress.json"  # TODO: should be enums not hardcoded strings
     )
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(
@@ -1411,8 +1417,8 @@ def run_lamda_allowance_sensitivity_stress(
     destination = (
         application.repository_root
         / config.workspace.directories.experiments
-        / "failure-boundaries" #TODO: should be enums not hardcoded strings
-        / "allowance-sensitivity-stress.json" #TODO: should be enums not hardcoded strings
+        / "failure-boundaries"  # TODO: should be enums not hardcoded strings
+        / "allowance-sensitivity-stress.json"  # TODO: should be enums not hardcoded strings
     )
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(
@@ -1453,7 +1459,9 @@ class TemporalDynamicsAblationReport:
 def run_lamda_temporal_dynamics_ablation(
     application: ExperimentRuntime,
 ) -> TemporalDynamicsAblationReport:
-    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline" #TODO: should be enums not hardcoded strings
+    raw_root = (
+        application.repository_root / "data" / "raw" / "LAMDA" / "Baseline"
+    )  # TODO: should be enums not hardcoded strings
     if not raw_root.is_dir():
         LOGGER.warning("temporal dynamics ablation has no LAMDA release at %s", raw_root)
         return TemporalDynamicsAblationReport(None, ScientificOutcome.INSUFFICIENT_EVIDENCE)
@@ -1561,8 +1569,8 @@ def run_lamda_temporal_dynamics_ablation(
     destination = (
         application.repository_root
         / config.workspace.directories.experiments
-        / "ablations" #TODO: should be enums not hardcoded strings
-        / "temporal-dynamics.json" #TODO: should be enums not hardcoded strings
+        / "ablations"  # TODO: should be enums not hardcoded strings
+        / "temporal-dynamics.json"  # TODO: should be enums not hardcoded strings
     )
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(

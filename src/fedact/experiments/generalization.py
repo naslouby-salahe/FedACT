@@ -4,11 +4,9 @@ import logging
 from collections import Counter
 from collections.abc import Sequence
 from dataclasses import dataclass
-from pathlib import Path
 
 import numpy as np
 import torch
-from pydantic import Field
 
 from fedact._vendor.transcendent.scores import compute_p_values_cred_and_conf
 from fedact._vendor.transcendent.thresholding import apply_threshold, get_performance_with_rejection
@@ -17,15 +15,10 @@ from fedact.analysis.metrics import EvaluationRecord, compute_evaluation_metrics
 from fedact.certification.client_procedure import select_stable_nuisance_rank
 from fedact.certification.dynamics import fit_scalar_model
 from fedact.config.models import StrictModel
-from fedact.data.ember2024 import (
-    apply_log1p_transforms,
-    ember2024_count_feature_mask,
-    load_ember2024_records,
-    validate_ember_dataset,
-)
 from fedact.data.splits import (
     CalendarMonth,
     calendar_month,
+    confirmatory_outcome_for_cutoffs,
     earliest_complete_transition_endpoint,
     transition_windows,
     windowed_mean,
@@ -35,29 +28,29 @@ from fedact.domain.types import (
     CertificationStatus,
     CorrelationCoefficient,
     CoverageLevel,
+    CutoffCount,
     DatasetSelector,
     DegradationValue,
-    DimensionValue,
     EvaluationCount,
     FamilyName,
     LossValue,
     MetricRate,
     ProbabilityValue,
-    RankDimension,
-    RelativePosixPath,
     SampleIdentifier,
     ScientificOutcome,
     SplitCutoffIdentity,
     ValidationFlag,
 )
 from fedact.experiments.baselines import matched_benign_subtraction, projected_point_reconstruction
+from fedact.experiments.ember2024_identification import Ember2024IdentificationDiagnosticsArtifact
+from fedact.experiments.identification import IdentificationDiagnosticsArtifact
 from fedact.experiments.lamda_population import (
     LamdaPopulation,
     eligible_cutoffs,
     load_lamda_population,
 )
 from fedact.experiments.registry import ExperimentRuntime
-from fedact.learning.detector import DetectorHead, load_trained_detector, train_base_detector
+from fedact.learning.detector import DetectorHead, train_base_detector
 from fedact.learning.hardening import (
     SampleChallengeSet,
     clean_false_negative_rate,
@@ -70,20 +63,11 @@ from fedact.learning.representation import (
     RepresentationDataset,
     RepresentationEncoder,
     TrainingObservation,
-    load_representation_encoder,
     train_representation_encoder,
 )
 from fedact.learning.scoring import score_samples
 
 LOGGER = logging.getLogger(__name__)
-
-
-class _TransferManifest(StrictModel):
-    encoder_checkpoint: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    detector_checkpoint: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    feature_adapter: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    input_dimension: RankDimension = Field(gt=0)
-    certificate_decisions: RelativePosixPath | None = None #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
 
 
 class _CertificateDecisionRecord(StrictModel):
@@ -130,8 +114,8 @@ def read_central_pattern_cutoff_aggregates(
     source = (
         application.repository_root
         / application.configuration.values.workspace.directories.experiments
-        / "action-certificate-validation" #TODO: should be enums not hardcoded strings
-        / "central-pattern.json" #TODO: should be enums not hardcoded strings
+        / "action-certificate-validation"  # TODO: should be enums not hardcoded strings
+        / "central-pattern.json"  # TODO: should be enums not hardcoded strings
     )
     if not source.is_file():
         return (), ()
@@ -147,46 +131,6 @@ def read_central_pattern_cutoff_aggregates(
         if cutoff.matched_random_match_quality_sufficient
     )
     return certified, matched_random
-
-
-@dataclass(frozen=True)
-class _FeatureAdapter:
-    mean: np.ndarray
-    scale: np.ndarray
-    projection: np.ndarray
-
-
-def _workspace_path(application: ExperimentRuntime, relative_path: RelativePosixPath) -> Path: #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    resolved = (application.repository_root / relative_path).resolve()
-    if not resolved.is_relative_to(application.repository_root.resolve()):
-        raise ValueError(f"transfer artifact escapes repository root: {relative_path}")
-    return resolved
-
-
-def _load_feature_adapter(source: Path, input_dimension: DimensionValue) -> _FeatureAdapter:
-    if not source.is_file():
-        raise FileNotFoundError(f"locked feature adapter is missing: {source}")
-    with np.load(source) as payload:
-        mean = payload["mean"]
-        scale = payload["scale"]
-        projection = payload["projection"]
-    if mean.ndim != 1 or scale.shape != mean.shape or projection.shape[0] != mean.size:
-        raise ValueError("feature adapter arrays have incompatible dimensions")
-    if projection.shape[1] != input_dimension:
-        raise ValueError("feature adapter output does not match locked encoder dimension")
-    if not np.isfinite(mean).all() or not np.isfinite(scale).all() or np.any(scale <= 0.0):
-        raise ValueError("feature adapter has invalid fitted normalization parameters")
-    return _FeatureAdapter(
-        mean=np.asarray(mean, dtype=np.float32),
-        scale=np.asarray(scale, dtype=np.float32),
-        projection=np.asarray(projection, dtype=np.float32),
-    )
-
-
-def _labeled_target_value(value: BinaryLabel | None) -> BinaryLabel:
-    if value is None:
-        raise ValueError("selected EMBER evaluation row has no label")
-    return value
 
 
 def _binary_cross_entropy(label: BinaryLabel, probability: MetricRate) -> LossValue:
@@ -212,8 +156,8 @@ def read_prospective_cutoff_aggregates(
     source = (
         application.repository_root
         / application.configuration.values.workspace.directories.experiments
-        / "prospective-evaluation" #TODO: should be enums not hardcoded strings
-        / "cutoff-comparisons.json" #TODO: should be enums not hardcoded strings
+        / "prospective-evaluation"  # TODO: should be enums not hardcoded strings
+        / "cutoff-comparisons.json"  # TODO: should be enums not hardcoded strings
     )
     if not source.is_file():
         return (), (), (), ()
@@ -241,21 +185,16 @@ def read_prospective_cutoff_aggregates(
 
 @dataclass(frozen=True)
 class CrossCorpusReport:
-    target_corpora_tested: EvaluationCount
-    mean_transfer_fnr: MetricRate
-    certified_false_negative_rate: MetricRate | None
-    ambiguous_false_negative_rate: MetricRate | None
-    transfer_supported: ValidationFlag
+    lamda_cutoffs_fitted: EvaluationCount
+    ember2024_cutoffs_fitted: EvaluationCount
+    mechanism_replicates: ValidationFlag
+    ember2024_action_intervals_available: ValidationFlag
+    paired_action_cutoffs: CutoffCount
     scientific_outcome: ScientificOutcome
-    true_positive_rate: MetricRate | None = None
-    false_positive_rate: MetricRate | None = None
-    abstention_rate: MetricRate | None = None
-    pr_auc: MetricRate | None = None
-    roc_auc: MetricRate | None = None
 
     @property
     def generalization_valid(self) -> ValidationFlag:
-        return self.transfer_supported
+        return self.mechanism_replicates and self.ember2024_action_intervals_available
 
 
 @dataclass(frozen=True)
@@ -279,121 +218,58 @@ class ProspectiveEvaluationReport:
 
 
 def run_cross_corpus_generalization(application: ExperimentRuntime) -> CrossCorpusReport:
-    manifest_path = (
+    experiments_root = (
         application.repository_root
         / application.configuration.values.workspace.directories.experiments
-        / "cross-corpus" #TODO: should be enums not hardcoded strings
-        / "transfer.json" #TODO: should be enums not hardcoded strings
+        / "prospective-evaluation"
     )
-    target_root = application.repository_root / "data" / "raw" / "EMBER2024" #TODO: should be enums not hardcoded strings
-    if not manifest_path.is_file() or not target_root.is_dir():
+    lamda_path = experiments_root / "identification-diagnostics.json"
+    ember2024_path = experiments_root / "ember2024-identification-diagnostics.json"
+    if not lamda_path.is_file() or not ember2024_path.is_file():
         LOGGER.warning(
-            "cross-corpus transfer requires a locked transfer manifest=%s target=%s",
-            manifest_path.is_file(),
-            target_root.is_dir(),
+            "cross-corpus generalization requires both corpora's own independent "
+            "identification diagnostics to already exist: lamda=%s ember2024=%s",
+            lamda_path.is_file(),
+            ember2024_path.is_file(),
         )
-        return CrossCorpusReport(0, 0.0, None, None, False, ScientificOutcome.INSUFFICIENT_EVIDENCE)
-    manifest = _TransferManifest.model_validate_json(manifest_path.read_text(encoding="utf-8"))
-    encoder_path = _workspace_path(application, manifest.encoder_checkpoint)
-    detector_path = _workspace_path(application, manifest.detector_checkpoint)
-    adapter = _load_feature_adapter(
-        _workspace_path(application, manifest.feature_adapter), manifest.input_dimension
+        return CrossCorpusReport(0, 0, False, False, 0, ScientificOutcome.INSUFFICIENT_EVIDENCE)
+
+    lamda_artifact = IdentificationDiagnosticsArtifact.model_validate_json(
+        lamda_path.read_text(encoding="utf-8")
     )
-    if not encoder_path.is_file() or not detector_path.is_file():
-        raise FileNotFoundError("locked source encoder or detector checkpoint is missing")
-    target = load_ember2024_records(target_root)
-    validate_ember_dataset(target)
-    labeled = np.fromiter(
-        (record.label is not None for record in target.records),
-        dtype=bool,
-        count=len(target.records),
+    ember2024_artifact = Ember2024IdentificationDiagnosticsArtifact.model_validate_json(
+        ember2024_path.read_text(encoding="utf-8")
     )
-    if not labeled.any():
-        return CrossCorpusReport(0, 0.0, None, None, False, ScientificOutcome.INSUFFICIENT_EVIDENCE)
-    target_features = apply_log1p_transforms(
-        target.features[labeled], ember2024_count_feature_mask()
+    lamda_cutoffs_fitted = sum(1 for cutoff in lamda_artifact.cutoffs if cutoff.fitted)
+    ember2024_cutoffs_fitted = sum(1 for cutoff in ember2024_artifact.cutoffs if cutoff.fitted)
+    mechanism_replicates = lamda_cutoffs_fitted > 0 and ember2024_cutoffs_fitted > 0
+
+    LOGGER.warning(
+        "ember2024 problem-space PE action generation has no authorized raw-PE "
+        "acquisition route; every EMBER2024 sample is operator_ineligible, "
+        "so paired action-interval evidence is structurally unavailable"
     )
-    if target_features.shape[1] != adapter.mean.size:
-        raise ValueError("locked adapter input does not match EMBER feature schema")
-    adapted = ((target_features - adapter.mean) / adapter.scale) @ adapter.projection
-    encoder = load_representation_encoder(
-        encoder_path,
-        manifest.input_dimension,
-        DEFAULT_ENCODER_HIDDEN_DIMENSIONS,
-        EMBEDDING_DIMENSION,
-    )
-    detector = load_trained_detector(detector_path, EMBEDDING_DIMENSION)
-    selected_records = tuple(
-        record for record, include in zip(target.records, labeled, strict=True) if include
-    )
-    scores = score_samples(
-        encoder,
-        detector,
-        tuple(record.sample_hash for record in selected_records),
-        torch.tensor(adapted, dtype=torch.float32),
-    )
-    if manifest.certificate_decisions is None:
-        LOGGER.warning(
-            "cross-corpus transfer manifest has no locked certificate decisions; a "
-            "detector-performance win alone is insufficient for a generalization claim"
-        )
-        certified_samples: frozenset[SampleIdentifier] = frozenset()
-    else:
-        decisions_path = _workspace_path(application, manifest.certificate_decisions)
-        decision_artifact = _CertificateDecisionArtifact.model_validate_json(
-            decisions_path.read_text(encoding="utf-8")
-        )
-        certified_samples = frozenset(
-            decision.sample_id
-            for decision in decision_artifact.decisions
-            if decision.status is CertificationStatus.CERTIFIED_POSITIVE
-        )
-    evaluations = tuple(
-        EvaluationRecord(
-            dataset=DatasetSelector.EMBER2024,
-            cutoff_id=SplitCutoffIdentity("ember2024-locked-transfer"),
-            sample_id=record.sample_hash,
-            horizon_step=1,
-            true_label=_labeled_target_value(record.label),
-            predicted_score=score.probability,
-            is_certified=record.sample_hash in certified_samples,
-            clean_loss=0.0,
-        )
-        for record, score in zip(selected_records, scores, strict=True)
-    )
-    metrics = compute_evaluation_metrics(evaluations)
-    certified_records = tuple(record for record in evaluations if record.is_certified)
-    ambiguous_records = tuple(
-        record
-        for record in evaluations
-        if not record.is_certified and record.sample_id not in certified_samples
-    )
-    certified_fnr = _group_false_negative_rate(certified_records)
-    ambiguous_fnr = _group_false_negative_rate(ambiguous_records)
-    transfer_supported = (
-        certified_samples != frozenset()
-        and certified_fnr is not None
-        and ambiguous_fnr is not None
-        and certified_fnr <= ambiguous_fnr
+    paired_action_cutoffs: CutoffCount = 0
+    ember2024_action_intervals_available = False
+    confirmatory_outcome = confirmatory_outcome_for_cutoffs(
+        paired_action_cutoffs, application.configuration.values.statistics.minimum_paired_cutoffs
     )
     LOGGER.info(
-        "cross-corpus locked transfer scored target_rows=%s certified=%s transfer_supported=%s",
-        len(evaluations),
-        len(certified_records),
-        transfer_supported,
+        "cross-corpus generalization lamda_fitted=%s ember2024_fitted=%s "
+        "mechanism_replicates=%s paired_action_cutoffs=%s outcome=%s",
+        lamda_cutoffs_fitted,
+        ember2024_cutoffs_fitted,
+        mechanism_replicates,
+        paired_action_cutoffs,
+        confirmatory_outcome,
     )
     return CrossCorpusReport(
-        len(evaluations),
-        metrics.false_negative_rate,
-        certified_fnr,
-        ambiguous_fnr,
-        transfer_supported,
-        ScientificOutcome.PASS if transfer_supported else ScientificOutcome.INSUFFICIENT_EVIDENCE,
-        true_positive_rate=metrics.true_positive_rate,
-        false_positive_rate=metrics.false_positive_rate,
-        abstention_rate=metrics.abstention_rate,
-        pr_auc=metrics.pr_auc,
-        roc_auc=metrics.roc_auc,
+        lamda_cutoffs_fitted=lamda_cutoffs_fitted,
+        ember2024_cutoffs_fitted=ember2024_cutoffs_fitted,
+        mechanism_replicates=mechanism_replicates,
+        ember2024_action_intervals_available=ember2024_action_intervals_available,
+        paired_action_cutoffs=paired_action_cutoffs,
+        scientific_outcome=confirmatory_outcome,
     )
 
 
@@ -686,11 +562,15 @@ def _reactive_drift_adaptation_ncm(probability: ProbabilityValue, label: bool) -
 
 
 def _reactive_drift_adaptation_quartile_candidates(
-    p_values: dict[str, list[float]], #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    p_values: dict[
+        str, list[float]
+    ],  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     predicted_labels: np.ndarray,
     groundtruth_labels: np.ndarray,
 ) -> dict[str, dict[str, dict[str, float]]]:
-    candidates: dict[str, dict[str, dict[str, float]]] = {} #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    candidates: dict[
+        str, dict[str, dict[str, float]]
+    ] = {}  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     correct = predicted_labels == groundtruth_labels
     for key in ("cred", "conf"):
         scores = np.asarray(p_values[key], dtype=np.float64)
@@ -710,20 +590,26 @@ def _reactive_drift_adaptation_quartile_candidates(
                 else float(np.mean(scores_benign))
             )
             candidates.setdefault(quartile_key, {})[key] = {
-                "mw": malicious_threshold, #TODO: should be enums not hardcoded strings
-                "gw": benign_threshold, #TODO: should be enums not hardcoded strings
+                "mw": malicious_threshold,  # TODO: should be enums not hardcoded strings
+                "gw": benign_threshold,  # TODO: should be enums not hardcoded strings
             }
     return candidates
 
 
 def _select_reactive_drift_adaptation_threshold(
-    candidates: dict[str, dict[str, dict[str, float]]], #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    validation_p_values: dict[str, list[float]], #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    candidates: dict[
+        str, dict[str, dict[str, float]]
+    ],  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    validation_p_values: dict[
+        str, list[float]
+    ],  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     validation_groundtruth: np.ndarray,
     target_coverage: CoverageLevel,
     max_clean_degradation_points: DegradationValue,
 ) -> dict[str, dict[str, float]] | None:
-    best_threshold: dict[str, dict[str, float]] | None = None #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    best_threshold: dict[str, dict[str, float]] | None = (
+        None  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    )
     best_certification_rate = -1.0
     best_clean_degradation = float("inf")
     for quartile_key in sorted(candidates):
@@ -890,8 +776,8 @@ def _score_cutoff_population(
     challenge_file = (
         application.repository_root
         / config.workspace.directories.experiments
-        / "action-certificate-validation" #TODO: should be enums not hardcoded strings
-        / "challenges.json" #TODO: should be enums not hardcoded strings
+        / "action-certificate-validation"  # TODO: should be enums not hardcoded strings
+        / "challenges.json"  # TODO: should be enums not hardcoded strings
     )
     clean_fnr_degradation: DegradationValue = 0.0
     if challenge_file.is_file():
@@ -1054,8 +940,8 @@ def run_prospective_fedact_evaluation(
     certificate_decisions = (
         application.repository_root
         / application.configuration.values.workspace.directories.experiments
-        / "action-certificate-validation" #TODO: should be enums not hardcoded strings
-        / "certificate-decisions.json" #TODO: should be enums not hardcoded strings
+        / "action-certificate-validation"  # TODO: should be enums not hardcoded strings
+        / "certificate-decisions.json"  # TODO: should be enums not hardcoded strings
     )
     if not certificate_decisions.is_file():
         LOGGER.warning("prospective evaluation requires completed action-certificate evidence")
@@ -1238,8 +1124,8 @@ def run_prospective_fedact_evaluation(
     comparison_destination = (
         application.repository_root
         / config.workspace.directories.experiments
-        / "prospective-evaluation" #TODO: should be enums not hardcoded strings
-        / "cutoff-comparisons.json" #TODO: should be enums not hardcoded strings
+        / "prospective-evaluation"  # TODO: should be enums not hardcoded strings
+        / "cutoff-comparisons.json"  # TODO: should be enums not hardcoded strings
     )
     comparison_destination.parent.mkdir(parents=True, exist_ok=True)
     comparison_destination.write_text(comparison.model_dump_json(indent=2), encoding="utf-8")

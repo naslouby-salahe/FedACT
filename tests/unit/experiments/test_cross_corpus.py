@@ -7,7 +7,9 @@ from fedact.workflow import Application
 
 def test_run_cross_corpus_generalization(application: Application) -> None:
     report = run_cross_corpus_generalization(application)
-    assert 0.0 <= report.mean_transfer_fnr <= 1.0
+    assert report.lamda_cutoffs_fitted >= 0
+    assert report.ember2024_cutoffs_fitted >= 0
+    assert report.paired_action_cutoffs >= 0
     assert report.scientific_outcome in (
         ScientificOutcome.PASS,
         ScientificOutcome.INSUFFICIENT_EVIDENCE,
