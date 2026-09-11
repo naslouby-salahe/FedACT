@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 import subprocess
 import tempfile
+import time
 from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
@@ -35,6 +36,11 @@ from fedact.data.ember2024 import (
     remove_debug_directory,
     rename_section,
     zero_pe_checksum,
+)
+from fedact.data.lamda_apk_emulator import (
+    EmulatorHandle,
+    jaccard_similarity,
+    run_dynamic_smoke,
 )
 from fedact.data.lamda_apk_mutations import (
     ApkFileBytes,
@@ -429,6 +435,7 @@ class ExecutionSmokeValidity:
     no_new_crash_or_anr: ValidationFlag
     sandbox_identity_recorded: ValidationFlag
     within_timeout_seconds: TimeoutSeconds
+    configured_timeout_seconds: TimeoutSeconds
 
     @property
     def is_valid(self) -> DomainValidityFlag:
@@ -437,7 +444,7 @@ class ExecutionSmokeValidity:
             and self.transformed_launched
             and self.no_new_crash_or_anr
             and self.sandbox_identity_recorded
-            and self.within_timeout_seconds <= 30.0
+            and self.within_timeout_seconds <= self.configured_timeout_seconds
         )
 
 
@@ -800,3 +807,40 @@ def maliciousness_validity_of(
         source_detected=source_detected,
         transformed_detected=transformed_detected,
     )
+
+
+def apk_dynamic_validity_of(
+    handle: EmulatorHandle,
+    source_apk_path: Path,
+    transformed_apk_path: Path,
+    package_name: str,
+    monkey_event_count: int,
+    monkey_seed: int,
+    execution_timeout_seconds: TimeoutSeconds,
+    minimum_behavior_jaccard: SimilarityScore,
+) -> tuple[ExecutionSmokeValidity, BehaviorValidity]:
+    started = time.monotonic()
+    source_result = run_dynamic_smoke(
+        handle, source_apk_path, package_name, monkey_event_count, monkey_seed
+    )
+    transformed_result = run_dynamic_smoke(
+        handle, transformed_apk_path, package_name, monkey_event_count, monkey_seed
+    )
+    elapsed = time.monotonic() - started
+    smoke = ExecutionSmokeValidity(
+        source_launched=source_result.launched,
+        transformed_launched=transformed_result.launched,
+        no_new_crash_or_anr=not (source_result.crashed_or_anr or transformed_result.crashed_or_anr),
+        sandbox_identity_recorded=bool(handle.serial),
+        within_timeout_seconds=elapsed,
+        configured_timeout_seconds=execution_timeout_seconds,
+    )
+    both_empty = not source_result.observable_events and not transformed_result.observable_events
+    behavior = BehaviorValidity(
+        jaccard_similarity=jaccard_similarity(
+            source_result.observable_events, transformed_result.observable_events
+        ),
+        minimum_behavior_jaccard=minimum_behavior_jaccard,
+        both_event_sets_empty=both_empty,
+    )
+    return smoke, behavior
