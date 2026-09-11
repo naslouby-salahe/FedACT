@@ -133,12 +133,13 @@ def _tool_version(command: list[str]) -> str:
 
 
 @lru_cache(maxsize=1)
-def _real_toolchain_identity() -> str:
+def _real_toolchain_identity(android_system_image: str) -> str:
     components = {
         "apktool": _tool_version(["apktool", "--version"]),
         "apksigner": _tool_version(["apksigner", "--version"]),
         "aapt2": _tool_version(["aapt2", "version"]),
         "clamscan": _tool_version(["clamscan", "--version"]),
+        "android_system_image": android_system_image,
     }
     return "; ".join(f"{name}={version}" for name, version in components.items())
 
@@ -173,6 +174,7 @@ def _candidate_validity(
     monkey_event_count: int,
     execution_timeout_seconds: float,
     minimum_behavior_jaccard: float,
+    android_system_image: str,
 ) -> CandidateValidityRecord:
     structural = apk_structural_validity_of(transformed_apk_bytes)
     maliciousness = maliciousness_validity_of(
@@ -196,7 +198,7 @@ def _candidate_validity(
         smoke=smoke,
         maliciousness=maliciousness,
         behavior=behavior,
-        toolchain_identity=_real_toolchain_identity(),
+        toolchain_identity=_real_toolchain_identity(android_system_image),
         source_hash=original_apk_path.stem,
     )
 
@@ -418,6 +420,7 @@ def run_lamda_action_generation(
                     config.operators.validation.android_monkey_events,
                     config.operators.validation.execution_timeout_seconds,
                     config.operators.validation.minimum_behavior_jaccard,
+                    config.operators.validation.android_system_image,
                 )
                 if validity.status is not ValidityStatus.VALID:
                     continue
