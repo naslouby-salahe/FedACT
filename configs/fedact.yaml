@@ -87,6 +87,7 @@ operators:
     execution_timeout_seconds: 60
     android_monkey_events: 500
     minimum_behavior_jaccard: 0.80
+    android_system_image: "system-images;android-30;google_apis;x86_64"
 
 ablations:
   zero_control_span_violation_budget: 0

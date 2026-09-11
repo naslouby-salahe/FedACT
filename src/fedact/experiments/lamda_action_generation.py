@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
+from androguard.misc import AnalyzeAPK
 
 from fedact.certification.actions import (
     CandidateValidityRecord,
@@ -128,6 +129,15 @@ def _historical_diameter_pool(
     return diameters
 
 
+def _apk_package_name(apk_bytes: bytes) -> str | None:
+    try:
+        apk, _dex, _analysis = AnalyzeAPK(apk_bytes, raw=True)
+    except Exception:
+        return None
+    package = apk.get_package()
+    return package if package else None
+
+
 def _apply_composition(
     candidate: OperatorCandidate, apk_bytes: ApkFileBytes, signing_identity: ApkSigningIdentity
 ) -> ApkFileBytes:
@@ -180,7 +190,6 @@ def _candidate_validity(
 def run_lamda_action_generation(
     application: ExperimentRuntime,
     emulator_handle: EmulatorHandle,
-    package_name_by_sample: dict[str, str],
 ) -> ActionGenerationReport:
     config = application.configuration.values
     raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline" / "2023"
@@ -212,12 +221,25 @@ def run_lamda_action_generation(
     cohort_index_by_sample = {
         record.sample_hash: index for index, record in enumerate(cohort_records)
     }
+    raw_root_all = application.repository_root / "data" / "raw"
+    package_name_by_sample: dict[str, str] = {}
+    for record in cohort_records:
+        if (
+            audited_label(rule, record).binary_label is not True
+            or record.sample_hash not in acquired
+        ):
+            continue
+        apk_path = androzoo_apk_destination(raw_root_all, record.sample_hash)
+        if not apk_path.is_file():
+            continue
+        package_name = _apk_package_name(apk_path.read_bytes())
+        if package_name is None:
+            LOGGER.warning("could not derive package name for %s; excluded", record.sample_hash)
+            continue
+        package_name_by_sample[record.sample_hash] = package_name
+
     eligible_source_records = tuple(
-        record
-        for record in cohort_records
-        if audited_label(rule, record).binary_label is True
-        and record.sample_hash in acquired
-        and record.sample_hash in package_name_by_sample
+        record for record in cohort_records if record.sample_hash in package_name_by_sample
     )
     if not eligible_source_records:
         LOGGER.warning("no acquired, package-identified APK belongs to cohort %s", cohort)

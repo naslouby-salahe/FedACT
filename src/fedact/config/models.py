@@ -51,6 +51,7 @@ from fedact.domain.types import (
     SyntheticCorruptionAttack,
     TimeoutSeconds,
     Tolerance,
+    ToolchainIdentifier,
     VarianceThreshold,
     WindowSpanMonths,
     ZeroDisplacementFloor,
@@ -215,6 +216,7 @@ class OperatorValidationBudgets(StrictModel):
     execution_timeout_seconds: TimeoutSeconds
     android_monkey_events: EventCount
     minimum_behavior_jaccard: SimilarityScore
+    android_system_image: ToolchainIdentifier
 
 
 class OperatorsConfig(StrictModel):

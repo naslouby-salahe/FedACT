@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import time
@@ -8,14 +9,8 @@ from pathlib import Path
 
 from fedact.data.lamda_apk_mutations import java_subprocess_environment
 
+ANDROID_SDK_ROOT_ENVIRONMENT_VARIABLE = "ANDROID_SDK_ROOT"
 _CMDLINE_TOOLS_JAVA_HOME = "/usr/lib/jvm/java-17-openjdk-amd64"
-
-
-def _cmdline_tools_environment() -> dict[str, str]:
-    environment = java_subprocess_environment()
-    environment["JAVA_HOME"] = _CMDLINE_TOOLS_JAVA_HOME
-    return environment
-
 
 DEFAULT_AVD_NAME = "fedact-operator-validation"
 _CRASH_OR_ANR_PATTERN = re.compile(r"FATAL EXCEPTION|ANR in ")
@@ -25,6 +20,21 @@ _DISPLAYED_PATTERN = re.compile(r"Displayed ([\w.]+)/")
 
 class AndroidEmulatorError(RuntimeError):
     pass
+
+
+def android_sdk_root_from_environment() -> Path:
+    value = os.environ.get(ANDROID_SDK_ROOT_ENVIRONMENT_VARIABLE)
+    if not value:
+        raise AndroidEmulatorError(
+            f"{ANDROID_SDK_ROOT_ENVIRONMENT_VARIABLE} is not set in the environment"
+        )
+    return Path(value)
+
+
+def _cmdline_tools_environment() -> dict[str, str]:
+    environment = java_subprocess_environment()
+    environment["JAVA_HOME"] = _CMDLINE_TOOLS_JAVA_HOME
+    return environment
 
 
 @dataclass(frozen=True)

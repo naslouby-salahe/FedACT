@@ -28,6 +28,14 @@ from fedact.data.lamda import (
     validate_lamda_dataset,
     year_month_to_calendar_month,
 )
+from fedact.data.lamda_apk_emulator import (
+    DEFAULT_AVD_NAME,
+    AndroidEmulatorError,
+    android_sdk_root_from_environment,
+    boot_emulator,
+    ensure_avd,
+    shutdown_emulator,
+)
 from fedact.data.records import (
     DatasetEligibilityRole,
     ExclusionReason,
@@ -79,6 +87,7 @@ from fedact.experiments.identification import (
     run_lamda_identification_diagnostics,
     run_lamda_temporal_dynamics_ablation,
 )
+from fedact.experiments.lamda_action_generation import run_lamda_action_generation
 from fedact.experiments.registry import (
     WORKFLOW_REGISTRY,
     registered_workflow,
@@ -634,6 +643,34 @@ def _statistical_synthesis_inputs(
     )
 
 
+def _run_lamda_action_generation_if_acquired(application: Application) -> None:
+    if not acquired_lamda_apk_sample_ids(application.repository_root / "data" / "raw"):
+        typer.echo("action certificate validation: no AndroZoo-acquired APKs, skipping generation")
+        return
+    try:
+        sdk_root = android_sdk_root_from_environment()
+    except AndroidEmulatorError as error:
+        typer.echo(f"action certificate validation: skipping generation ({error})")
+        return
+    system_image = application.configuration.values.operators.validation.android_system_image
+    try:
+        ensure_avd(sdk_root, DEFAULT_AVD_NAME, system_image)
+        handle = boot_emulator(sdk_root, DEFAULT_AVD_NAME, 5554, 300.0)
+    except AndroidEmulatorError as error:
+        typer.echo(f"action certificate validation: skipping generation ({error})")
+        return
+    try:
+        report = run_lamda_action_generation(application, handle)
+        typer.echo(
+            f"lamda action generation completed: "
+            f"eligible={report.operator_eligible_source_samples} "
+            f"considered={report.candidates_considered} "
+            f"written={report.valid_actions_written}"
+        )
+    finally:
+        shutdown_emulator(handle)
+
+
 def _dispatch_evaluation_workflow(
     workflow: ExecutableWorkflowName, application: Application
 ) -> bool:
@@ -655,6 +692,7 @@ def _dispatch_evaluation_workflow(
         return True
 
     if workflow is ExecutableWorkflowName.ACTION_CERTIFICATE_VALIDATION:
+        _run_lamda_action_generation_if_acquired(application)
         act_report = run_action_certificate_validation(application)
         _persist(
             application,
