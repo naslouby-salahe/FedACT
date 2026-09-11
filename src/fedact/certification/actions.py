@@ -16,7 +16,6 @@ import numpy as np
 import pefile
 import torch
 from androguard.core.apk import APK
-from androguard.misc import AnalyzeAPK
 
 from fedact.data.ember2024 import (
     APK_PAYLOAD_SIZES,
@@ -717,10 +716,7 @@ def apply_and_verify_pe_operator_family(
 
 def apk_structural_validity_of(apk_bytes: ApkFileBytes) -> StructuralValidity:
     try:
-        apk, _dex, _analysis = cast(
-            "tuple[APK, list[object], object]",
-            AnalyzeAPK(bytes(apk_bytes), raw=True),
-        )
+        apk = APK(cast(str, bytes(apk_bytes)), raw=True)
         primary_package = apk.get_package()
         parser_primary_ok = bool(primary_package)
     except Exception:

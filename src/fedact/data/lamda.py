@@ -60,7 +60,7 @@ def _feature_columns(columns: list[str]) -> list[str]:
 
 
 def load_lamda_records(data_directory: Path) -> LoadedLamdaDataset:
-    parquet_files = sorted(data_directory.glob("*.parquet"))
+    parquet_files = sorted(data_directory.rglob("*.parquet"))
     if not parquet_files:
         return LoadedLamdaDataset(records=(), features=np.zeros((0, 0), dtype=np.float32))
     combined = pd.concat((pd.read_parquet(path) for path in parquet_files), ignore_index=True)

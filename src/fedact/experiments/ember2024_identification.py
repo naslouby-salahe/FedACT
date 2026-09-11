@@ -548,7 +548,7 @@ def _train_cutoff_representation_encoder(
         return tuple(
             TrainingObservation(
                 sample_id=record.sample_hash,
-                features=torch.tensor(feature, dtype=torch.float32),
+                features=torch.from_numpy(feature),
                 month_index=int(month),
                 label=bool(record.label),
             )
@@ -584,7 +584,7 @@ def _train_cutoff_representation_encoder(
 
 def _embed_features(encoder: RepresentationEncoder, features: FloatArray) -> FloatArray:
     with torch.no_grad():
-        embedded = encoder(torch.tensor(features, dtype=torch.float32))
+        embedded = encoder(torch.from_numpy(np.asarray(features, dtype=np.float32)))
     return embedded.numpy().astype(np.float64)
 
 

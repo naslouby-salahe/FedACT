@@ -837,7 +837,7 @@ def _score_cutoff_population(
     observations = tuple(
         TrainingObservation(
             sample_id=sample_id,
-            features=torch.tensor(feature, dtype=torch.float32),
+            features=torch.from_numpy(feature),
             month_index=int(month),
             label=bool(label),
         )

@@ -6,9 +6,10 @@ import tempfile
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
+from typing import cast
 
 import numpy as np
-from androguard.misc import AnalyzeAPK
+from androguard.core.apk import APK
 
 from fedact.certification.actions import (
     CandidateValidityRecord,
@@ -148,7 +149,7 @@ def _real_toolchain_identity(android_system_image: str) -> str:
 
 def _apk_package_name(apk_bytes: bytes) -> str | None:
     try:
-        apk, _dex, _analysis = AnalyzeAPK(apk_bytes, raw=True)
+        apk = APK(cast(str, apk_bytes), raw=True)
     except Exception:
         return None
     package = apk.get_package()
@@ -214,7 +215,7 @@ def run_lamda_action_generation(
     emulator_handle: EmulatorHandle,
 ) -> ActionGenerationReport:
     config = application.configuration.values
-    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline" / "2023"
+    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline"
     if not raw_root.is_dir():
         LOGGER.warning("lamda action generation has no LAMDA release at %s", raw_root)
         return ActionGenerationReport(0, 0, 0, 0, ScientificOutcome.INSUFFICIENT_EVIDENCE)
@@ -328,6 +329,7 @@ def run_lamda_action_generation(
             transition_interval_months,
             config.identification.minimum_support_per_class,
         ):
+            LOGGER.info("action generation endpoint=%s rejected stage=malicious_support", endpoint)
             continue
         historical_endpoints = tuple(
             calendar_month(candidate)
@@ -345,6 +347,7 @@ def run_lamda_action_generation(
             application, loaded.records, loaded.features, rule, endpoint
         )
         if encoder is None:
+            LOGGER.info("action generation endpoint=%s rejected stage=encoder", endpoint)
             continue
         embedded_features = embed_features(encoder, loaded.features)
         embedded_cohort_features = embedded_features[cohort_mask]
@@ -361,6 +364,11 @@ def run_lamda_action_generation(
             earlier_malicious_endpoints,
         )
         if not isinstance(fit, ClientConstraintFit):
+            LOGGER.info(
+                "action generation endpoint=%s rejected stage=client_constraint_fit reason=%s",
+                endpoint,
+                fit,
+            )
             continue
         beta = float(fit.beta)
 
@@ -368,6 +376,7 @@ def run_lamda_action_generation(
             cohort_records, embedded_cohort_features, rule, endpoint, transition_interval_months
         )
         if point_estimate is None:
+            LOGGER.info("action generation endpoint=%s rejected stage=point_estimate", endpoint)
             continue
         ghat = point_estimate.displacement
 

@@ -608,7 +608,7 @@ def train_cutoff_representation_encoder(
         return tuple(
             TrainingObservation(
                 sample_id=record.sample_hash,
-                features=torch.tensor(feature, dtype=torch.float32),
+                features=torch.from_numpy(feature),
                 month_index=int(month),
                 label=bool(audited_label(rule, record).binary_label),
             )
@@ -644,7 +644,7 @@ def train_cutoff_representation_encoder(
 
 def embed_features(encoder: RepresentationEncoder, features: FloatArray) -> FloatArray:
     with torch.no_grad():
-        embedded = encoder(torch.tensor(features, dtype=torch.float32))
+        embedded = encoder(torch.from_numpy(np.asarray(features, dtype=np.float32)))
     return embedded.detach().cpu().numpy().astype(np.float64)
 
 
@@ -685,7 +685,7 @@ def dominant_malicious_family_cohort(
 def run_lamda_identification_diagnostics(
     application: ExperimentRuntime,
 ) -> IdentificationDiagnosticsReport:
-    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline" / "2023"
+    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline"
     if not raw_root.is_dir():
         LOGGER.warning("lamda identification diagnostics has no LAMDA release at %s", raw_root)
         return IdentificationDiagnosticsReport(None, 0, 0, ScientificOutcome.INSUFFICIENT_EVIDENCE)
@@ -893,7 +893,7 @@ class WeakEigengapStressReport:
 
 
 def run_lamda_weak_eigengap_stress(application: ExperimentRuntime) -> WeakEigengapStressReport:
-    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline" / "2023"
+    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline"
     if not raw_root.is_dir():
         LOGGER.warning("weak-eigengap stress has no LAMDA release at %s", raw_root)
         return WeakEigengapStressReport(None, (), ScientificOutcome.INSUFFICIENT_EVIDENCE)
@@ -1129,7 +1129,7 @@ class _BaselineIdentificationContext:
 def _locate_baseline_identification_context(
     application: ExperimentRuntime,
 ) -> _BaselineIdentificationContext | None:
-    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline" / "2023"
+    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline"
     if not raw_root.is_dir():
         return None
     config = application.configuration.values
@@ -1453,7 +1453,7 @@ class TemporalDynamicsAblationReport:
 def run_lamda_temporal_dynamics_ablation(
     application: ExperimentRuntime,
 ) -> TemporalDynamicsAblationReport:
-    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline" / "2023"
+    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline"
     if not raw_root.is_dir():
         LOGGER.warning("temporal dynamics ablation has no LAMDA release at %s", raw_root)
         return TemporalDynamicsAblationReport(None, ScientificOutcome.INSUFFICIENT_EVIDENCE)
