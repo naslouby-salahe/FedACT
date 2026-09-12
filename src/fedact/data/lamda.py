@@ -431,7 +431,7 @@ def lamda_schema_manifest(
     records: Sequence[LamdaRawRecord], features: np.ndarray
 ) -> SchemaChronologyManifest:
     sorted_hashes = sorted(record.sample_hash for record in records)
-    digest = hashlib.sha256(",".join(sorted_hashes).encode("utf-8")).hexdigest() #TODO: should be enum not hardcoded string
+    digest = hashlib.sha256(",".join(sorted_hashes).encode("utf-8")).hexdigest()
     observed_months = sorted({record.year_month for record in records})
     if observed_months:
         first_month = year_month_to_calendar_month(observed_months[0])
@@ -441,7 +441,7 @@ def lamda_schema_manifest(
         last_month = calendar_month(0)
     return SchemaChronologyManifest(
         dataset=DatasetIdentity(DatasetSelector.LAMDA),
-        acquisition_checksum=f"sha256:{digest}", #TODO: should be enums not hardcoded strings
+        acquisition_checksum=f"sha256:{digest}",
         fields=(
             SchemaManifestField(name="hash", observed=len(records) > 0),
             SchemaManifestField(

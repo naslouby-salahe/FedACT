@@ -410,27 +410,27 @@ class ReportingConfig(StrictModel):
 
 
 class WorkspaceDirectories(StrictModel):
-    preprocessing: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    shared_artifacts: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    shared_models: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    shared_scores: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    shared_fitted: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    shared_baselines: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    shared_derived: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    experiments: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    cache: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    staging: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    result_experiments: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    project_summary: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    reproducibility: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    preprocessing: RelativePosixPath
+    shared_artifacts: RelativePosixPath
+    shared_models: RelativePosixPath
+    shared_scores: RelativePosixPath
+    shared_fitted: RelativePosixPath
+    shared_baselines: RelativePosixPath
+    shared_derived: RelativePosixPath
+    experiments: RelativePosixPath
+    cache: RelativePosixPath
+    staging: RelativePosixPath
+    result_experiments: RelativePosixPath
+    project_summary: RelativePosixPath
+    reproducibility: RelativePosixPath
 
 
 class WorkspaceConfig(StrictModel):
-    configuration_file: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    outputs_root: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    results_root: RelativePosixPath #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    configuration_file: RelativePosixPath
+    outputs_root: RelativePosixPath
+    results_root: RelativePosixPath
     directories: WorkspaceDirectories
-    experiment_directories: list[ExperimentDirectoryName] #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    experiment_directories: list[ExperimentDirectoryName]
 
 
 class FedActConfig(StrictModel):
@@ -557,11 +557,11 @@ def _validate_workspace_layout(config: FedActConfig) -> None:
     )
 
     shared_children = {
-        "shared_models": directories.shared_models, #TODO: should be enums not hardcoded strings
-        "shared_scores": directories.shared_scores, #TODO: should be enums not hardcoded strings
-        "shared_fitted": directories.shared_fitted, #TODO: should be enums not hardcoded strings
-        "shared_baselines": directories.shared_baselines, #TODO: should be enums not hardcoded strings
-        "shared_derived": directories.shared_derived, #TODO: should be enums not hardcoded strings
+        "shared_models": directories.shared_models,
+        "shared_scores": directories.shared_scores,
+        "shared_fitted": directories.shared_fitted,
+        "shared_baselines": directories.shared_baselines,
+        "shared_derived": directories.shared_derived,
     }
     for label, path in shared_children.items():
         _require_relative_descendant(

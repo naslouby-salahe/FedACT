@@ -9,7 +9,7 @@ from fedact import workflow
 from fedact.domain.types import DatasetSelector, ExecutableWorkflowName
 
 app = typer.Typer(
-    name="fedact", #TODO: should be enum not hardcoded string
+    name="fedact",
     help="FedACT scientific workflow control surface",
     no_args_is_help=True,
     pretty_exceptions_enable=False,
@@ -17,11 +17,11 @@ app = typer.Typer(
 
 _REPOSITORY_ROOT_OPTION = typer.Option(
     ".",
-    "--repository-root", #TODO: should be enums not hardcoded strings
+    "--repository-root",
     hidden=True,
 )
 
-OverwriteOption = typer.Option(False, "--overwrite") #TODO: should be enums not hardcoded strings
+OverwriteOption = typer.Option(False, "--overwrite")
 OptionalDatasetArgument = typer.Argument(None)
 OptionalWorkflowArgument = typer.Argument(None)
 

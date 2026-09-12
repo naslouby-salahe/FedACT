@@ -56,8 +56,8 @@ def deterministic_configuration_payload(config: FedActConfig) -> ConfigurationPa
 
 
 def compute_configuration_hash(config: FedActConfig) -> ConfigurationHash:
-    digest = hashlib.sha256(deterministic_configuration_payload(config).encode("utf-8")) #TODO: should be enum not hardcoded string
-    return ConfigurationHash(f"sha256:{digest.hexdigest()}") #TODO: should be enums not hardcoded strings
+    digest = hashlib.sha256(deterministic_configuration_payload(config).encode("utf-8"))
+    return ConfigurationHash(f"sha256:{digest.hexdigest()}")
 
 
 def parse_configuration_payload(payload: ConfigurationPayloadText) -> FedActConfig:

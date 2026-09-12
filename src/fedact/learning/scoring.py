@@ -224,10 +224,10 @@ def serialize_scored_samples(
 ) -> None:
     destination_path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
-        "sample_ids": [s.sample_id for s in scored_samples], #TODO: should be enums not hardcoded strings
-        "logits": [s.logit for s in scored_samples], #TODO: should be enums not hardcoded strings
-        "probabilities": [s.probability for s in scored_samples], #TODO: should be enums not hardcoded strings
-        "predicted_labels": [s.predicted_label for s in scored_samples], #TODO: should be enums not hardcoded strings
+        "sample_ids": [s.sample_id for s in scored_samples],
+        "logits": [s.logit for s in scored_samples],
+        "probabilities": [s.probability for s in scored_samples],
+        "predicted_labels": [s.predicted_label for s in scored_samples],
     }
     torch.save(payload, destination_path)
 

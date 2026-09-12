@@ -75,10 +75,10 @@ def generate_project_summary(
 ) -> None:
     output_file.parent.mkdir(parents=True, exist_ok=True)
     payload = {
-        "project": project, #TODO: should be enums not hardcoded strings
-        "verdict": verdict, #TODO: should be enums not hardcoded strings
-        "prospective_fnr": prospective_fnr, #TODO: should be enums not hardcoded strings
-        "certification_rate": certification_rate, #TODO: should be enums not hardcoded strings
+        "project": project,
+        "verdict": verdict,
+        "prospective_fnr": prospective_fnr,
+        "certification_rate": certification_rate,
     }
     output_file.write_text(json.dumps(payload, indent=2) + chr(10), encoding="utf-8")
 
@@ -153,7 +153,7 @@ def export_verified_project_evidence(
     )
     summary_file = results_directory / "metrics" / "summary" / "project_summary.json" #TODO: should be enums not hardcoded strings
     generate_project_summary(
-        project="FedACT", #TODO: should be enums not hardcoded strings
+        project="FedACT",
         verdict=overall_outcome,
         prospective_fnr=fnr,
         certification_rate=certification_rate,

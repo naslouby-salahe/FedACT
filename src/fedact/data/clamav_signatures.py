@@ -73,9 +73,9 @@ def acquire_supplementary_signatures(raw_data_root: Path) -> SupplementarySignat
     manifest_path.write_text(
         json.dumps(
             {
-                "file_sha256": manifest.file_sha256, #TODO: should be enums not hardcoded strings
-                "fetched_at": manifest.fetched_at, #TODO: should be enums not hardcoded strings
-                "source": manifest.source, #TODO: should be enums not hardcoded strings
+                "file_sha256": manifest.file_sha256,
+                "fetched_at": manifest.fetched_at,
+                "source": manifest.source,
             },
             indent=2,
         ),

@@ -136,12 +136,12 @@ def extract_lamda_apk_features(
         "ActivityList": _raw_manifest_name_attributes(xml, ("activity",)), #TODO: should be enums not hardcoded strings
         "BroadcastReceiverList": _raw_manifest_name_attributes(xml, ("receiver",)), #TODO: should be enums not hardcoded strings
         "ServiceList": _raw_manifest_name_attributes(xml, ("service",)), #TODO: should be enums not hardcoded strings
-        "RequestedPermissionList": set(apk.get_permissions()), #TODO: should be enums not hardcoded strings
+        "RequestedPermissionList": set(apk.get_permissions()),
         "IntentFilterList": _raw_manifest_name_attributes(xml, ("action", "category")), #TODO: should be enums not hardcoded strings
-        "HardwareComponentsList": set(apk.get_features()), #TODO: should be enums not hardcoded strings
-        "RestrictedApiList": _called_api_references(dx), #TODO: should be enums not hardcoded strings
-        "SuspiciousApiList": _called_api_references(dx), #TODO: should be enums not hardcoded strings
-        "URLDomainList": _url_domains(dx), #TODO: should be enums not hardcoded strings
+        "HardwareComponentsList": set(apk.get_features()),
+        "RestrictedApiList": _called_api_references(dx),
+        "SuspiciousApiList": _called_api_references(dx),
+        "URLDomainList": _url_domains(dx),
     }
     feature_vector = np.zeros(vocabulary.dimension, dtype=np.float64)
     for index, (category, name) in enumerate(

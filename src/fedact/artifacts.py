@@ -51,7 +51,7 @@ class WorkspaceLayout:
     repository_root: Path
     workspace: WorkspaceConfig
 
-    def resolve(self, relative_path: RelativePosixPath | ExperimentName) -> Path: #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    def resolve(self, relative_path: RelativePosixPath | ExperimentName) -> Path:
         return self.repository_root / relative_path
 
     def output_directories(self) -> WorkspaceOutputDirectories:
@@ -101,11 +101,11 @@ def deterministic_json(value: JsonEncodableValue) -> DeterministicJsonPayload:
 
 
 def sha256_digest(payload: DeterministicJsonPayload) -> HexDigest:
-    return HexDigest(f"sha256:{hashlib.sha256(payload.encode('utf-8')).hexdigest()}") #TODO: should be enums not hardcoded strings
+    return HexDigest(f"sha256:{hashlib.sha256(payload.encode('utf-8')).hexdigest()}")
 
 
 def content_checksum(content: RawPayloadBytes) -> ContentChecksum:
-    return ContentChecksum(f"sha256:{hashlib.sha256(content).hexdigest()}") #TODO: should be enums not hardcoded strings
+    return ContentChecksum(f"sha256:{hashlib.sha256(content).hexdigest()}")
 
 
 @dataclass(frozen=True)
@@ -138,7 +138,7 @@ def write_bytes_atomically(destination: Path, payload: RawPayloadBytes) -> Conte
 
 
 def write_text_atomically(destination: Path, payload: SourceText) -> ContentChecksum:
-    return write_bytes_atomically(destination, payload.encode("utf-8")) #TODO: should be enum not hardcoded string
+    return write_bytes_atomically(destination, payload.encode("utf-8"))
 
 
 def read_bytes(source: Path) -> RawPayloadBytes:

@@ -183,7 +183,7 @@ def _real_toolchain_identity(android_system_image: str) -> str: #TODO: do not us
         "apksigner": _tool_version(["apksigner", "--version"]), #TODO: should be enums not hardcoded strings
         "aapt2": _tool_version(["aapt2", "version"]), #TODO: should be enums not hardcoded strings
         "clamscan": _tool_version(["clamscan", "--version"]), #TODO: should be enums not hardcoded strings
-        "android_system_image": android_system_image, #TODO: should be enums not hardcoded strings
+        "android_system_image": android_system_image,
     }
     return "; ".join(f"{name}={version}" for name, version in components.items())
 

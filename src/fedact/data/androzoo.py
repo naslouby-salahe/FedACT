@@ -68,7 +68,7 @@ def acquire_lamda_apk(
     if cached is not None:
         return cached
 
-    query = urllib.parse.urlencode({"apikey": api_key, "sha256": str(sample_id)}) #TODO: should be enums not hardcoded strings
+    query = urllib.parse.urlencode({"apikey": api_key, "sha256": str(sample_id)})
     request = urllib.request.Request(f"{ANDROZOO_DOWNLOAD_URL}?{query}")
     try:
         with urllib.request.urlopen(request, timeout=timeout_seconds) as response:

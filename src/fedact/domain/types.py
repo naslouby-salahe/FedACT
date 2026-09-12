@@ -412,7 +412,7 @@ CommitHash = Annotated[
         pattern=r"^[0-9a-fA-F]{7,64}$",
     ),
 ]
-RelativePosixPath = Annotated[ #TODO: convert to enum
+RelativePosixPath = Annotated[
     str,
     StringConstraints(pattern=r"^[A-Za-z0-9][A-Za-z0-9_\-./]*$"),
 ]
