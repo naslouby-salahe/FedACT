@@ -34,7 +34,7 @@ from fedact.domain.types import (
     ValidationFlag,
 )
 
-_DIAMETER_DOUBLING_FACTOR: Final = 2.0
+_DIAMETER_DOUBLING_FACTOR: Final = 2.0  # TODO: should be constant
 
 
 @dataclass(frozen=True)
@@ -340,7 +340,7 @@ def minimum_uniform_inflation(
             continue
         residual = center - constraint.projector @ center
         requirements.append(float(np.linalg.norm(residual)) / constraint.uncertainty_radius)
-    return max(1.0, *requirements)
+    return max(1.0, *requirements)  # TODO: should be constant
 
 
 def build_nuisance_spaces(

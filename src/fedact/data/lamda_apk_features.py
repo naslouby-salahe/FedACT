@@ -189,7 +189,7 @@ def extract_lamda_apk_features(
             present = ObservableFeatureToken(_canonical_api_reference(ApiReference(name))) in observed
         else:
             present = ObservableFeatureToken(name) in observed
-        feature_vector[index] = 1.0 if present else 0.0
+        feature_vector[index] = 1.0 if present else 0.0  # TODO: should be constant
     return LamdaApkFeatureExtraction(
         feature_vector=feature_vector,
         unverifiable_feature_indices=vocabulary.unverifiable_indices,

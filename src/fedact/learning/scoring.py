@@ -146,7 +146,7 @@ def compute_detector_scores(
                 sample_id=sample.sample_id,
                 logit=logit_val,
                 probability=prob_val,
-                predicted_label=bool(prob_val >= 0.5),
+                predicted_label=bool(prob_val >= 0.5),  # TODO: should be constant
             )
         )
     return tuple(scored)
@@ -173,7 +173,7 @@ def validate_scoring_output(
         for item in expected_population
     )
     actual_ids = tuple(s.sample_id for s in scores)
-    all_finite = all(0.0 <= s.probability <= 1.0 for s in scores)
+    all_finite = all(0.0 <= s.probability <= 1.0 for s in scores)  # TODO: should be constant
     identity_ok = expected_ids == actual_ids
     return ScoringValidationReport(
         expected_sample_count=len(expected_population),
@@ -213,7 +213,7 @@ def score_samples(
                 sample_id=sample_id,
                 logit=logit_val,
                 probability=prob_val,
-                predicted_label=bool(prob_val >= 0.5),
+                predicted_label=bool(prob_val >= 0.5),  # TODO: should be constant
             )
         )
     return tuple(scored)

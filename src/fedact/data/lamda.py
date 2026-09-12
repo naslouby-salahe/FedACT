@@ -115,7 +115,7 @@ def standardize_features(features: np.ndarray) -> np.ndarray:
         return features
     mean = np.mean(features, axis=0)
     std = np.std(features, axis=0)
-    std[std < 1e-12] = 1.0
+    std[std < 1e-12] = 1.0  # TODO: should be constant
     return (features - mean) / std
 
 
@@ -425,7 +425,7 @@ def sparse_control_transition_replicates(
 
 
 def effective_support(replicate: ControlTransitionReplicate) -> ThresholdValue:
-    return 1.0 / (1.0 / replicate.support_before + 1.0 / replicate.support_after)
+    return 1.0 / (1.0 / replicate.support_before + 1.0 / replicate.support_after)  # TODO: should be constant
 
 
 def replicate_weights(
@@ -433,8 +433,8 @@ def replicate_weights(
 ) -> tuple[Probability, ...]:
     supports = [effective_support(replicate) for replicate in replicates]
     total = sum(supports)
-    if total <= 0.0:
-        return tuple(0.0 for _replicate in replicates)
+    if total <= 0.0:  # TODO: should be constant
+        return tuple(0.0 for _replicate in replicates)  # TODO: should be constant
     return tuple(support / total for support in supports)
 
 

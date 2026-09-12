@@ -25,7 +25,7 @@ from fedact.learning.representation import (
 LOGGER = logging.getLogger(__name__)
 
 _MINIMUM_LOCAL_BATCH_SIZE = 2
-_COSINE_ANNEALING_HALF_RANGE = 0.5
+_COSINE_ANNEALING_HALF_RANGE = 0.5  # TODO: should be constant
 
 
 @dataclass(frozen=True)
@@ -51,7 +51,7 @@ def _cosine_annealed_learning_rate(
         return terminal_rate
     progress = round_index / (total_rounds - 1)
     return terminal_rate + _COSINE_ANNEALING_HALF_RANGE * (initial_rate - terminal_rate) * (
-        1.0 + math.cos(math.pi * progress)
+        1.0 + math.cos(math.pi * progress)  # TODO: should be constant
     )
 
 
@@ -73,7 +73,7 @@ def _local_epoch(
     optimizer = torch.optim.Adam(
         list(local_encoder.parameters()) + list(local_head.parameters()),
         lr=learning_rate,
-        weight_decay=0.0,
+        weight_decay=0.0,  # TODO: should be constant
     )
     local_encoder.train()
     local_head.train()
@@ -120,7 +120,7 @@ def train_federated_detector(
     total_rounds = maximum_rounds
     encoder_state = {key: value.clone() for key, value in encoder.state_dict().items()}
     head_state = {key: value.clone() for key, value in head.state_dict().items()}
-    final_loss: LossValue = 0.0
+    final_loss: LossValue = 0.0  # TODO: should be constant
     completed_rounds = 0
     for round_index in range(total_rounds):
         learning_rate = _cosine_annealed_learning_rate(
