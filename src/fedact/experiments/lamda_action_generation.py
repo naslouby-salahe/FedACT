@@ -53,9 +53,17 @@ from fedact.data.splits import (
     windowed_mean,
 )
 from fedact.domain.types import (
+    AndroidPackageName,
+    AndroidSystemImage,
     EvaluationCount,
+    EndpointOrdinal,
     FamilyName,
     SampleCount,
+    RejectionStage,
+    WorkflowArtifactName,
+    ToolVersion,
+    ToolchainIdentity,
+    ToolchainComponent,
     ScientificOutcome,
     SplitCutoffIdentity,
 )
@@ -86,12 +94,12 @@ _REJECTION_HISTORICAL_DIAMETER_POOL = "historical_diameter_pool"
 class EndpointFitCache(StrictModel):
     cohort: FamilyName
     record_count: SampleCount
-    rejections: dict[str, str] = {} #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    rejections: dict[EndpointOrdinal, RejectionStage] = {}
 
 
 def _load_endpoint_fit_cache(
     cache_path: Path, cohort: FamilyName, record_count: SampleCount
-) -> dict[int, str]:
+) -> dict[EndpointOrdinal, RejectionStage]:
     if not cache_path.is_file():
         return {}
     try:
@@ -111,7 +119,7 @@ def _persist_endpoint_fit_cache(
         record_count=record_count,
         rejections={str(endpoint): reason for endpoint, reason in rejections.items()},
     )
-    temporary_destination = cache_path.with_suffix(".json.partial")
+    temporary_destination = cache_path.with_suffix(".json.partial")  # TODO: should be enums not hardcoded strings
     temporary_destination.write_text(cache.model_dump_json(indent=2), encoding="utf-8")
     temporary_destination.replace(cache_path)
 
@@ -167,25 +175,25 @@ def _historical_diameter_pool(
     return diameters
 
 
-def _tool_version(command: list[str]) -> str: #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+def _tool_version(command: list[str]) -> ToolVersion:
     try:
         result = subprocess.run(command, capture_output=True, check=False, timeout=15)
     except (OSError, subprocess.TimeoutExpired):
-        return "unavailable"
+        return ToolVersion("unavailable")
     output = (result.stdout or result.stderr).decode(errors="replace").strip().splitlines()
-    return output[0] if output else "unavailable"
+    return ToolVersion(output[0] if output else "unavailable")
 
 
 @lru_cache(maxsize=1)
-def _real_toolchain_identity(android_system_image: str) -> str: #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+def _real_toolchain_identity(android_system_image: AndroidSystemImage) -> ToolchainIdentity:
     components = {
-        "apktool": _tool_version(["apktool", "--version"]), #TODO: should be enums not hardcoded strings
-        "apksigner": _tool_version(["apksigner", "--version"]), #TODO: should be enums not hardcoded strings
-        "aapt2": _tool_version(["aapt2", "version"]), #TODO: should be enums not hardcoded strings
-        "clamscan": _tool_version(["clamscan", "--version"]), #TODO: should be enums not hardcoded strings
+        ToolchainComponent.APKTOOL: _tool_version([ToolchainComponent.APKTOOL, "--version"]),
+        ToolchainComponent.APKSIGNER: _tool_version([ToolchainComponent.APKSIGNER, "--version"]),
+        ToolchainComponent.AAPT2: _tool_version([ToolchainComponent.AAPT2, "version"]),
+        ToolchainComponent.CLAMSCAN: _tool_version([ToolchainComponent.CLAMSCAN, "--version"]),
         "android_system_image": android_system_image,
     }
-    return "; ".join(f"{name}={version}" for name, version in components.items())
+    return ToolchainIdentity("; ".join(f"{name}={version}" for name, version in components.items()))
 
 
 def _apk_package_name(apk_bytes: bytes) -> str | None:
@@ -213,12 +221,12 @@ def _apply_composition(
 def _candidate_validity(
     original_apk_path: Path,
     transformed_apk_bytes: ApkFileBytes,
-    package_name: str, #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    package_name: AndroidPackageName,
     emulator_handle: EmulatorHandle,
     monkey_event_count: int,
     execution_timeout_seconds: float,
     minimum_behavior_jaccard: float,
-    android_system_image: str, #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    android_system_image: AndroidSystemImage,
     supplementary_signature_directory: Path,
 ) -> CandidateValidityRecord:
     structural = apk_structural_validity_of(transformed_apk_bytes)
@@ -256,12 +264,14 @@ def run_lamda_action_generation(
     emulator_handle: EmulatorHandle,
 ) -> ActionGenerationReport:
     config = application.configuration.values
-    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline" #TODO: should be enums not hardcoded strings
+    raw_root = application.repository_root / application.configuration.values.workspace.lamda_release_directory
     if not raw_root.is_dir():
         LOGGER.warning("lamda action generation has no LAMDA release at %s", raw_root)
         return ActionGenerationReport(0, 0, 0, 0, ScientificOutcome.INSUFFICIENT_EVIDENCE)
 
-    acquired = acquired_lamda_apk_sample_ids(application.repository_root / "data" / "raw") #TODO: should be enums not hardcoded strings
+    acquired = acquired_lamda_apk_sample_ids(
+        application.repository_root / application.configuration.values.workspace.raw_data_root
+    )
     if not acquired:
         LOGGER.warning("lamda action generation has no AndroZoo-acquired APKs on disk")
         return ActionGenerationReport(0, 0, 0, 0, ScientificOutcome.INSUFFICIENT_EVIDENCE)
@@ -285,8 +295,8 @@ def run_lamda_action_generation(
     cohort_index_by_sample = {
         record.sample_hash: index for index, record in enumerate(cohort_records)
     }
-    raw_root_all = application.repository_root / "data" / "raw" #TODO: should be enums not hardcoded strings
-    package_name_by_sample: dict[str, str] = {} #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    raw_root_all = application.repository_root / application.configuration.values.workspace.raw_data_root
+    package_name_by_sample: dict[SampleIdentifier, AndroidPackageName] = {}
     for record in cohort_records:
         if (
             audited_label(rule, record).binary_label is not True
@@ -323,18 +333,20 @@ def run_lamda_action_generation(
     )
 
     vocabulary = load_lamda_feature_vocabulary(
-        application.repository_root / "data" / "raw" / "LAMDA" / "Baseline" / "feature_mapping.csv" #TODO: should be enums not hardcoded strings
+        raw_root / "feature_mapping.csv"
     )
     signing_identity = ApkSigningIdentity(
-        keystore_path=experiment_directory(application, "action-certificate-validation") #TODO: should be enums not hardcoded strings
-        / "signing" #TODO: should be enums not hardcoded strings
-        / "debug-keystore.jks", #TODO: should be enums not hardcoded strings
+        keystore_path=experiment_directory(
+            application, ExecutableWorkflowName.ACTION_CERTIFICATE_VALIDATION
+        )
+        / "signing"  # TODO: should be enums not hardcoded strings
+        / "debug-keystore.jks",  # TODO: should be enums not hardcoded strings
         key_alias=_KEYSTORE_ALIAS,
         store_password=_DEBUG_KEYSTORE_STORE_PASSWORD,
     )
     generate_deterministic_debug_keystore(signing_identity)
     supplementary_signatures = acquire_supplementary_signatures(
-        application.repository_root / "data" / "raw" #TODO: should be enums not hardcoded strings
+        raw_root_all
     ).directory
 
     families = lamda_families()
@@ -344,16 +356,16 @@ def run_lamda_action_generation(
     )
 
     destination = (
-        experiment_directory(application, "action-certificate-validation") / "actions.json" #TODO: should be enums not hardcoded strings
+        experiment_directory(application, ExecutableWorkflowName.ACTION_CERTIFICATE_VALIDATION) / WorkflowArtifactName.ACTIONS
     )
     destination.parent.mkdir(parents=True, exist_ok=True)
     fit_cache_path = (
-        experiment_directory(application, "action-certificate-validation") #TODO: should be enums not hardcoded strings
-        / "endpoint_fit_cache.json" #TODO: should be enums not hardcoded strings
+        experiment_directory(application, ExecutableWorkflowName.ACTION_CERTIFICATE_VALIDATION)
+        / WorkflowArtifactName.ENDPOINT_FIT_CACHE
     )
 
     def _persist_written(actions: list[ActionObservation]) -> None:
-        temporary_destination = destination.with_suffix(".json.partial")
+        temporary_destination = destination.with_suffix(".json.partial")  # TODO: should be enums not hardcoded strings
         temporary_destination.write_text(
             ActionArtifact(actions=actions).model_dump_json(indent=2), encoding="utf-8"
         )
@@ -365,7 +377,7 @@ def run_lamda_action_generation(
     cached_rejections = _load_endpoint_fit_cache(fit_cache_path, cohort, len(loaded.records))
     rejections = dict(cached_rejections)
 
-    def _reject(endpoint_ordinal: int, endpoint: CalendarMonth, stage: str) -> None: #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    def _reject(endpoint_ordinal: EndpointOrdinal, endpoint: CalendarMonth, stage: RejectionStage) -> None:
         LOGGER.info("action generation endpoint=%s rejected stage=%s", endpoint, stage)
         rejections[endpoint_ordinal] = stage
         _persist_endpoint_fit_cache(fit_cache_path, cohort, len(loaded.records), rejections)
@@ -474,7 +486,7 @@ def run_lamda_action_generation(
             if int(months[cohort_index]) >= endpoint_ordinal:
                 continue
             apk_path = androzoo_apk_destination(
-                application.repository_root / "data" / "raw", source_record.sample_hash #TODO: should be enums not hardcoded strings
+                raw_root_all, source_record.sample_hash
             )
             if not apk_path.is_file():
                 continue

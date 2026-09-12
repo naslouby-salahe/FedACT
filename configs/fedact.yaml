@@ -1,11 +1,12 @@
 datasets:
   lamda:
+    preprocessing:
+      feature_column_prefix: feat_
+      raw_variance_threshold_when_required: 0.001
     labels:
       benign_detection_count: 0
       malware_minimum_detection_count: 4
       discard_detection_counts: [1, 2, 3]
-    preprocessing:
-      raw_variance_threshold_when_required: 0.001
   ember2024:
     confirmatory_formats: [win32_pe, win64_pe]
 
@@ -219,6 +220,8 @@ reporting:
 
 workspace:
   configuration_file: configs/fedact.yaml
+  raw_data_root: data/raw
+  lamda_release_directory: data/raw/LAMDA/Baseline
   outputs_root: outputs
   results_root: results
   directories:

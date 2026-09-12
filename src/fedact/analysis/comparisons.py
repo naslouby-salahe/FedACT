@@ -12,6 +12,7 @@ from fedact.domain.types import (
     PairedCutoffCount,
     ParameterName,
     SeedValue,
+    SensitivityParameterName,
     SplitCutoffIdentity,
     SufficiencyFlag,
     ThresholdValue,
@@ -86,7 +87,7 @@ def build_paired_contrast(
             continue
         differences.append(aggregate_a.value - aggregate_b.value)
     eligible_count = len(eligible_cutoffs)
-    missing_fraction = missing_count / eligible_count if eligible_count > 0 else 1.0
+    missing_fraction = missing_count / eligible_count if eligible_count > 0 else 1.0  # TODO: should be constant
     sufficient = (
         len(differences) >= minimum_paired_cutoffs
         and missing_fraction <= maximum_missing_cutoff_fraction
@@ -102,8 +103,8 @@ def build_paired_contrast(
 def contrast_effect_direction(
     paired_differences: tuple[CutoffDifferenceValue, ...],
 ) -> EffectDirection:
-    positive = sum(1 for difference in paired_differences if difference > 0.0)
-    negative = sum(1 for difference in paired_differences if difference < 0.0)
+    positive = sum(1 for difference in paired_differences if difference > 0.0)  # TODO: should be constant
+    negative = sum(1 for difference in paired_differences if difference < 0.0)  # TODO: should be constant
     if positive > negative:
         return EffectDirection.FAVORABLE
     if negative > positive:
@@ -149,14 +150,46 @@ def enumerate_sensitivity_coordinates(
     coverage_levels: tuple[ThresholdValue, ...],
 ) -> tuple[SensitivityCoordinate, ...]:
     axes = (
-        (SensitivityAxis.CONTROL_SPAN_VIOLATION, "rho", control_span_alphas), #TODO: should be enum, not hardcoded string
-        (SensitivityAxis.PRIVATE_CONTAMINATION, "xi", private_contamination_alphas), #TODO: should be enum, not hardcoded string
-        (SensitivityAxis.HISTORICAL_PLAUSIBILITY_RADIUS, "R", radius_multipliers), #TODO: should be enum, not hardcoded string
-        (SensitivityAxis.ALIGNMENT_THRESHOLD, "tau_align", alignment_percentiles), #TODO: should be enum, not hardcoded string
-        (SensitivityAxis.AMBIGUITY_WIDTH, "tau_amb", ambiguity_percentiles), #TODO: should be enum, not hardcoded string
-        (SensitivityAxis.FORECAST_HORIZON, "horizon", forecast_horizons), #TODO: should be enum, not hardcoded string
-        (SensitivityAxis.NUISANCE_RANK, "nuisance_rank", nuisance_ranks), #TODO: should be enum, not hardcoded string
-        (SensitivityAxis.TARGET_COVERAGE, "coverage_level", coverage_levels), #TODO: should be enum, not hardcoded string
+        (
+            SensitivityAxis.CONTROL_SPAN_VIOLATION,
+            SensitivityParameterName.CONTROL_SPAN,
+            control_span_alphas,
+        ),
+        (
+            SensitivityAxis.PRIVATE_CONTAMINATION,
+            SensitivityParameterName.PRIVATE_CONTAMINATION,
+            private_contamination_alphas,
+        ),
+        (
+            SensitivityAxis.HISTORICAL_PLAUSIBILITY_RADIUS,
+            SensitivityParameterName.HISTORICAL_PLAUSIBILITY_RADIUS,
+            radius_multipliers,
+        ),
+        (
+            SensitivityAxis.ALIGNMENT_THRESHOLD,
+            SensitivityParameterName.ALIGNMENT_THRESHOLD,
+            alignment_percentiles,
+        ),
+        (
+            SensitivityAxis.AMBIGUITY_WIDTH,
+            SensitivityParameterName.AMBIGUITY_WIDTH,
+            ambiguity_percentiles,
+        ),
+        (
+            SensitivityAxis.FORECAST_HORIZON,
+            SensitivityParameterName.FORECAST_HORIZON,
+            forecast_horizons,
+        ),
+        (
+            SensitivityAxis.NUISANCE_RANK,
+            SensitivityParameterName.NUISANCE_RANK,
+            nuisance_ranks,
+        ),
+        (
+            SensitivityAxis.TARGET_COVERAGE,
+            SensitivityParameterName.TARGET_COVERAGE,
+            coverage_levels,
+        ),
     )
     return tuple(
         SensitivityCoordinate(axis=axis, parameter_name=parameter_name, value=value)

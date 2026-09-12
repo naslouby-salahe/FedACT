@@ -278,9 +278,9 @@ _DATA_DIRECTORY_NAMES = (
 _FEATURE_HASHER_TRANSFORM_ATTRIBUTE = "transform"
 _SPARSE_MATRIX_TO_ARRAY_ATTRIBUTE = "toarray"
 
-EmberJsonObject = NewType("EmberJsonObject", dict[str, JsonEncodableValue]) #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+EmberJsonObject = NewType("EmberJsonObject", dict[str, JsonEncodableValue])  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
 EmberJsonObjectList = NewType("EmberJsonObjectList", list[EmberJsonObject])
-EmberJsonStringList = NewType("EmberJsonStringList", list[str]) #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+EmberJsonStringList = NewType("EmberJsonStringList", list[str])  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
 EmberJsonIntegerList = NewType("EmberJsonIntegerList", list[int])
 
 
@@ -714,7 +714,7 @@ def _parse_record(payload: EmberJsonObject) -> tuple[EmberRawRecord, np.ndarray]
 
 def load_ember2024_records(data_directory: Path) -> LoadedEmberDataset:
     feature_dimension = ember2024_count_feature_mask().size
-    jsonl_files = sorted(data_directory.glob("*.jsonl"))
+    jsonl_files = sorted(data_directory.glob("*.jsonl"))  # TODO: should be enums not hardcoded strings
     if not jsonl_files:
         return LoadedEmberDataset(records=(), features=np.zeros((0, feature_dimension)))
     records: list[EmberRawRecord] = []
@@ -870,8 +870,8 @@ def run_empty_ember_transform_audit() -> None:
         raise EmberValidationError("EMBER standardization produced an impossible shape")
 
 
-WeekIdentifier = NewType("WeekIdentifier", str) #TODO: convert to enum
-CalendarMonthCell = NewType("CalendarMonthCell", str) #TODO: convert to enum
+WeekIdentifier = NewType("WeekIdentifier", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+CalendarMonthCell = NewType("CalendarMonthCell", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
 
 
 @dataclass(frozen=True)
@@ -930,15 +930,15 @@ def match_ember_controls(
     level: ControlMatchingLevel,
 ) -> tuple[EmberControlMatch, ...]:
     key = _matching_key(level)
-    controls_by_cell: dict[str, list[EmberControlRecord]] = {} #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    controls_by_cell: dict[CalendarMonthCell | WeekIdentifier, list[EmberControlRecord]] = {}
     for control in controls:
-        controls_by_cell.setdefault(str(key(control)), []).append(control)
+        controls_by_cell.setdefault(key(control), []).append(control)
     matches: list[EmberControlMatch] = []
     used: set[SampleIdentifier] = set()
     for record in malicious:
         candidates = [
             control
-            for control in controls_by_cell.get(str(key(record)), [])
+            for control in controls_by_cell.get(key(record), [])
             if control.sample_hash not in used
         ]
         for control in candidates[:1]:

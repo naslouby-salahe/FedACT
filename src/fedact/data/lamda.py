@@ -34,16 +34,19 @@ from fedact.domain.types import (
     DatasetSelector,
     EligibilityFlag,
     FamilyName,
+    FeatureColumnName,
+    FeatureColumnPrefix,
     Fraction,
     Probability,
     SampleCount,
     SampleIdentifier,
     ThresholdValue,
+    TabularColumnName,
     VarianceThreshold,
     WindowSpanMonths,
 )
 
-_FEATURE_COLUMN_PREFIX = "feat_" #TODO: should be retrieved from yml and accessed through config. Identify any similar issues and fix it
+DEFAULT_FEATURE_COLUMN_PREFIX: FeatureColumnPrefix = "feat_"
 
 
 @dataclass(frozen=True)
@@ -52,26 +55,34 @@ class LoadedLamdaDataset:
     features: np.ndarray
 
 
-def _feature_columns(columns: list[str]) -> list[str]: #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+def _feature_columns(
+    columns: list[TabularColumnName], feature_column_prefix: FeatureColumnPrefix
+) -> list[FeatureColumnName]:
     return sorted(
-        (column for column in columns if column.startswith(_FEATURE_COLUMN_PREFIX)),
-        key=lambda column: int(column.removeprefix(_FEATURE_COLUMN_PREFIX)),
+        (
+            FeatureColumnName(column)
+            for column in columns
+            if column.startswith(feature_column_prefix)
+        ),
+        key=lambda column: int(column.removeprefix(feature_column_prefix)),
     )
 
 
-def load_lamda_records(data_directory: Path) -> LoadedLamdaDataset:
+def load_lamda_records(
+    data_directory: Path, feature_column_prefix: FeatureColumnPrefix = DEFAULT_FEATURE_COLUMN_PREFIX
+) -> LoadedLamdaDataset:
     parquet_files = sorted(data_directory.rglob("*.parquet"))
     if not parquet_files:
         return LoadedLamdaDataset(records=(), features=np.zeros((0, 0), dtype=np.float32))
     combined = pd.concat((pd.read_parquet(path) for path in parquet_files), ignore_index=True)
-    columns = cast(list[str], combined.columns.tolist())
-    feature_columns = _feature_columns(columns)
+    columns = [TabularColumnName(column) for column in combined.columns.tolist()]
+    feature_columns = _feature_columns(columns, feature_column_prefix)
     features = cast(np.ndarray, combined[feature_columns].to_numpy(dtype=np.float32))
-    hashes = cast(list[str], combined["hash"].tolist())
-    year_months = cast(list[str], combined["year_month"].tolist())
+    hashes = cast(list[str], combined["hash"].tolist())  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    year_months = cast(list[str], combined["year_month"].tolist())  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     labels = cast(list[float], combined["label"].tolist())
     vt_counts = cast(list[float], combined["vt_count"].tolist())
-    families = cast(list[str], combined["family"].tolist())
+    families = cast(list[str], combined["family"].tolist())  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     records = tuple(
         LamdaRawRecord(
             sample_hash=SampleIdentifier(sample_hash),
@@ -176,7 +187,7 @@ def match_controls_by_calendar_month(
     controls: tuple[LamdaRawRecord, ...],
     budget: MatchBudget,
 ) -> tuple[LamdaControlMatch, ...]:
-    controls_by_month: dict[str, list[LamdaRawRecord]] = {} #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    controls_by_month: dict[CalendarMonthString, list[LamdaRawRecord]] = {}
     for control in controls:
         controls_by_month.setdefault(control.year_month, []).append(control)
     matches: list[LamdaControlMatch] = []

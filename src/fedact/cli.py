@@ -6,7 +6,7 @@ from typing import Optional
 import typer
 
 from fedact import workflow
-from fedact.domain.types import DatasetSelector, ExecutableWorkflowName
+from fedact.domain.types import CliCommandName, DatasetSelector, ExecutableWorkflowName
 
 app = typer.Typer(
     name="fedact",
@@ -26,12 +26,12 @@ OptionalDatasetArgument = typer.Argument(None)
 OptionalWorkflowArgument = typer.Argument(None)
 
 
-@app.command("doctor") #TODO: should be enum not hardcoded string
+@app.command(CliCommandName.DOCTOR)
 def doctor_entry(repository_root: Path = _REPOSITORY_ROOT_OPTION) -> None:
     workflow.run_doctor(repository_root)
 
 
-@app.command("preprocess") #TODO: should be enum not hardcoded string
+@app.command(CliCommandName.PREPROCESS)
 def preprocess_entry(
     dataset: Optional[DatasetSelector] = OptionalDatasetArgument,
     overwrite: bool = OverwriteOption,
@@ -40,12 +40,12 @@ def preprocess_entry(
     workflow.run_preprocess(dataset, overwrite, repository_root)
 
 
-@app.command("plan") #TODO: should be enum not hardcoded string
+@app.command(CliCommandName.PLAN)
 def plan_entry(repository_root: Path = _REPOSITORY_ROOT_OPTION) -> None:
     workflow.run_plan(repository_root)
 
 
-@app.command("smoke") #TODO: should be enum not hardcoded string
+@app.command(CliCommandName.SMOKE)
 def smoke_entry(
     overwrite: bool = OverwriteOption,
     repository_root: Path = _REPOSITORY_ROOT_OPTION,
@@ -53,7 +53,7 @@ def smoke_entry(
     workflow.run_smoke(overwrite, repository_root)
 
 
-@app.command("run") #TODO: should be enum not hardcoded string
+@app.command(CliCommandName.RUN)
 def run_entry(
     workflow_name: ExecutableWorkflowName,
     overwrite: bool = OverwriteOption,
@@ -62,7 +62,7 @@ def run_entry(
     workflow.run_experiment(workflow_name, overwrite, repository_root)
 
 
-@app.command("status") #TODO: should be enum not hardcoded string
+@app.command(CliCommandName.STATUS)
 def status_entry(
     workflow_name: Optional[ExecutableWorkflowName] = OptionalWorkflowArgument,
     repository_root: Path = _REPOSITORY_ROOT_OPTION,
@@ -70,7 +70,7 @@ def status_entry(
     workflow.run_status(workflow_name, repository_root)
 
 
-@app.command("report") #TODO: should be enum not hardcoded string
+@app.command(CliCommandName.REPORT)
 def report_entry(
     workflow_name: Optional[ExecutableWorkflowName] = OptionalWorkflowArgument,
     overwrite: bool = OverwriteOption,

@@ -4,16 +4,18 @@ import hashlib
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import NewType, Self, cast
+from typing import Self, cast
 
 import yaml
 
 from fedact.config.models import FedActConfig, validate_configuration_constraints
-from fedact.domain.types import JsonEncodableValue
-
-ConfigurationHash = NewType("ConfigurationHash", str) #TODO: convert to enum
-ConfigurationPayloadText = NewType("ConfigurationPayloadText", str) #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-ConfigurationRawMapping = NewType("ConfigurationRawMapping", dict[str, JsonEncodableValue]) #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+from fedact.domain.types import (
+    ConfigurationHash,
+    ConfigurationKey,
+    ConfigurationPayloadText,
+    ConfigurationRawMapping,
+    JsonEncodableValue,
+)
 
 
 class DuplicateYamlKeyError(ValueError):
@@ -27,13 +29,13 @@ class _DuplicateKeyRejectingLoader(yaml.SafeLoader):
 def _construct_mapping(loader: yaml.Loader, node: yaml.Node) -> ConfigurationRawMapping:
     if not isinstance(node, yaml.MappingNode):
         raise TypeError("configuration mappings must deserialize from YAML mapping nodes")
-    seen: set[str] = set() #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    seen: set[ConfigurationKey] = set()
     for key_node, _unused in node.value:
-        key = cast(str, loader.construct_object(key_node))
+        key = ConfigurationKey(cast(str, loader.construct_object(key_node)))
         if key in seen:
             raise DuplicateYamlKeyError(f"duplicate configuration key encountered: {key!r}")
         seen.add(key)
-    mapping = cast(dict[str, JsonEncodableValue], loader.construct_mapping(node))
+    mapping = cast(dict[str, JsonEncodableValue], loader.construct_mapping(node))  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     return ConfigurationRawMapping(mapping)
 
 
@@ -90,7 +92,7 @@ def parse_raw_configuration_mapping(payload: ConfigurationPayloadText) -> JsonEn
 def _deep_merge(base: JsonEncodableValue, overlay: JsonEncodableValue) -> JsonEncodableValue:
     if not isinstance(base, dict) or not isinstance(overlay, dict):
         return overlay
-    merged: dict[str, JsonEncodableValue] = dict(base) #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    merged = ConfigurationRawMapping(dict(base))
     for key, value in overlay.items():
         merged[key] = _deep_merge(merged[key], value) if key in merged else value
     return merged

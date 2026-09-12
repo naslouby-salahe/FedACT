@@ -26,6 +26,7 @@ from fedact.domain.types import (
     ScientificOutcome,
     SourceText,
     ValidationFlag,
+    WorkflowArtifactName,
 )
 
 
@@ -83,9 +84,9 @@ class WorkspaceLayout:
         return self.resolve(self.workspace.directories.staging)
 
 
-DeterministicJsonPayload = NewType("DeterministicJsonPayload", str) #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-HexDigest = NewType("HexDigest", str) #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-ArtifactIdentity = NewType("ArtifactIdentity", str) #TODO: convert to enum
+DeterministicJsonPayload = NewType("DeterministicJsonPayload", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+HexDigest = NewType("HexDigest", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+ArtifactIdentity = NewType("ArtifactIdentity", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
 
 
 def deterministic_json(value: JsonEncodableValue) -> DeterministicJsonPayload:
@@ -160,11 +161,11 @@ class WorkflowResultRecord(StrictModel):
 
 
 def workflow_result_path(experiment_directory: Path) -> Path:
-    return experiment_directory / "result.json" #TODO: should be enums not hardcoded strings
+    return experiment_directory / WorkflowArtifactName.RESULT
 
 
 def workflow_evidence_path(experiment_directory: Path) -> Path:
-    return experiment_directory / "evidence.json" #TODO: should be enums not hardcoded strings
+    return experiment_directory / WorkflowArtifactName.EVIDENCE
 
 
 def write_workflow_result(experiment_directory: Path, record: WorkflowResultRecord) -> Path:

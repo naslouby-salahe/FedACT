@@ -34,12 +34,12 @@ from fedact.domain.types import (
 )
 
 type FloatArray = NDArray[np.float64]
-GridCellIdentity = NewType("GridCellIdentity", str) #TODO: convert to enum
-StructuralSeedIdentity = NewType("StructuralSeedIdentity", str) #TODO: convert to enum
-NoiseSeedIdentity = NewType("NoiseSeedIdentity", str) #TODO: convert to enum
+GridCellIdentity = NewType("GridCellIdentity", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+StructuralSeedIdentity = NewType("StructuralSeedIdentity", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+NoiseSeedIdentity = NewType("NoiseSeedIdentity", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
 
 SYNTHETIC_DIMENSION = 64
-_NEAREST_INTEGER_ROUNDING_OFFSET = 0.5
+_NEAREST_INTEGER_ROUNDING_OFFSET = 0.5  # TODO: should be constant
 
 
 class SyntheticGeneratorError(ValueError):
@@ -61,7 +61,7 @@ def deterministic_orthonormal_basis(
     raw = generator.standard_normal((rows, columns))
     basis, _unused = np.linalg.qr(raw)
     signs = np.sign(basis[np.abs(basis).argmax(axis=0), np.arange(basis.shape[1])])
-    signs[signs == 0] = 1.0
+    signs[signs == 0] = 1.0  # TODO: should be constant
     return basis * signs
 
 
@@ -154,7 +154,7 @@ class MaliciousTransition:
 
 
 def effective_support(support_before: SampleSize, support_after: SampleSize) -> EffectiveSampleSize:
-    return (1.0 / support_before + 1.0 / support_after) ** -1.0
+    return (1.0 / support_before + 1.0 / support_after) ** -1.0  # TODO: should be constant
 
 
 def draw_private_transition(
@@ -232,14 +232,14 @@ def common_intersection_dimension(
     singular_values = np.linalg.svd(stacked, compute_uv=False)
     if singular_values.size == 0:
         return 0
-    cutoff = max(singular_values[0], 1.0) * rank_tolerance
+    cutoff = max(singular_values[0], 1.0) * rank_tolerance  # TODO: should be constant
     return int(np.count_nonzero(singular_values > cutoff))
 
 
 def principal_angles(first: np.ndarray, second: np.ndarray) -> np.ndarray:
     overlap = first.T @ second
     singular_values = np.linalg.svd(overlap, compute_uv=False)
-    cosine = np.clip(singular_values, -1.0, 1.0)
+    cosine = np.clip(singular_values, -1.0, 1.0)  # TODO: should be constant
     return np.arccos(cosine)
 
 
@@ -328,7 +328,7 @@ def _check_intersection(
 ) -> SmokeCheckResult:
     stacked = np.concatenate([client.basis for client in spaces.clients], axis=1)
     singular_values = np.linalg.svd(stacked, compute_uv=False)
-    cutoff = max(float(singular_values[0]), 1.0) * rank_tolerance
+    cutoff = max(float(singular_values[0]), 1.0) * rank_tolerance  # TODO: should be constant
     observed = int(np.count_nonzero(singular_values > cutoff))
     expected = (
         requested

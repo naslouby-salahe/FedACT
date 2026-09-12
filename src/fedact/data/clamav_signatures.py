@@ -8,12 +8,20 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
-SANESECURITY_MIRROR = "https://mirror.rollernet.us/sanesecurity"
+from fedact.domain.types import (
+    ContentChecksum,
+    SignatureAcquisitionTimestamp,
+    SignatureSourceUrl,
+    SupplementarySignatureArtifactName,
+    SupplementarySignatureFileName,
+)
+
+SANESECURITY_MIRROR = SignatureSourceUrl("https://mirror.rollernet.us/sanesecurity")
 SUPPLEMENTARY_SIGNATURE_FILES = (
-    "malwarehash.hsb",
-    "rogue.hdb",
-    "foxhole_filename.cdb",
-    "foxhole_generic.cdb",
+    SupplementarySignatureFileName.MALWARE_HASH,
+    SupplementarySignatureFileName.ROGUE,
+    SupplementarySignatureFileName.FOXHOLE_FILENAME,
+    SupplementarySignatureFileName.FOXHOLE_GENERIC,
 )
 
 
@@ -24,17 +32,17 @@ class ClamavSignatureAcquisitionError(RuntimeError):
 @dataclass(frozen=True)
 class SupplementarySignatureManifest:
     directory: Path
-    file_sha256: dict[str, str] #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    fetched_at: str #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    source: str #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    file_sha256: dict[SupplementarySignatureFileName, ContentChecksum]
+    fetched_at: SignatureAcquisitionTimestamp
+    source: SignatureSourceUrl
 
 
 def supplementary_signature_directory(raw_data_root: Path) -> Path:
-    return raw_data_root / "clamav-signatures" / "sanesecurity"
+    return raw_data_root / "clamav-signatures" / "sanesecurity"  # TODO: should be enums not hardcoded strings
 
 
 def _manifest_path(directory: Path) -> Path:
-    return directory / "manifest.json" #TODO: should be enums not hardcoded strings
+    return directory / SupplementarySignatureArtifactName.MANIFEST
 
 
 def acquire_supplementary_signatures(raw_data_root: Path) -> SupplementarySignatureManifest:
@@ -44,13 +52,16 @@ def acquire_supplementary_signatures(raw_data_root: Path) -> SupplementarySignat
         payload = json.loads(manifest_path.read_text(encoding="utf-8"))
         return SupplementarySignatureManifest(
             directory=directory,
-            file_sha256=payload["file_sha256"],
-            fetched_at=payload["fetched_at"],
-            source=payload["source"],
+            file_sha256={
+                SupplementarySignatureFileName(filename): ContentChecksum(digest)
+                for filename, digest in payload["file_sha256"].items()
+            },
+            fetched_at=SignatureAcquisitionTimestamp(payload["fetched_at"]),
+            source=SignatureSourceUrl(payload["source"]),
         )
 
     directory.mkdir(parents=True, exist_ok=True)
-    file_sha256: dict[str, str] = {} #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    file_sha256: dict[SupplementarySignatureFileName, ContentChecksum] = {}
     for filename in SUPPLEMENTARY_SIGNATURE_FILES:
         url = f"{SANESECURITY_MIRROR}/{filename}"
         try:
@@ -62,12 +73,12 @@ def acquire_supplementary_signatures(raw_data_root: Path) -> SupplementarySignat
         temporary_destination = destination.with_suffix(destination.suffix + ".partial")
         temporary_destination.write_bytes(payload_bytes)
         temporary_destination.replace(destination)
-        file_sha256[filename] = hashlib.sha256(payload_bytes).hexdigest()
+        file_sha256[filename] = ContentChecksum(f"sha256:{hashlib.sha256(payload_bytes).hexdigest()}")
 
     manifest = SupplementarySignatureManifest(
         directory=directory,
         file_sha256=file_sha256,
-        fetched_at=datetime.now(UTC).isoformat(),
+        fetched_at=SignatureAcquisitionTimestamp(datetime.now(UTC).isoformat()),
         source=SANESECURITY_MIRROR,
     )
     manifest_path.write_text(

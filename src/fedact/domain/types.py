@@ -78,9 +78,87 @@ class ExecutableWorkflowName(StrEnum):
     STATISTICAL_SYNTHESIS = "statistical-synthesis"
 
 
+class WorkflowArtifactName(StrEnum):
+    ENDPOINT_FIT_CACHE = "endpoint_fit_cache.json"
+    ACTIONS = "actions.json"
+    CALIBRATION_OBSERVATIONS = "observations.json"
+    CALIBRATION_SELECTION = "selected.json"
+    CHALLENGES = "challenges.json"
+    CERTIFICATE_DECISIONS = "certificate-decisions.json"
+    CUTOFF_COMPARISONS = "cutoff-comparisons.json"
+    CENTRAL_PATTERN = "central-pattern.json"
+    IDENTIFICATION_DIAGNOSTICS = "identification-diagnostics.json"
+    TEMPORAL_DYNAMICS = "temporal-dynamics.json"
+    ABLATION_MEASUREMENTS = "measurements.json"
+    FEDERATION_CLIENTS = "clients.json"
+    EVIDENCE = "evidence.json"
+    RESULT = "result.json"
+    STRESS_MEASUREMENTS = "stress-measurements.json"
+
+
+class CliCommandName(StrEnum):
+    DOCTOR = "doctor"
+    PREPROCESS = "preprocess"
+    PLAN = "plan"
+    SMOKE = "smoke"
+    RUN = "run"
+    STATUS = "status"
+    REPORT = "report"
+
+
+class ToolchainComponent(StrEnum):
+    APKTOOL = "apktool"
+    APKSIGNER = "apksigner"
+    AAPT2 = "aapt2"
+    CLAMSCAN = "clamscan"
+
+
+class SupplementarySignatureFileName(StrEnum):
+    MALWARE_HASH = "malwarehash.hsb"
+    ROGUE = "rogue.hdb"
+    FOXHOLE_FILENAME = "foxhole_filename.cdb"
+    FOXHOLE_GENERIC = "foxhole_generic.cdb"
+
+
+class SupplementarySignatureArtifactName(StrEnum):
+    MANIFEST = "manifest.json"
+
+
 class DatasetSelector(StrEnum):
     LAMDA = "lamda"
     EMBER2024 = "ember2024"
+
+
+class LamdaFeatureCategory(StrEnum):
+    ACTIVITY_LIST = "ActivityList"
+    BROADCAST_RECEIVER_LIST = "BroadcastReceiverList"
+    SERVICE_LIST = "ServiceList"
+    REQUESTED_PERMISSION_LIST = "RequestedPermissionList"
+    INTENT_FILTER_LIST = "IntentFilterList"
+    HARDWARE_COMPONENTS_LIST = "HardwareComponentsList"
+    RESTRICTED_API_LIST = "RestrictedApiList"
+    SUSPICIOUS_API_LIST = "SuspiciousApiList"
+    URL_DOMAIN_LIST = "URLDomainList"
+    USED_PERMISSIONS_LIST = "UsedPermissionsList"
+
+
+class AndroidManifestTag(StrEnum):
+    ACTIVITY = "activity"
+    RECEIVER = "receiver"
+    SERVICE = "service"
+    ACTION = "action"
+    CATEGORY = "category"
+
+
+class SensitivityParameterName(StrEnum):
+    CONTROL_SPAN = "rho"
+    PRIVATE_CONTAMINATION = "xi"
+    HISTORICAL_PLAUSIBILITY_RADIUS = "R"
+    ALIGNMENT_THRESHOLD = "tau_align"
+    AMBIGUITY_WIDTH = "tau_amb"
+    FORECAST_HORIZON = "horizon"
+    NUISANCE_RANK = "nuisance_rank"
+    TARGET_COVERAGE = "coverage_level"
 
 
 class FederationGeometry(StrEnum):
@@ -363,35 +441,35 @@ ObservedValue = NonEmptyString
 EmbeddingComponent = FiniteFloat
 
 
-ActionDecision = NonEmptyString #TODO: convert to enum
-ExecutionReason = NonEmptyString #TODO: convert to enum
-WorkflowStatus = NonEmptyString #TODO: convert to enum
+ActionDecision = NonEmptyString
+ExecutionReason = NonEmptyString
+WorkflowStatus = NonEmptyString
 DiagnosisMessage = NonEmptyString
 WorkflowDescription = NonEmptyString
 DetailMessage = NonEmptyString
 OperationalizationText = NonEmptyString
 RuleDescription = NonEmptyString
 NormalizedOperatorFormText = NonEmptyString
-ArtifactName = NonEmptyString #TODO: convert to enum
-ToolchainIdentifier = NonEmptyString #TODO: convert to enum
-TableIdentifier = NonEmptyString #TODO: convert to enum
-FigureIdentifier = NonEmptyString #TODO: convert to enum
-ComparatorIdentifier = NonEmptyString #TODO: convert to enum
-RoadmapSectionId = NonEmptyString #TODO: convert to enum
-ParameterName = NonEmptyString #TODO: convert to enum
-ManifestFieldName = NonEmptyString #TODO: convert to enum
-IntegrityCheckName = NonEmptyString #TODO: convert to enum
-ScientificInvariantName = NonEmptyString #TODO: convert to enum
-CohortIdentifier = NonEmptyString #TODO: convert to enum
-OperatorIdentifier = NonEmptyString #TODO: convert to enum
-FamilyName = NonEmptyString #TODO: convert to enum
-AblationIdentifier = NonEmptyString #TODO: convert to enum
-ProducerIdentifier = NonEmptyString #TODO: convert to enum
-RequirementId = NonEmptyString #TODO: convert to enum
-DatasetName = NonEmptyString #TODO: convert to enum
-FieldName = NonEmptyString #TODO: convert to enum
-GridCellLabel = NonEmptyString #TODO: convert to enum
-LoggerName = NonEmptyString #TODO: convert to enum
+ArtifactName = NonEmptyString
+ToolchainIdentifier = NonEmptyString
+TableIdentifier = NonEmptyString
+FigureIdentifier = NonEmptyString
+ComparatorIdentifier = NonEmptyString
+RoadmapSectionId = NonEmptyString
+ParameterName = NonEmptyString
+ManifestFieldName = NonEmptyString
+IntegrityCheckName = NonEmptyString
+ScientificInvariantName = NonEmptyString
+CohortIdentifier = NonEmptyString
+OperatorIdentifier = NonEmptyString
+FamilyName = NonEmptyString
+AblationIdentifier = NonEmptyString
+ProducerIdentifier = NonEmptyString
+RequirementId = NonEmptyString
+DatasetName = NonEmptyString
+FieldName = NonEmptyString
+GridCellLabel = NonEmptyString
+LoggerName = NonEmptyString
 HashDigest = NonEmptyString
 ModuleQualifiedName = NonEmptyString
 SourceText = NonEmptyString
@@ -462,24 +540,58 @@ MechanismValidFlag = StrictBoolean
 JsonEncodableValue = JsonValue
 FilePath = Path
 RawPayloadBytes = StrictBytes
+FeatureColumnPrefix = NonEmptyString
+FeatureColumnName = NewType("FeatureColumnName", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+TabularColumnName = NewType("TabularColumnName", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+ApiReference = NewType("ApiReference", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+AndroidAvdName = NewType("AndroidAvdName", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+AndroidDeviceSerial = NewType("AndroidDeviceSerial", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+AndroidPackageName = NewType("AndroidPackageName", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+AndroidSystemImage = NewType("AndroidSystemImage", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+AndroidCommandArgument = NewType("AndroidCommandArgument", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+ApkSigningKeyAlias = NewType("ApkSigningKeyAlias", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+ApkSigningPassword = NewType("ApkSigningPassword", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+ApkArchiveEntryName = NewType("ApkArchiveEntryName", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+ObservableEvent = NewType("ObservableEvent", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+MonkeyEventCount = PositiveInt
+EmulatorPort = PositiveInt
+EndpointOrdinal = NonNegativeInt
+RejectionStage = NewType("RejectionStage", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+ToolVersion = NewType("ToolVersion", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+ToolchainIdentity = NewType("ToolchainIdentity", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+PValueSeries = NewType("PValueSeries", list[float])  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+PValueCriterion = NewType("PValueCriterion", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+ConfigurationHash = NewType("ConfigurationHash", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+ConfigurationFieldName = NewType("ConfigurationFieldName", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+ConfigurationKey = NewType("ConfigurationKey", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+ConfigurationPayloadText = NewType("ConfigurationPayloadText", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+ConfigurationRawMapping = NewType("ConfigurationRawMapping", dict[str, JsonEncodableValue])  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+SignatureAcquisitionTimestamp = NewType("SignatureAcquisitionTimestamp", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+SignatureSourceUrl = NewType("SignatureSourceUrl", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+LamdaFeatureName = NewType("LamdaFeatureName", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+ManifestAttributeName = NewType("ManifestAttributeName", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+ManifestAttributeValue = NewType("ManifestAttributeValue", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+ManifestXmlTag = NewType("ManifestXmlTag", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+ObservableFeatureToken = NewType("ObservableFeatureToken", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+UrlDomain = NewType("UrlDomain", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
 
 
-DependencyFingerprint = NewType("DependencyFingerprint", str)
-ContentChecksum = NewType("ContentChecksum", str)
-RepositoryCommit = NewType("RepositoryCommit", str)
-DatasetIdentity = NewType("DatasetIdentity", str) #TODO: convert to enum
-PreprocessingIdentity = NewType("PreprocessingIdentity", str)
-SplitCutoffIdentity = NewType("SplitCutoffIdentity", str)
-CohortDefinition = NewType("CohortDefinition", str) #TODO: convert to enum
-SampleIdentifier = NewType("SampleIdentifier", str)
-OperatorLibraryIdentity = NewType("OperatorLibraryIdentity", str) #TODO: convert to enum
-SolverOutcomeRecord = NewType("SolverOutcomeRecord", str)
-RunResultSummary = NewType("RunResultSummary", str)
-ExperimentName = NewType("ExperimentName", str) #TODO: convert to enum
-LogNamespace = NewType("LogNamespace", str) #TODO: convert to enum
-ClientIdentifier = NewType("ClientIdentifier", str) #TODO: convert to enum
+DependencyFingerprint = NewType("DependencyFingerprint", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+ContentChecksum = NewType("ContentChecksum", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+RepositoryCommit = NewType("RepositoryCommit", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+DatasetIdentity = NewType("DatasetIdentity", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+PreprocessingIdentity = NewType("PreprocessingIdentity", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+SplitCutoffIdentity = NewType("SplitCutoffIdentity", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+CohortDefinition = NewType("CohortDefinition", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+SampleIdentifier = NewType("SampleIdentifier", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+OperatorLibraryIdentity = NewType("OperatorLibraryIdentity", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+SolverOutcomeRecord = NewType("SolverOutcomeRecord", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+RunResultSummary = NewType("RunResultSummary", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+ExperimentName = NewType("ExperimentName", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+LogNamespace = NewType("LogNamespace", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+ClientIdentifier = NewType("ClientIdentifier", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
 SeedValue = NonNegativeInt
-ExperimentDirectoryName = NonEmptyString #TODO: convert to enum
+ExperimentDirectoryName = NonEmptyString
 
 __all__ = [
     "AblationIdentifier",
@@ -488,6 +600,8 @@ __all__ = [
     "ActionCount",
     "ActionScore",
     "ActionDecision",
+    "ApiReference",
+    "AndroidManifestTag",
     "ActivationFlag",
     "AmbiguityFlag",
     "AmbiguityStatusFlag",
@@ -505,6 +619,7 @@ __all__ = [
     "CertificationStatus",
     "CertificationStatusFlag",
     "ClientCount",
+    "CliCommandName",
     "ClientIdentifier",
     "ClientIndex",
     "ClientSelectionComparator",
@@ -514,6 +629,11 @@ __all__ = [
     "CommitHash",
     "ConditionNumberLimit",
     "ConfidenceLevel",
+    "ConfigurationHash",
+    "ConfigurationFieldName",
+    "ConfigurationKey",
+    "ConfigurationPayloadText",
+    "ConfigurationRawMapping",
     "ConfirmatoryFlag",
     "ConfirmatoryFormat",
     "ContainmentFlag",
@@ -563,6 +683,8 @@ __all__ = [
     "FamilyName",
     "FeasibilityCondition",
     "FeatureValue",
+    "FeatureColumnName",
+    "FeatureColumnPrefix",
     "FigureIdentifier",
     "FederationClientCount",
     "FederationGeometry",
@@ -582,6 +704,8 @@ __all__ = [
     "IterationCount",
     "JsonEncodableValue",
     "KurtosisExcess",
+    "LamdaFeatureCategory",
+    "LamdaFeatureName",
     "LearningRate",
     "LogNamespace",
     "LogDeterminantGain",
@@ -594,6 +718,9 @@ __all__ = [
     "MaximumIterations",
     "MechanismValidFlag",
     "MetricRate",
+    "ManifestAttributeName",
+    "ManifestAttributeValue",
+    "ManifestXmlTag",
     "MinimumDetectionCount",
     "MissingCutoffReason",
     "ModuleQualifiedName",
@@ -604,6 +731,7 @@ __all__ = [
     "NormValue",
     "NormalizedOperatorFormText",
     "ObservabilityFlag",
+    "ObservableFeatureToken",
     "OperationalizationText",
     "OperatorIdentifier",
     "OperatorLibraryIdentity",
@@ -655,11 +783,14 @@ __all__ = [
     "SeedValue",
     "SelectedCount",
     "SensitivityMultiplier",
+    "SensitivityParameterName",
     "Sigma",
     "SignificanceLevel",
     "SimilarityScore",
     "SolverOutcomeRecord",
     "SourceText",
+    "SignatureAcquisitionTimestamp",
+    "SignatureSourceUrl",
     "SplitCutoffIdentity",
     "StabilityFlag",
     "StandardizationFloor",
@@ -667,22 +798,27 @@ __all__ = [
     "StrictBytes",
     "SufficiencyFlag",
     "SupportThreshold",
+    "SupplementarySignatureArtifactName",
+    "SupplementarySignatureFileName",
     "SyntheticCorruptionAttack",
     "ThresholdValue",
     "TimeoutSeconds",
     "Tolerance",
     "ToolchainIdentifier",
     "TableIdentifier",
+    "TabularColumnName",
     "TriggerabilityFlag",
     "UnitCount",
     "UncertaintyRadius",
     "UsageCount",
+    "UrlDomain",
     "ValidationFlag",
     "VarianceThreshold",
     "VerificationFlag",
     "VersionText",
     "WindowMonth",
     "WindowSpanMonths",
+    "WorkflowArtifactName",
     "WorkflowDescription",
     "WorkflowStatus",
     "ZeroDisplacementFloor",

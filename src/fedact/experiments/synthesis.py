@@ -124,7 +124,7 @@ def run_statistical_synthesis(
     central_pattern_certified_series: tuple[CutoffAggregate, ...] = (),
     matched_random_series: tuple[CutoffAggregate, ...] = (),
 ) -> StatisticalSynthesisReport:
-    coverage_satisfied = coverage >= (1.0 - maximum_coverage_deficit)
+    coverage_satisfied = coverage >= (1.0 - maximum_coverage_deficit)  # TODO: should be constant
     clean_cost_satisfied = clean_fnr_degradation <= maximum_clean_fnr_degradation
     outcome = ScientificOutcome.FAIL
     coordinates = enumerate_sensitivity_coordinates(

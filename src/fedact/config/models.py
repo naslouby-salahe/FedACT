@@ -10,6 +10,7 @@ from fedact.domain.types import (
     BudgetAmount,
     ClientCount,
     ConditionNumberLimit,
+    ConfigurationFieldName,
     ConfidenceLevel,
     ConfirmatoryFormat,
     CorruptedClientAttack,
@@ -23,6 +24,7 @@ from fedact.domain.types import (
     ExperimentDirectoryName,
     FederationClientCount,
     FederationGeometry,
+    FeatureColumnPrefix,
     Fraction,
     IntersectionDimension,
     KurtosisExcess,
@@ -69,6 +71,7 @@ class LamdaLabelRules(StrictModel):
 
 
 class LamdaPreprocessingRules(StrictModel):
+    feature_column_prefix: FeatureColumnPrefix
     raw_variance_threshold_when_required: VarianceThreshold
 
 
@@ -427,6 +430,8 @@ class WorkspaceDirectories(StrictModel):
 
 class WorkspaceConfig(StrictModel):
     configuration_file: RelativePosixPath
+    raw_data_root: RelativePosixPath
+    lamda_release_directory: RelativePosixPath
     outputs_root: RelativePosixPath
     results_root: RelativePosixPath
     directories: WorkspaceDirectories
@@ -457,14 +462,20 @@ class ConfigurationConstraintError(ValueError):
     pass
 
 
-def _require_membership(
-    value: float | int, candidates: list[float] | list[int], label: str #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+def _require_membership[SelectionValue](
+    value: SelectionValue,
+    candidates: list[SelectionValue],
+    label: ConfigurationFieldName,
 ) -> None:
     if value not in candidates:
         raise ConfigurationConstraintError(f"{label} must be one of {candidates}; got {value}")
 
 
-def _require_relative_descendant(parent: str, child: str, label: str) -> None: #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+def _require_relative_descendant(
+    parent: RelativePosixPath,
+    child: RelativePosixPath,
+    label: ConfigurationFieldName,
+) -> None:
     parent_path = PurePosixPath(parent)
     child_path = PurePosixPath(child)
     if child_path == parent_path or parent_path not in child_path.parents:
@@ -494,27 +505,27 @@ def _validate_identification_selections(config: FedActConfig) -> None:
     _require_membership(
         identification.eigengap_ratio.default_without_nested_calibration,
         identification.eigengap_ratio.candidates,
-        "identification.eigengap_ratio.default_without_nested_calibration",
+        ConfigurationFieldName("identification.eigengap_ratio.default_without_nested_calibration"),
     )
     _require_membership(
         identification.target_coverage.primary,
         identification.target_coverage.candidates,
-        "identification.target_coverage.primary",
+        ConfigurationFieldName("identification.target_coverage.primary"),
     )
     _require_membership(
         identification.control_span_violation.primary_alpha,
         identification.control_span_violation.sensitivity_alpha,
-        "identification.control_span_violation.primary_alpha",
+        ConfigurationFieldName("identification.control_span_violation.primary_alpha"),
     )
     _require_membership(
         identification.private_contamination.primary_alpha,
         identification.private_contamination.sensitivity_alpha,
-        "identification.private_contamination.primary_alpha",
+        ConfigurationFieldName("identification.private_contamination.primary_alpha"),
     )
     _require_membership(
         identification.covariance_regularization.primary_c,
         identification.covariance_regularization.sensitivity_c,
-        "identification.covariance_regularization.primary_c",
+        ConfigurationFieldName("identification.covariance_regularization.primary_c"),
     )
 
 
@@ -522,7 +533,7 @@ def _validate_hardening_selection(config: FedActConfig) -> None:
     _require_membership(
         config.hardening.maximum_actions_per_sample.primary,
         config.hardening.maximum_actions_per_sample.candidates,
-        "hardening.maximum_actions_per_sample.primary",
+        ConfigurationFieldName("hardening.maximum_actions_per_sample.primary"),
     )
 
 
@@ -533,27 +544,27 @@ def _validate_workspace_layout(config: FedActConfig) -> None:
     results_root = workspace.results_root
 
     _require_relative_descendant(
-        outputs_root, directories.preprocessing, "workspace.directories.preprocessing"
+        outputs_root, directories.preprocessing, ConfigurationFieldName("workspace.directories.preprocessing")
     )
     _require_relative_descendant(
-        outputs_root, directories.experiments, "workspace.directories.experiments"
+        outputs_root, directories.experiments, ConfigurationFieldName("workspace.directories.experiments")
     )
-    _require_relative_descendant(outputs_root, directories.cache, "workspace.directories.cache")
+    _require_relative_descendant(outputs_root, directories.cache, ConfigurationFieldName("workspace.directories.cache"))
     _require_relative_descendant(
-        directories.cache, directories.staging, "workspace.directories.staging"
+        directories.cache, directories.staging, ConfigurationFieldName("workspace.directories.staging")
     )
     _require_relative_descendant(
         workspace.results_root,
         directories.result_experiments,
-        "workspace.directories.result_experiments",
+        ConfigurationFieldName("workspace.directories.result_experiments"),
     )
     _require_relative_descendant(
-        results_root, directories.project_summary, "workspace.directories.project_summary"
+        results_root, directories.project_summary, ConfigurationFieldName("workspace.directories.project_summary")
     )
     _require_relative_descendant(
         directories.project_summary,
         directories.reproducibility,
-        "workspace.directories.reproducibility",
+        ConfigurationFieldName("workspace.directories.reproducibility"),
     )
 
     shared_children = {
@@ -565,7 +576,9 @@ def _validate_workspace_layout(config: FedActConfig) -> None:
     }
     for label, path in shared_children.items():
         _require_relative_descendant(
-            directories.shared_artifacts, path, f"workspace.directories.{label}"
+            directories.shared_artifacts,
+            path,
+            ConfigurationFieldName(f"workspace.directories.{label}"),
         )
 
     if len(set(workspace.experiment_directories)) != len(workspace.experiment_directories):

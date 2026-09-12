@@ -53,6 +53,7 @@ from fedact.domain.types import (
     BootstrapAlpha,
     EigengapRatio,
     EvaluationCount,
+    FeatureColumnPrefix,
     FamilyName,
     Fraction,
     NormValue,
@@ -566,9 +567,11 @@ class IdentificationDiagnosticsReport:
 
 
 def load_variance_filtered_lamda_dataset(
-    raw_root: Path, variance_threshold: VarianceThreshold
+    raw_root: Path,
+    variance_threshold: VarianceThreshold,
+    feature_column_prefix: FeatureColumnPrefix,
 ) -> LoadedLamdaDataset:
-    loaded = load_lamda_records(raw_root)
+    loaded = load_lamda_records(raw_root, feature_column_prefix)
     validate_lamda_dataset(loaded)
     filtered_features = filter_low_variance_features(loaded.features, variance_threshold)
     return LoadedLamdaDataset(records=loaded.records, features=filtered_features)
@@ -685,15 +688,15 @@ def dominant_malicious_family_cohort(
 def run_lamda_identification_diagnostics(
     application: ExperimentRuntime,
 ) -> IdentificationDiagnosticsReport:
-    raw_root = (
-        application.repository_root / "data" / "raw" / "LAMDA" / "Baseline"
-    )  # TODO: should be enums not hardcoded strings
+    raw_root = application.repository_root / application.configuration.values.workspace.lamda_release_directory
     if not raw_root.is_dir():
         LOGGER.warning("lamda identification diagnostics has no LAMDA release at %s", raw_root)
         return IdentificationDiagnosticsReport(None, 0, 0, ScientificOutcome.INSUFFICIENT_EVIDENCE)
     config = application.configuration.values
     loaded = load_variance_filtered_lamda_dataset(
-        raw_root, config.datasets.lamda.preprocessing.raw_variance_threshold_when_required
+        raw_root,
+        config.datasets.lamda.preprocessing.raw_variance_threshold_when_required,
+        config.datasets.lamda.preprocessing.feature_column_prefix,
     )
     rule = label_derivation_rule(config.datasets.lamda)
 
@@ -895,15 +898,15 @@ class WeakEigengapStressReport:
 
 
 def run_lamda_weak_eigengap_stress(application: ExperimentRuntime) -> WeakEigengapStressReport:
-    raw_root = (
-        application.repository_root / "data" / "raw" / "LAMDA" / "Baseline"
-    )  # TODO: should be enums not hardcoded strings
+    raw_root = application.repository_root / application.configuration.values.workspace.lamda_release_directory
     if not raw_root.is_dir():
         LOGGER.warning("weak-eigengap stress has no LAMDA release at %s", raw_root)
         return WeakEigengapStressReport(None, (), ScientificOutcome.INSUFFICIENT_EVIDENCE)
     config = application.configuration.values
     loaded = load_variance_filtered_lamda_dataset(
-        raw_root, config.datasets.lamda.preprocessing.raw_variance_threshold_when_required
+        raw_root,
+        config.datasets.lamda.preprocessing.raw_variance_threshold_when_required,
+        config.datasets.lamda.preprocessing.feature_column_prefix,
     )
     rule = label_derivation_rule(config.datasets.lamda)
     transition_interval_months = config.temporal.transition_interval_months
@@ -1133,14 +1136,14 @@ class _BaselineIdentificationContext:
 def _locate_baseline_identification_context(
     application: ExperimentRuntime,
 ) -> _BaselineIdentificationContext | None:
-    raw_root = (
-        application.repository_root / "data" / "raw" / "LAMDA" / "Baseline"
-    )  # TODO: should be enums not hardcoded strings
+    raw_root = application.repository_root / application.configuration.values.workspace.lamda_release_directory
     if not raw_root.is_dir():
         return None
     config = application.configuration.values
     loaded = load_variance_filtered_lamda_dataset(
-        raw_root, config.datasets.lamda.preprocessing.raw_variance_threshold_when_required
+        raw_root,
+        config.datasets.lamda.preprocessing.raw_variance_threshold_when_required,
+        config.datasets.lamda.preprocessing.feature_column_prefix,
     )
     rule = label_derivation_rule(config.datasets.lamda)
     cohort = dominant_malicious_family_cohort(loaded.records, rule)
@@ -1459,15 +1462,15 @@ class TemporalDynamicsAblationReport:
 def run_lamda_temporal_dynamics_ablation(
     application: ExperimentRuntime,
 ) -> TemporalDynamicsAblationReport:
-    raw_root = (
-        application.repository_root / "data" / "raw" / "LAMDA" / "Baseline"
-    )  # TODO: should be enums not hardcoded strings
+    raw_root = application.repository_root / application.configuration.values.workspace.lamda_release_directory
     if not raw_root.is_dir():
         LOGGER.warning("temporal dynamics ablation has no LAMDA release at %s", raw_root)
         return TemporalDynamicsAblationReport(None, ScientificOutcome.INSUFFICIENT_EVIDENCE)
     config = application.configuration.values
     loaded = load_variance_filtered_lamda_dataset(
-        raw_root, config.datasets.lamda.preprocessing.raw_variance_threshold_when_required
+        raw_root,
+        config.datasets.lamda.preprocessing.raw_variance_threshold_when_required,
+        config.datasets.lamda.preprocessing.feature_column_prefix,
     )
     rule = label_derivation_rule(config.datasets.lamda)
     cohort = dominant_malicious_family_cohort(loaded.records, rule)

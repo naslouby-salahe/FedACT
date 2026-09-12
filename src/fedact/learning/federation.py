@@ -62,7 +62,7 @@ def _local_epoch(
     head_state: dict[str, torch.Tensor], #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     population: ClientTrainingPopulation,
     learning_rate: LearningRate,
-) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor], LossValue]:
+) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor], LossValue]:  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     local_encoder = copy.deepcopy(encoder_template)
     local_head = copy.deepcopy(head_template)
     local_encoder.load_state_dict(encoder_state)
@@ -86,8 +86,8 @@ def _local_epoch(
 
 
 def _weighted_average_state(
-    weighted_states: list[tuple[SampleCount, dict[str, torch.Tensor]]], total_samples: SampleCount
-) -> dict[str, torch.Tensor]:
+    weighted_states: list[tuple[SampleCount, dict[str, torch.Tensor]]], total_samples: SampleCount  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+) -> dict[str, torch.Tensor]:  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     keys = weighted_states[0][1].keys()
     averaged: dict[str, torch.Tensor] = {} #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     for key in keys:
@@ -129,8 +129,8 @@ def train_federated_detector(
             initial_learning_rate,
             final_learning_rate,
         )
-        weighted_encoder_states: list[tuple[SampleCount, dict[str, torch.Tensor]]] = []
-        weighted_head_states: list[tuple[SampleCount, dict[str, torch.Tensor]]] = []
+        weighted_encoder_states: list[tuple[SampleCount, dict[str, torch.Tensor]]] = []  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+        weighted_head_states: list[tuple[SampleCount, dict[str, torch.Tensor]]] = []  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
         total_samples = 0
         round_losses: list[float] = []
         for population in eligible_populations:

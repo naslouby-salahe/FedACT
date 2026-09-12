@@ -5,21 +5,28 @@ from typing import cast
 import numpy as np
 import sklearn.metrics as sklearn_metrics
 from numpy.typing import NDArray
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class ClassThresholds:
+    malicious: float
+    benign: float
 
 
 def apply_threshold(
-    binary_thresholds: dict[str, dict[str, float]],
-    test_scores: dict[str, list[float]],
+    binary_thresholds: dict[str, ClassThresholds],  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    test_scores: dict[str, list[float]],  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     y_test: NDArray[np.int_],
 ) -> NDArray[np.bool_]:
     assert set(binary_thresholds.keys()) in [{"cred"}, {"conf"}, {"cred", "conf"}]
 
     for key in binary_thresholds:
         assert key in test_scores
-        assert set(binary_thresholds[key].keys()) == {"mw", "gw"}
 
     def get_class_threshold(criteria: str, k: int) -> float:
-        return binary_thresholds[criteria]["mw"] if k == 1 else binary_thresholds[criteria]["gw"]
+        threshold = binary_thresholds[criteria]
+        return threshold.malicious if k == 1 else threshold.benign
 
     keep_mask: list[bool] = []
     for i, y_prediction in enumerate(y_test):
@@ -44,11 +51,11 @@ def get_performance_with_rejection(
     y_pred: NDArray[np.int_],
     keep_mask: NDArray[np.bool_],
     full: bool = True,
-) -> dict[str, float]:
+) -> dict[str, float]:  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     y_true = np.array(y_true)
     y_pred = np.array(y_pred)
 
-    d: dict[str, float] = {}
+    d: dict[str, float] = {}  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
 
     total_neg = float(len(y_true) - sum(y_true))
     total_pos = float(sum(y_true))

@@ -9,7 +9,7 @@ import numpy as np
 import torch
 
 from fedact._vendor.transcendent.scores import compute_p_values_cred_and_conf
-from fedact._vendor.transcendent.thresholding import apply_threshold, get_performance_with_rejection
+from fedact._vendor.transcendent.thresholding import ClassThresholds, apply_threshold, get_performance_with_rejection
 from fedact.analysis.comparisons import CutoffAggregate
 from fedact.analysis.metrics import EvaluationRecord, compute_evaluation_metrics
 from fedact.certification.client_procedure import select_stable_nuisance_rank
@@ -32,14 +32,18 @@ from fedact.domain.types import (
     DatasetSelector,
     DegradationValue,
     EvaluationCount,
+    ExecutableWorkflowName,
     FamilyName,
     LossValue,
     MetricRate,
     ProbabilityValue,
+    PValueCriterion,
+    PValueSeries,
     SampleIdentifier,
     ScientificOutcome,
     SplitCutoffIdentity,
     ValidationFlag,
+    WorkflowArtifactName,
 )
 from fedact.experiments.baselines import matched_benign_subtraction, projected_point_reconstruction
 from fedact.experiments.ember2024_identification import Ember2024IdentificationDiagnosticsArtifact
@@ -114,8 +118,8 @@ def read_central_pattern_cutoff_aggregates(
     source = (
         application.repository_root
         / application.configuration.values.workspace.directories.experiments
-        / "action-certificate-validation"  # TODO: should be enums not hardcoded strings
-        / "central-pattern.json"  # TODO: should be enums not hardcoded strings
+        / ExecutableWorkflowName.ACTION_CERTIFICATE_VALIDATION
+        / WorkflowArtifactName.CENTRAL_PATTERN
     )
     if not source.is_file():
         return (), ()
@@ -156,8 +160,8 @@ def read_prospective_cutoff_aggregates(
     source = (
         application.repository_root
         / application.configuration.values.workspace.directories.experiments
-        / "prospective-evaluation"  # TODO: should be enums not hardcoded strings
-        / "cutoff-comparisons.json"  # TODO: should be enums not hardcoded strings
+        / ExecutableWorkflowName.PROSPECTIVE_EVALUATION
+        / WorkflowArtifactName.CUTOFF_COMPARISONS
     )
     if not source.is_file():
         return (), (), (), ()
@@ -221,10 +225,10 @@ def run_cross_corpus_generalization(application: ExperimentRuntime) -> CrossCorp
     experiments_root = (
         application.repository_root
         / application.configuration.values.workspace.directories.experiments
-        / "prospective-evaluation"
+        / "prospective-evaluation"  # TODO: should be enums not hardcoded strings
     )
-    lamda_path = experiments_root / "identification-diagnostics.json"
-    ember2024_path = experiments_root / "ember2024-identification-diagnostics.json"
+    lamda_path = experiments_root / "identification-diagnostics.json"  # TODO: should be enums not hardcoded strings
+    ember2024_path = experiments_root / "ember2024-identification-diagnostics.json"  # TODO: should be enums not hardcoded strings
     if not lamda_path.is_file() or not ember2024_path.is_file():
         LOGGER.warning(
             "cross-corpus generalization requires both corpora's own independent "
@@ -562,14 +566,12 @@ def _reactive_drift_adaptation_ncm(probability: ProbabilityValue, label: bool) -
 
 
 def _reactive_drift_adaptation_quartile_candidates(
-    p_values: dict[
-        str, list[float]
-    ],  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    p_values: dict[PValueCriterion, PValueSeries],
     predicted_labels: np.ndarray,
     groundtruth_labels: np.ndarray,
-) -> dict[str, dict[str, dict[str, float]]]:
+) -> dict[str, dict[str, dict[str, float]]]:  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     candidates: dict[
-        str, dict[str, dict[str, float]]
+        str, dict[str, dict[str, float]]  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     ] = {}  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     correct = predicted_labels == groundtruth_labels
     for key in ("cred", "conf"):
@@ -589,10 +591,10 @@ def _reactive_drift_adaptation_quartile_candidates(
                 if percentile is not None
                 else float(np.mean(scores_benign))
             )
-            candidates.setdefault(quartile_key, {})[key] = {
-                "mw": malicious_threshold,  # TODO: should be enums not hardcoded strings
-                "gw": benign_threshold,  # TODO: should be enums not hardcoded strings
-            }
+            candidates.setdefault(quartile_key, {})[key] = ClassThresholds(
+                malicious=malicious_threshold,
+                benign=benign_threshold,
+            )
     return candidates
 
 
@@ -600,13 +602,11 @@ def _select_reactive_drift_adaptation_threshold(
     candidates: dict[
         str, dict[str, dict[str, float]]
     ],  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    validation_p_values: dict[
-        str, list[float]
-    ],  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    validation_p_values: dict[PValueCriterion, PValueSeries],
     validation_groundtruth: np.ndarray,
     target_coverage: CoverageLevel,
     max_clean_degradation_points: DegradationValue,
-) -> dict[str, dict[str, float]] | None:
+) -> dict[str, dict[str, float]] | None:  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     best_threshold: dict[str, dict[str, float]] | None = (
         None  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     )
@@ -776,8 +776,8 @@ def _score_cutoff_population(
     challenge_file = (
         application.repository_root
         / config.workspace.directories.experiments
-        / "action-certificate-validation"  # TODO: should be enums not hardcoded strings
-        / "challenges.json"  # TODO: should be enums not hardcoded strings
+        / ExecutableWorkflowName.ACTION_CERTIFICATE_VALIDATION
+        / WorkflowArtifactName.CHALLENGES
     )
     clean_fnr_degradation: DegradationValue = 0.0
     if challenge_file.is_file():
@@ -940,8 +940,8 @@ def run_prospective_fedact_evaluation(
     certificate_decisions = (
         application.repository_root
         / application.configuration.values.workspace.directories.experiments
-        / "action-certificate-validation"  # TODO: should be enums not hardcoded strings
-        / "certificate-decisions.json"  # TODO: should be enums not hardcoded strings
+        / ExecutableWorkflowName.ACTION_CERTIFICATE_VALIDATION
+        / WorkflowArtifactName.CERTIFICATE_DECISIONS
     )
     if not certificate_decisions.is_file():
         LOGGER.warning("prospective evaluation requires completed action-certificate evidence")
@@ -1124,8 +1124,8 @@ def run_prospective_fedact_evaluation(
     comparison_destination = (
         application.repository_root
         / config.workspace.directories.experiments
-        / "prospective-evaluation"  # TODO: should be enums not hardcoded strings
-        / "cutoff-comparisons.json"  # TODO: should be enums not hardcoded strings
+        / ExecutableWorkflowName.PROSPECTIVE_EVALUATION
+        / WorkflowArtifactName.CUTOFF_COMPARISONS
     )
     comparison_destination.parent.mkdir(parents=True, exist_ok=True)
     comparison_destination.write_text(comparison.model_dump_json(indent=2), encoding="utf-8")

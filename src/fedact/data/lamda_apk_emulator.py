@@ -8,6 +8,20 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from fedact.data.lamda_apk_mutations import java_subprocess_environment
+from fedact.domain.types import (
+    AndroidAvdName,
+    AndroidCommandArgument,
+    AndroidDeviceSerial,
+    AndroidPackageName,
+    AndroidSystemImage,
+    EmulatorPort,
+    MetricRate,
+    MonkeyEventCount,
+    ObservableEvent,
+    SeedValue,
+    TimeoutSeconds,
+    ValidationFlag,
+)
 
 ANDROID_SDK_ROOT_ENVIRONMENT_VARIABLE = "ANDROID_SDK_ROOT"
 _CMDLINE_TOOLS_JAVA_HOME = "/usr/lib/jvm/java-17-openjdk-amd64"
@@ -31,7 +45,7 @@ def android_sdk_root_from_environment() -> Path:
     return Path(value)
 
 
-def _cmdline_tools_environment() -> dict[str, str]:
+def _cmdline_tools_environment() -> dict[str, str]:  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     environment = java_subprocess_environment()
     environment["JAVA_HOME"] = _CMDLINE_TOOLS_JAVA_HOME
     return environment
@@ -40,8 +54,8 @@ def _cmdline_tools_environment() -> dict[str, str]:
 @dataclass(frozen=True)
 class EmulatorHandle:
     sdk_root: Path
-    serial: str #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    process: subprocess.Popen[bytes]
+    serial: AndroidDeviceSerial
+    process: subprocess.Popen
 
 
 _DEFAULT_ADB_TIMEOUT_SECONDS = 60.0
@@ -49,11 +63,11 @@ _DEFAULT_ADB_TIMEOUT_SECONDS = 60.0
 
 def _adb(
     sdk_root: Path,
-    serial: str, #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    *args: str, #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    serial: AndroidDeviceSerial,
+    *args: AndroidCommandArgument,
     timeout_seconds: float = _DEFAULT_ADB_TIMEOUT_SECONDS,
 ) -> subprocess.CompletedProcess[bytes]:
-    adb_path = sdk_root / "platform-tools" / "adb"
+    adb_path = sdk_root / "platform-tools" / "adb"  # TODO: should be enums not hardcoded strings
     try:
         return subprocess.run(
             [str(adb_path), "-s", serial, *args],
@@ -66,8 +80,8 @@ def _adb(
         raise AndroidEmulatorError(f"adb command timed out: {args}") from error
 
 
-def ensure_avd(sdk_root: Path, avd_name: str, system_image: str) -> None: #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    avdmanager_path = sdk_root / "cmdline-tools" / "latest" / "bin" / "avdmanager"
+def ensure_avd(sdk_root: Path, avd_name: AndroidAvdName, system_image: AndroidSystemImage) -> None:
+    avdmanager_path = sdk_root / "cmdline-tools" / "latest" / "bin" / "avdmanager"  # TODO: should be enums not hardcoded strings
     list_result = subprocess.run(
         [str(avdmanager_path), "list", "avd"],
         capture_output=True,
@@ -100,10 +114,10 @@ def ensure_avd(sdk_root: Path, avd_name: str, system_image: str) -> None: #TODO:
 
 
 def boot_emulator(
-    sdk_root: Path, avd_name: str, port: int, boot_timeout_seconds: float #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    sdk_root: Path, avd_name: AndroidAvdName, port: EmulatorPort, boot_timeout_seconds: TimeoutSeconds
 ) -> EmulatorHandle:
-    emulator_path = sdk_root / "emulator" / "emulator"
-    serial = f"emulator-{port}"
+    emulator_path = sdk_root / "emulator" / "emulator"  # TODO: should be enums not hardcoded strings
+    serial = AndroidDeviceSerial(f"emulator-{port}")
     process = subprocess.Popen(
         [
             str(emulator_path),
@@ -149,7 +163,7 @@ def _install(handle: EmulatorHandle, apk_path: Path) -> bool:
     return b"Success" in result.stdout
 
 
-def _uninstall(handle: EmulatorHandle, package_name: str) -> None: #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+def _uninstall(handle: EmulatorHandle, package_name: AndroidPackageName) -> None:
     _adb(handle.sdk_root, handle.serial, "uninstall", package_name)
 
 
@@ -157,7 +171,7 @@ def _clear_logcat(handle: EmulatorHandle) -> None:
     _adb(handle.sdk_root, handle.serial, "logcat", "-c")
 
 
-def _launch(handle: EmulatorHandle, package_name: str) -> bool: #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+def _launch(handle: EmulatorHandle, package_name: AndroidPackageName) -> ValidationFlag:
     result = _adb(
         handle.sdk_root,
         handle.serial,
@@ -173,7 +187,7 @@ def _launch(handle: EmulatorHandle, package_name: str) -> bool: #TODO: do not us
 
 
 def _run_monkey_events(
-    handle: EmulatorHandle, package_name: str, event_count: int, seed: int #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    handle: EmulatorHandle, package_name: AndroidPackageName, event_count: MonkeyEventCount, seed: SeedValue
 ) -> None:
     _adb(
         handle.sdk_root,
@@ -195,32 +209,32 @@ def _read_logcat(handle: EmulatorHandle) -> str:
     return result.stdout.decode(errors="replace")
 
 
-def _observable_event_set(logcat_text: str) -> frozenset[str]: #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    events: set[str] = set() #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+def _observable_event_set(logcat_text: str) -> frozenset[ObservableEvent]:
+    events: set[ObservableEvent] = set()
     for match in _ACTIVITY_START_PATTERN.finditer(logcat_text):
-        events.add(f"start:{match.group(1)}")
+        events.add(ObservableEvent(f"start:{match.group(1)}"))
     for match in _DISPLAYED_PATTERN.finditer(logcat_text):
-        events.add(f"displayed:{match.group(1)}")
+        events.add(ObservableEvent(f"displayed:{match.group(1)}"))
     return frozenset(events)
 
 
-def _has_crash_or_anr(logcat_text: str) -> bool: #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+def _has_crash_or_anr(logcat_text: str) -> ValidationFlag:
     return _CRASH_OR_ANR_PATTERN.search(logcat_text) is not None
 
 
 @dataclass(frozen=True)
 class DynamicRunResult:
-    launched: bool
-    crashed_or_anr: bool
-    observable_events: frozenset[str] #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    launched: ValidationFlag
+    crashed_or_anr: ValidationFlag
+    observable_events: frozenset[ObservableEvent]
 
 
 def run_dynamic_smoke(
     handle: EmulatorHandle,
     apk_path: Path,
-    package_name: str, #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    monkey_event_count: int,
-    monkey_seed: int,
+    package_name: AndroidPackageName,
+    monkey_event_count: MonkeyEventCount,
+    monkey_seed: SeedValue,
 ) -> DynamicRunResult:
     _uninstall(handle, package_name)
     if not _install(handle, apk_path):
@@ -240,7 +254,7 @@ def run_dynamic_smoke(
     return result
 
 
-def jaccard_similarity(source_events: frozenset[str], transformed_events: frozenset[str]) -> float: #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+def jaccard_similarity(source_events: frozenset[ObservableEvent], transformed_events: frozenset[ObservableEvent]) -> MetricRate:
     union = source_events | transformed_events
     if not union:
         return 0.0

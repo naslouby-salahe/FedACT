@@ -28,11 +28,17 @@ class LamdaPopulation:
 
 
 def load_lamda_population(application: ExperimentRuntime) -> LamdaPopulation | None:
-    raw_root = application.repository_root / "data" / "raw" / "LAMDA" / "Baseline" #TODO: should be enums not hardcoded strings
+    raw_root = (
+        application.repository_root
+        / application.configuration.values.workspace.lamda_release_directory
+    )
     if not raw_root.is_dir():
         LOGGER.warning("LAMDA population load has no release at %s", raw_root)
         return None
-    loaded = load_lamda_records(raw_root)
+    loaded = load_lamda_records(
+        raw_root,
+        application.configuration.values.datasets.lamda.preprocessing.feature_column_prefix,
+    )
     validate_lamda_dataset(loaded)
     rule = label_derivation_rule(application.configuration.values.datasets.lamda)
     keep = np.fromiter(

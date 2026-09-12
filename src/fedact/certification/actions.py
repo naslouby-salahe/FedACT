@@ -201,7 +201,7 @@ def box_diameter_bound(
     return float(np.sqrt(sum(d * d for d in diffs)))
 
 
-OperatorName = NewType("OperatorName", str) #TODO: convert to enum
+OperatorName = NewType("OperatorName", str)  # TODO: convert to enum
 NormalizedParameterString = NewType("NormalizedParameterString", str) #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
 OutputHash = NewType("OutputHash", str) #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
 CoverageRatio = NewType("CoverageRatio", float)

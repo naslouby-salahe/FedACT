@@ -290,7 +290,7 @@ class Application:
         return self.workspace_layout().experiment_workspace(ExperimentName(workflow))
 
     def raw_data_root(self) -> Path:
-        return self.repository_root / "data" / "raw" #TODO: should be enums not hardcoded strings
+        return self.repository_root / self.configuration.values.workspace.raw_data_root
 
     def is_raw_data_available(self) -> DataAvailabilityFlag:
         raw_root = self.raw_data_root()
@@ -375,9 +375,16 @@ def run_preprocess(
         typer.echo(f"{selected}: first_cutoff={first_identity} last_cutoff={last_identity}")
 
         if selected is DatasetSelector.LAMDA:
-            baseline_directory = application.raw_data_root() / "LAMDA" / "Baseline" / "2023" #TODO: should be retrieved from yml and accessed through config. Identify any similar issues and fix it
+            baseline_directory = (
+                application.repository_root
+                / application.configuration.values.workspace.lamda_release_directory
+                / "2023"
+            )
             if baseline_directory.is_dir():
-                loaded_lamda = load_lamda_records(baseline_directory)
+                loaded_lamda = load_lamda_records(
+                    baseline_directory,
+                    config.datasets.lamda.preprocessing.feature_column_prefix,
+                )
                 validate_lamda_dataset(loaded_lamda)
                 standardized_lamda_features = standardize_features(loaded_lamda.features)
                 if standardized_lamda_features.shape[0] < 0:
@@ -644,7 +651,7 @@ def _statistical_synthesis_inputs(
 
 
 def _run_lamda_action_generation_if_acquired(application: Application) -> None:
-    if not acquired_lamda_apk_sample_ids(application.repository_root / "data" / "raw"): #TODO: should be enums not hardcoded strings
+    if not acquired_lamda_apk_sample_ids(application.raw_data_root()):
         typer.echo("action certificate validation: no AndroZoo-acquired APKs, skipping generation")
         return
     try:
@@ -655,7 +662,7 @@ def _run_lamda_action_generation_if_acquired(application: Application) -> None:
     system_image = application.configuration.values.operators.validation.android_system_image
     try:
         ensure_avd(sdk_root, DEFAULT_AVD_NAME, system_image)
-        handle = boot_emulator(sdk_root, DEFAULT_AVD_NAME, 5554, 300.0)
+        handle = boot_emulator(sdk_root, DEFAULT_AVD_NAME, 5554, 300.0)  # TODO: should be constant
     except AndroidEmulatorError as error:
         typer.echo(f"action certificate validation: skipping generation ({error})")
         return

@@ -11,11 +11,13 @@ from pathlib import Path
 from typing import NewType
 
 from fedact.data.ember2024 import PayloadBytes
+from fedact.domain.types import ApkArchiveEntryName, ApkSigningKeyAlias, ApkSigningPassword, ValidationFlag
+from fedact.domain.types import FamilyName, ParameterName
 
 _JAVA_NON_BLOCKING_ENTROPY_OPTION = "-Djava.security.egd=file:/dev/./urandom"
 
 
-def java_subprocess_environment() -> dict[str, str]:
+def java_subprocess_environment() -> dict[str, str]:  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
     environment = dict(os.environ)
     existing_options = environment.get("_JAVA_OPTIONS", "")
     if _JAVA_NON_BLOCKING_ENTROPY_OPTION not in existing_options:
@@ -62,11 +64,11 @@ class ApkSigningError(RuntimeError):
 @dataclass(frozen=True)
 class ApkSigningIdentity:
     keystore_path: Path
-    key_alias: str #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    store_password: str #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    key_alias: ApkSigningKeyAlias
+    store_password: ApkSigningPassword
 
 
-def _is_signature_entry(entry_name: str) -> bool: #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+def _is_signature_entry(entry_name: ApkArchiveEntryName) -> ValidationFlag:
     lowered = entry_name.lower()
     if not lowered.startswith("meta-inf/"):
         return False
@@ -173,7 +175,7 @@ def unreachable_benign_gadget_injection(
     working_directory.mkdir(parents=True, exist_ok=True)
     source_path = working_directory / "source.apk"
     source_path.write_bytes(bytes(apk_bytes))
-    decompiled_directory = working_directory / "decompiled"
+    decompiled_directory = working_directory / "decompiled"  # TODO: should be enums not hardcoded strings
     if decompiled_directory.exists():
         shutil.rmtree(decompiled_directory)
     rebuilt_path = working_directory / "rebuilt.apk"
@@ -210,12 +212,12 @@ def unreachable_benign_gadget_injection(
             f"apktool gadget injection failed: {error.stderr.decode(errors='replace')}"
         ) from error
     rebuilt_bytes = ApkFileBytes(rebuilt_path.read_bytes())
-    return sign_and_align_apk(rebuilt_bytes, signing_identity, working_directory / "signing") #TODO: should be enums not hardcoded strings
+    return sign_and_align_apk(rebuilt_bytes, signing_identity, working_directory / "signing")  # TODO: should be enums not hardcoded strings
 
 
 def apply_apk_operator_family(
-    family_name: str, #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    parameter: str, #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    family_name: FamilyName,
+    parameter: ParameterName,
     apk_bytes: ApkFileBytes,
     signing_identity: ApkSigningIdentity,
 ) -> ApkFileBytes:
@@ -228,5 +230,5 @@ def apply_apk_operator_family(
         if family_name == "permission-neutral-resource-injection":
             payload_size = PayloadBytes(int(parameter.split("=", 1)[1]))
             mutated = permission_neutral_resource_injection(apk_bytes, payload_size)
-            return sign_and_align_apk(mutated, signing_identity, working_directory / "signing") #TODO: should be enums not hardcoded strings
+            return sign_and_align_apk(mutated, signing_identity, working_directory / "signing")  # TODO: should be enums not hardcoded strings
     raise ApkMutationError(f"unsupported APK operator family: {family_name!r}")

@@ -27,7 +27,7 @@ from fedact.learning.representation import (
     TrainingObservation,
 )
 
-_COSINE_ANNEALING_HALF_RANGE = 0.5
+_COSINE_ANNEALING_HALF_RANGE = 0.5  # TODO: should be constant
 
 
 @dataclass(frozen=True)
@@ -94,7 +94,7 @@ def clean_false_negative_rate(
     validation_population: Sequence[TrainingObservation],
 ) -> CleanFnr:
     if not validation_population:
-        return CleanFnr(rate=0.0)
+        return CleanFnr(rate=0.0)  # TODO: should be constant
     encoder.eval()
     head.eval()
     features = torch.stack(
@@ -109,13 +109,13 @@ def clean_false_negative_rate(
     with torch.no_grad():
         encoded = encoder(features)
         logits = head(encoded)
-        preds = logits >= 0.0
+        preds = logits >= 0.0  # TODO: should be constant
     positives = labels == 1
     if not positives.any():
-        return CleanFnr(rate=0.0)
+        return CleanFnr(rate=0.0)  # TODO: should be constant
     fn = (positives & ~preds).sum().item()
     fnr = float(fn / positives.sum().item())
-    return CleanFnr(rate=min(1.0, max(0.0, fnr)))
+    return CleanFnr(rate=min(1.0, max(0.0, fnr)))  # TODO: should be constant
 
 
 def _cosine_annealed_learning_rate(
@@ -128,7 +128,7 @@ def _cosine_annealed_learning_rate(
         return terminal_rate
     progress = epoch_index / (total_epochs - 1)
     return terminal_rate + _COSINE_ANNEALING_HALF_RANGE * (initial_rate - terminal_rate) * (
-        1.0 + math.cos(math.pi * progress)
+        1.0 + math.cos(math.pi * progress)  # TODO: should be constant
     )
 
 
@@ -207,7 +207,7 @@ def harden_detector_head(
         ]
     )
     train_labels = torch.tensor(
-        [1.0 if obs.label else 0.0 for obs in training_population], dtype=torch.float32
+        [1.0 if obs.label else 0.0 for obs in training_population], dtype=torch.float32  # TODO: should be constant
     )
     with torch.no_grad():
         train_embeddings = encoder(train_features)
@@ -221,7 +221,7 @@ def harden_detector_head(
         ]
     )
     val_labels = torch.tensor(
-        [1.0 if obs.label else 0.0 for obs in validation_population], dtype=torch.float32
+        [1.0 if obs.label else 0.0 for obs in validation_population], dtype=torch.float32  # TODO: should be constant
     )
     validation_malicious_ids = tuple(
         observation.sample_id for observation in validation_population if observation.label
@@ -233,16 +233,16 @@ def harden_detector_head(
     optimizer = torch.optim.Adam(
         local_head.parameters(),
         lr=initial_learning_rate,
-        weight_decay=0.0,
+        weight_decay=0.0,  # TODO: should be constant
     )
     max_degradation = maximum_clean_fnr_degradation_percentage_points
     total_epochs = maximum_epochs
 
-    saved_states: list[dict[str, torch.Tensor]] = [
+    saved_states: list[dict[str, torch.Tensor]] = [  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
         {key: value.clone() for key, value in local_head.state_dict().items()}
     ]
     validation_objectives: list[float] = []
-    degradations: list[DegradationValue] = [0.0]
+    degradations: list[DegradationValue] = [0.0]  # TODO: should be constant
     with torch.no_grad():
         local_head.eval()
         initial_objective = _combined_objective(

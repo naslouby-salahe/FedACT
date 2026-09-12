@@ -33,6 +33,7 @@ from fedact.domain.types import (
     EigengapRatio,
     EmbeddingComponent,
     EvaluationCount,
+    ExecutableWorkflowName,
     FamilyName,
     IntervalBound,
     MetricRate,
@@ -47,6 +48,7 @@ from fedact.domain.types import (
     ThresholdValue,
     UncertaintyRadius,
     ValidationFlag,
+    WorkflowArtifactName,
 )
 from fedact.experiments.registry import ExperimentRuntime, experiment_directory
 from fedact.learning.detector import DetectorHead
@@ -151,7 +153,10 @@ class AblationExperimentReport:
 
 
 def _hardening_off_ablation_result(application: ExperimentRuntime) -> AblationResult | None:
-    source = experiment_directory(application, "prospective-evaluation") / "cutoff-comparisons.json" #TODO: should be enums not hardcoded strings
+    source = (
+        experiment_directory(application, ExecutableWorkflowName.PROSPECTIVE_EVALUATION)
+        / WorkflowArtifactName.CUTOFF_COMPARISONS
+    )
     if not source.is_file():
         return None
     artifact = _ProspectiveCutoffComparisonArtifact.model_validate_json(
@@ -179,7 +184,8 @@ def _hardening_off_ablation_result(application: ExperimentRuntime) -> AblationRe
 
 def _point_vs_set_ablation_result(application: ExperimentRuntime) -> AblationResult | None:
     source = (
-        experiment_directory(application, "action-certificate-validation") / "central-pattern.json" #TODO: should be enums not hardcoded strings
+        experiment_directory(application, ExecutableWorkflowName.ACTION_CERTIFICATE_VALIDATION)
+        / WorkflowArtifactName.CENTRAL_PATTERN
     )
     if not source.is_file():
         return None
@@ -204,8 +210,8 @@ def _identification_diagnostics_artifact(
     application: ExperimentRuntime,
 ) -> _IdentificationDiagnosticsArtifact | None:
     source = (
-        experiment_directory(application, "prospective-evaluation") #TODO: should be enums not hardcoded strings
-        / "identification-diagnostics.json" #TODO: should be enums not hardcoded strings
+        experiment_directory(application, ExecutableWorkflowName.PROSPECTIVE_EVALUATION)
+        / WorkflowArtifactName.IDENTIFICATION_DIAGNOSTICS
     )
     if not source.is_file():
         return None
@@ -289,7 +295,10 @@ class _TemporalDynamicsAblationRecord(StrictModel):
 def _temporal_dynamics_ablation_results(
     application: ExperimentRuntime,
 ) -> tuple[AblationResult | None, AblationResult | None]:
-    source = experiment_directory(application, "ablations") / "temporal-dynamics.json" #TODO: should be enums not hardcoded strings
+    source = (
+        experiment_directory(application, ExecutableWorkflowName.ABLATIONS)
+        / WorkflowArtifactName.TEMPORAL_DYNAMICS
+    )
     if not source.is_file():
         return None, None
     record = _TemporalDynamicsAblationRecord.model_validate_json(source.read_text(encoding="utf-8"))
@@ -347,7 +356,10 @@ def run_novelty_critical_ablations(application: ExperimentRuntime) -> AblationEx
     ):
         if descriptive_result is not None:
             results.append(descriptive_result)
-    source = experiment_directory(application, "ablations") / "measurements.json" #TODO: should be enums not hardcoded strings
+    source = (
+        experiment_directory(application, ExecutableWorkflowName.ABLATIONS)
+        / WorkflowArtifactName.ABLATION_MEASUREMENTS
+    )
     if source.is_file():
         artifact = _AblationArtifact.model_validate_json(source.read_text(encoding="utf-8"))
         results.extend(
@@ -367,7 +379,8 @@ def run_novelty_critical_ablations(application: ExperimentRuntime) -> AblationEx
         LOGGER.warning(
             "no ablation evidence is available: %s has no completed prospective-evaluation "
             "cutoff comparisons and %s is missing",
-            experiment_directory(application, "prospective-evaluation") / "cutoff-comparisons.json", #TODO: should be enums not hardcoded strings
+            experiment_directory(application, ExecutableWorkflowName.PROSPECTIVE_EVALUATION)
+            / WorkflowArtifactName.CUTOFF_COMPARISONS,
             source,
         )
         return AblationExperimentReport(0, (), ScientificOutcome.INSUFFICIENT_EVIDENCE)
@@ -503,7 +516,10 @@ def _weighted_width_reduction(
 def run_communication_limited_client_selection(
     application: ExperimentRuntime,
 ) -> SelectionExperimentReport:
-    source = experiment_directory(application, "federation") / "clients.json" #TODO: should be enums not hardcoded strings
+    source = (
+        experiment_directory(application, ExecutableWorkflowName.FEDERATION)
+        / WorkflowArtifactName.FEDERATION_CLIENTS
+    )
     if not source.is_file():
         LOGGER.warning(
             "client-selection input is missing: %s; natural client observations are required",
@@ -672,7 +688,10 @@ class FederationGeometryReport:
 
 
 def run_federation_geometry_evaluation(application: ExperimentRuntime) -> FederationGeometryReport:
-    source = experiment_directory(application, "federation") / "clients.json" #TODO: should be enums not hardcoded strings
+    source = (
+        experiment_directory(application, ExecutableWorkflowName.FEDERATION)
+        / WorkflowArtifactName.FEDERATION_CLIENTS
+    )
     if not source.is_file():
         LOGGER.warning(
             "federation input is missing: %s; an approved natural multi-client partition "
