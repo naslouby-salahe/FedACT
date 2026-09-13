@@ -12,7 +12,7 @@ from fedact.data.lamda import (
     validate_lamda_dataset,
     year_month_to_calendar_month,
 )
-from fedact.domain.types import FamilyName, SampleIdentifier
+from fedact.domain.types import FamilyName, MonthIndex, SampleIdentifier
 from fedact.experiments.registry import ExperimentRuntime
 
 LOGGER = logging.getLogger(__name__)
@@ -73,12 +73,12 @@ def load_lamda_population(application: ExperimentRuntime) -> LamdaPopulation | N
 
 def eligible_cutoffs(
     application: ExperimentRuntime, population: LamdaPopulation
-) -> tuple[int, ...]:
+) -> tuple[MonthIndex, ...]:
     config = application.configuration.values
     horizon = config.temporal.primary_confirmatory_horizon_months
     history = config.temporal.historical_training_window_months
     minimum = config.identification.minimum_support_per_class
-    eligible: list[int] = []
+    eligible: list[MonthIndex] = []
     for cutoff in range(int(population.months.min()), int(population.months.max()) - horizon + 1):
         historical = (population.months >= cutoff - history) & (population.months < cutoff)
         later = (population.months >= cutoff) & (population.months < cutoff + horizon)

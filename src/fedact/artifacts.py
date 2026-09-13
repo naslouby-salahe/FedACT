@@ -5,7 +5,6 @@ import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import NewType
 
 from pydantic import BaseModel
 
@@ -15,6 +14,7 @@ from fedact.domain.types import (
     CorrelationCoefficient,
     DegradationValue,
     DependencyFingerprint,
+    DeterministicJsonPayload,
     ExecutableWorkflowName,
     ExperimentName,
     HashDigest,
@@ -84,11 +84,6 @@ class WorkspaceLayout:
         return self.resolve(self.workspace.directories.staging)
 
 
-DeterministicJsonPayload = NewType("DeterministicJsonPayload", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-HexDigest = NewType("HexDigest", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-ArtifactIdentity = NewType("ArtifactIdentity", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-
-
 def deterministic_json(value: JsonEncodableValue) -> DeterministicJsonPayload:
     return DeterministicJsonPayload(
         json.dumps(
@@ -101,8 +96,8 @@ def deterministic_json(value: JsonEncodableValue) -> DeterministicJsonPayload:
     )
 
 
-def sha256_digest(payload: DeterministicJsonPayload) -> HexDigest:
-    return HexDigest(f"sha256:{hashlib.sha256(payload.encode('utf-8')).hexdigest()}")
+def sha256_digest(payload: DeterministicJsonPayload) -> HashDigest:
+    return f"sha256:{hashlib.sha256(payload.encode('utf-8')).hexdigest()}"
 
 
 def content_checksum(content: RawPayloadBytes) -> ContentChecksum:

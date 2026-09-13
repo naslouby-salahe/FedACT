@@ -54,10 +54,10 @@ class ConfidenceInterval:
     confidence_level: MetricRate
 
     def excludes_zero_favorably(self) -> ZeroExclusionFlag:
-        return self.lower > 0.0  # TODO: should be constant
+        return self.lower > 0.0
 
     def excludes_zero_contrarily(self) -> ZeroExclusionFlag:
-        return self.upper < 0.0  # TODO: should be constant
+        return self.upper < 0.0
 
 
 @dataclass(frozen=True)
@@ -115,12 +115,12 @@ def paired_wilcoxon_signed_rank_test(
     maximum_nonzero_pairs_for_exact: CutoffCount,
 ) -> WilcoxonSignedRankResult:
     differences = np.asarray(paired_differences, dtype=np.float64)
-    nonzero = differences[differences != 0.0]  # TODO: should be constant
+    nonzero = differences[differences != 0.0]
     nonzero_count = int(nonzero.size)
     if nonzero_count == 0:
         return WilcoxonSignedRankResult(
-            statistic=0.0,  # TODO: should be constant
-            p_value=1.0,  # TODO: should be constant
+            statistic=0.0,
+            p_value=1.0,
             used_exact_distribution=False,
             nonzero_pair_count=0,
         )
@@ -154,8 +154,8 @@ def matched_pairs_rank_biserial_effect_size(
     positive_rank_sum = float(signed_ranks[signed_ranks > 0].sum())
     negative_rank_sum = float(-signed_ranks[signed_ranks < 0].sum())
     total_rank_sum = positive_rank_sum + negative_rank_sum
-    if total_rank_sum <= 0.0:  # TODO: should be constant
-        return 0.0  # TODO: should be constant
+    if total_rank_sum <= 0.0:
+        return 0.0
     return (positive_rank_sum - negative_rank_sum) / total_rank_sum
 
 
@@ -175,14 +175,14 @@ def benjamini_hochberg_correction(
         return BenjaminiHochbergOutcome((), (), (), correction_applied=False)
     order = sorted(range(family_size), key=lambda index: p_values[index])
     sorted_p_values = [p_values[index] for index in order]
-    adjusted_sorted = [0.0] * family_size  # TODO: should be constant
-    running_minimum = 1.0  # TODO: should be constant
+    adjusted_sorted = [0.0] * family_size
+    running_minimum = 1.0
     for rank in range(family_size, 0, -1):
         position = rank - 1
         candidate = sorted_p_values[position] * family_size / rank
         running_minimum = min(running_minimum, candidate)
         adjusted_sorted[position] = running_minimum
-    adjusted = [0.0] * family_size  # TODO: should be constant
+    adjusted = [0.0] * family_size
     for sorted_position, original_index in enumerate(order):
         adjusted[original_index] = adjusted_sorted[sorted_position]
     rejected = tuple(adjusted[index] <= q for index in range(family_size))

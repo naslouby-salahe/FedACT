@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from itertools import combinations
 from pathlib import Path
-from typing import NewType, Protocol, cast
+from typing import Protocol, cast
 
 import lief
 import numpy as np
@@ -20,8 +20,6 @@ from androguard.core.apk import APK
 from fedact.data.ember2024 import (
     APK_PAYLOAD_SIZES,
     PE_PAYLOAD_SIZES,
-    PayloadBytes,
-    PeFileBytes,
     PeImportName,
     PeSectionRenameTarget,
     UpxAction,
@@ -42,7 +40,6 @@ from fedact.data.lamda_apk_emulator import (
     run_dynamic_smoke,
 )
 from fedact.data.lamda_apk_mutations import (
-    ApkFileBytes,
     ApkSigningIdentity,
     apply_apk_operator_family,
 )
@@ -50,26 +47,41 @@ from fedact.domain.records import AssumptionConsequence
 from fedact.domain.types import (
     ActionCount,
     AmbiguityFlag,
+    AndroidPackageName,
+    ApkFileBytes,
+    ApkOperatorFamilyName,
     CertificationFlag,
+    CompositionLengthLimit,
     CoordinateValue,
+    CoverageRatio,
     DomainValidityFlag,
-    FamilyName,
+    FileSuffix,
     HashDigest,
     IntervalBound,
     MetricRate,
+    MonkeyEventCount,
     NormalizedOperatorFormText,
+    NormalizedParameterString,
     NormValue,
+    OperatorFamilyName,
     OperatorIdentifier,
     OrderIndex,
+    PayloadBytes,
+    PeFileBytes,
+    PeMachineCode,
+    PeOperatorFamilyName,
+    RawPayloadBytes,
     SampleCount,
     SampleIdentifier,
     ScientificAssumption,
     ScientificOutcome,
+    SeedValue,
     SimilarityScore,
     SplitCutoffIdentity,
     SufficiencyFlag,
     ThresholdValue,
     TimeoutSeconds,
+    ToolchainComponent,
     ToolchainIdentifier,
     ValidationFlag,
 )
@@ -201,29 +213,26 @@ def box_diameter_bound(
     return float(np.sqrt(sum(d * d for d in diffs)))
 
 
-OperatorName = NewType("OperatorName", str)  # TODO: convert to enum
-NormalizedParameterString = NewType("NormalizedParameterString", str) #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-OutputHash = NewType("OutputHash", str) #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-CoverageRatio = NewType("CoverageRatio", float)
-CompositionLengthLimit = NewType("CompositionLengthLimit", int)
-
-
 class OperatorDomain(StrEnum):
     WINDOWS_PE = "windows-pe"
     ANDROID_APK = "android-apk"
 
 
 @dataclass(frozen=True)
-class OperatorFamily:
-    name: FamilyName
+class OperatorFamily[FamilyNameT: OperatorFamilyName]:
+    name: FamilyNameT
     domain: OperatorDomain
     listed_order: OrderIndex
     parameter_grid: tuple[NormalizedParameterString, ...]
 
 
+type PeOperatorFamily = OperatorFamily[PeOperatorFamilyName]
+type ApkOperatorFamily = OperatorFamily[ApkOperatorFamilyName]
+
+
 @dataclass(frozen=True)
-class OperatorComposition:
-    families: tuple[OperatorFamily, ...]
+class OperatorComposition[FamilyNameT: OperatorFamilyName]:
+    families: tuple[OperatorFamily[FamilyNameT], ...]
     parameters: tuple[NormalizedParameterString, ...]
 
     def __post_init__(self) -> None:
@@ -237,22 +246,22 @@ class OperatorComposition:
 
 
 @dataclass(frozen=True)
-class OperatorCandidate:
-    composition: OperatorComposition
+class OperatorCandidate[FamilyNameT: OperatorFamilyName]:
+    composition: OperatorComposition[FamilyNameT]
     normalized_form: NormalizedOperatorFormText
     source_sample_id: SampleIdentifier
     cutoff_identity: SplitCutoffIdentity
 
 
 @dataclass(frozen=True)
-class ActionDisplacement:
-    candidate: OperatorCandidate
+class ActionDisplacement[FamilyNameT: OperatorFamilyName]:
+    candidate: OperatorCandidate[FamilyNameT]
     displacement_norm: NormValue
 
 
 @dataclass(frozen=True)
-class ZeroDisplacementRejection:
-    candidate: OperatorCandidate
+class ZeroDisplacementRejection[FamilyNameT: OperatorFamilyName]:
+    candidate: OperatorCandidate[FamilyNameT]
     observed_norm: NormValue
     floor: ThresholdValue
 
@@ -267,28 +276,30 @@ class EnumerationContractError(ValueError):
     pass
 
 
-def _normalized_form(
-    families: tuple[OperatorFamily, ...], parameters: tuple[NormalizedParameterString, ...]
+def _normalized_form[FamilyNameT: OperatorFamilyName](
+    families: tuple[OperatorFamily[FamilyNameT], ...],
+    parameters: tuple[NormalizedParameterString, ...],
 ) -> NormalizedOperatorFormText:
     pairs = zip(families, parameters, strict=True)
     parts = [f"{family.name}={parameter}" for family, parameter in pairs]
     return "|".join(parts)
 
 
-def _ordered_composition(
-    families: tuple[OperatorFamily, ...], parameters: tuple[NormalizedParameterString, ...]
-) -> OperatorComposition:
+def _ordered_composition[FamilyNameT: OperatorFamilyName](
+    families: tuple[OperatorFamily[FamilyNameT], ...],
+    parameters: tuple[NormalizedParameterString, ...],
+) -> OperatorComposition[FamilyNameT]:
     paired = sorted(zip(families, parameters, strict=True), key=lambda pair: pair[0].listed_order)
     ordered_families = tuple(family for family, _unused in paired)
     ordered_parameters = tuple(parameter for _unused, parameter in paired)
     return OperatorComposition(families=ordered_families, parameters=ordered_parameters)
 
 
-def _compositions_of_length(
-    selections: tuple[tuple[OperatorFamily, NormalizedParameterString], ...],
+def _compositions_of_length[FamilyNameT: OperatorFamilyName](
+    selections: tuple[tuple[OperatorFamily[FamilyNameT], NormalizedParameterString], ...],
     length: ActionCount,
-) -> list[OperatorComposition]:
-    compositions: list[OperatorComposition] = []
+) -> list[OperatorComposition[FamilyNameT]]:
+    compositions: list[OperatorComposition[FamilyNameT]] = []
     for chosen in combinations(selections, length):
         chosen_families = tuple(family for family, _unused in chosen)
         names = [family.name for family in chosen_families]
@@ -299,25 +310,25 @@ def _compositions_of_length(
     return compositions
 
 
-def enumerate_candidates(
-    families: tuple[OperatorFamily, ...],
+def enumerate_candidates[FamilyNameT: OperatorFamilyName](
+    families: tuple[OperatorFamily[FamilyNameT], ...],
     maximum_composed_atomic_actions: CompositionLengthLimit,
     source_sample_id: SampleIdentifier,
     cutoff_identity: SplitCutoffIdentity,
-) -> tuple[OperatorCandidate, ...]:
+) -> tuple[OperatorCandidate[FamilyNameT], ...]:
     if maximum_composed_atomic_actions < 1:
         raise EnumerationContractError("maximum composed atomic actions must be at least one")
     ordered_families = tuple(sorted(families, key=lambda family: family.listed_order))
     listed_orders = [family.listed_order for family in ordered_families]
     if len(set(listed_orders)) != len(listed_orders):
         raise EnumerationContractError("operator families must have unique listed orders")
-    selections: list[tuple[OperatorFamily, NormalizedParameterString]] = []
+    selections: list[tuple[OperatorFamily[FamilyNameT], NormalizedParameterString]] = []
     for family in ordered_families:
         for parameter in sorted(family.parameter_grid):
             selections.append((family, parameter))
 
-    candidates: list[OperatorCandidate] = []
-    seen: set[str] = set() #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    candidates: list[OperatorCandidate[FamilyNameT]] = []
+    seen: set[NormalizedOperatorFormText] = set()
     for length in range(1, maximum_composed_atomic_actions + 1):
         for composition in _compositions_of_length(tuple(selections), length):
             normalized_form = _normalized_form(composition.families, composition.parameters)
@@ -508,16 +519,16 @@ def validate_candidate_displacements(
 BENIGN_GADGET_LIBRARY = "cutoff-safe-benign-gadget-library"
 
 
-def lamda_families() -> tuple[OperatorFamily, ...]:
+def lamda_families() -> tuple[ApkOperatorFamily, ...]:
     return (
         OperatorFamily(
-            name="unreachable-benign-gadget-injection",
+            name=ApkOperatorFamilyName.UNREACHABLE_BENIGN_GADGET_INJECTION,
             domain=OperatorDomain.ANDROID_APK,
             listed_order=0,
             parameter_grid=(NormalizedParameterString(f"gadget-library={BENIGN_GADGET_LIBRARY}"),),
         ),
         OperatorFamily(
-            name="permission-neutral-resource-injection",
+            name=ApkOperatorFamilyName.PERMISSION_NEUTRAL_RESOURCE_INJECTION,
             domain=OperatorDomain.ANDROID_APK,
             listed_order=1,
             parameter_grid=tuple(
@@ -527,23 +538,16 @@ def lamda_families() -> tuple[OperatorFamily, ...]:
     )
 
 
-GadgetLibraryIdentity = NewType("GadgetLibraryIdentity", str) #TODO: convert to enum
-
-
 def pe_operator_enumerations() -> tuple[
     type[PeImportName], type[PeSectionRenameTarget], type[UpxAction]
 ]:
     return (PeImportName, PeSectionRenameTarget, UpxAction)
 
 
-def gadget_library_identity() -> GadgetLibraryIdentity:
-    return GadgetLibraryIdentity(BENIGN_GADGET_LIBRARY)
-
-
-def pe_mutation_families() -> tuple[OperatorFamily, ...]:
+def pe_mutation_families() -> tuple[PeOperatorFamily, ...]:
     return (
         OperatorFamily(
-            name="append-benign-eof-bytes",
+            name=PeOperatorFamilyName.APPEND_BENIGN_EOF_BYTES,
             domain=OperatorDomain.WINDOWS_PE,
             listed_order=0,
             parameter_grid=tuple(
@@ -551,7 +555,7 @@ def pe_mutation_families() -> tuple[OperatorFamily, ...]:
             ),
         ),
         OperatorFamily(
-            name="fill-existing-section-slack",
+            name=PeOperatorFamilyName.FILL_EXISTING_SECTION_SLACK,
             domain=OperatorDomain.WINDOWS_PE,
             listed_order=1,
             parameter_grid=tuple(
@@ -560,7 +564,7 @@ def pe_mutation_families() -> tuple[OperatorFamily, ...]:
             ),
         ),
         OperatorFamily(
-            name="add-unused-import",
+            name=PeOperatorFamilyName.ADD_UNUSED_IMPORT,
             domain=OperatorDomain.WINDOWS_PE,
             listed_order=2,
             parameter_grid=tuple(
@@ -568,7 +572,7 @@ def pe_mutation_families() -> tuple[OperatorFamily, ...]:
             ),
         ),
         OperatorFamily(
-            name="rename-section",
+            name=PeOperatorFamilyName.RENAME_SECTION,
             domain=OperatorDomain.WINDOWS_PE,
             listed_order=3,
             parameter_grid=tuple(
@@ -577,7 +581,7 @@ def pe_mutation_families() -> tuple[OperatorFamily, ...]:
             ),
         ),
         OperatorFamily(
-            name="add-read-only-section",
+            name=PeOperatorFamilyName.ADD_READ_ONLY_SECTION,
             domain=OperatorDomain.WINDOWS_PE,
             listed_order=4,
             parameter_grid=tuple(
@@ -587,31 +591,31 @@ def pe_mutation_families() -> tuple[OperatorFamily, ...]:
             ),
         ),
         OperatorFamily(
-            name="entry-point-trampoline",
+            name=PeOperatorFamilyName.ENTRY_POINT_TRAMPOLINE,
             domain=OperatorDomain.WINDOWS_PE,
             listed_order=5,
             parameter_grid=(NormalizedParameterString("no-parameter"),),
         ),
         OperatorFamily(
-            name="remove-authenticode-directory",
+            name=PeOperatorFamilyName.REMOVE_AUTHENTICODE_DIRECTORY,
             domain=OperatorDomain.WINDOWS_PE,
             listed_order=6,
             parameter_grid=(NormalizedParameterString("no-parameter"),),
         ),
         OperatorFamily(
-            name="zero-pe-checksum",
+            name=PeOperatorFamilyName.ZERO_PE_CHECKSUM,
             domain=OperatorDomain.WINDOWS_PE,
             listed_order=7,
             parameter_grid=(NormalizedParameterString("no-parameter"),),
         ),
         OperatorFamily(
-            name="remove-debug-directory",
+            name=PeOperatorFamilyName.REMOVE_DEBUG_DIRECTORY,
             domain=OperatorDomain.WINDOWS_PE,
             listed_order=8,
             parameter_grid=(NormalizedParameterString("no-parameter"),),
         ),
         OperatorFamily(
-            name="upx-pack-unpack",
+            name=PeOperatorFamilyName.UPX_PACK_UNPACK,
             domain=OperatorDomain.WINDOWS_PE,
             listed_order=9,
             parameter_grid=tuple(
@@ -631,15 +635,8 @@ _EXPECTED_PE_MACHINE_TYPES: frozenset[int] = frozenset(
 )
 
 
-class UnsupportedOperatorFamilyError(ValueError):
-    pass
-
-
 class MutationStructuralIntegrityError(ValueError):
     pass
-
-
-PeMachineCode = NewType("PeMachineCode", int)
 
 
 class PeFileHeader(Protocol):
@@ -653,30 +650,30 @@ def _parameter_value(parameter: NormalizedParameterString) -> NormalizedParamete
 
 
 def apply_pe_operator_family(
-    family: OperatorFamily, parameter: NormalizedParameterString, pe_bytes: PeFileBytes
+    family: PeOperatorFamily, parameter: NormalizedParameterString, pe_bytes: PeFileBytes
 ) -> PeFileBytes:
     value = _parameter_value(parameter)
-    if family.name == "append-benign-eof-bytes":
-        return append_benign_eof_bytes(pe_bytes, PayloadBytes(int(value)))
-    if family.name == "fill-existing-section-slack":
-        return fill_existing_section_slack(pe_bytes, PayloadBytes(int(value)))
-    if family.name == "add-unused-import":
-        return add_unused_import(pe_bytes, PeImportName(value))
-    if family.name == "rename-section":
-        return rename_section(pe_bytes, PeSectionRenameTarget(value))
-    if family.name == "add-read-only-section":
-        return add_read_only_section(pe_bytes, PayloadBytes(int(value)))
-    if family.name == "entry-point-trampoline":
-        return add_entry_point_trampoline(pe_bytes)
-    if family.name == "remove-authenticode-directory":
-        return remove_authenticode_directory(pe_bytes)
-    if family.name == "zero-pe-checksum":
-        return zero_pe_checksum(pe_bytes)
-    if family.name == "remove-debug-directory":
-        return remove_debug_directory(pe_bytes)
-    if family.name == "upx-pack-unpack":
-        return apply_upx_action(pe_bytes, UpxAction(value))
-    raise UnsupportedOperatorFamilyError(f"unsupported PE operator family: {family.name}")
+    match family.name:
+        case PeOperatorFamilyName.APPEND_BENIGN_EOF_BYTES:
+            return append_benign_eof_bytes(pe_bytes, PayloadBytes(int(value)))
+        case PeOperatorFamilyName.FILL_EXISTING_SECTION_SLACK:
+            return fill_existing_section_slack(pe_bytes, PayloadBytes(int(value)))
+        case PeOperatorFamilyName.ADD_UNUSED_IMPORT:
+            return add_unused_import(pe_bytes, PeImportName(value))
+        case PeOperatorFamilyName.RENAME_SECTION:
+            return rename_section(pe_bytes, PeSectionRenameTarget(value))
+        case PeOperatorFamilyName.ADD_READ_ONLY_SECTION:
+            return add_read_only_section(pe_bytes, PayloadBytes(int(value)))
+        case PeOperatorFamilyName.ENTRY_POINT_TRAMPOLINE:
+            return add_entry_point_trampoline(pe_bytes)
+        case PeOperatorFamilyName.REMOVE_AUTHENTICODE_DIRECTORY:
+            return remove_authenticode_directory(pe_bytes)
+        case PeOperatorFamilyName.ZERO_PE_CHECKSUM:
+            return zero_pe_checksum(pe_bytes)
+        case PeOperatorFamilyName.REMOVE_DEBUG_DIRECTORY:
+            return remove_debug_directory(pe_bytes)
+        case PeOperatorFamilyName.UPX_PACK_UNPACK:
+            return apply_upx_action(pe_bytes, UpxAction(value))
 
 
 def structural_validity_of(pe_bytes: PeFileBytes) -> StructuralValidity:
@@ -704,7 +701,7 @@ def structural_validity_status(pe_bytes: PeFileBytes) -> ValidityStatus:
 
 
 def apply_and_verify_pe_operator_family(
-    family: OperatorFamily, parameter: NormalizedParameterString, pe_bytes: PeFileBytes
+    family: PeOperatorFamily, parameter: NormalizedParameterString, pe_bytes: PeFileBytes
 ) -> PeFileBytes:
     mutated = apply_pe_operator_family(family, parameter, pe_bytes)
     if structural_validity_status(mutated) is ValidityStatus.INVALID:
@@ -728,7 +725,7 @@ def apk_structural_validity_of(apk_bytes: ApkFileBytes) -> StructuralValidity:
         source_path.write_bytes(bytes(apk_bytes))
         try:
             result = subprocess.run(
-                ["aapt2", "dump", "badging", str(source_path)],
+                [ToolchainComponent.AAPT2, "dump", "badging", source_path],
                 check=True,
                 capture_output=True,
             )
@@ -760,8 +757,8 @@ def apk_structural_validity_status(apk_bytes: ApkFileBytes) -> ValidityStatus:
 
 
 def apply_and_verify_apk_operator_family(
-    family_name: str, #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    parameter: str, #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    family_name: ApkOperatorFamilyName,
+    parameter: NormalizedParameterString,
     apk_bytes: ApkFileBytes,
     signing_identity: ApkSigningIdentity,
 ) -> ApkFileBytes:
@@ -774,15 +771,18 @@ def apply_and_verify_apk_operator_family(
 
 
 _CLAMSCAN_INFECTED_EXIT_CODE = 1
+_CLAMAV_SYSTEM_SIGNATURE_DIRECTORY = Path("/var/lib/clamav")
 
 
 def _clamscan_detected(
     file_path: Path, supplementary_signature_directory: Path | None
 ) -> ValidationFlag:
-    command = ["clamscan", "--no-summary"]
+    command: list[str | Path] = [ToolchainComponent.CLAMSCAN, "--no-summary"]
     if supplementary_signature_directory is not None:
-        command.extend(["-d", "/var/lib/clamav", "-d", str(supplementary_signature_directory)])
-    command.append(str(file_path))
+        command.extend(
+            ["-d", _CLAMAV_SYSTEM_SIGNATURE_DIRECTORY, "-d", supplementary_signature_directory]
+        )
+    command.append(file_path)
     result = subprocess.run(command, capture_output=True, check=False)
     if result.returncode not in (0, _CLAMSCAN_INFECTED_EXIT_CODE):
         raise RuntimeError(
@@ -792,9 +792,9 @@ def _clamscan_detected(
 
 
 def maliciousness_validity_of(
-    source_bytes: bytes,
-    transformed_bytes: bytes,
-    file_suffix: str, #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    source_bytes: RawPayloadBytes,
+    transformed_bytes: RawPayloadBytes,
+    file_suffix: FileSuffix,
     supplementary_signature_directory: Path | None = None,
 ) -> MaliciousnessValidity:
     with tempfile.TemporaryDirectory(prefix="fedact-maliciousness-") as scratch_directory:
@@ -813,28 +813,28 @@ def maliciousness_validity_of(
 
 
 def apk_dynamic_validity_of(
-    handle: EmulatorHandle,
+    emulator: EmulatorHandle,
     source_apk_path: Path,
     transformed_apk_path: Path,
-    package_name: str, #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    monkey_event_count: int,
-    monkey_seed: int,
+    package_name: AndroidPackageName,
+    monkey_event_count: MonkeyEventCount,
+    monkey_seed: SeedValue,
     execution_timeout_seconds: TimeoutSeconds,
     minimum_behavior_jaccard: SimilarityScore,
 ) -> tuple[ExecutionSmokeValidity, BehaviorValidity]:
     started = time.monotonic()
     source_result = run_dynamic_smoke(
-        handle, source_apk_path, package_name, monkey_event_count, monkey_seed
+        emulator, source_apk_path, package_name, monkey_event_count, monkey_seed
     )
     transformed_result = run_dynamic_smoke(
-        handle, transformed_apk_path, package_name, monkey_event_count, monkey_seed
+        emulator, transformed_apk_path, package_name, monkey_event_count, monkey_seed
     )
     elapsed = time.monotonic() - started
     smoke = ExecutionSmokeValidity(
         source_launched=source_result.launched,
         transformed_launched=transformed_result.launched,
         no_new_crash_or_anr=not (source_result.crashed_or_anr or transformed_result.crashed_or_anr),
-        sandbox_identity_recorded=bool(handle.serial),
+        sandbox_identity_recorded=bool(emulator.serial),
         within_timeout_seconds=elapsed,
         configured_timeout_seconds=execution_timeout_seconds,
     )

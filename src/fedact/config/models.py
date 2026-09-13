@@ -5,13 +5,14 @@ from pathlib import PurePosixPath
 from pydantic import BaseModel, ConfigDict
 
 from fedact.domain.types import (
+    AndroidSystemImage,
     AngleDegrees,
     BatchSize,
     BudgetAmount,
     ClientCount,
     ConditionNumberLimit,
-    ConfigurationFieldName,
     ConfidenceLevel,
+    ConfigurationFieldName,
     ConfirmatoryFormat,
     CorruptedClientAttack,
     CutoffCount,
@@ -20,11 +21,11 @@ from fedact.domain.types import (
     EigengapRatio,
     EpochCount,
     Epsilon,
-    EventCount,
     ExperimentDirectoryName,
+    FeatureColumnPrefix,
     FederationClientCount,
     FederationGeometry,
-    FeatureColumnPrefix,
+    FilePath,
     Fraction,
     IntersectionDimension,
     KurtosisExcess,
@@ -32,6 +33,7 @@ from fedact.domain.types import (
     MatchedTotalSamplesFlag,
     MaximumIterations,
     MinimumDetectionCount,
+    MonkeyEventCount,
     PercentagePoints,
     PercentileValue,
     PrivateTransitionSparsityMode,
@@ -53,7 +55,6 @@ from fedact.domain.types import (
     SyntheticCorruptionAttack,
     TimeoutSeconds,
     Tolerance,
-    ToolchainIdentifier,
     VarianceThreshold,
     WindowSpanMonths,
     ZeroDisplacementFloor,
@@ -217,9 +218,9 @@ class CertificationConfig(StrictModel):
 
 class OperatorValidationBudgets(StrictModel):
     execution_timeout_seconds: TimeoutSeconds
-    android_monkey_events: EventCount
+    android_monkey_events: MonkeyEventCount
     minimum_behavior_jaccard: SimilarityScore
-    android_system_image: ToolchainIdentifier
+    android_system_image: AndroidSystemImage
 
 
 class OperatorsConfig(StrictModel):
@@ -438,7 +439,27 @@ class WorkspaceConfig(StrictModel):
     experiment_directories: list[ExperimentDirectoryName]
 
 
+class AndroZooAcquisitionConfig(StrictModel):
+    download_deadline_seconds: TimeoutSeconds
+
+
+class SupplementarySignatureAcquisitionConfig(StrictModel):
+    transfer_deadline_seconds: TimeoutSeconds
+
+
+class AcquisitionConfig(StrictModel):
+    androzoo: AndroZooAcquisitionConfig
+    supplementary_signatures: SupplementarySignatureAcquisitionConfig
+
+
+class ToolchainConfig(StrictModel):
+    android_cmdline_tools_java_home: FilePath
+    adb_command_deadline_seconds: TimeoutSeconds
+
+
 class FedActConfig(StrictModel):
+    acquisition: AcquisitionConfig
+    toolchain: ToolchainConfig
     datasets: DatasetsConfig
     temporal: TemporalConfig
     training: TrainingConfig
@@ -544,14 +565,22 @@ def _validate_workspace_layout(config: FedActConfig) -> None:
     results_root = workspace.results_root
 
     _require_relative_descendant(
-        outputs_root, directories.preprocessing, ConfigurationFieldName("workspace.directories.preprocessing")
+        outputs_root,
+        directories.preprocessing,
+        ConfigurationFieldName("workspace.directories.preprocessing"),
     )
     _require_relative_descendant(
-        outputs_root, directories.experiments, ConfigurationFieldName("workspace.directories.experiments")
+        outputs_root,
+        directories.experiments,
+        ConfigurationFieldName("workspace.directories.experiments"),
     )
-    _require_relative_descendant(outputs_root, directories.cache, ConfigurationFieldName("workspace.directories.cache"))
     _require_relative_descendant(
-        directories.cache, directories.staging, ConfigurationFieldName("workspace.directories.staging")
+        outputs_root, directories.cache, ConfigurationFieldName("workspace.directories.cache")
+    )
+    _require_relative_descendant(
+        directories.cache,
+        directories.staging,
+        ConfigurationFieldName("workspace.directories.staging"),
     )
     _require_relative_descendant(
         workspace.results_root,
@@ -559,7 +588,9 @@ def _validate_workspace_layout(config: FedActConfig) -> None:
         ConfigurationFieldName("workspace.directories.result_experiments"),
     )
     _require_relative_descendant(
-        results_root, directories.project_summary, ConfigurationFieldName("workspace.directories.project_summary")
+        results_root,
+        directories.project_summary,
+        ConfigurationFieldName("workspace.directories.project_summary"),
     )
     _require_relative_descendant(
         directories.project_summary,

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol, cast
+from typing import cast
+from xml.etree.ElementTree import Element
 
 import numpy as np
 import pandas as pd
@@ -16,25 +16,18 @@ from numpy.typing import NDArray
 from fedact.domain.types import (
     AndroidManifestTag,
     ApiReference,
+    DimensionValue,
+    FeatureColumnName,
+    FeatureIndex,
     LamdaFeatureCategory,
     LamdaFeatureName,
     ManifestAttributeName,
-    ManifestAttributeValue,
-    ManifestXmlTag,
     ObservableFeatureToken,
     UrlDomain,
 )
 
 MANIFEST_ANDROID_NAMESPACE = "{http://schemas.android.com/apk/res/android}"
 URL_DOMAIN_PATTERN = re.compile(r"[a-zA-Z][a-zA-Z0-9+.-]*://([a-zA-Z0-9.-]+)")
-
-
-class ManifestElement(Protocol):
-    tag: ManifestXmlTag
-
-    def iter(self) -> Iterator[ManifestElement]: ...
-
-    def get(self, key: ManifestAttributeName) -> ManifestAttributeValue | None: ...
 
 
 REPRODUCIBLE_FEATURE_CATEGORIES = (
@@ -57,10 +50,10 @@ class LamdaFeatureVocabularyError(ValueError):
 
 @dataclass(frozen=True)
 class LamdaFeatureVocabulary:
-    dimension: int
+    dimension: DimensionValue
     category_by_index: tuple[LamdaFeatureCategory, ...]
     name_by_index: tuple[LamdaFeatureName, ...]
-    unverifiable_indices: frozenset[int]
+    unverifiable_indices: frozenset[FeatureIndex]
 
 
 def load_lamda_feature_vocabulary(mapping_path: Path) -> LamdaFeatureVocabulary:
@@ -68,7 +61,7 @@ def load_lamda_feature_vocabulary(mapping_path: Path) -> LamdaFeatureVocabulary:
     known_categories = REPRODUCIBLE_FEATURE_CATEGORIES + UNVERIFIABLE_FEATURE_CATEGORIES
     feature_index = cast(pd.Series, mapping["mapped_name"].str.removeprefix("feat_")).astype(int)
     ordered = mapping.assign(feature_index=feature_index).sort_values(by="feature_index")
-    feature_names = cast(list[str], ordered["feature_name"].tolist())  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    feature_names = cast(list[FeatureColumnName], ordered["feature_name"].tolist())
     categories: list[LamdaFeatureCategory] = []
     names: list[LamdaFeatureName] = []
     unverifiable_indices: set[int] = set()
@@ -89,14 +82,14 @@ def load_lamda_feature_vocabulary(mapping_path: Path) -> LamdaFeatureVocabulary:
         dimension=len(names),
         category_by_index=tuple(categories),
         name_by_index=tuple(names),
-        unverifiable_indices=frozenset(unverifiable_indices),
+        unverifiable_indices=frozenset(FeatureIndex(index) for index in unverifiable_indices),
     )
 
 
 @dataclass(frozen=True)
 class LamdaApkFeatureExtraction:
     feature_vector: NDArray[np.float64]
-    unverifiable_feature_indices: frozenset[int]
+    unverifiable_feature_indices: frozenset[FeatureIndex]
 
 
 def _canonical_api_reference(reference: ApiReference) -> ApiReference:
@@ -106,15 +99,15 @@ def _canonical_api_reference(reference: ApiReference) -> ApiReference:
     return ApiReference(normalized)
 
 
-def _manifest_xml(apk: APK) -> ManifestElement:
-    xml = cast("ManifestElement | None", apk.get_android_manifest_xml())
+def _manifest_xml(apk: APK) -> Element:
+    xml = cast("Element | None", apk.get_android_manifest_xml())
     if xml is None:
         raise LamdaFeatureVocabularyError("APK has no parseable AndroidManifest.xml")
     return xml
 
 
 def _raw_manifest_name_attributes(
-    xml: ManifestElement, tags: tuple[AndroidManifestTag, ...]
+    xml: Element, tags: tuple[AndroidManifestTag, ...]
 ) -> set[ObservableFeatureToken]:
     names: set[ObservableFeatureToken] = set()
     for element in xml.iter():
@@ -150,7 +143,7 @@ def _url_domains(dx: Analysis) -> set[ObservableFeatureToken]:
 def extract_lamda_apk_features(
     apk_path: Path, vocabulary: LamdaFeatureVocabulary
 ) -> LamdaApkFeatureExtraction:
-    apk, _, dx = cast("tuple[APK, list[object], Analysis]", AnalyzeAPK(str(apk_path)))
+    apk, _dex_objects, dx = AnalyzeAPK(apk_path.as_posix())
     xml = _manifest_xml(apk)
     observed_by_category: dict[LamdaFeatureCategory, set[ObservableFeatureToken]] = {
         LamdaFeatureCategory.ACTIVITY_LIST: _raw_manifest_name_attributes(
@@ -186,10 +179,12 @@ def extract_lamda_apk_features(
             LamdaFeatureCategory.RESTRICTED_API_LIST,
             LamdaFeatureCategory.SUSPICIOUS_API_LIST,
         ):
-            present = ObservableFeatureToken(_canonical_api_reference(ApiReference(name))) in observed
+            present = (
+                ObservableFeatureToken(_canonical_api_reference(ApiReference(name))) in observed
+            )
         else:
             present = ObservableFeatureToken(name) in observed
-        feature_vector[index] = 1.0 if present else 0.0  # TODO: should be constant
+        feature_vector[index] = 1.0 if present else 0.0
     return LamdaApkFeatureExtraction(
         feature_vector=feature_vector,
         unverifiable_feature_indices=vocabulary.unverifiable_indices,

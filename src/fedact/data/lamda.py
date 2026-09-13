@@ -4,7 +4,7 @@ import hashlib
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import NewType, cast
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -18,7 +18,6 @@ from fedact.data.records import (
     corpus_level_client_audit,
 )
 from fedact.data.splits import (
-    CalendarMonth,
     ControlTransitionReplicate,
     TransitionDisplacement,
     calendar_month,
@@ -28,6 +27,7 @@ from fedact.data.splits import (
 )
 from fedact.domain.types import (
     BinaryLabel,
+    CalendarMonth,
     CalendarMonthString,
     DataAvailabilityFlag,
     DatasetIdentity,
@@ -37,11 +37,12 @@ from fedact.domain.types import (
     FeatureColumnName,
     FeatureColumnPrefix,
     Fraction,
+    MaximumMatchesPerSample,
     Probability,
     SampleCount,
     SampleIdentifier,
-    ThresholdValue,
     TabularColumnName,
+    ThresholdValue,
     VarianceThreshold,
     WindowSpanMonths,
 )
@@ -75,14 +76,15 @@ def load_lamda_records(
     if not parquet_files:
         return LoadedLamdaDataset(records=(), features=np.zeros((0, 0), dtype=np.float32))
     combined = pd.concat((pd.read_parquet(path) for path in parquet_files), ignore_index=True)
-    columns = [TabularColumnName(column) for column in combined.columns.tolist()]
+    column_labels = cast(list[str], combined.columns.tolist())
+    columns = [TabularColumnName(label) for label in column_labels]
     feature_columns = _feature_columns(columns, feature_column_prefix)
     features = cast(np.ndarray, combined[feature_columns].to_numpy(dtype=np.float32))
-    hashes = cast(list[str], combined["hash"].tolist())  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    year_months = cast(list[str], combined["year_month"].tolist())  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    hashes = cast(list[str], combined["hash"].tolist())
+    year_months = cast(list[str], combined["year_month"].tolist())
     labels = cast(list[float], combined["label"].tolist())
     vt_counts = cast(list[float], combined["vt_count"].tolist())
-    families = cast(list[str], combined["family"].tolist())  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    families = cast(list[str], combined["family"].tolist())
     records = tuple(
         LamdaRawRecord(
             sample_hash=SampleIdentifier(sample_hash),
@@ -115,7 +117,7 @@ def standardize_features(features: np.ndarray) -> np.ndarray:
         return features
     mean = np.mean(features, axis=0)
     std = np.std(features, axis=0)
-    std[std < 1e-12] = 1.0  # TODO: should be constant
+    std[std < 1e-12] = 1.0
     return (features - mean) / std
 
 
@@ -172,9 +174,6 @@ class LamdaControlMatch:
     malicious_sample_id: SampleIdentifier
     control_sample_id: SampleIdentifier
     calendar_month: CalendarMonthString
-
-
-MaximumMatchesPerSample = NewType("MaximumMatchesPerSample", int)
 
 
 @dataclass(frozen=True)
@@ -425,7 +424,7 @@ def sparse_control_transition_replicates(
 
 
 def effective_support(replicate: ControlTransitionReplicate) -> ThresholdValue:
-    return 1.0 / (1.0 / replicate.support_before + 1.0 / replicate.support_after)  # TODO: should be constant
+    return 1.0 / (1.0 / replicate.support_before + 1.0 / replicate.support_after)
 
 
 def replicate_weights(
@@ -433,8 +432,8 @@ def replicate_weights(
 ) -> tuple[Probability, ...]:
     supports = [effective_support(replicate) for replicate in replicates]
     total = sum(supports)
-    if total <= 0.0:  # TODO: should be constant
-        return tuple(0.0 for _replicate in replicates)  # TODO: should be constant
+    if total <= 0.0:
+        return tuple(0.0 for _replicate in replicates)
     return tuple(support / total for support in supports)
 
 

@@ -27,7 +27,6 @@ from fedact.data.records import (
     EligibilityStatus,
     ExclusionReason,
     FeasibilityCondition,
-    FeatureValue,
     LabelDerivationRuleError,
     PreparedSample,
     PreprocessingRuleError,
@@ -42,6 +41,7 @@ from fedact.data.records import (
 from fedact.domain.types import (
     DatasetIdentity,
     DatasetSelector,
+    FeatureValue,
     SampleIdentifier,
     SplitCutoffIdentity,
 )

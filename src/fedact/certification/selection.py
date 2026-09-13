@@ -26,7 +26,7 @@ from fedact.domain.types import (
 )
 
 FloatArray = NDArray[np.float64]
-_BALL_DIAMETER_DOUBLING_FACTOR = 2.0  # TODO: should be constant
+_BALL_DIAMETER_DOUBLING_FACTOR = 2.0
 
 
 @dataclass(frozen=True)
@@ -86,7 +86,7 @@ def greedy_d_optimal(
 def uniform_action_weights(action_count: ActionCount) -> tuple[Probability, ...]:
     if action_count == 0:
         return ()
-    weight = 1.0 / action_count  # TODO: should be constant
+    weight = 1.0 / action_count
     return tuple(weight for _unused in range(action_count))
 
 
@@ -121,7 +121,7 @@ def largest_sample_count_selection(
     ranked = sorted(
         supports,
         key=lambda support: (
-            -(support.effective_support if support.effective_support is not None else -1.0),  # TODO: should be constant
+            -(support.effective_support if support.effective_support is not None else -1.0),
             support.client,
         ),
     )

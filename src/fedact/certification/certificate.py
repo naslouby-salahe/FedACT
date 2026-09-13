@@ -10,8 +10,8 @@ import numpy as np
 import torch
 
 from fedact.certification.actions import ActionInterval
-from fedact.certification.dynamics import AbstentionReason
 from fedact.domain.types import (
+    AbstentionReason,
     CertificationFlag,
     CertificationStatus,
     ClientIdentifier,
@@ -34,7 +34,7 @@ from fedact.domain.types import (
     ValidationFlag,
 )
 
-_DIAMETER_DOUBLING_FACTOR: Final = 2.0  # TODO: should be constant
+_DIAMETER_DOUBLING_FACTOR: Final = 2.0
 
 
 @dataclass(frozen=True)
@@ -340,7 +340,7 @@ def minimum_uniform_inflation(
             continue
         residual = center - constraint.projector @ center
         requirements.append(float(np.linalg.norm(residual)) / constraint.uncertainty_radius)
-    return max(1.0, *requirements)  # TODO: should be constant
+    return max((1.0, *requirements))
 
 
 def build_nuisance_spaces(

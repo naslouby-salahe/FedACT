@@ -13,6 +13,7 @@ from fedact.certification.actions import (
     OperatorCoverageError,
     OperatorDomain,
     OperatorFamily,
+    PeOperatorFamilyName,
     ValidityAuditEntry,
     enumerate_candidates,
     run_validity_audit,
@@ -28,7 +29,9 @@ CUTOFF = SplitCutoffIdentity("month-000024")
 SAMPLE = SampleIdentifier("sample-1")
 
 
-def family(name: str, order: int, grid: tuple[str, ...] = ("p1",)) -> OperatorFamily:
+def family(
+    name: PeOperatorFamilyName, order: int, grid: tuple[str, ...] = ("p1",)
+) -> OperatorFamily[PeOperatorFamilyName]:
     return OperatorFamily(
         name=name,
         domain=OperatorDomain.WINDOWS_PE,
@@ -128,31 +131,34 @@ def test_coverage_below_minimum_is_operationally_empty() -> None:
 
 
 def test_composition_repeats_of_one_family_are_invalid() -> None:
-    f1 = family("append", 0)
+    f1 = family(PeOperatorFamilyName.APPEND_BENIGN_EOF_BYTES, 0)
     params = (NormalizedParameterString("64"), NormalizedParameterString("64"))
     with pytest.raises(ValueError, match="may not repeat"):
         OperatorComposition(families=(f1, f1), parameters=params)
 
 
 def test_composition_requires_aligned_families_and_parameters() -> None:
-    f1 = family("append", 0)
+    f1 = family(PeOperatorFamilyName.APPEND_BENIGN_EOF_BYTES, 0)
     with pytest.raises(ValueError, match="align"):
         OperatorComposition(families=(f1,), parameters=())
 
 
 def test_enumeration_covers_lengths_one_through_maximum() -> None:
-    families = (family("append", 0, ("64", "256")), family("checksum", 1, ("zero",)))
+    families = (
+        family(PeOperatorFamilyName.APPEND_BENIGN_EOF_BYTES, 0, ("64", "256")),
+        family(PeOperatorFamilyName.ZERO_PE_CHECKSUM, 1, ("zero",)),
+    )
     candidates = enumerate_candidates(families, CompositionLengthLimit(2), SAMPLE, CUTOFF)
     lengths = sorted({candidate.composition.families.__len__() for candidate in candidates})
     assert lengths == [1, 2]
     normalized_forms = {candidate.normalized_form for candidate in candidates}
-    assert "append=64" in normalized_forms
-    assert "append=64|checksum=zero" in normalized_forms
+    assert "append-benign-eof-bytes=64" in normalized_forms
+    assert "append-benign-eof-bytes=64|zero-pe-checksum=zero" in normalized_forms
 
 
 def test_enumeration_normalizes_permutations_to_one_candidate() -> None:
-    first = family("append", 0, ("64",))
-    second = family("rename", 1, ("data1",))
+    first = family(PeOperatorFamilyName.APPEND_BENIGN_EOF_BYTES, 0, ("64",))
+    second = family(PeOperatorFamilyName.RENAME_SECTION, 1, ("data1",))
     direct = enumerate_candidates((first, second), CompositionLengthLimit(2), SAMPLE, CUTOFF)
     swapped = enumerate_candidates((second, first), CompositionLengthLimit(2), SAMPLE, CUTOFF)
     forms_direct = {candidate.normalized_form for candidate in direct}
@@ -163,7 +169,10 @@ def test_enumeration_normalizes_permutations_to_one_candidate() -> None:
 
 
 def test_enumeration_is_deterministic_across_calls() -> None:
-    families = (family("append", 0, ("64", "1024")), family("section", 1, ("ro-256",)))
+    families = (
+        family(PeOperatorFamilyName.APPEND_BENIGN_EOF_BYTES, 0, ("64", "1024")),
+        family(PeOperatorFamilyName.ADD_READ_ONLY_SECTION, 1, ("ro-256",)),
+    )
     first = enumerate_candidates(families, CompositionLengthLimit(3), SAMPLE, CUTOFF)
     second = enumerate_candidates(families, CompositionLengthLimit(3), SAMPLE, CUTOFF)
     assert [candidate.normalized_form for candidate in first] == [
@@ -172,12 +181,15 @@ def test_enumeration_is_deterministic_across_calls() -> None:
 
 
 def test_enumeration_rejects_invalid_maximum() -> None:
-    fams = (family("append", 0),)
+    fams = (family(PeOperatorFamilyName.APPEND_BENIGN_EOF_BYTES, 0),)
     with pytest.raises(EnumerationContractError):
         enumerate_candidates(fams, CompositionLengthLimit(0), SAMPLE, CUTOFF)
 
 
 def test_enumeration_rejects_duplicate_listed_orders() -> None:
-    fams = (family("a", 0), family("b", 0))
+    fams = (
+        family(PeOperatorFamilyName.FILL_EXISTING_SECTION_SLACK, 0),
+        family(PeOperatorFamilyName.ENTRY_POINT_TRAMPOLINE, 0),
+    )
     with pytest.raises(EnumerationContractError, match="unique listed orders"):
         enumerate_candidates(fams, CompositionLengthLimit(1), SAMPLE, CUTOFF)

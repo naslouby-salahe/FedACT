@@ -35,7 +35,7 @@ def _construct_mapping(loader: yaml.Loader, node: yaml.Node) -> ConfigurationRaw
         if key in seen:
             raise DuplicateYamlKeyError(f"duplicate configuration key encountered: {key!r}")
         seen.add(key)
-    mapping = cast(dict[str, JsonEncodableValue], loader.construct_mapping(node))  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    mapping = cast(dict[str, JsonEncodableValue], loader.construct_mapping(node))
     return ConfigurationRawMapping(mapping)
 
 

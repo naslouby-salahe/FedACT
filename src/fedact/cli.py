@@ -6,7 +6,12 @@ from typing import Optional
 import typer
 
 from fedact import workflow
-from fedact.domain.types import CliCommandName, DatasetSelector, ExecutableWorkflowName
+from fedact.domain.types import (
+    ByteBudget,
+    CliCommandName,
+    DatasetSelector,
+    ExecutableWorkflowName,
+)
 
 app = typer.Typer(
     name="fedact",
@@ -22,8 +27,21 @@ _REPOSITORY_ROOT_OPTION = typer.Option(
 )
 
 OverwriteOption = typer.Option(False, "--overwrite")
+MaximumTotalBytesOption = typer.Option(
+    ...,
+    "--maximum-total-bytes",
+    help="Byte budget for this run; acquisition stops once newly downloaded bytes reach it.",
+)
 OptionalDatasetArgument = typer.Argument(None)
 OptionalWorkflowArgument = typer.Argument(None)
+
+
+@app.command(CliCommandName.ACQUIRE)
+def acquire_entry(
+    maximum_total_bytes: int = MaximumTotalBytesOption,
+    repository_root: Path = _REPOSITORY_ROOT_OPTION,
+) -> None:
+    workflow.run_acquire(ByteBudget(maximum_total_bytes), repository_root)
 
 
 @app.command(CliCommandName.DOCTOR)

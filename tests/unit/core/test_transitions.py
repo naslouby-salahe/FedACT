@@ -4,7 +4,6 @@ import numpy as np
 import pytest
 
 from fedact.certification.dynamics import (
-    AbstentionReason,
     effective_support,
     geometric_median,
     later_real_proxy,
@@ -19,7 +18,7 @@ from fedact.domain.records import (
     PRIVATE_TRANSITION_ALLOWANCE_CONSEQUENCE,
     SHARED_COMPONENT_CONSEQUENCE,
 )
-from fedact.domain.types import ScientificAssumption, ScientificOutcome
+from fedact.domain.types import AbstentionReason, ScientificAssumption, ScientificOutcome
 
 
 @pytest.mark.parametrize(

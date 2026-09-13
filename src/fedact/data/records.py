@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import NewType
 
 from fedact.data.splits import ChronologyAuditResult
 from fedact.domain.types import (
@@ -21,6 +20,8 @@ from fedact.domain.types import (
     ExclusionReason,
     FamilyName,
     FeasibilityCondition,
+    FeatureColumnIndex,
+    FeatureValue,
     FieldName,
     HashDigest,
     HorizonAvailability,
@@ -162,10 +163,6 @@ class DatasetEligibilityOutcome:
         }:
             return DatasetEligibilityRole.SECONDARY_EVIDENCE
         return DatasetEligibilityRole.DIAGNOSTIC_ONLY
-
-
-FeatureValue = NewType("FeatureValue", float)
-FeatureColumnIndex = NewType("FeatureColumnIndex", int)
 
 
 class PreprocessingRuleError(ValueError):

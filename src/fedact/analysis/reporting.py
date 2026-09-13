@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import NewType
 
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -14,12 +13,26 @@ from fedact.domain.types import (
     ArtifactVerificationStatus,
     EpochCount,
     FigureIdentifier,
+    LatexTableCell,
     MetricRate,
     ScientificOutcome,
     TableIdentifier,
 )
 
-LatexTableCell = NewType("LatexTableCell", str) #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+_REPORT_TABLES_DIRECTORY = Path("tables") / "main"
+_REPORT_FIGURES_DIRECTORY = Path("figures") / "main"
+_REPORT_METRICS_DIRECTORY = Path("metrics") / "summary"
+_REPORT_REPRODUCIBILITY_DIRECTORY = Path("reproducibility") / "execution"
+
+_MAIN_RESULTS_TABLE_ID = "main_results"
+_MAIN_RESULTS_TABLE_FILENAME = "table_1_main.tex"
+_PROSPECTIVE_FIGURE_ID = "fig_1_prospective"
+_PROSPECTIVE_FIGURE_FILENAME = "fig_1.png"
+_PROJECT_SUMMARY_FILENAME = "project_summary.json"
+_EVIDENCE_INDEX_FILENAME = "evidence_index.json"
+
+_STATIC_CHRONOLOGICAL_DETECTOR_LABEL = "Static chronological detector (no hardening)"
+_NOT_APPLICABLE_CELL = "n/a"
 
 
 def generate_latex_table(
@@ -130,28 +143,28 @@ def export_verified_project_evidence(
     if static_chronological_fnr is not None:
         rows.append(
             (
-                "Static chronological detector (no hardening)", #TODO: should be enum, not hardcoded string
+                _STATIC_CHRONOLOGICAL_DETECTOR_LABEL,
                 f"{static_chronological_fnr:.{rate_significant_figures}f}",
-                "n/a", #TODO: should be enum, not hardcoded string
-                "n/a", #TODO: should be enum, not hardcoded string
+                _NOT_APPLICABLE_CELL,
+                _NOT_APPLICABLE_CELL,
             )
         )
-    table_file = results_directory / "tables" / "main" / "table_1_main.tex" #TODO: should be enums not hardcoded strings
+    table_file = results_directory / _REPORT_TABLES_DIRECTORY / _MAIN_RESULTS_TABLE_FILENAME
     generate_latex_table(
-        table_id="main_results", #TODO: should be enums not hardcoded strings
+        table_id=_MAIN_RESULTS_TABLE_ID,
         headers=tuple(LatexTableCell(header) for header in headers),
         rows=tuple(tuple(LatexTableCell(cell) for cell in row) for row in rows),
         output_file=table_file,
     )
-    figure_file = results_directory / "figures" / "main" / "fig_1.png" #TODO: should be enums not hardcoded strings
+    figure_file = results_directory / _REPORT_FIGURES_DIRECTORY / _PROSPECTIVE_FIGURE_FILENAME
     generate_prospective_metrics_figure(
-        "fig_1_prospective", #TODO: should be enums not hardcoded strings
+        _PROSPECTIVE_FIGURE_ID,
         fnr,
         certification_rate,
         rate_significant_figures,
         figure_file,
     )
-    summary_file = results_directory / "metrics" / "summary" / "project_summary.json" #TODO: should be enums not hardcoded strings
+    summary_file = results_directory / _REPORT_METRICS_DIRECTORY / _PROJECT_SUMMARY_FILENAME
     generate_project_summary(
         project="FedACT",
         verdict=overall_outcome,
@@ -160,19 +173,17 @@ def export_verified_project_evidence(
         output_file=summary_file,
     )
     evidence_index_file = (
-        results_directory / "reproducibility" / "execution" / "evidence_index.json" #TODO: should be enums not hardcoded strings
+        results_directory / _REPORT_REPRODUCIBILITY_DIRECTORY / _EVIDENCE_INDEX_FILENAME
     )
     package_artifact_status_index(
         [
+            ArtifactStatusRecord(artifact=table_file.name, status=_verification_status(table_file)),
             ArtifactStatusRecord(
-                artifact="table_1_main.tex", status=_verification_status(table_file) #TODO: should be enums not hardcoded strings
-            ),
-            ArtifactStatusRecord(
-                artifact="fig_1.png", #TODO: should be enums not hardcoded strings
+                artifact=figure_file.name,
                 status=_verification_status(figure_file),
             ),
             ArtifactStatusRecord(
-                artifact="project_summary.json", status=_verification_status(summary_file) #TODO: should be enums not hardcoded strings
+                artifact=summary_file.name, status=_verification_status(summary_file)
             ),
         ],
         evidence_index_file,

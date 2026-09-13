@@ -18,9 +18,7 @@ class ExperimentRuntime(Protocol):
         return cast(LoadedConfiguration, None)
 
 
-def experiment_directory(
-    application: ExperimentRuntime, workflow: ExecutableWorkflowName
-) -> Path:
+def experiment_directory(application: ExperimentRuntime, workflow: ExecutableWorkflowName) -> Path:
     return (
         application.repository_root
         / application.configuration.values.workspace.directories.experiments

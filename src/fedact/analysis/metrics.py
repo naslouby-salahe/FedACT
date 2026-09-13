@@ -51,29 +51,29 @@ class EvaluationMetrics:
 def compute_evaluation_metrics(records: tuple[EvaluationRecord, ...]) -> EvaluationMetrics:
     if not records:
         return EvaluationMetrics(
-            false_negative_rate=0.0,  # TODO: should be constant
-            certification_rate=0.0,  # TODO: should be constant
-            clean_fnr=0.0,  # TODO: should be constant
-            cumulative_exposure=0.0,  # TODO: should be constant
-            true_positive_rate=0.0,  # TODO: should be constant
-            false_positive_rate=0.0,  # TODO: should be constant
-            abstention_rate=0.0,  # TODO: should be constant
+            false_negative_rate=0.0,
+            certification_rate=0.0,
+            clean_fnr=0.0,
+            cumulative_exposure=0.0,
+            true_positive_rate=0.0,
+            false_positive_rate=0.0,
+            abstention_rate=0.0,
         )
 
     malicious = [r for r in records if r.true_label]
     benign = [r for r in records if not r.true_label]
 
     fnr = (
-        sum(1 for r in malicious if r.predicted_score < 0.5) / len(malicious) if malicious else 0.0  # TODO: should be constant
+        sum(1 for r in malicious if r.predicted_score < 0.5) / len(malicious) if malicious else 0.0
     )
-    clean_fnr = sum(1 for r in benign if r.predicted_score >= 0.5) / len(benign) if benign else 0.0  # TODO: should be constant
+    clean_fnr = sum(1 for r in benign if r.predicted_score >= 0.5) / len(benign) if benign else 0.0
     cert_rate = sum(1 for r in records if r.is_certified) / len(records)
     exposure = float(sum(r.clean_loss for r in malicious))
 
     pr_auc: MetricRate | None = None
     roc_auc: MetricRate | None = None
     if malicious and benign:
-        labels = np.fromiter((1.0 if r.true_label else 0.0 for r in records), dtype=np.float64)  # TODO: should be constant
+        labels = np.fromiter((1.0 if r.true_label else 0.0 for r in records), dtype=np.float64)
         scores = np.fromiter((r.predicted_score for r in records), dtype=np.float64)
         pr_auc = float(cast(float, sklearn_metrics.average_precision_score(labels, scores)))
         roc_auc = float(cast(float, sklearn_metrics.roc_auc_score(labels, scores)))
@@ -83,9 +83,9 @@ def compute_evaluation_metrics(records: tuple[EvaluationRecord, ...]) -> Evaluat
         certification_rate=cert_rate,
         clean_fnr=clean_fnr,
         cumulative_exposure=exposure,
-        true_positive_rate=1.0 - fnr,  # TODO: should be constant
+        true_positive_rate=1.0 - fnr,
         false_positive_rate=clean_fnr,
-        abstention_rate=1.0 - cert_rate,  # TODO: should be constant
+        abstention_rate=1.0 - cert_rate,
         pr_auc=pr_auc,
         roc_auc=roc_auc,
     )
@@ -137,17 +137,17 @@ class MetricValidationError(ValueError):
 
 
 def validate_evaluation_metrics(metrics: EvaluationMetrics) -> None:
-    if not (0.0 <= metrics.false_negative_rate <= 1.0):  # TODO: should be constant
+    if not (0.0 <= metrics.false_negative_rate <= 1.0):
         raise MetricValidationError("false negative rate out of bounds [0, 1]")
-    if not (0.0 <= metrics.certification_rate <= 1.0):  # TODO: should be constant
+    if not (0.0 <= metrics.certification_rate <= 1.0):
         raise MetricValidationError("certification rate out of bounds [0, 1]")
-    if not (0.0 <= metrics.true_positive_rate <= 1.0):  # TODO: should be constant
+    if not (0.0 <= metrics.true_positive_rate <= 1.0):
         raise MetricValidationError("true positive rate out of bounds [0, 1]")
-    if not (0.0 <= metrics.false_positive_rate <= 1.0):  # TODO: should be constant
+    if not (0.0 <= metrics.false_positive_rate <= 1.0):
         raise MetricValidationError("false positive rate out of bounds [0, 1]")
-    if not (0.0 <= metrics.abstention_rate <= 1.0):  # TODO: should be constant
+    if not (0.0 <= metrics.abstention_rate <= 1.0):
         raise MetricValidationError("abstention rate out of bounds [0, 1]")
-    if metrics.pr_auc is not None and not (0.0 <= metrics.pr_auc <= 1.0):  # TODO: should be constant
+    if metrics.pr_auc is not None and not (0.0 <= metrics.pr_auc <= 1.0):
         raise MetricValidationError("PR-AUC out of bounds [0, 1]")
-    if metrics.roc_auc is not None and not (0.0 <= metrics.roc_auc <= 1.0):  # TODO: should be constant
+    if metrics.roc_auc is not None and not (0.0 <= metrics.roc_auc <= 1.0):
         raise MetricValidationError("ROC-AUC out of bounds [0, 1]")

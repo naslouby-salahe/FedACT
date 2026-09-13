@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import cast
 
 import numpy as np
 import sklearn.metrics as sklearn_metrics
 from numpy.typing import NDArray
-from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
@@ -15,8 +15,8 @@ class ClassThresholds:
 
 
 def apply_threshold(
-    binary_thresholds: dict[str, ClassThresholds],  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    test_scores: dict[str, list[float]],  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    binary_thresholds: dict[str, ClassThresholds],
+    test_scores: dict[str, list[float]],
     y_test: NDArray[np.int_],
 ) -> NDArray[np.bool_]:
     assert set(binary_thresholds.keys()) in [{"cred"}, {"conf"}, {"cred", "conf"}]
@@ -51,11 +51,11 @@ def get_performance_with_rejection(
     y_pred: NDArray[np.int_],
     keep_mask: NDArray[np.bool_],
     full: bool = True,
-) -> dict[str, float]:  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+) -> dict[str, float]:
     y_true = np.array(y_true)
     y_pred = np.array(y_pred)
 
-    d: dict[str, float] = {}  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    d: dict[str, float] = {}
 
     total_neg = float(len(y_true) - sum(y_true))
     total_pos = float(sum(y_true))

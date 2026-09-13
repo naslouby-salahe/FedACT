@@ -87,7 +87,7 @@ def build_paired_contrast(
             continue
         differences.append(aggregate_a.value - aggregate_b.value)
     eligible_count = len(eligible_cutoffs)
-    missing_fraction = missing_count / eligible_count if eligible_count > 0 else 1.0  # TODO: should be constant
+    missing_fraction = missing_count / eligible_count if eligible_count > 0 else 1.0
     sufficient = (
         len(differences) >= minimum_paired_cutoffs
         and missing_fraction <= maximum_missing_cutoff_fraction
@@ -103,8 +103,8 @@ def build_paired_contrast(
 def contrast_effect_direction(
     paired_differences: tuple[CutoffDifferenceValue, ...],
 ) -> EffectDirection:
-    positive = sum(1 for difference in paired_differences if difference > 0.0)  # TODO: should be constant
-    negative = sum(1 for difference in paired_differences if difference < 0.0)  # TODO: should be constant
+    positive = sum(1 for difference in paired_differences if difference > 0.0)
+    negative = sum(1 for difference in paired_differences if difference < 0.0)
     if positive > negative:
         return EffectDirection.FAVORABLE
     if negative > positive:

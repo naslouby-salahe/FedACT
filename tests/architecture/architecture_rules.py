@@ -42,8 +42,20 @@ class NumericLiteralSite:
     value: int | float
 
 
+VENDORED_COMPONENT = "_vendor"
+
+
 def production_source_files(repository_root: Path) -> list[Path]:
     return sorted((repository_root / "src" / "fedact").rglob("*.py"))
+
+
+def owned_source_files(repository_root: Path) -> list[Path]:
+    package_root = repository_root / "src" / "fedact"
+    return [
+        source_file
+        for source_file in production_source_files(repository_root)
+        if VENDORED_COMPONENT not in source_file.relative_to(package_root).parts
+    ]
 
 
 def relative_source_path(repository_root: Path, source_file: Path) -> str:

@@ -25,7 +25,7 @@ from fedact.learning.representation import (
 LOGGER = logging.getLogger(__name__)
 
 _MINIMUM_LOCAL_BATCH_SIZE = 2
-_COSINE_ANNEALING_HALF_RANGE = 0.5  # TODO: should be constant
+_COSINE_ANNEALING_HALF_RANGE = 0.5
 
 
 @dataclass(frozen=True)
@@ -51,18 +51,18 @@ def _cosine_annealed_learning_rate(
         return terminal_rate
     progress = round_index / (total_rounds - 1)
     return terminal_rate + _COSINE_ANNEALING_HALF_RANGE * (initial_rate - terminal_rate) * (
-        1.0 + math.cos(math.pi * progress)  # TODO: should be constant
+        1.0 + math.cos(math.pi * progress)
     )
 
 
 def _local_epoch(
     encoder_template: RepresentationEncoder,
     head_template: DetectorHead,
-    encoder_state: dict[str, torch.Tensor], #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    head_state: dict[str, torch.Tensor], #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    encoder_state: dict[str, torch.Tensor],
+    head_state: dict[str, torch.Tensor],
     population: ClientTrainingPopulation,
     learning_rate: LearningRate,
-) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor], LossValue]:  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor], LossValue]:
     local_encoder = copy.deepcopy(encoder_template)
     local_head = copy.deepcopy(head_template)
     local_encoder.load_state_dict(encoder_state)
@@ -73,7 +73,7 @@ def _local_epoch(
     optimizer = torch.optim.Adam(
         list(local_encoder.parameters()) + list(local_head.parameters()),
         lr=learning_rate,
-        weight_decay=0.0,  # TODO: should be constant
+        weight_decay=0.0,
     )
     local_encoder.train()
     local_head.train()
@@ -86,10 +86,10 @@ def _local_epoch(
 
 
 def _weighted_average_state(
-    weighted_states: list[tuple[SampleCount, dict[str, torch.Tensor]]], total_samples: SampleCount  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-) -> dict[str, torch.Tensor]:  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    weighted_states: list[tuple[SampleCount, dict[str, torch.Tensor]]], total_samples: SampleCount
+) -> dict[str, torch.Tensor]:
     keys = weighted_states[0][1].keys()
-    averaged: dict[str, torch.Tensor] = {} #TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    averaged: dict[str, torch.Tensor] = {}
     for key in keys:
         accumulator = torch.zeros_like(weighted_states[0][1][key], dtype=torch.float32)
         for weight, state in weighted_states:
@@ -120,7 +120,7 @@ def train_federated_detector(
     total_rounds = maximum_rounds
     encoder_state = {key: value.clone() for key, value in encoder.state_dict().items()}
     head_state = {key: value.clone() for key, value in head.state_dict().items()}
-    final_loss: LossValue = 0.0  # TODO: should be constant
+    final_loss: LossValue = 0.0
     completed_rounds = 0
     for round_index in range(total_rounds):
         learning_rate = _cosine_annealed_learning_rate(
@@ -129,8 +129,8 @@ def train_federated_detector(
             initial_learning_rate,
             final_learning_rate,
         )
-        weighted_encoder_states: list[tuple[SampleCount, dict[str, torch.Tensor]]] = []  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-        weighted_head_states: list[tuple[SampleCount, dict[str, torch.Tensor]]] = []  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+        weighted_encoder_states: list[tuple[SampleCount, dict[str, torch.Tensor]]] = []
+        weighted_head_states: list[tuple[SampleCount, dict[str, torch.Tensor]]] = []
         total_samples = 0
         round_losses: list[float] = []
         for population in eligible_populations:

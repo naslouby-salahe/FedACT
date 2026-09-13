@@ -1,8 +1,15 @@
 from __future__ import annotations
 
+import pytest
+
 from fedact.domain.types import ExecutableWorkflowName as W
 from fedact.domain.types import ScientificOutcome
-from fedact.workflow import WorkflowExecutionState, WorkflowOutcomeRecord, resolve_execution_plan
+from fedact.workflow import (
+    ExecutionPlan,
+    WorkflowExecutionState,
+    WorkflowOutcomeRecord,
+    resolve_execution_plan,
+)
 
 
 def _passed(*workflows: W) -> tuple[WorkflowOutcomeRecord, ...]:
@@ -81,3 +88,17 @@ def test_client_selection_is_marked_optional_and_never_blocks_synthesis() -> Non
     synthesis = plan.entry(W.STATISTICAL_SYNTHESIS)
     assert W.CLIENT_SELECTION not in synthesis.blocking_dependencies
     assert W.STATISTICAL_SYNTHESIS in plan.executable
+
+
+def test_executable_and_blocked_accessors_agree_with_the_plan() -> None:
+    plan = resolve_execution_plan()
+    assert set(plan.executable_workflows()) == set(plan.executable)
+    assert plan.blocked_workflows() == tuple(entry.workflow for entry in plan.blocked)
+    assert set(plan.executable_workflows()).isdisjoint(set(plan.blocked_workflows()))
+
+
+def test_lookup_of_an_unregistered_workflow_is_rejected() -> None:
+    plan = resolve_execution_plan()
+    partial = ExecutionPlan(entries=(plan.entry(W.PREPROCESS),))
+    with pytest.raises(KeyError, match="not found in plan"):
+        partial.entry(W.SMOKE)

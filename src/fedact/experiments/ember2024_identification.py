@@ -18,7 +18,7 @@ from fedact.certification.client_procedure import (
     private_transition_term_single_client,
     select_stable_nuisance_rank,
 )
-from fedact.certification.dynamics import AbstentionReason, effective_support
+from fedact.certification.dynamics import effective_support
 from fedact.certification.uncertainty import client_radius, regularized_covariance
 from fedact.config.models import StrictModel
 from fedact.data.ember2024 import (
@@ -32,14 +32,16 @@ from fedact.data.ember2024 import (
     year_month_to_calendar_month,
 )
 from fedact.data.splits import (
-    CalendarMonth,
     calendar_month,
     earliest_complete_transition_endpoint,
     transition_windows,
 )
 from fedact.domain.types import (
+    AbstentionReason,
+    CalendarMonth,
     EigengapRatio,
     EvaluationCount,
+    ExecutableWorkflowName,
     FamilyName,
     RankDimension,
     ScientificOutcome,
@@ -616,9 +618,7 @@ class Ember2024IdentificationDiagnosticsReport:
 def run_ember2024_identification_diagnostics(
     application: ExperimentRuntime,
 ) -> Ember2024IdentificationDiagnosticsReport:
-    raw_root = (
-        application.repository_root / "data" / "raw" / "EMBER2024"  # TODO: should be enums not hardcoded strings
-    )
+    raw_root = application.repository_root / "data" / "raw" / "EMBER2024"
     if not raw_root.is_dir():
         LOGGER.warning("ember2024 identification diagnostics has no release at %s", raw_root)
         return Ember2024IdentificationDiagnosticsReport(
@@ -771,8 +771,8 @@ def run_ember2024_identification_diagnostics(
     destination = (
         application.repository_root
         / config.workspace.directories.experiments
-        / "prospective-evaluation"  # TODO: should be enums not hardcoded strings
-        / "ember2024-identification-diagnostics.json"  # TODO: should be enums not hardcoded strings
+        / ExecutableWorkflowName.PROSPECTIVE_EVALUATION
+        / "ember2024-identification-diagnostics.json"
     )
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(

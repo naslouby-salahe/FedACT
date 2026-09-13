@@ -8,8 +8,7 @@ from fedact.certification.certificate import (
     is_forecast_set_within_gate,
     leave_one_client_out_stability,
 )
-from fedact.certification.dynamics import AbstentionReason
-from fedact.domain.types import CertificationStatus
+from fedact.domain.types import AbstentionReason, CertificationStatus
 
 
 def test_decide_certifies_positive_bounded_interval() -> None:

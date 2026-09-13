@@ -220,7 +220,7 @@ def train_representation_encoder(
         random_seed,
     )
     val_losses: list[float] = []
-    saved_states: list[dict[str, torch.Tensor]] = []  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    saved_states: list[dict[str, torch.Tensor]] = []
     for _unused in range(epochs):
         encoder.train()
         supervision_head.train()

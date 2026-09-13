@@ -12,8 +12,8 @@ import numpy as np
 from androguard.core.apk import APK
 
 from fedact.certification.actions import (
+    ApkOperatorFamilyName,
     CandidateValidityRecord,
-    CompositionLengthLimit,
     MutationStructuralIntegrityError,
     OperatorCandidate,
     ValidityStatus,
@@ -39,7 +39,6 @@ from fedact.data.lamda import (
 from fedact.data.lamda_apk_emulator import EmulatorHandle
 from fedact.data.lamda_apk_features import extract_lamda_apk_features, load_lamda_feature_vocabulary
 from fedact.data.lamda_apk_mutations import (
-    ApkFileBytes,
     ApkMutationError,
     ApkSigningError,
     ApkSigningIdentity,
@@ -47,25 +46,37 @@ from fedact.data.lamda_apk_mutations import (
 )
 from fedact.data.records import LabelDerivationRule
 from fedact.data.splits import (
-    CalendarMonth,
     calendar_month,
     earliest_complete_transition_endpoint,
     windowed_mean,
 )
 from fedact.domain.types import (
+    AbstentionReason,
     AndroidPackageName,
     AndroidSystemImage,
-    EvaluationCount,
+    ApkFileBytes,
+    ApkSigningKeyAlias,
+    ApkSigningPassword,
+    CalendarMonth,
+    CompositionLengthLimit,
     EndpointOrdinal,
+    EvaluationCount,
+    ExecutableWorkflowName,
     FamilyName,
-    SampleCount,
+    FileSuffix,
+    MonkeyEventCount,
     RejectionStage,
-    WorkflowArtifactName,
-    ToolVersion,
-    ToolchainIdentity,
-    ToolchainComponent,
+    SampleCount,
+    SampleIdentifier,
     ScientificOutcome,
+    SeedValue,
+    SimilarityScore,
     SplitCutoffIdentity,
+    TimeoutSeconds,
+    ToolchainComponent,
+    ToolchainIdentity,
+    ToolVersion,
+    WorkflowArtifactName,
 )
 from fedact.experiments.identification import (
     ClientConstraintFit,
@@ -80,26 +91,35 @@ from fedact.experiments.validation import ActionArtifact, ActionObservation
 
 LOGGER = logging.getLogger(__name__)
 
-_KEYSTORE_ALIAS = "fedact-operator"
-_DEBUG_KEYSTORE_STORE_PASSWORD = "changeit"
-_MONKEY_SEED = 42
+_KEYSTORE_ALIAS = ApkSigningKeyAlias("fedact-operator")
+_DEBUG_KEYSTORE_STORE_PASSWORD = ApkSigningPassword("changeit")
+_MONKEY_SEED: SeedValue = 42
 
-_REJECTION_MALICIOUS_SUPPORT = "malicious_support"
-_REJECTION_ENCODER = "encoder"
-_REJECTION_POINT_ESTIMATE = "point_estimate"
-_REJECTION_TRANSITION_SUPPORT = "transition_support"
-_REJECTION_HISTORICAL_DIAMETER_POOL = "historical_diameter_pool"
+_PARTIAL_ARTIFACT_SUFFIX = ".json.partial"
+_SIGNING_OUTPUT_DIRECTORY_NAME = "signing"
+_DEBUG_KEYSTORE_FILENAME = "debug-keystore.jks"
+_ANDROID_SYSTEM_IMAGE_IDENTITY_KEY = "android_system_image"
+
+_TOOL_VERSION_PROBE_TIMEOUT_SECONDS: TimeoutSeconds = 15.0
+_SET_DIAMETER_DOUBLING_FACTOR = 2.0
+_TRANSITION_HISTORY_DOUBLING_FACTOR = 2
+
+
+class EndpointRejection(StrictModel):
+    endpoint: EndpointOrdinal
+    stage: RejectionStage
+    abstention: AbstentionReason | None = None
 
 
 class EndpointFitCache(StrictModel):
     cohort: FamilyName
     record_count: SampleCount
-    rejections: dict[EndpointOrdinal, RejectionStage] = {}
+    rejections: tuple[EndpointRejection, ...] = ()
 
 
 def _load_endpoint_fit_cache(
     cache_path: Path, cohort: FamilyName, record_count: SampleCount
-) -> dict[EndpointOrdinal, RejectionStage]:
+) -> dict[EndpointOrdinal, EndpointRejection]:
     if not cache_path.is_file():
         return {}
     try:
@@ -108,18 +128,17 @@ def _load_endpoint_fit_cache(
         return {}
     if cache.cohort != cohort or cache.record_count != record_count:
         return {}
-    return {int(endpoint): reason for endpoint, reason in cache.rejections.items()}
+    return {rejection.endpoint: rejection for rejection in cache.rejections}
 
 
 def _persist_endpoint_fit_cache(
-    cache_path: Path, cohort: FamilyName, record_count: SampleCount, rejections: dict[int, str]
+    cache_path: Path,
+    cohort: FamilyName,
+    record_count: SampleCount,
+    rejections: tuple[EndpointRejection, ...],
 ) -> None:
-    cache = EndpointFitCache(
-        cohort=cohort,
-        record_count=record_count,
-        rejections={str(endpoint): reason for endpoint, reason in rejections.items()},
-    )
-    temporary_destination = cache_path.with_suffix(".json.partial")  # TODO: should be enums not hardcoded strings
+    cache = EndpointFitCache(cohort=cohort, record_count=record_count, rejections=rejections)
+    temporary_destination = cache_path.with_suffix(_PARTIAL_ARTIFACT_SUFFIX)
     temporary_destination.write_text(cache.model_dump_json(indent=2), encoding="utf-8")
     temporary_destination.replace(cache_path)
 
@@ -171,13 +190,18 @@ def _historical_diameter_pool(
             inner_earlier_malicious,
         )
         if isinstance(result, ClientConstraintFit):
-            diameters.append(2.0 * float(result.beta))
+            diameters.append(_SET_DIAMETER_DOUBLING_FACTOR * float(result.beta))
     return diameters
 
 
 def _tool_version(command: list[str]) -> ToolVersion:
     try:
-        result = subprocess.run(command, capture_output=True, check=False, timeout=15)
+        result = subprocess.run(
+            command,
+            capture_output=True,
+            check=False,
+            timeout=_TOOL_VERSION_PROBE_TIMEOUT_SECONDS,
+        )
     except (OSError, subprocess.TimeoutExpired):
         return ToolVersion("unavailable")
     output = (result.stdout or result.stderr).decode(errors="replace").strip().splitlines()
@@ -191,22 +215,25 @@ def _real_toolchain_identity(android_system_image: AndroidSystemImage) -> Toolch
         ToolchainComponent.APKSIGNER: _tool_version([ToolchainComponent.APKSIGNER, "--version"]),
         ToolchainComponent.AAPT2: _tool_version([ToolchainComponent.AAPT2, "version"]),
         ToolchainComponent.CLAMSCAN: _tool_version([ToolchainComponent.CLAMSCAN, "--version"]),
-        "android_system_image": android_system_image,
     }
-    return ToolchainIdentity("; ".join(f"{name}={version}" for name, version in components.items()))
+    rendered = [f"{name}={version}" for name, version in components.items()]
+    rendered.append(f"{_ANDROID_SYSTEM_IMAGE_IDENTITY_KEY}={android_system_image}")
+    return ToolchainIdentity("; ".join(rendered))
 
 
-def _apk_package_name(apk_bytes: bytes) -> str | None:
+def _apk_package_name(apk_bytes: ApkFileBytes) -> AndroidPackageName | None:
     try:
         apk = APK(cast(str, apk_bytes), raw=True)
     except Exception:
         return None
     package = apk.get_package()
-    return package if package else None
+    return AndroidPackageName(package) if package else None
 
 
 def _apply_composition(
-    candidate: OperatorCandidate, apk_bytes: ApkFileBytes, signing_identity: ApkSigningIdentity
+    candidate: OperatorCandidate[ApkOperatorFamilyName],
+    apk_bytes: ApkFileBytes,
+    signing_identity: ApkSigningIdentity,
 ) -> ApkFileBytes:
     current = apk_bytes
     for family, parameter in zip(
@@ -223,9 +250,9 @@ def _candidate_validity(
     transformed_apk_bytes: ApkFileBytes,
     package_name: AndroidPackageName,
     emulator_handle: EmulatorHandle,
-    monkey_event_count: int,
-    execution_timeout_seconds: float,
-    minimum_behavior_jaccard: float,
+    monkey_event_count: MonkeyEventCount,
+    execution_timeout_seconds: TimeoutSeconds,
+    minimum_behavior_jaccard: SimilarityScore,
     android_system_image: AndroidSystemImage,
     supplementary_signature_directory: Path,
 ) -> CandidateValidityRecord:
@@ -233,7 +260,7 @@ def _candidate_validity(
     maliciousness = maliciousness_validity_of(
         original_apk_path.read_bytes(),
         bytes(transformed_apk_bytes),
-        ".apk",
+        FileSuffix(".apk"),
         supplementary_signature_directory,
     )
     with tempfile.TemporaryDirectory(prefix="fedact-action-dynamic-") as scratch_directory:
@@ -264,7 +291,10 @@ def run_lamda_action_generation(
     emulator_handle: EmulatorHandle,
 ) -> ActionGenerationReport:
     config = application.configuration.values
-    raw_root = application.repository_root / application.configuration.values.workspace.lamda_release_directory
+    raw_root = (
+        application.repository_root
+        / application.configuration.values.workspace.lamda_release_directory
+    )
     if not raw_root.is_dir():
         LOGGER.warning("lamda action generation has no LAMDA release at %s", raw_root)
         return ActionGenerationReport(0, 0, 0, 0, ScientificOutcome.INSUFFICIENT_EVIDENCE)
@@ -295,7 +325,9 @@ def run_lamda_action_generation(
     cohort_index_by_sample = {
         record.sample_hash: index for index, record in enumerate(cohort_records)
     }
-    raw_root_all = application.repository_root / application.configuration.values.workspace.raw_data_root
+    raw_root_all = (
+        application.repository_root / application.configuration.values.workspace.raw_data_root
+    )
     package_name_by_sample: dict[SampleIdentifier, AndroidPackageName] = {}
     for record in cohort_records:
         if (
@@ -306,7 +338,7 @@ def run_lamda_action_generation(
         apk_path = androzoo_apk_destination(raw_root_all, record.sample_hash)
         if not apk_path.is_file():
             continue
-        package_name = _apk_package_name(apk_path.read_bytes())
+        package_name = _apk_package_name(ApkFileBytes(apk_path.read_bytes()))
         if package_name is None:
             LOGGER.warning("could not derive package name for %s; excluded", record.sample_hash)
             continue
@@ -332,21 +364,19 @@ def run_lamda_action_generation(
         earliest_complete_transition_endpoint(calendar_month(month_min), transition_interval_months)
     )
 
-    vocabulary = load_lamda_feature_vocabulary(
-        raw_root / "feature_mapping.csv"
-    )
+    vocabulary = load_lamda_feature_vocabulary(raw_root / "feature_mapping.csv")
     signing_identity = ApkSigningIdentity(
         keystore_path=experiment_directory(
             application, ExecutableWorkflowName.ACTION_CERTIFICATE_VALIDATION
         )
-        / "signing"  # TODO: should be enums not hardcoded strings
-        / "debug-keystore.jks",  # TODO: should be enums not hardcoded strings
+        / _SIGNING_OUTPUT_DIRECTORY_NAME
+        / _DEBUG_KEYSTORE_FILENAME,
         key_alias=_KEYSTORE_ALIAS,
         store_password=_DEBUG_KEYSTORE_STORE_PASSWORD,
     )
     generate_deterministic_debug_keystore(signing_identity)
     supplementary_signatures = acquire_supplementary_signatures(
-        raw_root_all
+        raw_root_all, config.acquisition.supplementary_signatures.transfer_deadline_seconds
     ).directory
 
     families = lamda_families()
@@ -356,7 +386,8 @@ def run_lamda_action_generation(
     )
 
     destination = (
-        experiment_directory(application, ExecutableWorkflowName.ACTION_CERTIFICATE_VALIDATION) / WorkflowArtifactName.ACTIONS
+        experiment_directory(application, ExecutableWorkflowName.ACTION_CERTIFICATE_VALIDATION)
+        / WorkflowArtifactName.ACTIONS
     )
     destination.parent.mkdir(parents=True, exist_ok=True)
     fit_cache_path = (
@@ -365,7 +396,7 @@ def run_lamda_action_generation(
     )
 
     def _persist_written(actions: list[ActionObservation]) -> None:
-        temporary_destination = destination.with_suffix(".json.partial")  # TODO: should be enums not hardcoded strings
+        temporary_destination = destination.with_suffix(_PARTIAL_ARTIFACT_SUFFIX)
         temporary_destination.write_text(
             ActionArtifact(actions=actions).model_dump_json(indent=2), encoding="utf-8"
         )
@@ -375,12 +406,21 @@ def run_lamda_action_generation(
     candidates_considered = 0
     maliciousness_validation_unavailable_count = 0
     cached_rejections = _load_endpoint_fit_cache(fit_cache_path, cohort, len(loaded.records))
-    rejections = dict(cached_rejections)
+    rejections: dict[EndpointOrdinal, EndpointRejection] = dict(cached_rejections)
 
-    def _reject(endpoint_ordinal: EndpointOrdinal, endpoint: CalendarMonth, stage: RejectionStage) -> None:
+    def _reject(
+        endpoint_ordinal: EndpointOrdinal,
+        endpoint: CalendarMonth,
+        stage: RejectionStage,
+        abstention: AbstentionReason | None = None,
+    ) -> None:
         LOGGER.info("action generation endpoint=%s rejected stage=%s", endpoint, stage)
-        rejections[endpoint_ordinal] = stage
-        _persist_endpoint_fit_cache(fit_cache_path, cohort, len(loaded.records), rejections)
+        rejections[endpoint_ordinal] = EndpointRejection(
+            endpoint=endpoint_ordinal, stage=stage, abstention=abstention
+        )
+        _persist_endpoint_fit_cache(
+            fit_cache_path, cohort, len(loaded.records), tuple(rejections.values())
+        )
 
     for endpoint_ordinal in range(
         max(earliest_valid_endpoint, month_min + 1), month_max - horizon + 1
@@ -390,7 +430,7 @@ def run_lamda_action_generation(
             LOGGER.info(
                 "action generation endpoint=%s cached_rejection stage=%s",
                 endpoint,
-                cached_rejections[endpoint_ordinal],
+                cached_rejections[endpoint_ordinal].stage,
             )
             continue
         if not cohort_has_sufficient_malicious_support(
@@ -400,7 +440,7 @@ def run_lamda_action_generation(
             transition_interval_months,
             config.identification.minimum_support_per_class,
         ):
-            _reject(endpoint_ordinal, endpoint, _REJECTION_MALICIOUS_SUPPORT)
+            _reject(endpoint_ordinal, endpoint, RejectionStage.MALICIOUS_SUPPORT)
             continue
         historical_endpoints = tuple(
             calendar_month(candidate)
@@ -418,7 +458,7 @@ def run_lamda_action_generation(
             application, loaded.records, loaded.features, rule, endpoint
         )
         if encoder is None:
-            _reject(endpoint_ordinal, endpoint, _REJECTION_ENCODER)
+            _reject(endpoint_ordinal, endpoint, RejectionStage.ENCODER)
             continue
         embedded_features = embed_features(encoder, loaded.features)
         embedded_cohort_features = embedded_features[cohort_mask]
@@ -435,7 +475,7 @@ def run_lamda_action_generation(
             earlier_malicious_endpoints,
         )
         if not isinstance(fit, ClientConstraintFit):
-            _reject(endpoint_ordinal, endpoint, f"client_constraint_fit:{fit.value}")
+            _reject(endpoint_ordinal, endpoint, RejectionStage.CLIENT_CONSTRAINT_FIT, fit)
             continue
         beta = float(fit.beta)
 
@@ -443,11 +483,13 @@ def run_lamda_action_generation(
             cohort_records, embedded_cohort_features, rule, endpoint, transition_interval_months
         )
         if point_estimate is None:
-            _reject(endpoint_ordinal, endpoint, _REJECTION_POINT_ESTIMATE)
+            _reject(endpoint_ordinal, endpoint, RejectionStage.POINT_ESTIMATE)
             continue
         ghat = point_estimate.displacement
 
-        before_start = calendar_month(endpoint_ordinal - transition_interval_months * 2)
+        before_start = calendar_month(
+            endpoint_ordinal - transition_interval_months * _TRANSITION_HISTORY_DOUBLING_FACTOR
+        )
         before_end = calendar_month(endpoint_ordinal - transition_interval_months)
         after_end = calendar_month(endpoint_ordinal + horizon)
         before_mean, before_support = windowed_mean(
@@ -457,7 +499,7 @@ def run_lamda_action_generation(
             embedded_cohort_features, months, endpoint, after_end
         )
         if before_support == 0 or after_support == 0:
-            _reject(endpoint_ordinal, endpoint, _REJECTION_TRANSITION_SUPPORT)
+            _reject(endpoint_ordinal, endpoint, RejectionStage.TRANSITION_SUPPORT)
             continue
         ghat_real = after_mean - before_mean
 
@@ -473,7 +515,7 @@ def run_lamda_action_generation(
             earliest_valid_endpoint,
         )
         if not historical_diameters:
-            _reject(endpoint_ordinal, endpoint, _REJECTION_HISTORICAL_DIAMETER_POOL)
+            _reject(endpoint_ordinal, endpoint, RejectionStage.HISTORICAL_DIAMETER_POOL)
             continue
         historical_diameter_quantile = float(
             np.percentile(historical_diameters, diameter_quantile_fraction * 100.0, method="linear")
@@ -485,9 +527,7 @@ def run_lamda_action_generation(
             cohort_index = cohort_index_by_sample[source_record.sample_hash]
             if int(months[cohort_index]) >= endpoint_ordinal:
                 continue
-            apk_path = androzoo_apk_destination(
-                raw_root_all, source_record.sample_hash
-            )
+            apk_path = androzoo_apk_destination(raw_root_all, source_record.sample_hash)
             if not apk_path.is_file():
                 continue
             original_bytes = apk_path.read_bytes()
@@ -544,7 +584,7 @@ def run_lamda_action_generation(
                 projected_point = float(np.dot(q_o, ghat))
                 lower_bound = projected_point - beta
                 upper_bound = projected_point + beta
-                point_score = (lower_bound + upper_bound) / 2.0
+                point_score = (lower_bound + upper_bound) / _SET_DIAMETER_DOUBLING_FACTOR
                 later_real_alignment_score = float(np.dot(q_o, ghat_real))
 
                 written.append(
@@ -553,7 +593,7 @@ def run_lamda_action_generation(
                         lower_bound=lower_bound,
                         upper_bound=upper_bound,
                         domain_valid=True,
-                        set_diameter=2.0 * beta,
+                        set_diameter=_SET_DIAMETER_DOUBLING_FACTOR * beta,
                         historical_diameter_quantile=historical_diameter_quantile,
                         cutoff_id=cutoff_id,
                         cohort=cohort,

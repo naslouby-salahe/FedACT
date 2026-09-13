@@ -13,8 +13,8 @@ from tests.architecture.architecture_rules import (
     annotation_mapping_names,
     annotation_sites,
     module_name,
+    owned_source_files,
     parse_source,
-    production_source_files,
     relative_source_path,
 )
 
@@ -59,7 +59,7 @@ def structured_boundary_violations_for_tree(module: str, tree: ast.Module, path:
 
 def structured_boundary_violations(repository_root: Path) -> list[str]:
     violations: list[str] = []
-    for source_file in production_source_files(repository_root):
+    for source_file in owned_source_files(repository_root):
         violations.extend(
             structured_boundary_violations_for_tree(
                 module_name(repository_root, source_file),
@@ -72,7 +72,7 @@ def structured_boundary_violations(repository_root: Path) -> list[str]:
 
 def observed_structured_sites(repository_root: Path) -> dict[tuple[str, str], set[str]]:
     observed: dict[tuple[str, str], set[str]] = defaultdict(set)
-    for source_file in production_source_files(repository_root):
+    for source_file in owned_source_files(repository_root):
         module = module_name(repository_root, source_file)
         for site in annotation_sites(module, parse_source(source_file)):
             observed[(site.symbol, site.kind)] |= structured_issue_names(site.annotation)

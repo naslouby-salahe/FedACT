@@ -9,9 +9,9 @@ from tests.architecture.architecture_rules import (
     annotation_sites,
     collect_type_aliases,
     module_name,
+    owned_source_files,
     parse_source,
     primitive_names,
-    production_source_files,
     relative_source_path,
 )
 
@@ -30,7 +30,7 @@ def primitive_violations_for_tree(module: str, tree: ast.Module, path: str) -> l
 
 def primitive_violations(repository_root: Path) -> list[str]:
     violations: list[str] = []
-    for source_file in production_source_files(repository_root):
+    for source_file in owned_source_files(repository_root):
         module = module_name(repository_root, source_file)
         path = relative_source_path(repository_root, source_file)
         violations.extend(primitive_violations_for_tree(module, parse_source(source_file), path))

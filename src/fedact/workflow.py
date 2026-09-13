@@ -18,9 +18,15 @@ from fedact.artifacts import (
     write_workflow_result,
 )
 from fedact.config.loading import LoadedConfiguration, load_production_configuration
-from fedact.data.androzoo import acquired_lamda_apk_sample_ids
+from fedact.data.androzoo import (
+    acquire_lamda_apks_within_budget,
+    acquired_lamda_apk_sample_ids,
+    androzoo_api_key_from_environment,
+)
 from fedact.data.ember2024 import run_empty_ember_transform_audit
 from fedact.data.lamda import (
+    audited_label,
+    label_derivation_rule,
     lamda_client_semantics,
     lamda_schema_manifest,
     load_lamda_records,
@@ -61,10 +67,13 @@ from fedact.data.synthetic import (
     seeded_generator,
 )
 from fedact.domain.types import (
+    ByteBudget,
+    ByteCount,
     DataAvailabilityFlag,
     DatasetSelector,
     DegradationValue,
     DiagnosisMessage,
+    EmulatorPort,
     ExecutableWorkflowName,
     ExperimentName,
     FederationGeometry,
@@ -74,6 +83,7 @@ from fedact.domain.types import (
     ScientificOutcome,
     SeedValue,
     SplitCutoffIdentity,
+    TimeoutSeconds,
 )
 from fedact.experiments.baselines import verify_subtraction_comparator_parity
 from fedact.experiments.ember2024_identification import run_ember2024_identification_diagnostics
@@ -84,6 +94,7 @@ from fedact.experiments.generalization import (
     run_prospective_fedact_evaluation,
 )
 from fedact.experiments.identification import (
+    dominant_malicious_family_cohort,
     run_lamda_identification_diagnostics,
     run_lamda_temporal_dynamics_ablation,
 )
@@ -274,7 +285,7 @@ class Application:
 
     @classmethod
     def from_repository_root(cls, repository_root: Path) -> Application:
-        configuration = load_production_configuration(repository_root / "configs" / "fedact.yaml") #TODO: use enums instead of hardcoded strings
+        configuration = load_production_configuration(repository_root / "configs" / "fedact.yaml")
         return cls(repository_root=repository_root.resolve(), configuration=configuration)
 
     def workspace_layout(self) -> WorkspaceLayout:
@@ -311,8 +322,8 @@ class Application:
 def discover_repository_root(start: Path) -> Path:
     candidate = start.resolve()
     for current in (candidate, *candidate.parents):
-        if (current / "pyproject.toml").is_file() and ( #TODO: use enums instead of hardcoded strings
-            current / "configs" / "fedact.yaml" #TODO: use enums instead of hardcoded strings
+        if (current / "pyproject.toml").is_file() and (
+            current / "configs" / "fedact.yaml"
         ).is_file():
             return current
     raise FileNotFoundError(f"FedACT repository root not found above {start}")
@@ -328,6 +339,51 @@ def run_doctor(repository_root: Path) -> None:
     plan = application.plan()
     typer.echo(f"executable_now: {' '.join(plan.executable)}")
     typer.echo(f"blocked_count: {len(plan.blocked)}")
+
+
+class AcquisitionRequestError(RuntimeError):
+    pass
+
+
+def run_acquire(maximum_total_bytes: ByteBudget, repository_root: Path) -> None:
+    application = Application.from_repository_root(discover_repository_root(repository_root))
+    configuration = application.configuration.values
+    release_directory = (
+        application.repository_root / configuration.workspace.lamda_release_directory
+    )
+    if not release_directory.is_dir():
+        raise AcquisitionRequestError(f"LAMDA release directory is missing: {release_directory}")
+    loaded = load_lamda_records(
+        release_directory, configuration.datasets.lamda.preprocessing.feature_column_prefix
+    )
+    validate_lamda_dataset(loaded)
+    rule = label_derivation_rule(configuration.datasets.lamda)
+    cohort = dominant_malicious_family_cohort(loaded.records, rule)
+    if cohort is None:
+        raise AcquisitionRequestError("no dominant malicious family cohort is identifiable")
+    already_acquired = acquired_lamda_apk_sample_ids(application.raw_data_root())
+    outstanding = tuple(
+        record.sample_hash
+        for record in loaded.records
+        if record.family == cohort
+        and record.sample_hash not in already_acquired
+        and audited_label(rule, record).binary_label is True
+    )
+    if not outstanding:
+        typer.echo(f"acquisition: cohort {cohort} has no outstanding samples")
+        return
+    acquired = acquire_lamda_apks_within_budget(
+        outstanding,
+        application.raw_data_root(),
+        androzoo_api_key_from_environment(),
+        maximum_total_bytes,
+        configuration.acquisition.androzoo.download_deadline_seconds,
+    )
+    total_bytes = ByteCount(sum(record.byte_size for record in acquired))
+    typer.echo(
+        f"acquisition: cohort={cohort} outstanding={len(outstanding)} "
+        f"acquired={len(acquired)} bytes={total_bytes} budget={maximum_total_bytes}"
+    )
 
 
 def run_plan(repository_root: Path) -> None:
@@ -371,7 +427,7 @@ def run_preprocess(
             history_start_month=source.first_observed_month,
             cutoff_exclusive_end_month=calendar_month(source.last_observed_month + 1),
         )
-        typer.echo(f"{selected}: chronology_audit={'PASS' if chronology.is_passing else 'FAIL'}") #TODO: should be enum not hardcoded string
+        typer.echo(f"{selected}: chronology_audit={'PASS' if chronology.is_passing else 'FAIL'}")
         typer.echo(f"{selected}: first_cutoff={first_identity} last_cutoff={last_identity}")
 
         if selected is DatasetSelector.LAMDA:
@@ -650,6 +706,10 @@ def _statistical_synthesis_inputs(
     )
 
 
+_EMULATOR_PORT: EmulatorPort = 5554
+_EMULATOR_BOOT_TIMEOUT_SECONDS: TimeoutSeconds = 300.0
+
+
 def _run_lamda_action_generation_if_acquired(application: Application) -> None:
     if not acquired_lamda_apk_sample_ids(application.raw_data_root()):
         typer.echo("action certificate validation: no AndroZoo-acquired APKs, skipping generation")
@@ -661,13 +721,24 @@ def _run_lamda_action_generation_if_acquired(application: Application) -> None:
         return
     system_image = application.configuration.values.operators.validation.android_system_image
     try:
-        ensure_avd(sdk_root, DEFAULT_AVD_NAME, system_image)
-        handle = boot_emulator(sdk_root, DEFAULT_AVD_NAME, 5554, 300.0)  # TODO: should be constant
+        ensure_avd(
+            sdk_root,
+            DEFAULT_AVD_NAME,
+            system_image,
+            application.configuration.values.toolchain.android_cmdline_tools_java_home,
+        )
+        emulator = boot_emulator(
+            sdk_root,
+            DEFAULT_AVD_NAME,
+            _EMULATOR_PORT,
+            _EMULATOR_BOOT_TIMEOUT_SECONDS,
+            application.configuration.values.toolchain.adb_command_deadline_seconds,
+        )
     except AndroidEmulatorError as error:
         typer.echo(f"action certificate validation: skipping generation ({error})")
         return
     try:
-        report = run_lamda_action_generation(application, handle)
+        report = run_lamda_action_generation(application, emulator)
         typer.echo(
             f"lamda action generation completed: "
             f"eligible={report.operator_eligible_source_samples} "
@@ -676,7 +747,7 @@ def _run_lamda_action_generation_if_acquired(application: Application) -> None:
             f"maliciousness_unavailable={report.maliciousness_validation_unavailable_count}"
         )
     finally:
-        shutdown_emulator(handle)
+        shutdown_emulator(emulator)
 
 
 def _dispatch_evaluation_workflow(

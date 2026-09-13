@@ -199,6 +199,16 @@ client_selection:
   budget_fractions: [0.25, 0.50, 0.75]
   d_optimal_ridge: 1.0e-6
 
+acquisition:
+  androzoo:
+    download_deadline_seconds: 120.0
+  supplementary_signatures:
+    transfer_deadline_seconds: 60.0
+
+toolchain:
+  android_cmdline_tools_java_home: /usr/lib/jvm/java-17-openjdk-amd64
+  adb_command_deadline_seconds: 60.0
+
 numerical:
   scale_standardization_floor: 1.0e-8
   rank_clip_epsilon_relative: 1.0e-6

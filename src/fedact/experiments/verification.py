@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import NewType, cast
+from typing import cast
 
 import numpy as np
 import torch
@@ -72,7 +72,6 @@ from fedact.experiments.registry import ExperimentRuntime
 from fedact.experiments.validation import apply_corrupted_client_attack
 
 FloatArray = NDArray[np.float64]
-VerificationMetric = NewType("VerificationMetric", float)
 
 _WIDTH_BOUND_MULTIPLIER = 2.0
 _BALL_DIAMETER_MULTIPLIER = 2.0

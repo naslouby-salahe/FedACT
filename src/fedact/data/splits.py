@@ -2,17 +2,18 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import NewType
 
 import numpy as np
 
 from fedact.domain.types import (
+    CalendarMonth,
     CalendarMonthString,
     DatasetSelector,
     EligibilityFlag,
     EligibilityStatus,
     HorizonAvailability,
     HorizonMonths,
+    IndexInPopulation,
     MonthIndex,
     ObservabilityFlag,
     OverlapFlag,
@@ -28,10 +29,8 @@ from fedact.domain.types import (
     WindowSpanMonths,
 )
 
-CalendarMonth = NewType("CalendarMonth", int)
-
 _TRANSITION_WINDOW_SPAN_MULTIPLIER = 2
-_MONTHS_PER_CALENDAR_YEAR = 12
+_CALENDAR_YEAR_SPAN = 12
 
 
 def calendar_month(value: MonthIndex) -> CalendarMonth:
@@ -45,7 +44,7 @@ def year_month_ordinal(
 ) -> CalendarMonth:
     year_text, month_text = year_month.split("-")
     epoch_year_text, epoch_month_text = epoch_year_month.split("-")
-    ordinal = (int(year_text) - int(epoch_year_text)) * _MONTHS_PER_CALENDAR_YEAR + (
+    ordinal = (int(year_text) - int(epoch_year_text)) * _CALENDAR_YEAR_SPAN + (
         int(month_text) - int(epoch_month_text)
     )
     return calendar_month(ordinal)
@@ -328,9 +327,6 @@ class SplitPartition(StrEnum):
 
 class SplitConstructionError(ValueError):
     pass
-
-
-IndexInPopulation = NewType("IndexInPopulation", int)
 
 
 @dataclass(frozen=True)

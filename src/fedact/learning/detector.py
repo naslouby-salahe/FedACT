@@ -79,7 +79,7 @@ def train_base_detector(
         detector_seed,
     )
     val_losses: list[float] = []
-    detector_states: list[dict[str, torch.Tensor]] = []  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    detector_states: list[dict[str, torch.Tensor]] = []
     for _unused in range(epochs):
         detector.train()
         for batch_h, batch_y in loader:

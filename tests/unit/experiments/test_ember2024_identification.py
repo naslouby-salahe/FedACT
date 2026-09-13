@@ -2,10 +2,9 @@ from __future__ import annotations
 
 import numpy as np
 
-from fedact.certification.dynamics import AbstentionReason
 from fedact.data.ember2024 import EmberRawRecord
 from fedact.data.splits import calendar_month
-from fedact.domain.types import SampleIdentifier
+from fedact.domain.types import AbstentionReason, SampleIdentifier
 from fedact.experiments.ember2024_identification import fit_ember2024_client_constraint
 from fedact.workflow import Application
 
@@ -31,7 +30,7 @@ def test_fit_ember2024_client_constraint_abstains_on_insufficient_malicious_supp
     application: Application,
 ) -> None:
     records, features = _tiny_records_and_features()
-    endpoint = calendar_month(2)
+    endpoint = calendar_month(6)
     result = fit_ember2024_client_constraint(
         application,
         records,

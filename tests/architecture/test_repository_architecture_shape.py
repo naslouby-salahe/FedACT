@@ -10,6 +10,7 @@ REQUIRED_COMPONENTS = frozenset(
         "cli.py",
         "workflow.py",
         "artifacts.py",
+        "_vendor",
         "domain",
         "config",
         "data",

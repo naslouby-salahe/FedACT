@@ -8,26 +8,21 @@ import tempfile
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import NewType
 
-from fedact.data.ember2024 import PayloadBytes
-from fedact.domain.types import ApkArchiveEntryName, ApkSigningKeyAlias, ApkSigningPassword, ValidationFlag
-from fedact.domain.types import FamilyName, ParameterName
+from fedact.domain.types import (
+    ApkArchiveEntryName,
+    ApkFileBytes,
+    ApkOperatorFamilyName,
+    ApkSigningKeyAlias,
+    ApkSigningPassword,
+    NormalizedParameterString,
+    PayloadBytes,
+    SubprocessEnvironment,
+    ToolchainComponent,
+    ValidationFlag,
+)
 
 _JAVA_NON_BLOCKING_ENTROPY_OPTION = "-Djava.security.egd=file:/dev/./urandom"
-
-
-def java_subprocess_environment() -> dict[str, str]:  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    environment = dict(os.environ)
-    existing_options = environment.get("_JAVA_OPTIONS", "")
-    if _JAVA_NON_BLOCKING_ENTROPY_OPTION not in existing_options:
-        environment["_JAVA_OPTIONS"] = (
-            f"{existing_options} {_JAVA_NON_BLOCKING_ENTROPY_OPTION}".strip()
-        )
-    return environment
-
-
-ApkFileBytes = NewType("ApkFileBytes", bytes)
 
 UNREFERENCED_RESOURCE_ENTRY_NAME = "assets/fedact_operator_payload.bin"
 _SIGNATURE_FILE_SUFFIXES = (".rsa", ".dsa", ".ec", ".sf")
@@ -52,6 +47,13 @@ _BENIGN_GADGET_SMALI_CONTENT = """.class public Lcom/fedact/operator/BenignGadge
 .end method
 """
 
+_SOURCE_APK_FILENAME = "source.apk"
+_UNSIGNED_APK_FILENAME = "unsigned.apk"
+_ALIGNED_APK_FILENAME = "aligned.apk"
+_REBUILT_APK_FILENAME = "rebuilt.apk"
+_DECOMPILED_OUTPUT_DIRECTORY = Path("decompiled")
+_SIGNING_OUTPUT_DIRECTORY = Path("signing")
+
 
 class ApkMutationError(RuntimeError):
     pass
@@ -66,6 +68,16 @@ class ApkSigningIdentity:
     keystore_path: Path
     key_alias: ApkSigningKeyAlias
     store_password: ApkSigningPassword
+
+
+def java_subprocess_environment() -> SubprocessEnvironment:
+    environment = SubprocessEnvironment(dict(os.environ))
+    existing_options = environment.get("_JAVA_OPTIONS", "")
+    if _JAVA_NON_BLOCKING_ENTROPY_OPTION not in existing_options:
+        environment["_JAVA_OPTIONS"] = (
+            f"{existing_options} {_JAVA_NON_BLOCKING_ENTROPY_OPTION}".strip()
+        )
+    return environment
 
 
 def _is_signature_entry(entry_name: ApkArchiveEntryName) -> ValidationFlag:
@@ -91,7 +103,7 @@ def permission_neutral_resource_injection(
             )
         with zipfile.ZipFile(destination, "w", zipfile.ZIP_DEFLATED) as destination_zip:
             for item in source_zip.infolist():
-                if _is_signature_entry(item.filename):
+                if _is_signature_entry(ApkArchiveEntryName(item.filename)):
                     continue
                 destination_zip.writestr(item, source_zip.read(item.filename))
             destination_zip.writestr(UNREFERENCED_RESOURCE_ENTRY_NAME, bytes(payload_size))
@@ -104,10 +116,10 @@ def generate_deterministic_debug_keystore(signing_identity: ApkSigningIdentity) 
     signing_identity.keystore_path.parent.mkdir(parents=True, exist_ok=True)
     subprocess.run(
         [
-            "keytool",
+            ToolchainComponent.KEYTOOL,
             "-genkeypair",
             "-keystore",
-            str(signing_identity.keystore_path),
+            signing_identity.keystore_path,
             "-alias",
             signing_identity.key_alias,
             "-storepass",
@@ -135,28 +147,28 @@ def sign_and_align_apk(
     working_directory: Path,
 ) -> ApkFileBytes:
     working_directory.mkdir(parents=True, exist_ok=True)
-    unsigned_path = working_directory / "unsigned.apk"
-    aligned_path = working_directory / "aligned.apk"
+    unsigned_path = working_directory / _UNSIGNED_APK_FILENAME
+    aligned_path = working_directory / _ALIGNED_APK_FILENAME
     unsigned_path.write_bytes(bytes(unsigned_apk))
     try:
         subprocess.run(
-            ["zipalign", "-f", "-p", "4", str(unsigned_path), str(aligned_path)],
+            [ToolchainComponent.ZIPALIGN, "-f", "-p", "4", unsigned_path, aligned_path],
             check=True,
             capture_output=True,
         )
         subprocess.run(
             [
-                "apksigner",
+                ToolchainComponent.APKSIGNER,
                 "sign",
                 "--ks",
-                str(signing_identity.keystore_path),
+                signing_identity.keystore_path,
                 "--ks-key-alias",
                 signing_identity.key_alias,
                 "--ks-pass",
                 f"pass:{signing_identity.store_password}",
                 "--key-pass",
                 f"pass:{signing_identity.store_password}",
-                str(aligned_path),
+                aligned_path,
             ],
             check=True,
             capture_output=True,
@@ -173,22 +185,22 @@ def unreachable_benign_gadget_injection(
     apk_bytes: ApkFileBytes, signing_identity: ApkSigningIdentity, working_directory: Path
 ) -> ApkFileBytes:
     working_directory.mkdir(parents=True, exist_ok=True)
-    source_path = working_directory / "source.apk"
+    source_path = working_directory / _SOURCE_APK_FILENAME
     source_path.write_bytes(bytes(apk_bytes))
-    decompiled_directory = working_directory / "decompiled"  # TODO: should be enums not hardcoded strings
+    decompiled_directory = working_directory / _DECOMPILED_OUTPUT_DIRECTORY
     if decompiled_directory.exists():
         shutil.rmtree(decompiled_directory)
-    rebuilt_path = working_directory / "rebuilt.apk"
+    rebuilt_path = working_directory / _REBUILT_APK_FILENAME
     try:
         subprocess.run(
             [
-                "apktool",
+                ToolchainComponent.APKTOOL,
                 "d",
                 "-f",
                 "-r",
                 "-o",
-                str(decompiled_directory),
-                str(source_path),
+                decompiled_directory,
+                source_path,
             ],
             check=True,
             capture_output=True,
@@ -202,7 +214,7 @@ def unreachable_benign_gadget_injection(
         gadget_path.parent.mkdir(parents=True, exist_ok=True)
         gadget_path.write_text(_BENIGN_GADGET_SMALI_CONTENT, encoding="utf-8")
         subprocess.run(
-            ["apktool", "b", "-f", "-o", str(rebuilt_path), str(decompiled_directory)],
+            [ToolchainComponent.APKTOOL, "b", "-f", "-o", rebuilt_path, decompiled_directory],
             check=True,
             capture_output=True,
             env=java_subprocess_environment(),
@@ -212,23 +224,27 @@ def unreachable_benign_gadget_injection(
             f"apktool gadget injection failed: {error.stderr.decode(errors='replace')}"
         ) from error
     rebuilt_bytes = ApkFileBytes(rebuilt_path.read_bytes())
-    return sign_and_align_apk(rebuilt_bytes, signing_identity, working_directory / "signing")  # TODO: should be enums not hardcoded strings
+    return sign_and_align_apk(
+        rebuilt_bytes, signing_identity, working_directory / _SIGNING_OUTPUT_DIRECTORY
+    )
 
 
 def apply_apk_operator_family(
-    family_name: FamilyName,
-    parameter: ParameterName,
+    family_name: ApkOperatorFamilyName,
+    parameter: NormalizedParameterString,
     apk_bytes: ApkFileBytes,
     signing_identity: ApkSigningIdentity,
 ) -> ApkFileBytes:
     with tempfile.TemporaryDirectory(prefix="fedact-apk-operator-") as scratch_directory:
         working_directory = Path(scratch_directory)
-        if family_name == "unreachable-benign-gadget-injection":
-            return unreachable_benign_gadget_injection(
-                apk_bytes, signing_identity, working_directory
-            )
-        if family_name == "permission-neutral-resource-injection":
-            payload_size = PayloadBytes(int(parameter.split("=", 1)[1]))
-            mutated = permission_neutral_resource_injection(apk_bytes, payload_size)
-            return sign_and_align_apk(mutated, signing_identity, working_directory / "signing")  # TODO: should be enums not hardcoded strings
-    raise ApkMutationError(f"unsupported APK operator family: {family_name!r}")
+        match family_name:
+            case ApkOperatorFamilyName.UNREACHABLE_BENIGN_GADGET_INJECTION:
+                return unreachable_benign_gadget_injection(
+                    apk_bytes, signing_identity, working_directory
+                )
+            case ApkOperatorFamilyName.PERMISSION_NEUTRAL_RESOURCE_INJECTION:
+                payload_size = PayloadBytes(int(parameter.split("=", 1)[1]))
+                mutated = permission_neutral_resource_injection(apk_bytes, payload_size)
+                return sign_and_align_apk(
+                    mutated, signing_identity, working_directory / _SIGNING_OUTPUT_DIRECTORY
+                )

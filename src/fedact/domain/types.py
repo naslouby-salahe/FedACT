@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import subprocess
 from enum import StrEnum
 from pathlib import Path
 from typing import Annotated, NewType
@@ -97,6 +98,7 @@ class WorkflowArtifactName(StrEnum):
 
 
 class CliCommandName(StrEnum):
+    ACQUIRE = "acquire"
     DOCTOR = "doctor"
     PREPROCESS = "preprocess"
     PLAN = "plan"
@@ -111,6 +113,12 @@ class ToolchainComponent(StrEnum):
     APKSIGNER = "apksigner"
     AAPT2 = "aapt2"
     CLAMSCAN = "clamscan"
+    KEYTOOL = "keytool"
+    ZIPALIGN = "zipalign"
+    UPX = "upx"
+    ADB = "adb"
+    AVDMANAGER = "avdmanager"
+    EMULATOR = "emulator"
 
 
 class SupplementarySignatureFileName(StrEnum):
@@ -288,6 +296,36 @@ class AbstentionReason(StrEnum):
     ABSTAIN_SINGLE_CLIENT_CERTIFICATE_DOMINANCE = "ABSTAIN_SINGLE_CLIENT_CERTIFICATE_DOMINANCE"
 
 
+class RejectionStage(StrEnum):
+    MALICIOUS_SUPPORT = "malicious_support"
+    ENCODER = "encoder"
+    POINT_ESTIMATE = "point_estimate"
+    TRANSITION_SUPPORT = "transition_support"
+    HISTORICAL_DIAMETER_POOL = "historical_diameter_pool"
+    CLIENT_CONSTRAINT_FIT = "client_constraint_fit"
+
+
+class PeOperatorFamilyName(StrEnum):
+    APPEND_BENIGN_EOF_BYTES = "append-benign-eof-bytes"
+    FILL_EXISTING_SECTION_SLACK = "fill-existing-section-slack"
+    ADD_UNUSED_IMPORT = "add-unused-import"
+    RENAME_SECTION = "rename-section"
+    ADD_READ_ONLY_SECTION = "add-read-only-section"
+    ENTRY_POINT_TRAMPOLINE = "entry-point-trampoline"
+    REMOVE_AUTHENTICODE_DIRECTORY = "remove-authenticode-directory"
+    ZERO_PE_CHECKSUM = "zero-pe-checksum"
+    REMOVE_DEBUG_DIRECTORY = "remove-debug-directory"
+    UPX_PACK_UNPACK = "upx-pack-unpack"
+
+
+class ApkOperatorFamilyName(StrEnum):
+    UNREACHABLE_BENIGN_GADGET_INJECTION = "unreachable-benign-gadget-injection"
+    PERMISSION_NEUTRAL_RESOURCE_INJECTION = "permission-neutral-resource-injection"
+
+
+OperatorFamilyName = PeOperatorFamilyName | ApkOperatorFamilyName
+
+
 NonNegativeInt = Annotated[
     int,
     Field(ge=0, strict=True),
@@ -435,7 +473,7 @@ PValue = UnitInterval
 RankBiserialEffectSize = Annotated[float, Field(ge=-1.0, le=1.0)]
 CutoffDifferenceValue = FiniteFloat
 TestStatisticValue = FiniteFloat
-FeatureValue = FiniteFloat
+FeatureValue = NewType("FeatureValue", float)
 DisplacementComponent = FiniteFloat
 ObservedValue = NonEmptyString
 EmbeddingComponent = FiniteFloat
@@ -540,56 +578,85 @@ MechanismValidFlag = StrictBoolean
 JsonEncodableValue = JsonValue
 FilePath = Path
 RawPayloadBytes = StrictBytes
+SubprocessEnvironment = NewType("SubprocessEnvironment", dict[str, str])
+ApkFileBytes = NewType("ApkFileBytes", bytes)
+PeFileBytes = NewType("PeFileBytes", bytes)
+PayloadBytes = NewType("PayloadBytes", int)
+FileSuffix = NewType("FileSuffix", str)
+AndroZooApiKey = NewType("AndroZooApiKey", str)
+ByteCount = NewType("ByteCount", int)
+ByteBudget = NewType("ByteBudget", int)
+NormalizedParameterString = NewType("NormalizedParameterString", str)
+EmulatorProcess = NewType("EmulatorProcess", subprocess.Popen[bytes])
+ArtifactIdentity = NewType("ArtifactIdentity", str)
+CalendarMonth = NewType("CalendarMonth", int)
+CalendarMonthCell = NewType("CalendarMonthCell", str)
+CompositionLength = NewType("CompositionLength", int)
+CompositionLengthLimit = NewType("CompositionLengthLimit", int)
+CoverageRatio = NewType("CoverageRatio", float)
+DeterministicJsonPayload = NewType("DeterministicJsonPayload", str)
+EmberJsonObject = NewType("EmberJsonObject", dict[str, JsonEncodableValue])
+EmberJsonObjectList = NewType("EmberJsonObjectList", list[EmberJsonObject])
+EmberJsonStringList = NewType("EmberJsonStringList", list[str])
+EmberJsonIntegerList = NewType("EmberJsonIntegerList", list[int])
+FeatureColumnIndex = NewType("FeatureColumnIndex", int)
+GridCellIdentity = NewType("GridCellIdentity", str)
+IndexInPopulation = NewType("IndexInPopulation", int)
+LatexTableCell = NewType("LatexTableCell", str)
+MaximumMatchesPerSample = NewType("MaximumMatchesPerSample", int)
+NoiseSeedIdentity = NewType("NoiseSeedIdentity", str)
+OutputHash = NewType("OutputHash", str)
+PeMachineCode = NewType("PeMachineCode", int)
+StructuralSeedIdentity = NewType("StructuralSeedIdentity", str)
+VerificationMetric = NewType("VerificationMetric", float)
+WeekIdentifier = NewType("WeekIdentifier", str)
 FeatureColumnPrefix = NonEmptyString
-FeatureColumnName = NewType("FeatureColumnName", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-TabularColumnName = NewType("TabularColumnName", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-ApiReference = NewType("ApiReference", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-AndroidAvdName = NewType("AndroidAvdName", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-AndroidDeviceSerial = NewType("AndroidDeviceSerial", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-AndroidPackageName = NewType("AndroidPackageName", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-AndroidSystemImage = NewType("AndroidSystemImage", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-AndroidCommandArgument = NewType("AndroidCommandArgument", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-ApkSigningKeyAlias = NewType("ApkSigningKeyAlias", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-ApkSigningPassword = NewType("ApkSigningPassword", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-ApkArchiveEntryName = NewType("ApkArchiveEntryName", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-ObservableEvent = NewType("ObservableEvent", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+FeatureColumnName = NewType("FeatureColumnName", str)
+FeatureIndex = NewType("FeatureIndex", int)
+TabularColumnName = NewType("TabularColumnName", str)
+ApiReference = NewType("ApiReference", str)
+AndroidAvdName = NewType("AndroidAvdName", str)
+AndroidDeviceSerial = NewType("AndroidDeviceSerial", str)
+AndroidPackageName = NewType("AndroidPackageName", str)
+AndroidSystemImage = NewType("AndroidSystemImage", str)
+ApkSigningKeyAlias = NewType("ApkSigningKeyAlias", str)
+ApkSigningPassword = NewType("ApkSigningPassword", str)
+ApkArchiveEntryName = NewType("ApkArchiveEntryName", str)
+ObservableEvent = NewType("ObservableEvent", str)
 MonkeyEventCount = PositiveInt
 EmulatorPort = PositiveInt
 EndpointOrdinal = NonNegativeInt
-RejectionStage = NewType("RejectionStage", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-ToolVersion = NewType("ToolVersion", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-ToolchainIdentity = NewType("ToolchainIdentity", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-PValueSeries = NewType("PValueSeries", list[float])  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-PValueCriterion = NewType("PValueCriterion", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-ConfigurationHash = NewType("ConfigurationHash", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-ConfigurationFieldName = NewType("ConfigurationFieldName", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-ConfigurationKey = NewType("ConfigurationKey", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-ConfigurationPayloadText = NewType("ConfigurationPayloadText", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-ConfigurationRawMapping = NewType("ConfigurationRawMapping", dict[str, JsonEncodableValue])  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-SignatureAcquisitionTimestamp = NewType("SignatureAcquisitionTimestamp", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-SignatureSourceUrl = NewType("SignatureSourceUrl", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-LamdaFeatureName = NewType("LamdaFeatureName", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-ManifestAttributeName = NewType("ManifestAttributeName", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-ManifestAttributeValue = NewType("ManifestAttributeValue", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-ManifestXmlTag = NewType("ManifestXmlTag", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-ObservableFeatureToken = NewType("ObservableFeatureToken", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-UrlDomain = NewType("UrlDomain", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-
-
-DependencyFingerprint = NewType("DependencyFingerprint", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-ContentChecksum = NewType("ContentChecksum", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-RepositoryCommit = NewType("RepositoryCommit", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-DatasetIdentity = NewType("DatasetIdentity", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-PreprocessingIdentity = NewType("PreprocessingIdentity", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-SplitCutoffIdentity = NewType("SplitCutoffIdentity", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-CohortDefinition = NewType("CohortDefinition", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-SampleIdentifier = NewType("SampleIdentifier", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-OperatorLibraryIdentity = NewType("OperatorLibraryIdentity", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-SolverOutcomeRecord = NewType("SolverOutcomeRecord", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-RunResultSummary = NewType("RunResultSummary", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-ExperimentName = NewType("ExperimentName", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-LogNamespace = NewType("LogNamespace", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-ClientIdentifier = NewType("ClientIdentifier", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+ToolVersion = NewType("ToolVersion", str)
+ToolchainIdentity = NewType("ToolchainIdentity", str)
+PValueSeries = NewType("PValueSeries", list[float])
+PValueCriterion = NewType("PValueCriterion", str)
+ConfigurationHash = NewType("ConfigurationHash", str)
+ConfigurationFieldName = NewType("ConfigurationFieldName", str)
+ConfigurationKey = NewType("ConfigurationKey", str)
+ConfigurationPayloadText = NewType("ConfigurationPayloadText", str)
+ConfigurationRawMapping = NewType("ConfigurationRawMapping", dict[str, JsonEncodableValue])
+SignatureAcquisitionTimestamp = NewType("SignatureAcquisitionTimestamp", str)
+SignatureSourceUrl = NewType("SignatureSourceUrl", str)
+LamdaFeatureName = NewType("LamdaFeatureName", str)
+ManifestAttributeName = NewType("ManifestAttributeName", str)
+ManifestAttributeValue = NewType("ManifestAttributeValue", str)
+ManifestXmlTag = NewType("ManifestXmlTag", str)
+ObservableFeatureToken = NewType("ObservableFeatureToken", str)
+UrlDomain = NewType("UrlDomain", str)
+DependencyFingerprint = NewType("DependencyFingerprint", str)
+ContentChecksum = NewType("ContentChecksum", str)
+RepositoryCommit = NewType("RepositoryCommit", str)
+DatasetIdentity = NewType("DatasetIdentity", str)
+PreprocessingIdentity = NewType("PreprocessingIdentity", str)
+SplitCutoffIdentity = NewType("SplitCutoffIdentity", str)
+CohortDefinition = NewType("CohortDefinition", str)
+SampleIdentifier = NewType("SampleIdentifier", str)
+OperatorLibraryIdentity = NewType("OperatorLibraryIdentity", str)
+SolverOutcomeRecord = NewType("SolverOutcomeRecord", str)
+RunResultSummary = NewType("RunResultSummary", str)
+ExperimentName = NewType("ExperimentName", str)
+LogNamespace = NewType("LogNamespace", str)
+ClientIdentifier = NewType("ClientIdentifier", str)
 SeedValue = NonNegativeInt
 ExperimentDirectoryName = NonEmptyString
 
@@ -600,13 +667,17 @@ __all__ = [
     "ActionCount",
     "ActionScore",
     "ActionDecision",
+    "AndroZooApiKey",
+    "ApkFileBytes",
     "ApiReference",
     "AndroidManifestTag",
     "ActivationFlag",
     "AmbiguityFlag",
     "AmbiguityStatusFlag",
     "AngleDegrees",
+    "ApkOperatorFamilyName",
     "ArtifactBoundary",
+    "ArtifactIdentity",
     "ArtifactName",
     "ArtifactVerificationStatus",
     "BatchSize",
@@ -614,6 +685,10 @@ __all__ = [
     "BinaryLabel",
     "BoundValidityFlag",
     "BudgetAmount",
+    "ByteBudget",
+    "ByteCount",
+    "CalendarMonth",
+    "CalendarMonthCell",
     "CalendarMonthString",
     "CertificationFlag",
     "CertificationStatus",
@@ -627,6 +702,8 @@ __all__ = [
     "CohortDefinition",
     "CohortIdentifier",
     "CommitHash",
+    "CompositionLength",
+    "CompositionLengthLimit",
     "ConditionNumberLimit",
     "ConfidenceLevel",
     "ConfigurationHash",
@@ -644,6 +721,7 @@ __all__ = [
     "CorrelationCoefficient",
     "CorruptedClientAttack",
     "CoverageLevel",
+    "CoverageRatio",
     "CutoffCount",
     "CutoffDifferenceValue",
     "DataAvailabilityFlag",
@@ -656,6 +734,7 @@ __all__ = [
     "DependencyFingerprint",
     "DetailMessage",
     "DetectionCount",
+    "DeterministicJsonPayload",
     "DiagnosisMessage",
     "DimensionValue",
     "DisplacementComponent",
@@ -667,6 +746,11 @@ __all__ = [
     "EigengapRatio",
     "EligibilityFlag",
     "EligibilityStatus",
+    "EmberJsonIntegerList",
+    "EmberJsonObject",
+    "EmberJsonObjectList",
+    "EmberJsonStringList",
+    "EmulatorProcess",
     "EmbeddingComponent",
     "EpochCount",
     "EpochSeconds",
@@ -682,22 +766,27 @@ __all__ = [
     "ExperimentName",
     "FamilyName",
     "FeasibilityCondition",
+    "FeatureColumnIndex",
     "FeatureValue",
     "FeatureColumnName",
+    "FeatureIndex",
     "FeatureColumnPrefix",
     "FigureIdentifier",
+    "FileSuffix",
     "FederationClientCount",
     "FederationGeometry",
     "FieldName",
     "FilePath",
     "Fraction",
     "GateComplianceFlag",
+    "GridCellIdentity",
     "GridCellLabel",
     "HashDigest",
     "HorizonAvailability",
     "HorizonMonths",
     "HorizonStep",
     "IdentifiabilityFlag",
+    "IndexInPopulation",
     "IntegrityCheckName",
     "IntersectionDimension",
     "IntervalBound",
@@ -706,6 +795,7 @@ __all__ = [
     "KurtosisExcess",
     "LamdaFeatureCategory",
     "LamdaFeatureName",
+    "LatexTableCell",
     "LearningRate",
     "LogNamespace",
     "LogDeterminantGain",
@@ -716,6 +806,7 @@ __all__ = [
     "ManifestFieldName",
     "MatchedTotalSamplesFlag",
     "MaximumIterations",
+    "MaximumMatchesPerSample",
     "MechanismValidFlag",
     "MetricRate",
     "ManifestAttributeName",
@@ -726,6 +817,7 @@ __all__ = [
     "ModuleQualifiedName",
     "MonotonicityFlag",
     "MonthIndex",
+    "NoiseSeedIdentity",
     "NonEmptyString",
     "NonIdentifiabilityFlag",
     "NormValue",
@@ -733,10 +825,13 @@ __all__ = [
     "ObservabilityFlag",
     "ObservableFeatureToken",
     "OperationalizationText",
+    "NormalizedParameterString",
+    "OperatorFamilyName",
     "OperatorIdentifier",
     "OperatorLibraryIdentity",
     "OptionalFlag",
     "OrderIndex",
+    "OutputHash",
     "OverlapFlag",
     "OverwriteRequested",
     "PValue",
@@ -745,7 +840,11 @@ __all__ = [
     "ParameterName",
     "ParameterValue",
     "PassingFlag",
+    "PayloadBytes",
+    "PeMachineCode",
+    "PeOperatorFamilyName",
     "PercentagePoints",
+    "PeFileBytes",
     "PercentileValue",
     "PositiveInt",
     "PreprocessingIdentity",
@@ -761,6 +860,7 @@ __all__ = [
     "RankSelectionMethod",
     "RawPayloadBytes",
     "ReferenceCenterCount",
+    "RejectionStage",
     "RelativePosixPath",
     "ReplicateCount",
     "ReplicateIndex",
@@ -796,6 +896,8 @@ __all__ = [
     "StandardizationFloor",
     "StrictBoolean",
     "StrictBytes",
+    "StructuralSeedIdentity",
+    "SubprocessEnvironment",
     "SufficiencyFlag",
     "SupportThreshold",
     "SupplementarySignatureArtifactName",
@@ -815,7 +917,9 @@ __all__ = [
     "ValidationFlag",
     "VarianceThreshold",
     "VerificationFlag",
+    "VerificationMetric",
     "VersionText",
+    "WeekIdentifier",
     "WindowMonth",
     "WindowSpanMonths",
     "WorkflowArtifactName",

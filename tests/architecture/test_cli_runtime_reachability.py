@@ -3,10 +3,28 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-from fedact.domain.types import ExecutableWorkflowName
+from fedact.domain.types import CliCommandName, ExecutableWorkflowName
 from tests.architecture.architecture_rules import parse_source
 
-REQUIRED_COMMANDS = frozenset({"doctor", "preprocess", "plan", "smoke", "run", "status", "report"})
+REQUIRED_COMMANDS = frozenset(
+    {"acquire", "doctor", "preprocess", "plan", "smoke", "run", "status", "report"}
+)
+
+
+def registered_command_name(decorator: ast.Call) -> str | None:
+    if not decorator.args:
+        return None
+    argument = decorator.args[0]
+    if isinstance(argument, ast.Constant) and isinstance(argument.value, str):
+        return argument.value
+    if (
+        isinstance(argument, ast.Attribute)
+        and isinstance(argument.value, ast.Name)
+        and argument.value.id == CliCommandName.__name__
+    ):
+        member = CliCommandName.__members__.get(argument.attr)
+        return member.value if member is not None else None
+    return None
 
 
 def cli_reachability_violations(repository_root: Path) -> list[str]:
@@ -16,16 +34,14 @@ def cli_reachability_violations(repository_root: Path) -> list[str]:
         return ["cli.py and workflow.py must exist"]
     tree = parse_source(cli_path)
     commands = {
-        decorator.args[0].value
+        registered
         for node in tree.body
         if isinstance(node, ast.FunctionDef)
         for decorator in node.decorator_list
         if isinstance(decorator, ast.Call)
         and isinstance(decorator.func, ast.Attribute)
         and decorator.func.attr == "command"
-        and decorator.args
-        and isinstance(decorator.args[0], ast.Constant)
-        and isinstance(decorator.args[0].value, str)
+        if (registered := registered_command_name(decorator)) is not None
     }
     violations = [f"cli.py missing command {name}" for name in sorted(REQUIRED_COMMANDS - commands)]
     violations.extend(

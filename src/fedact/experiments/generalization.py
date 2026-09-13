@@ -9,14 +9,17 @@ import numpy as np
 import torch
 
 from fedact._vendor.transcendent.scores import compute_p_values_cred_and_conf
-from fedact._vendor.transcendent.thresholding import ClassThresholds, apply_threshold, get_performance_with_rejection
+from fedact._vendor.transcendent.thresholding import (
+    ClassThresholds,
+    apply_threshold,
+    get_performance_with_rejection,
+)
 from fedact.analysis.comparisons import CutoffAggregate
 from fedact.analysis.metrics import EvaluationRecord, compute_evaluation_metrics
 from fedact.certification.client_procedure import select_stable_nuisance_rank
 from fedact.certification.dynamics import fit_scalar_model
 from fedact.config.models import StrictModel
 from fedact.data.splits import (
-    CalendarMonth,
     calendar_month,
     confirmatory_outcome_for_cutoffs,
     earliest_complete_transition_endpoint,
@@ -25,6 +28,7 @@ from fedact.data.splits import (
 )
 from fedact.domain.types import (
     BinaryLabel,
+    CalendarMonth,
     CertificationStatus,
     CorrelationCoefficient,
     CoverageLevel,
@@ -72,6 +76,9 @@ from fedact.learning.representation import (
 from fedact.learning.scoring import score_samples
 
 LOGGER = logging.getLogger(__name__)
+
+_NCM_DECISION_SCALE = 2.0
+_NCM_DECISION_OFFSET = 1.0
 
 
 class _CertificateDecisionRecord(StrictModel):
@@ -225,10 +232,10 @@ def run_cross_corpus_generalization(application: ExperimentRuntime) -> CrossCorp
     experiments_root = (
         application.repository_root
         / application.configuration.values.workspace.directories.experiments
-        / "prospective-evaluation"  # TODO: should be enums not hardcoded strings
+        / ExecutableWorkflowName.PROSPECTIVE_EVALUATION
     )
-    lamda_path = experiments_root / "identification-diagnostics.json"  # TODO: should be enums not hardcoded strings
-    ember2024_path = experiments_root / "ember2024-identification-diagnostics.json"  # TODO: should be enums not hardcoded strings
+    lamda_path = experiments_root / WorkflowArtifactName.IDENTIFICATION_DIAGNOSTICS
+    ember2024_path = experiments_root / "ember2024-identification-diagnostics.json"
     if not lamda_path.is_file() or not ember2024_path.is_file():
         LOGGER.warning(
             "cross-corpus generalization requires both corpora's own independent "
@@ -561,7 +568,7 @@ def _raw_future_transition_forecast_challenges(
 
 
 def _reactive_drift_adaptation_ncm(probability: ProbabilityValue, label: bool) -> float:
-    decision = 2.0 * probability - 1.0
+    decision = _NCM_DECISION_SCALE * probability - _NCM_DECISION_OFFSET
     return -decision if label else decision
 
 
@@ -569,12 +576,10 @@ def _reactive_drift_adaptation_quartile_candidates(
     p_values: dict[PValueCriterion, PValueSeries],
     predicted_labels: np.ndarray,
     groundtruth_labels: np.ndarray,
-) -> dict[str, dict[str, dict[str, float]]]:  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    candidates: dict[
-        str, dict[str, dict[str, float]]  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    ] = {}  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+) -> dict[str, dict[str, ClassThresholds]]:
+    candidates: dict[str, dict[str, ClassThresholds]] = {}
     correct = predicted_labels == groundtruth_labels
-    for key in ("cred", "conf"):
+    for key in (PValueCriterion("cred"), PValueCriterion("conf")):
         scores = np.asarray(p_values[key], dtype=np.float64)
         scores_malicious = scores[(predicted_labels == 1) & correct]
         scores_benign = scores[(predicted_labels == 0) & correct]
@@ -599,22 +604,22 @@ def _reactive_drift_adaptation_quartile_candidates(
 
 
 def _select_reactive_drift_adaptation_threshold(
-    candidates: dict[
-        str, dict[str, dict[str, float]]
-    ],  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
+    candidates: dict[str, dict[str, ClassThresholds]],
     validation_p_values: dict[PValueCriterion, PValueSeries],
     validation_groundtruth: np.ndarray,
     target_coverage: CoverageLevel,
     max_clean_degradation_points: DegradationValue,
-) -> dict[str, dict[str, float]] | None:  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    best_threshold: dict[str, dict[str, float]] | None = (
-        None  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-    )
+) -> dict[str, ClassThresholds] | None:
+    best_threshold: dict[str, ClassThresholds] | None = None
     best_certification_rate = -1.0
     best_clean_degradation = float("inf")
     for quartile_key in sorted(candidates):
         threshold = candidates[quartile_key]
-        keep_mask = apply_threshold(threshold, validation_p_values, validation_groundtruth)
+        keep_mask = apply_threshold(
+            threshold,
+            {str(criterion): list(series) for criterion, series in validation_p_values.items()},
+            validation_groundtruth,
+        )
         performance = get_performance_with_rejection(
             validation_groundtruth, validation_groundtruth, keep_mask, full=False
         )
@@ -671,12 +676,16 @@ def _reactive_drift_adaptation_false_negative_rate(
         for score, label in zip(validation_scored, validation_groundtruth, strict=True)
     ]
     validation_groundtruth_list = [int(value) for value in validation_groundtruth]
-    validation_p_values = compute_p_values_cred_and_conf(
-        validation_ncms,
-        validation_groundtruth_list,
-        validation_ncms,
-        validation_groundtruth_list,
-    )
+    validation_p_values = {
+        PValueCriterion(criterion): PValueSeries(series)
+        for criterion, series in compute_p_values_cred_and_conf(
+            validation_ncms,
+            validation_groundtruth_list,
+            validation_ncms,
+            validation_groundtruth_list,
+        ).items()
+    }
+
     candidates = _reactive_drift_adaptation_quartile_candidates(
         validation_p_values, validation_groundtruth, validation_groundtruth
     )

@@ -226,3 +226,5 @@ results/
 docs/temp/
 docs/.graphify-audit/
 docs/.architecture-refactor/
+
+graphify-out/

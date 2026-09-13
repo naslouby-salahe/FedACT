@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
-from typing import NewType, cast
+from typing import cast
 
 import lief
 import numpy as np
@@ -19,7 +19,6 @@ from sklearn.feature_extraction import FeatureHasher
 
 from fedact.data.records import ClientSemanticsAudit
 from fedact.data.splits import (
-    CalendarMonth,
     ControlTransitionReplicate,
     TransitionDisplacement,
     transition_windows,
@@ -28,6 +27,8 @@ from fedact.data.splits import (
 )
 from fedact.domain.types import (
     BinaryLabel,
+    CalendarMonth,
+    CalendarMonthCell,
     CalendarMonthString,
     ClientSemanticsClass,
     ConfirmatoryFormat,
@@ -35,17 +36,27 @@ from fedact.domain.types import (
     DegeneracyFlag,
     DetailMessage,
     DisplacementComponent,
+    EmberJsonIntegerList,
+    EmberJsonObject,
+    EmberJsonObjectList,
+    EmberJsonStringList,
     EpochSeconds,
     FamilyName,
     JsonEncodableValue,
     NormValue,
+    PayloadBytes,
+    PeFileBytes,
     SampleCount,
     SampleIdentifier,
     SupportThreshold,
+    ToolchainComponent,
     ValidationFlag,
+    WeekIdentifier,
     WindowSpanMonths,
     ZeroDisplacementFloor,
 )
+
+_EMBER_JSONL_FILE_GLOB = "*.jsonl"
 
 _STRING_PRINTABLE_BIN_COUNT = 96
 _SECTION_HASH_BUCKETS = 50
@@ -277,11 +288,6 @@ _DATA_DIRECTORY_NAMES = (
 
 _FEATURE_HASHER_TRANSFORM_ATTRIBUTE = "transform"
 _SPARSE_MATRIX_TO_ARRAY_ATTRIBUTE = "toarray"
-
-EmberJsonObject = NewType("EmberJsonObject", dict[str, JsonEncodableValue])  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-EmberJsonObjectList = NewType("EmberJsonObjectList", list[EmberJsonObject])
-EmberJsonStringList = NewType("EmberJsonStringList", list[str])  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-EmberJsonIntegerList = NewType("EmberJsonIntegerList", list[int])
 
 
 def _scalar(value: JsonEncodableValue) -> float:
@@ -714,7 +720,7 @@ def _parse_record(payload: EmberJsonObject) -> tuple[EmberRawRecord, np.ndarray]
 
 def load_ember2024_records(data_directory: Path) -> LoadedEmberDataset:
     feature_dimension = ember2024_count_feature_mask().size
-    jsonl_files = sorted(data_directory.glob("*.jsonl"))  # TODO: should be enums not hardcoded strings
+    jsonl_files = sorted(data_directory.glob(_EMBER_JSONL_FILE_GLOB))
     if not jsonl_files:
         return LoadedEmberDataset(records=(), features=np.zeros((0, feature_dimension)))
     records: list[EmberRawRecord] = []
@@ -870,10 +876,6 @@ def run_empty_ember_transform_audit() -> None:
         raise EmberValidationError("EMBER standardization produced an impossible shape")
 
 
-WeekIdentifier = NewType("WeekIdentifier", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-CalendarMonthCell = NewType("CalendarMonthCell", str)  # TODO: do not use primitives. Fix by introducing a proper error type or message class and identify and fix why architecture tests didn't catch this
-
-
 @dataclass(frozen=True)
 class EmberControlRecord:
     sample_hash: SampleIdentifier
@@ -967,14 +969,9 @@ def ember_client_semantics(
     )
 
 
-PeFileBytes = NewType("PeFileBytes", bytes)
-
-
 class PeMutationError(RuntimeError):
     pass
 
-
-PayloadBytes = NewType("PayloadBytes", int)
 
 PE_PAYLOAD_SIZES: tuple[PayloadBytes, ...] = (
     PayloadBytes(64),
@@ -987,8 +984,6 @@ APK_PAYLOAD_SIZES: tuple[PayloadBytes, ...] = (
     PayloadBytes(1024),
     PayloadBytes(4096),
 )
-
-CompositionLength = NewType("CompositionLength", int)
 
 
 class PeImportName(StrEnum):
@@ -1144,7 +1139,7 @@ def remove_debug_directory(pe_bytes: PeFileBytes) -> PeFileBytes:
 
 
 def apply_upx_action(pe_bytes: PeFileBytes, action: UpxAction) -> PeFileBytes:
-    upx_path = shutil.which("upx")
+    upx_path = shutil.which(ToolchainComponent.UPX)
     if upx_path is None:
         raise PeMutationError("upx toolchain is not available on PATH")
     with tempfile.NamedTemporaryFile(suffix=".exe", delete=False) as temp_file:

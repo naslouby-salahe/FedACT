@@ -8,7 +8,6 @@ import numpy as np
 import torch
 
 from fedact.certification.certificate import ClientConstraint, L2Ball
-from fedact.certification.dynamics import AbstentionReason
 from fedact.certification.selection import (
     ClientInformationMatrix,
     MaliciousSupportCount,
@@ -24,6 +23,7 @@ from fedact.config.models import StrictModel
 from fedact.data.splits import CalendarMonth
 from fedact.domain.types import (
     AblationIdentifier,
+    AbstentionReason,
     BinaryLabel,
     ClientIdentifier,
     ClientIndex,

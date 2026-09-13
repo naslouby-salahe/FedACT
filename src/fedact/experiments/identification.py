@@ -20,7 +20,6 @@ from fedact.certification.client_procedure import (
     select_stable_nuisance_rank,
 )
 from fedact.certification.dynamics import (
-    AbstentionReason,
     effective_support,
     fit_scalar_model,
     process_error_radius,
@@ -43,28 +42,33 @@ from fedact.data.lamda import (
     year_month_to_calendar_month,
 )
 from fedact.data.splits import (
-    CalendarMonth,
     ControlTransitionReplicate,
     calendar_month,
     earliest_complete_transition_endpoint,
     transition_windows,
 )
 from fedact.domain.types import (
+    AbstentionReason,
     BootstrapAlpha,
+    CalendarMonth,
     EigengapRatio,
     EvaluationCount,
-    FeatureColumnPrefix,
+    ExecutableWorkflowName,
     FamilyName,
+    FeatureColumnPrefix,
     Fraction,
     NormValue,
     RankDimension,
     ScientificOutcome,
     SensitivityMultiplier,
+    SufficiencyFlag,
+    SupportThreshold,
     ThresholdValue,
     UncertaintyRadius,
     ValidationFlag,
     VarianceThreshold,
     WindowSpanMonths,
+    WorkflowArtifactName,
 )
 from fedact.experiments.registry import ExperimentRuntime
 from fedact.learning.representation import (
@@ -656,8 +660,8 @@ def cohort_has_sufficient_malicious_support(
     rule: LabelDerivationRule,
     endpoint: CalendarMonth,
     transition_interval_months: WindowSpanMonths,
-    minimum_support_per_class: int,
-) -> bool:
+    minimum_support_per_class: SupportThreshold,
+) -> SufficiencyFlag:
     windows = transition_windows(endpoint, transition_interval_months)
     before_count = 0
     after_count = 0
@@ -688,7 +692,10 @@ def dominant_malicious_family_cohort(
 def run_lamda_identification_diagnostics(
     application: ExperimentRuntime,
 ) -> IdentificationDiagnosticsReport:
-    raw_root = application.repository_root / application.configuration.values.workspace.lamda_release_directory
+    raw_root = (
+        application.repository_root
+        / application.configuration.values.workspace.lamda_release_directory
+    )
     if not raw_root.is_dir():
         LOGGER.warning("lamda identification diagnostics has no LAMDA release at %s", raw_root)
         return IdentificationDiagnosticsReport(None, 0, 0, ScientificOutcome.INSUFFICIENT_EVIDENCE)
@@ -848,8 +855,8 @@ def run_lamda_identification_diagnostics(
     destination = (
         application.repository_root
         / config.workspace.directories.experiments
-        / "prospective-evaluation"  # TODO: should be enums not hardcoded strings
-        / "identification-diagnostics.json"  # TODO: should be enums not hardcoded strings
+        / ExecutableWorkflowName.PROSPECTIVE_EVALUATION
+        / WorkflowArtifactName.IDENTIFICATION_DIAGNOSTICS
     )
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(
@@ -898,7 +905,10 @@ class WeakEigengapStressReport:
 
 
 def run_lamda_weak_eigengap_stress(application: ExperimentRuntime) -> WeakEigengapStressReport:
-    raw_root = application.repository_root / application.configuration.values.workspace.lamda_release_directory
+    raw_root = (
+        application.repository_root
+        / application.configuration.values.workspace.lamda_release_directory
+    )
     if not raw_root.is_dir():
         LOGGER.warning("weak-eigengap stress has no LAMDA release at %s", raw_root)
         return WeakEigengapStressReport(None, (), ScientificOutcome.INSUFFICIENT_EVIDENCE)
@@ -1101,8 +1111,8 @@ def run_lamda_weak_eigengap_stress(application: ExperimentRuntime) -> WeakEigeng
     destination = (
         application.repository_root
         / config.workspace.directories.experiments
-        / "failure-boundaries"  # TODO: should be enums not hardcoded strings
-        / "weak-eigengap-stress.json"  # TODO: should be enums not hardcoded strings
+        / ExecutableWorkflowName.FAILURE_BOUNDARIES
+        / "weak-eigengap-stress.json"
     )
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(
@@ -1136,7 +1146,10 @@ class _BaselineIdentificationContext:
 def _locate_baseline_identification_context(
     application: ExperimentRuntime,
 ) -> _BaselineIdentificationContext | None:
-    raw_root = application.repository_root / application.configuration.values.workspace.lamda_release_directory
+    raw_root = (
+        application.repository_root
+        / application.configuration.values.workspace.lamda_release_directory
+    )
     if not raw_root.is_dir():
         return None
     config = application.configuration.values
@@ -1310,8 +1323,8 @@ def run_lamda_sparse_control_stress(application: ExperimentRuntime) -> SparseCon
     destination = (
         application.repository_root
         / config.workspace.directories.experiments
-        / "failure-boundaries"  # TODO: should be enums not hardcoded strings
-        / "sparse-control-stress.json"  # TODO: should be enums not hardcoded strings
+        / ExecutableWorkflowName.FAILURE_BOUNDARIES
+        / "sparse-control-stress.json"
     )
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(
@@ -1420,8 +1433,8 @@ def run_lamda_allowance_sensitivity_stress(
     destination = (
         application.repository_root
         / config.workspace.directories.experiments
-        / "failure-boundaries"  # TODO: should be enums not hardcoded strings
-        / "allowance-sensitivity-stress.json"  # TODO: should be enums not hardcoded strings
+        / ExecutableWorkflowName.FAILURE_BOUNDARIES
+        / "allowance-sensitivity-stress.json"
     )
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(
@@ -1462,7 +1475,10 @@ class TemporalDynamicsAblationReport:
 def run_lamda_temporal_dynamics_ablation(
     application: ExperimentRuntime,
 ) -> TemporalDynamicsAblationReport:
-    raw_root = application.repository_root / application.configuration.values.workspace.lamda_release_directory
+    raw_root = (
+        application.repository_root
+        / application.configuration.values.workspace.lamda_release_directory
+    )
     if not raw_root.is_dir():
         LOGGER.warning("temporal dynamics ablation has no LAMDA release at %s", raw_root)
         return TemporalDynamicsAblationReport(None, ScientificOutcome.INSUFFICIENT_EVIDENCE)
@@ -1572,8 +1588,8 @@ def run_lamda_temporal_dynamics_ablation(
     destination = (
         application.repository_root
         / config.workspace.directories.experiments
-        / "ablations"  # TODO: should be enums not hardcoded strings
-        / "temporal-dynamics.json"  # TODO: should be enums not hardcoded strings
+        / ExecutableWorkflowName.ABLATIONS
+        / WorkflowArtifactName.TEMPORAL_DYNAMICS
     )
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(
