@@ -78,7 +78,7 @@ def train_base_detector(
         representation_seed,
         detector_seed,
     )
-    val_losses: list[float] = []
+    val_losses: list[LossValue] = []
     detector_states: list[dict[str, torch.Tensor]] = []
     for _unused in range(epochs):
         detector.train()
@@ -91,7 +91,7 @@ def train_base_detector(
         detector.eval()
         with torch.no_grad():
             val_logits = detector(val_h)
-            val_loss = float(criterion(val_logits, validation_labels.float()).item())
+            val_loss = criterion(val_logits, validation_labels.float()).item()
         val_losses.append(val_loss)
         detector_states.append({k: v.cpu().clone() for k, v in detector.state_dict().items()})
     selection = select_checkpoint_epoch(tuple(val_losses), tie_tolerance, epochs)

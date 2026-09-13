@@ -65,6 +65,7 @@ from fedact.domain.types import (
     SampleSize,
     ScientificOutcome,
     SyntheticCorruptionAttack,
+    SyntheticSweepAxis,
     VerificationFlag,
     ZeroDisplacementFloor,
 )
@@ -314,13 +315,10 @@ _SYNTHETIC_TO_CORRUPTED_CLIENT_ATTACK = {
     ),
 }
 
-CONTROL_SPAN_AXIS: ParameterName = SensitivityAxis.CONTROL_SPAN_VIOLATION
-FEDERATION_AXIS: ParameterName = ExecutableWorkflowName.FEDERATION
-
 
 @dataclass(frozen=True)
 class SweepCellResult:
-    parameter_name: ParameterName
+    parameter_name: SyntheticSweepAxis
     parameter_value: ParameterValue
     coverage: MetricRate
     action_width: IntervalBound
@@ -340,7 +338,7 @@ class SyntheticSweepReport:
 
 def _synthetic_sweep_cell(
     application: ExperimentRuntime,
-    axis_name: ParameterName,
+    axis_name: SyntheticSweepAxis,
     axis_value: ParameterValue,
     cell_index: SampleCount,
     geometry: FederationGeometry | None = None,
@@ -361,29 +359,29 @@ def _synthetic_sweep_cell(
     synchronized = defaults.synchronized_nuisance_over_sigma
     private_norm = defaults.private_transition_norm_over_sigma
     action_angle = defaults.action_rotation_angle_degrees
-    if axis_name == "nuisance_dimension":
+    if axis_name == SyntheticSweepAxis.NUISANCE_DIMENSION:
         nuisance_fraction = axis_value
-    elif axis_name == "control_malicious_amplitude":
+    elif axis_name == SyntheticSweepAxis.CONTROL_MALICIOUS_AMPLITUDE:
         amplitude = axis_value
-    elif axis_name == "principal_angle":
+    elif axis_name == SyntheticSweepAxis.PRINCIPAL_ANGLE:
         principal_angle = axis_value
-    elif axis_name == "common_intersection":
+    elif axis_name == SyntheticSweepAxis.COMMON_INTERSECTION:
         intersection = cast(IntersectionDimension, axis_value)
-    elif axis_name == "control_sample_size":
+    elif axis_name == SyntheticSweepAxis.CONTROL_SAMPLE_SIZE:
         control_size = cast(SampleSize, axis_value)
-    elif axis_name == "malicious_sample_size":
+    elif axis_name == SyntheticSweepAxis.MALICIOUS_SAMPLE_SIZE:
         amplitude *= axis_value / defaults.malicious_sample_size
-    elif axis_name == CONTROL_SPAN_AXIS:
+    elif axis_name == SyntheticSweepAxis.CONTROL_SPAN_VIOLATION:
         control_span = axis_value
-    elif axis_name == "synchronized_nuisance":
+    elif axis_name == SyntheticSweepAxis.SYNCHRONIZED_NUISANCE:
         synchronized = axis_value
-    elif axis_name == "spectral_conditioning":
+    elif axis_name == SyntheticSweepAxis.SPECTRAL_CONDITIONING:
         amplitude *= axis_value / defaults.spectral_conditioning_ratio
-    elif axis_name == "action_rotation":
+    elif axis_name == SyntheticSweepAxis.ACTION_ROTATION:
         action_angle = axis_value
-    elif axis_name == FEDERATION_AXIS:
+    elif axis_name == SyntheticSweepAxis.FEDERATION:
         client_count = cast(ClientIndex, axis_value)
-    elif axis_name == "private_transition":
+    elif axis_name == SyntheticSweepAxis.PRIVATE_TRANSITION:
         private_norm = axis_value
     generator = seeded_generator(
         config.seeds.synthetic_generation[cell_index % len(config.seeds.synthetic_generation)]
@@ -481,16 +479,16 @@ def run_synthetic_geometry_sweeps(application: ExperimentRuntime) -> SyntheticSw
     config = application.configuration.values
     cells: list[SweepCellResult] = []
     sweep_axes = (
-        ("nuisance_dimension", config.synthetic.sweeps.nuisance_dimension.fractions),
-        ("control_malicious_amplitude", config.synthetic.sweeps.control_malicious_amplitude_ratio),
-        ("principal_angle", config.synthetic.sweeps.pairwise_principal_angle_degrees),
-        ("common_intersection", config.synthetic.sweeps.common_intersection_dimension),
-        ("control_sample_size", config.synthetic.sweeps.control_sample_size),
-        ("malicious_sample_size", config.synthetic.sweeps.malicious_sample_size),
-        (CONTROL_SPAN_AXIS, config.synthetic.sweeps.control_span_violation_over_sigma),
-        ("synchronized_nuisance", config.synthetic.sweeps.synchronized_nuisance_over_sigma),
-        ("spectral_conditioning", config.synthetic.sweeps.spectral_conditioning_ratio),
-        ("action_rotation", config.synthetic.sweeps.action_rotation_angle_degrees),
+        (SyntheticSweepAxis.NUISANCE_DIMENSION, config.synthetic.sweeps.nuisance_dimension.fractions),
+        (SyntheticSweepAxis.CONTROL_MALICIOUS_AMPLITUDE, config.synthetic.sweeps.control_malicious_amplitude_ratio),
+        (SyntheticSweepAxis.PRINCIPAL_ANGLE, config.synthetic.sweeps.pairwise_principal_angle_degrees),
+        (SyntheticSweepAxis.COMMON_INTERSECTION, config.synthetic.sweeps.common_intersection_dimension),
+        (SyntheticSweepAxis.CONTROL_SAMPLE_SIZE, config.synthetic.sweeps.control_sample_size),
+        (SyntheticSweepAxis.MALICIOUS_SAMPLE_SIZE, config.synthetic.sweeps.malicious_sample_size),
+        (SyntheticSweepAxis.CONTROL_SPAN_VIOLATION, config.synthetic.sweeps.control_span_violation_over_sigma),
+        (SyntheticSweepAxis.SYNCHRONIZED_NUISANCE, config.synthetic.sweeps.synchronized_nuisance_over_sigma),
+        (SyntheticSweepAxis.SPECTRAL_CONDITIONING, config.synthetic.sweeps.spectral_conditioning_ratio),
+        (SyntheticSweepAxis.ACTION_ROTATION, config.synthetic.sweeps.action_rotation_angle_degrees),
     )
     for axis_name, values in sweep_axes:
         for value in values:
@@ -499,7 +497,7 @@ def run_synthetic_geometry_sweeps(application: ExperimentRuntime) -> SyntheticSw
         for geometry in config.synthetic.sweeps.federation.geometries:
             cells.append(
                 _synthetic_sweep_cell(
-                    application, FEDERATION_AXIS, client_count, len(cells), geometry
+                    application, SyntheticSweepAxis.FEDERATION, client_count, len(cells), geometry
                 )
             )
     for magnitude in config.synthetic.sweeps.private_transition.norm_over_sigma:
@@ -507,7 +505,7 @@ def run_synthetic_geometry_sweeps(application: ExperimentRuntime) -> SyntheticSw
             cells.append(
                 _synthetic_sweep_cell(
                     application,
-                    "private_transition",
+                    SyntheticSweepAxis.PRIVATE_TRANSITION,
                     magnitude,
                     len(cells),
                     private_sparsity=sparsity,
@@ -518,7 +516,7 @@ def run_synthetic_geometry_sweeps(application: ExperimentRuntime) -> SyntheticSw
             cells.append(
                 _synthetic_sweep_cell(
                     application,
-                    "outlier_client_stress",
+                    SyntheticSweepAxis.OUTLIER_CLIENT_STRESS,
                     corrupted_count,
                     len(cells),
                     synthetic_attack=attack,

@@ -304,7 +304,7 @@ def _check_nuisance_dimensions(
     observed = spaces.clients[0].basis.shape[1]
     all_match = all(client.basis.shape[1] == requested for client in spaces.clients)
     return SmokeCheckResult(
-        check_name="nuisance_dimension",
+        check_name=IntegrityCheckName.NUISANCE_DIMENSION,
         passed=all_match and observed == requested,
         detail=f"requested={requested} observed={observed}",
     )
@@ -316,7 +316,7 @@ def _check_orthonormality(spaces: NuisanceSpaces, tolerance: Tolerance) -> Smoke
         for client in spaces.clients
     )
     return SmokeCheckResult(
-        check_name="orthonormality",
+        check_name=IntegrityCheckName.ORTHONORMALITY,
         passed=worst <= tolerance,
         detail=f"max deviation={worst}",
     )
@@ -335,7 +335,7 @@ def _check_intersection(
         else min(requested, spaces.clients[0].basis.shape[1])
     )
     return SmokeCheckResult(
-        check_name="common_intersection",
+        check_name=IntegrityCheckName.COMMON_INTERSECTION,
         passed=observed >= min(expected, spaces.clients[0].basis.shape[1]),
         detail=f"requested={requested} observed={observed}",
     )
@@ -346,7 +346,7 @@ def _check_replay_determinism(seed_pair: list[SeedValue]) -> SmokeCheckResult:
     second = np.random.default_rng(np.random.SeedSequence(seed_pair).spawn(1)[0]).standard_normal(8)
     identical = bool(np.array_equal(first, second))
     return SmokeCheckResult(
-        check_name="deterministic_replay",
+        check_name=IntegrityCheckName.DETERMINISTIC_REPLAY,
         passed=identical,
         detail="paired seed streams reproduce exactly",
     )

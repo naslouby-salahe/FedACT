@@ -82,7 +82,7 @@ def _local_epoch(
     loss = torch_functional.binary_cross_entropy_with_logits(logits, labels)
     loss.backward()
     optimizer.step()
-    return local_encoder.state_dict(), local_head.state_dict(), float(loss.item())
+    return local_encoder.state_dict(), local_head.state_dict(), loss.item()
 
 
 def _weighted_average_state(

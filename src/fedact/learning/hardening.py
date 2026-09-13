@@ -114,7 +114,7 @@ def clean_false_negative_rate(
     if not positives.any():
         return CleanFnr(rate=0.0)
     fn = (positives & ~preds).sum().item()
-    fnr = float(fn / positives.sum().item())
+    fnr = fn / positives.sum().item()
     return CleanFnr(rate=min(1.0, max(0.0, fnr)))
 
 
@@ -241,7 +241,7 @@ def harden_detector_head(
     saved_states: list[dict[str, torch.Tensor]] = [
         {key: value.clone() for key, value in local_head.state_dict().items()}
     ]
-    validation_objectives: list[float] = []
+    validation_objectives: list[LossValue] = []
     degradations: list[DegradationValue] = [0.0]
     with torch.no_grad():
         local_head.eval()
@@ -253,7 +253,7 @@ def harden_detector_head(
             challenges_by_sample,
             hardening_weight,
         )
-    validation_objectives.append(float(initial_objective.item()))
+    validation_objectives.append(initial_objective.item())
 
     for epoch_index in range(total_epochs):
         learning_rate = _cosine_annealed_learning_rate(
@@ -290,7 +290,7 @@ def harden_detector_head(
         epoch_fnr = clean_false_negative_rate(local_head, encoder, validation_population).rate
         degradation = max(0.0, (epoch_fnr - baseline_clean_fnr.rate) * 100.0)
         saved_states.append({key: value.clone() for key, value in local_head.state_dict().items()})
-        validation_objectives.append(float(validation_objective.item()))
+        validation_objectives.append(validation_objective.item())
         degradations.append(degradation)
 
     eligible_epochs = [

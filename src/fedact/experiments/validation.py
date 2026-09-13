@@ -160,7 +160,13 @@ _RANDOM_MATCH_LEVELS_COUNTING_TOWARD_MINIMUM_FRACTION = (
 )
 
 
-def _match_key(action: ActionObservation, level: RandomMatchLevel) -> tuple[object, ...]:
+def _match_key(
+    action: ActionObservation, level: RandomMatchLevel
+) -> (
+    tuple[SplitCutoffIdentity, CohortIdentifier, HorizonStep, SampleIdentifier, ActionCount]
+    | tuple[SplitCutoffIdentity, CohortIdentifier, HorizonStep, SampleIdentifier]
+    | tuple[SplitCutoffIdentity, CohortIdentifier, HorizonStep]
+):
     if level is RandomMatchLevel.EXACT:
         return (
             action.cutoff_id,

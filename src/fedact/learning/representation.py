@@ -137,7 +137,7 @@ def select_checkpoint_epoch(
             best_epoch = epoch
     return EpochSelection(
         selected_epoch=best_epoch,
-        selected_validation_loss=float(best_loss),
+        selected_validation_loss=best_loss,
         eligible_epochs=len(losses),
     )
 
@@ -146,7 +146,7 @@ def stratified_validation_split(
     population: Sequence[TrainingObservation],
     validation_fraction: MetricRate,
 ) -> tuple[tuple[TrainingObservation, ...], tuple[TrainingObservation, ...]]:
-    strata: dict[tuple[bool, int], list[TrainingObservation]] = defaultdict(list)
+    strata: dict[tuple[BinaryLabel, MonthIndex], list[TrainingObservation]] = defaultdict(list)
     for obs in population:
         strata[(obs.label, obs.month_index)].append(obs)
     training: list[TrainingObservation] = []
@@ -219,7 +219,7 @@ def train_representation_encoder(
         epochs,
         random_seed,
     )
-    val_losses: list[float] = []
+    val_losses: list[LossValue] = []
     saved_states: list[dict[str, torch.Tensor]] = []
     for _unused in range(epochs):
         encoder.train()
@@ -234,7 +234,7 @@ def train_representation_encoder(
         supervision_head.eval()
         with torch.no_grad():
             val_logits = supervision_head(encoder(val_features)).squeeze(-1)
-            val_loss = float(criterion(val_logits, val_labels).item())
+            val_loss = criterion(val_logits, val_labels).item()
         val_losses.append(val_loss)
         saved_states.append({k: v.cpu().clone() for k, v in encoder.state_dict().items()})
     selection = select_checkpoint_epoch(tuple(val_losses), tie_tolerance, epochs)

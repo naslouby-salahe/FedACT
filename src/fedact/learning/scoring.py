@@ -139,8 +139,8 @@ def compute_detector_scores(
         probabilities = torch.sigmoid(logits)
     scored: list[ScoredSample] = []
     for idx, sample in enumerate(samples):
-        logit_val = float(logits[idx].item())
-        prob_val = float(probabilities[idx].item())
+        logit_val = logits[idx].item()
+        prob_val = probabilities[idx].item()
         scored.append(
             ScoredSample(
                 sample_id=sample.sample_id,
@@ -206,8 +206,8 @@ def score_samples(
         probabilities = torch.sigmoid(logits)
     scored: list[ScoredSample] = []
     for idx, sample_id in enumerate(sample_ids):
-        logit_val = float(logits[idx].item())
-        prob_val = float(probabilities[idx].item())
+        logit_val = logits[idx].item()
+        prob_val = probabilities[idx].item()
         scored.append(
             ScoredSample(
                 sample_id=sample_id,

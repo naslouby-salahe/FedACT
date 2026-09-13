@@ -174,6 +174,22 @@ class FederationGeometry(StrEnum):
     COMPLEMENTARY = "complementary"
 
 
+class SyntheticSweepAxis(StrEnum):
+    NUISANCE_DIMENSION = "nuisance_dimension"
+    CONTROL_MALICIOUS_AMPLITUDE = "control_malicious_amplitude"
+    PRINCIPAL_ANGLE = "principal_angle"
+    COMMON_INTERSECTION = "common_intersection"
+    CONTROL_SAMPLE_SIZE = "control_sample_size"
+    MALICIOUS_SAMPLE_SIZE = "malicious_sample_size"
+    CONTROL_SPAN_VIOLATION = "control_span_violation"
+    SYNCHRONIZED_NUISANCE = "synchronized_nuisance"
+    SPECTRAL_CONDITIONING = "spectral_conditioning"
+    ACTION_ROTATION = "action_rotation"
+    PRIVATE_TRANSITION = "private_transition"
+    OUTLIER_CLIENT_STRESS = "outlier_client_stress"
+    FEDERATION = "federation"
+
+
 class RandomMatchLevel(StrEnum):
     EXACT = "exact_action_match"
     SOURCE_SAMPLE = "source_sample_match"
@@ -496,7 +512,15 @@ ComparatorIdentifier = NonEmptyString
 RoadmapSectionId = NonEmptyString
 ParameterName = NonEmptyString
 ManifestFieldName = NonEmptyString
-IntegrityCheckName = NonEmptyString
+
+
+class IntegrityCheckName(StrEnum):
+    NUISANCE_DIMENSION = "nuisance_dimension"
+    ORTHONORMALITY = "orthonormality"
+    COMMON_INTERSECTION = "common_intersection"
+    DETERMINISTIC_REPLAY = "deterministic_replay"
+
+
 ScientificInvariantName = NonEmptyString
 CohortIdentifier = NonEmptyString
 OperatorIdentifier = NonEmptyString
@@ -775,6 +799,7 @@ __all__ = [
     "FileSuffix",
     "FederationClientCount",
     "FederationGeometry",
+    "SyntheticSweepAxis",
     "FieldName",
     "FilePath",
     "Fraction",
